@@ -218,12 +218,13 @@ export function probeFocus(): { where: string; indicator: boolean; obscured: boo
   }
   // Ô tuỳ biến: checkbox/radio trong suốt hoặc thu nhỏ, hình vẽ nằm ở phần tử ngay sau hoặc ở nhãn.
   // Thấy được hình thay thế ⇒ không phải focus lạc (vòng focus do CSS `input:focus-visible + span` vẽ).
-  let proxy: Element | undefined;
+  let proxies: Element[] = [];
   if (hidden && el.matches("input[type=checkbox], input[type=radio]")) {
     const cands = [el.nextElementSibling, ...Array.from((el as HTMLInputElement).labels ?? [])];
-    proxy = cands.find((c): c is Element => !!c && c.getBoundingClientRect().width > 1 && c.getBoundingClientRect().height > 1 && Number(getComputedStyle(c).opacity) > 0);
-    if (proxy) hidden = false;
+    proxies = cands.filter((c): c is Element => !!c && c.getBoundingClientRect().width > 1 && c.getBoundingClientRect().height > 1 && Number(getComputedStyle(c).opacity) > 0);
+    if (proxies.length) hidden = false;
   }
+  const proxy = proxies[0];
   const target = proxy ?? el;
   const tr = target.getBoundingClientRect();
   let obscured = hidden;
@@ -233,7 +234,7 @@ export function probeFocus(): { where: string; indicator: boolean; obscured: boo
     const mine = (n: Element): boolean => n === el || el.contains(n) || n.contains(el) || n === target || target.contains(n) || n.contains(target);
     obscured = !!hit && !mine(hit) && !(hit.shadowRoot && hit.shadowRoot.contains(el));
   }
-  return { where, indicator: hasRing(cs) || (!!proxy && hasRing(getComputedStyle(proxy))), obscured, hidden };
+  return { where, indicator: hasRing(cs) || proxies.some((p) => hasRing(getComputedStyle(p))), obscured, hidden };
 }
 
 /**

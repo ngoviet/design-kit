@@ -96,6 +96,7 @@ describe("check on real pages", () => {
   it("a custom checkbox whose visible box draws no focus ring is still reported", async () => {
     const { out } = await run(["check", "test/fixtures/khong-vong.html", ...FAST, "--full"]);
     expect(out).toMatch(/focus,input#nho.*no visible focus ring/);
+    expect(out).not.toMatch(/input#gio.*no visible focus ring/);
     expect(out).not.toContain("nobody can see");
   }, 120_000);
 
