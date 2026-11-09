@@ -12,7 +12,7 @@ Cổng có ba mức:
 - **mềm**: phải sửa, hoặc ghi lý do không sửa.
 - **người**: chủ duyệt trên ảnh chụp.
 
-Bằng chứng nằm trong kho tri thức, chủ đề `tieu-chuan-va-cach-huong-dan-ai-lam-giao-dien-web-dep-de-dun` (s1–s22). Mọi trích dẫn đã được kiểm lại bằng `research-axi kb verify`.
+Mã nguồn `s…` và luận điểm `c…` tra trong [`docs/nguon.md`](nguon.md): bản xuất có URL và câu trích. Bản gốc nằm trong kho tri thức, chủ đề `tieu-chuan-va-cach-huong-dan-ai-lam-giao-dien-web-dep-de-dun` (s1–s28, c1–c36). Mọi trích dẫn đã được kiểm lại bằng `research-axi kb verify`.
 
 | Tiêu chí | Ngưỡng | Đo bằng (`design-kit check`) | Cổng | Loại, nguồn |
 | --- | --- | --- | --- | --- |
@@ -25,7 +25,7 @@ Bằng chứng nằm trong kho tri thức, chủ đề `tieu-chuan-va-cach-huong
 | Autocomplete | `username`, `current-password`, `new-password` đúng chỗ | axe `autocomplete-valid` + khối mẫu | cứng | chuẩn (s14) |
 | Vùng cuộn | Vùng `overflow:auto` focus được bằng bàn phím | axe `scrollable-region-focusable` | cứng | chuẩn: WCAG 2.1.1 |
 | Giảm chuyển động | Không animation nào còn chạy khi `reduce` | `motion` | cứng | chuẩn: WCAG 2.3.3 (s11, s15) |
-| Focus | Thấy được, ≥ 2px, không bị che | `focus` (Tab 15 lần) | mềm | chuẩn: 2.4.11 AA, 2.4.13 AAA (s9, s10) |
+| Focus | Thấy được, ≥ 2px, không bị che, không rơi vào phần tử vô hình (bị cắt về 1px, mờ hẳn, ngoài màn) | `focus` (Tab 15 lần ở khổ 1280 **và** 390) | mềm | chuẩn: 2.4.7, 2.4.11 AA, 2.4.13 AAA (s9, s10) |
 | CWV | LCP ≤ 2,5 s, CLS ≤ 0,1 (lab); INP ≤ 200 ms (thực địa) | `lcp`, `cls` | mềm | chuẩn: p75 thực địa (s2) |
 | Tiếng Việt | `lang="vi"`; giãn dòng tiêu đề ≥ 1,2; font có bộ ký tự vietnamese | `lang`, `heading-lh`, `font` | cứng / mềm | quy ước (s18) |
 | Cỡ chữ | Không chữ nào < 12px, kể cả chữ SVG tính theo cỡ đã co | `text-min`, Impeccable `tiny-text` | cứng | quy ước (Impeccable) |
@@ -33,7 +33,9 @@ Bằng chứng nằm trong kho tri thức, chủ đề `tieu-chuan-va-cach-huong
 | Độ dài dòng | ≤ 75–80 ký tự. Đặt `--measure: 32em`, **không dùng `ch`** | `measure`, Impeccable `line-length` | mềm | nghiên cứu: Baymard 50–75 (s17) |
 | Dấu hiệu UI do AI làm | 0 luật "slop" của Impeccable, trừ `cream-palette` (mềm: thuộc khẩu vị, chủ chấm A/B chọn bản nền kem) | `impeccable` | cứng | nghiên cứu (s4); A/B 09/11/2026 |
 | Màu hợp thương hiệu | Sắc nhấn theo lĩnh vực hoặc thương hiệu, không mặc định theo loại màn hình | `scripts/doi-mau.mjs` + ảnh chụp | người | A/B đợt 2: thua ở đề tiệm bánh vì màu xanh ngọc lạnh |
-| Quy trình có dẫn đường | Có bản đồ tác vụ. Tác vụ trên 3 bước có trình tự từng bước, ghi tên bước kế tiếp. Lần đầu dùng có danh sách "Bắt đầu". Chỗ dễ lúng túng có mẹo đúng lúc. Không có tour mở đầu bắt buộc | ảnh chụp các trạng thái `?lan-dau=1`, `?buoc=N` | người | nghiên cứu: NN/g (s25–s27), Gee (s28) |
+| Quy trình có dẫn đường | Có bản đồ tác vụ. Tác vụ trên 3 bước có trình tự từng bước, ghi tên bước kế tiếp. Lần đầu dùng có danh sách "Bắt đầu". Chỗ dễ lúng túng có mẹo đúng lúc. Không có tour mở đầu bắt buộc | ảnh chụp các trạng thái `?lan-dau=1`, `?buoc=N` và trạng thái trong `<trang>.steps.json` | người | nghiên cứu: NN/g (s25–s27), Gee (s28) |
+| Dẫn đường đo được | Nút đi tiếp không chỉ ghi "Tiếp"/"Next" (phân trang trong `<nav>` thì được). Câu báo rỗng ("Không có … nào", "No results") có nút hoặc liên kết gỡ ngay cạnh. Không có thư viện tour (intro.js, Shepherd, driver.js…) hay hộp "Chào mừng" mở sẵn khi vào trang | `guide` | mềm | nghiên cứu: NN/g (s25–s27); quy ước design-kit |
+| Trạng thái sau tương tác | Mỗi trạng thái người dùng tới bằng thao tác (lỗi form, bước 3, menu mở, sắp xếp, không có kết quả) đạt mọi tiêu chí trên. Thao tác nào không làm được ở một khổ là lỗi | `<trang>.steps.json` hoặc `--steps`: mỗi trạng thái một dòng phán quyết; `steps` khi bấm hỏng | cứng | quy ước design-kit; A/B: agent kiểm theo trạng thái tìm thêm lỗi |
 | Form dài một màn | Không quá 12 ô nhập hiện cùng lúc. Nếu nhiều hơn, chia bước hoặc ẩn bớt phần nâng cao | `long-form` | mềm | nghiên cứu: NN/g (s25, s27) |
 | Màn nhìn nhanh | Dashboard: số liệu hôm nay và việc cần làm ngay nằm ở màn đầu 1280px, không nằm dưới bảng dài | ảnh chụp 1280px | người | A/B đợt 2 |
 | Phân cấp, cá tính | Mỗi màn có một điểm nhấn chính, khớp DESIGN.md | ảnh chụp 3 khổ × sáng/tối | người | nghiên cứu: LLM tự chấm chưa bằng người (s20, s21) |
@@ -43,3 +45,5 @@ Bằng chứng nằm trong kho tri thức, chủ đề `tieu-chuan-va-cach-huong
 - **`ch` đo sai với chữ Việt.** Trong Be Vietnam Pro, `max-width: 68ch` chứa khoảng 93 ký tự mỗi dòng: chữ Việt trung bình hẹp hơn chữ số "0" khoảng 37%. Vì vậy token dùng `32em`.
 - **Impeccable không nhìn vào shadow DOM.** Engine 0.1.19, quét qua URL, bỏ sót chữ 9,9px và tương phản 1,55:1 nằm trong một open shadow root. Probe của design-kit và axe-core đều bắt được. Chi tiết ở `test/fixtures/loi.html`.
 - **Chữ SVG co theo viewBox.** Khai báo 13px trong viewBox rộng 900, khi hiển thị ở khổ 390px chỉ còn khoảng 5px.
+- **Tái hiện lại lỗi shadow DOM của Impeccable** (skill 4.8.1, engine 0.1.19). Trang chỉ có lỗi trong shadow root: Impeccable báo 0 lỗi và thoát 0. Đặt cùng dòng chữ lỗi vào light DOM thì nó báo đủ (`low-contrast`, `undersized-ui-text`). Bản nháp báo lỗi ở `docs/bao-loi-impeccable-shadow-dom.md`, chưa gửi.
+- **Cổng theo trạng thái bắt được lỗi mà lần render đầu bỏ qua.** Ở khổ 320/390, khối `bang-du-lieu` giấu `thead` theo kiểu sr-only. Hệ quả: người dùng điện thoại không sắp xếp được bảng, còn phím Tab rơi vào nút vô hình. Tệp `bang-du-lieu.steps.json` báo "click … failed" ở 320/390, và phép đo focus ở 390 báo focus lạc. Bản React cũng không có cách sắp xếp ở khổ hẹp, và câu báo rỗng không kèm nút gỡ. Đã sửa cả hai bản: ẩn hẳn `thead`, thêm ô "Sắp xếp", thêm trạng thái "không thấy" có nút gỡ lọc.

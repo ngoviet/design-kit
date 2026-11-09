@@ -1,0 +1,16 @@
+{
+  "description": "design-kit: nhắc dẫn đường như game và chạy cổng khi AI sửa tệp giao diện",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/nhac-giao-dien.mjs\"", "timeout": 10 }]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/nhac-giao-dien.mjs\"", "timeout": 10 }]
+      }
+    ]
+  }
+}

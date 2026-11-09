@@ -1,0 +1,5 @@
+[
+  { "name": "sap-xep", "viewports": [1280], "do": [{ "click": "thead button:has-text('Tải xuống')" }] },
+  { "name": "sap-xep-hep", "viewports": [320, 390], "do": [{ "select": ["select[id$='-sx']", "xuong:descending"] }] },
+  { "name": "khong-thay", "do": [{ "fill": ["input[type=search]", "zzz"] }] }
+]

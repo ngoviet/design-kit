@@ -5,7 +5,7 @@ import { dirname, extname, join, relative, resolve, sep } from "node:path";
 import type { Browser } from "playwright-core";
 import { fail } from "./errors.js";
 
-/** Kênh trình duyệt có sẵn trên máy: không tải Chromium riêng (Playwright Python từng lệch phiên bản). */
+/** Ưu tiên trình duyệt có sẵn trên máy (Playwright Python từng lệch phiên bản Chromium); Chromium của Playwright chỉ là đường lùi. */
 const CHANNELS = ["msedge", "chrome"] as const;
 
 export async function launchBrowser(env: Record<string, string | undefined>): Promise<{ browser: Browser; via: string }> {
@@ -23,8 +23,15 @@ export async function launchBrowser(env: Record<string, string | undefined>): Pr
       errors.push(`${channel}: ${(e as Error).message.split("\n")[0]}`);
     }
   }
+  // Đường lùi cho máy không có Edge/Chrome (container Linux của CI, máy chủ): Chromium do Playwright tải,
+  // đúng phiên bản playwright-core (image mcr.microsoft.com/playwright đã có sẵn).
+  try {
+    return { browser: await chromium.launch(), via: "chromium (playwright)" };
+  } catch (e) {
+    errors.push(`chromium: ${(e as Error).message.split("\n")[0]}`);
+  }
   fail(`no browser found (${errors.join("; ")})`, "BROWSER_MISSING", [
-    "Install Microsoft Edge or Google Chrome, or set DK_BROWSER to a Chromium executable",
+    "Install Microsoft Edge or Google Chrome, or run `npx playwright install chromium`, or set DK_BROWSER to a Chromium executable",
   ]);
 }
 

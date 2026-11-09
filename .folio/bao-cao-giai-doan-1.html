@@ -161,6 +161,9 @@
   .shots figure:last-child { grid-column: 1 / -1; }
   .shots img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: var(--radius); }
   @media (max-width: 700px) { .shots { grid-template-columns: minmax(0, 1fr); } }
+  .shots-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .shots-2 figure:last-child { grid-column: auto; }
+  @media (max-width: 500px) { .shots-2 { grid-template-columns: minmax(0, 1fr); } }
   footer { margin-top: var(--s8); padding-top: var(--s5); border-top: 1px solid var(--line); }
   @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 </style>
@@ -179,6 +182,7 @@
         <li><a href="#vong">Vòng tự kiểm</a></li>
         <li><a href="#phuong-an">Ba phương án</a></li>
         <li><a href="#giai-doan-2">Giai đoạn 2</a></li>
+        <li><a href="#dong-goi">Chạy độc lập</a></li>
         <li><a href="#nguon">Nguồn</a></li>
       </ol>
     </nav>
@@ -487,12 +491,72 @@
           </ul>
         </li>
       </ul>
+      <h3>Hoàn tất: công cụ tự nhắc dẫn đường, cổng đo cả trạng thái (09/11/2026)</h3>
+      <p>Chủ muốn chính công cụ nhắc AI làm quy trình dễ như phần hướng dẫn trong game: hướng dẫn từng bước, làm đến đâu hướng dẫn đến đấy. Trước đây chỉ skill nhắc việc này. Nay CLI cũng nhắc, và cổng đo được một phần.</p>
+      <div class="tbl wide" tabindex="0" role="region" aria-label="Bảng thay đổi, cuộn ngang được">
+        <table>
+          <thead><tr><th scope="col">Phần</th><th scope="col">Đã làm</th><th scope="col">Bằng chứng</th></tr></thead>
+          <tbody>
+            <tr><td>CLI tự nhắc</td><td><code>design-kit</code> in mục <code>workflow</code>: lập bản đồ tác vụ, rồi gắn mỗi chỗ dễ lúng túng với một mẫu (từng bước, danh sách Bắt đầu, mẹo đúng lúc, rỗng biết chỉ đường, Hoàn tác). Mỗi lần <code>design-kit check</code> đều kết thúc bằng lời nhắc "Guide like a game".</td><td>Đã chạy thử cả hai lệnh, lời nhắc hiện đúng.</td></tr>
+            <tr><td>Phép đo <code>guide</code> (mềm)</td><td>Báo nút đi tiếp chỉ ghi "Tiếp"/"Next", câu báo rỗng không kèm nút gỡ, tour hoặc hộp "Chào mừng" tự bật khi mở trang.</td><td>Test cài cả ba lỗi vào trang mẫu, cả ba đều bị bắt.</td></tr>
+            <tr><td>Đo trạng thái sau thao tác</td><td><code>--steps</code> và tệp <code>&lt;trang&gt;.steps.json</code>. Mỗi trạng thái nạp trang mới, bấm hoặc gõ, rồi được đo đủ mọi tiêu chí và có dòng phán quyết riêng. Bước nào không làm được thì báo lỗi cứng.</td><td>Viết cho 9 khối HTML và 3 khối React. Test 10/10.</td></tr>
+            <tr><td>Focus ở khổ hẹp</td><td>Kiểm Tab ở cả 1280 và 390. Báo khi focus rơi vào phần tử vô hình.</td><td>Bắt được lỗi thật ở bảng dữ liệu (dưới đây).</td></tr>
+            <tr><td>Báo lỗi cho Impeccable</td><td>Tái hiện với bản 4.8.1: trang chỉ có lỗi trong shadow root thì Impeccable báo 0 lỗi. Issue đã soạn ở <code>docs/bao-loi-impeccable-shadow-dom.md</code>.</td><td><strong>Chưa gửi</strong>, chờ chủ duyệt.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Cách đo mới tìm ra lỗi thật trong chính các khối</h3>
+      <ul>
+        <li><strong>Bảng dữ liệu không sắp xếp được trên điện thoại.</strong> Dưới 40rem, tiêu đề cột bị giấu kiểu sr-only, kéo theo các nút sắp xếp. Bước bấm sắp xếp hỏng ở 320/390. Phím Tab thì rơi vào nút vô hình. Đã sửa: ẩn hẳn tiêu đề và thêm ô chọn "Sắp xếp". Bản React cũng không có cách sắp xếp ở khổ hẹp, đã sửa tương tự.</li>
+        <li><strong>Tìm không ra thì bảng trống trơn.</strong> Bảng giờ nói lý do và có nút "Xoá tìm kiếm và bộ lọc" (cả HTML lẫn React).</li>
+        <li><strong>Bộ lọc tắt hết mức độ thì chỉ hiện số 0.</strong> Giờ khối ghi: "Chưa chọn mức độ nào: bật ít nhất một mức để xem cảnh báo."</li>
+      </ul>
+      <p><strong>Duyệt ảnh chụp bắt thêm</strong> những lỗi máy đo báo đạt:</p>
+      <ul>
+        <li>Bảng ghi "Tên thiết bị (A → Z)", nhưng hàng không hề được xếp. Đã cho xếp thật ngay khi tải.</li>
+        <li>Ở khổ hẹp, tiêu đề bảng bị bóp thành cột hẹp, mỗi dòng một chữ; số và đơn vị bị tách xa nhau ("182,4 …… Mb/s"); nhãn "Địa chỉ IP" hiện bằng font chữ số. Đã sửa cả ba.</li>
+        <li>Thu hẹp hộp mẹo để dòng chữ không quá dài thì mẹo leo lên cạnh công tắc, mũi tên trỏ vào khoảng trống. Đã chuyển dòng đó sang grid: mẹo nằm ngay dưới công tắc.</li>
+        <li>Có hai báo nhầm của phép đo focus mới, đã sửa trong cổng chứ không sửa khối:
+          <ul>
+            <li>Công tắc tuỳ biến: <code>input</code> trong suốt, vòng focus vẽ trên <code>span</code>.</li>
+            <li>Mẹo đang chạy hiệu ứng mở, độ mờ còn bằng 0 đúng lúc đo.</li>
+          </ul>
+        </li>
+      </ul>
+      <div class="shots shots-2">
+        <figure><img src="anh/gd2-hoan-tat/sap-xep-hep-light-390.png" alt="Bảng dữ liệu ở khổ 390px, hướng Đêm, theme sáng: có ô chọn Sắp xếp đang đặt Tải xuống cao đến thấp, các hàng xếp thành khối dọc có nhãn" loading="lazy" width="390" height="1615"><figcaption>Khổ 390: ô "Sắp xếp" thay cho tiêu đề cột đã ẩn.</figcaption></figure>
+        <figure><img src="anh/gd2-hoan-tat/khong-thay-light-390.png" alt="Bảng dữ liệu ở khổ 390px sau khi tìm zzz: câu Không thấy thiết bị nào khớp, gợi ý cách tìm khác và nút Xoá tìm kiếm và bộ lọc" loading="lazy" width="390" height="844"><figcaption>Tìm "zzz": nói lý do, chỉ cách gỡ.</figcaption></figure>
+      </div>
+
       <h3>Còn lại</h3>
       <ol class="steps">
-        <li><strong>Lặp lại A/B với vị trí đảo</strong><p>Thêm 3 đề mới, đặt bản design-kit ở cột trái, để loại thiên lệch vị trí.</p></li>
-        <li><strong>Kịch bản trạng thái cho cổng</strong><p>Thêm tuỳ chọn <code>--steps</code>: tự bấm qua lỗi, đang gửi, xác nhận, thay cho việc agent tự viết script.</p></li>
-        <li><strong>Báo lỗi shadow DOM cho Impeccable</strong><p>Gửi kèm trang tái hiện <code>test/fixtures/loi.html</code>.</p></li>
+        <li><strong>Gửi báo lỗi shadow DOM cho Impeccable</strong><p>Chủ đã đồng ý gửi. Chế độ tự động của Claude Code chặn lệnh tạo issue, nên chủ tự chạy lệnh ghi trong <code>docs/bao-loi-impeccable-shadow-dom.md</code>.</p></li>
       </ol>
+    </section>
+
+    <section id="dong-goi" aria-labelledby="dong-goi-h">
+      <h2 id="dong-goi-h">Gộp phụ thuộc để chạy độc lập?</h2>
+      <p>Mục tiêu "độc lập": trên một máy Windows hay Linux bất kỳ, chỉ cần <code>git clone</code> rồi <code>npm install</code> là cổng chạy đủ. Có máy đường dẫn <code>D:\code</code> hay không cũng vậy, và không cần các dự án khác của chủ.</p>
+      <p><strong>Nguyên tắc chọn:</strong> gộp những gì design-kit tự sở hữu, hoặc nhỏ và ít đổi (dữ liệu, font, thư viện npm, bằng chứng). Không chép vào những thứ là sản phẩm riêng, có vòng đời riêng hoặc nặng (trình duyệt, engine Impeccable, các skill khác). Với nhóm này: ghim phiên bản, tải khi cần, thiếu thì cổng vẫn chạy và báo rõ.</p>
+      <div class="tbl wide" tabindex="0" role="region" aria-label="Bảng phụ thuộc, cuộn ngang được">
+        <table>
+          <thead><tr><th scope="col">Thành phần</th><th scope="col">Hiện tại</th><th scope="col">Đề xuất</th><th scope="col">Lý do</th></tr></thead>
+          <tbody>
+            <tr><td>Script đổi màu, kiểm cặp màu (<code>colorjs.io</code>)</td><td>Skill gọi <code>node D:/code/design-kit/scripts/doi-mau.mjs</code>. <code>colorjs.io</code> chỉ là devDependency.</td><td><span class="tag std">Gộp</span> Đưa vào dependencies, thêm lệnh con <code>design-kit doi-mau</code>, <code>design-kit kiem-mau</code>.</td><td>Đây là lỗi độc lập có thật: cài như một gói (không có devDependency) thì lệnh đổi màu hỏng ngay.</td></tr>
+            <tr><td>Đường dẫn cứng trong skill</td><td>2 chỗ <code>D:\code\design-kit</code></td><td><span class="tag std">Gộp</span> Skill hỏi <code>design-kit</code> lấy đường dẫn của kit, rồi gọi lệnh con.</td><td>Máy khác, phiên cloud không có ổ D.</td></tr>
+            <tr><td>Font (Be Vietnam Pro, Literata, Bricolage Grotesque, JetBrains Mono)</td><td>Tải từ Google Fonts</td><td><span class="tag std">Gộp</span> Thêm bản tự host: woff2 chỉ gồm bộ chữ Latin và tiếng Việt. Ước chừng 1 MB, cần đo lại. Có hai tệp, <code>fonts.css</code> (CDN) và <code>fonts-local.css</code>.</td><td>Card Home Assistant và trang Folio chạy trong mạng nhà, có lúc không ra Internet. Không gọi bên thứ ba thì riêng tư hơn. Cả bốn font dùng giấy phép OFL, được phép chép.</td></tr>
+            <tr><td>Bằng chứng cho ngưỡng (s1–s36, c29–c36)</td><td>Nằm trong kho tri thức <code>research-hub</code></td><td><span class="tag std">Gộp bản xuất</span> Xuất ra <code>docs/nguon.md</code>: mỗi nguồn kèm URL và câu trích đã kiểm.</td><td><code>tieu-chi.md</code> đang trỏ tới một kho ở ngoài repo. Kho vẫn là bản gốc, repo giữ một bản chụp.</td></tr>
+            <tr><td>Lint DESIGN.md (<code>@google/design.md</code>)</td><td>Tải bằng <code>npx -p</code> mỗi lần chạy</td><td><span class="tag std">Gộp</span> Thêm vào devDependencies, chạy bằng <code>npm run lint:design</code>.</td><td>Ghim được phiên bản, chạy được khi không có mạng.</td></tr>
+            <tr><td>Trình duyệt</td><td>Edge, không có thì Chrome có sẵn trên máy</td><td><span class="tag conv">Không gộp</span> Thêm đường lùi: không có Edge hay Chrome thì dùng Chromium của Playwright (<code>npx playwright install chromium</code>).</td><td>Trình duyệt nặng hơn 150 MB và cần cập nhật bảo mật. Container Linux của Woodpecker không có Edge.</td></tr>
+            <tr><td>Engine Impeccable</td><td>Lấy từ skill <code>impeccable</code>. Tệp 20,8 MB, chỉ có bản Windows.</td><td><span class="tag soft">Tải khi cần</span> Ghim phiên bản, tải từ trang release của <code>pbakaus/impeccable</code> về bộ nhớ đệm, kiểm checksum. Không có thì cổng báo "skipped", như hiện nay.</td><td>Giấy phép Apache-2.0 cho phép chép, nhưng mỗi lần cập nhật sẽ đẩy thêm 20 MB vào lịch sử git. Engine cũng đang chờ sửa lỗi shadow DOM, nên cần cập nhật theo bản mới.</td></tr>
+            <tr><td>Skill <code>impeccable</code>, <code>palette-axi</code>, <code>folio</code>, <code>research-axi</code></td><td>Công cụ riêng của chủ</td><td><span class="tag conv">Không gộp</span> Có thì dùng, không có thì bỏ qua.</td><td>Đó là sản phẩm độc lập. Chép vào thì thành hai bản lệch nhau.</td></tr>
+            <tr><td><code>axe-core</code>, <code>playwright-core</code>, <code>axi-sdk-js</code></td><td>Gói npm từ registry</td><td><span class="tag std">Đã gộp</span> Giữ nguyên.</td><td>Cả ba lấy từ registry công khai, đã có trong <code>package.json</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>Đã làm (09/11/2026, bản 0.2.0):</strong> làm đúng theo bảng trên. Đã thử cài từ gói ra một thư mục tạm, tách khỏi repo: <code>design-kit</code>, <code>doi-mau</code> và <code>check</code> đều chạy. Bản tải engine Impeccable khớp sha256. Plugin qua <code>claude plugin validate</code>. Font tự host chỉ 414 KB, vì ba trong bốn họ font là font biến thiên. Còn chờ chủ: bật repo trong Woodpecker, cài plugin trên PC1.</p>
+      <div class="note"><p>Làm cùng lúc với việc đóng gói thành plugin: đẩy lên repo riêng tư, thêm Woodpecker CI, plugin gồm skill và hook nhắc. CI chạy trên Linux là phép thử "độc lập" thật: nếu repo còn dựa vào thứ gì chỉ có trên PC1, CI sẽ đỏ.</p></div>
     </section>
 
     <section id="nguon" aria-labelledby="nguon-h">

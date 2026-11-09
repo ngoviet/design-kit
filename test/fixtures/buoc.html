@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trạng thái sau khi bấm</title>
+<link rel="stylesheet" href="../../tokens/fonts-local.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<style>
+  body { margin: 0; background: var(--bg); color: var(--text); font: 400 var(--fs-body)/var(--lh-body) var(--font-body); }
+  main { max-width: 40rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4); }
+  h1 { font: var(--weight-display) var(--fs-2xl)/var(--lh-tight) var(--font-display); margin: 0 0 var(--sp-4); }
+  p { max-width: var(--measure); margin: 0 0 var(--sp-4); }
+  button { min-height: var(--hit-lg); padding: 0 var(--sp-5); border: 0; border-radius: var(--r-md); background: var(--accent); color: var(--on-accent); font: 600 var(--fs-sm) var(--font-body); cursor: pointer; }
+  button:focus-visible { outline: var(--focus-w) solid var(--focus); outline-offset: 3px; }
+  [hidden] { display: none !important; }
+  /* Công tắc tuỳ biến: input trong suốt, vòng focus vẽ trên span. Không được báo nhầm là focus lạc. */
+  .switch { position: relative; display: inline-block; width: 48px; height: 28px; vertical-align: middle; }
+  .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; }
+  .switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--border-strong); pointer-events: none; }
+  .switch input:focus-visible + span { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
+  /* Lỗi cố ý: chỉ hiện sau khi bấm Gửi, nên lần render đầu không thấy. */
+  .loi { font-size: 10px; }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Gửi yêu cầu hỗ trợ</h1>
+    <p>Bấm nút bên dưới khi chưa nhập email để thấy thông báo lỗi. Lỗi chữ quá nhỏ chỉ lộ ra ở trạng thái này.</p>
+    <p class="loi" id="loi" hidden>Thiếu email: hãy nhập địa chỉ email rồi gửi lại.</p>
+    <p><label for="sw">Nhận email trả lời</label> <span class="switch"><input type="checkbox" role="switch" id="sw"><span></span></span></p>
+    <button type="button" id="gui">Gửi yêu cầu</button>
+  </main>
+  <script>
+    document.getElementById("gui").addEventListener("click", () => { document.getElementById("loi").hidden = false; });
+  </script>
+</body>
+</html>

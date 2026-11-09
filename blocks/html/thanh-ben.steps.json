@@ -1,0 +1,3 @@
+[
+  { "name": "ngan-keo", "viewports": [320, 390], "do": [{ "click": ".open-side" }] }
+]

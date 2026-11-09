@@ -1,0 +1,9 @@
+{
+  "name": "design-kit",
+  "version": "0.2.0",
+  "description": "Chuẩn và cổng cho giao diện do AI làm: ba hướng thẩm mỹ, khối mẫu đã qua cổng, skill dẫn đường như game, và hook nhắc chạy design-kit check khi sửa tệp giao diện. Cần CLI: clone repo, npm ci, npm install -g . (xem README)",
+  "author": { "name": "Ngô Đức Việt", "url": "https://github.com/ngoviet" },
+  "repository": "https://github.com/ngoviet/design-kit",
+  "license": "MIT",
+  "keywords": ["design", "ui", "accessibility", "wcag", "vietnamese"]
+}

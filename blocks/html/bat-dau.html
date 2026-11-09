@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Khối: bắt đầu và mẹo đúng lúc</title>
 <script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,k=q.get("dk"),t=q.get("theme");if(k&&/^(dem|giay|dam)$/.test(k))d.dataset.dk=k;if(t==="light"||t==="dark")d.dataset.theme=t;})();</script>
-<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/fonts-local.css">
 <link rel="stylesheet" href="../../tokens/core.css">
 <link rel="stylesheet" href="../../tokens/dem.css">
 <link rel="stylesheet" href="../../tokens/giay.css">
@@ -37,9 +37,11 @@
 
   /* ---- Khối: mẹo đúng lúc (gắn cạnh nút người dùng sắp dùng; một mẹo một lúc; không chặn trang) ---- */
   /* Mẹo nằm trong luồng trang ngay dưới điều khiển, không nổi đè: mẹo không được che việc người dùng đang làm. */
-  .anchor { flex-wrap: wrap; }
+  /* Grid chứ không flex-wrap: mẹo luôn xuống hàng riêng, kể cả khi hẹp hơn hàng (flex sẽ kéo nó lên cạnh công tắc) */
+  .setting.anchor { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--sp-4); }
   .tip {
-    position: relative; flex-basis: 100%; margin-top: var(--sp-1);
+    /* Rộng tối đa 34rem, dạt phải: nằm ngay dưới công tắc mũi tên chỉ tới, dòng chữ không quá ~70 ký tự */
+    position: relative; grid-column: 1 / -1; justify-self: end; width: 100%; max-width: 34rem; margin-top: var(--sp-1);
     padding: var(--sp-3) var(--sp-4); border-radius: var(--r-sm); background: var(--accent-soft); color: var(--text);
     font: 400 var(--fs-base)/1.5 var(--font-ui, var(--font-body));
   }

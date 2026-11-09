@@ -34,10 +34,17 @@ export async function homeView(args: string[], rt: Runtime): Promise<Record<stri
     kit: root.replace(/\\/g, "/"),
     directions: directions.length ? directions.map((d) => `${d} (design/${d}/DESIGN.md)`).join(", ") : "0 directions found",
     blocks: `${html.length} html: ${html.join(", ") || "none"}; ${react.length} react: ${react.join(", ") || "none"}`,
-    impeccable: imp ? tilde(imp) : "not found: install the impeccable skill or set IMPECCABLE_BIN",
+    impeccable: imp ? tilde(imp) : "not found: run `design-kit setup`, or set IMPECCABLE_BIN",
     browser: rt.env["DK_BROWSER"] ? `DK_BROWSER=${rt.env["DK_BROWSER"]}` : "Edge, else Chrome (playwright-core channel)",
     project: `${rt.cwd.replace(/\\/g, "/")}: DESIGN.md ${existsSync(join(rt.cwd, "DESIGN.md")) ? "yes" : "no"}, PRODUCT.md ${existsSync(join(rt.cwd, "PRODUCT.md")) ? "yes" : "no"}`,
+    // Chủ yêu cầu 09/11/2026: mọi quy trình, phức tạp đến mấy, phải dễ như phần hướng dẫn trong game.
+    workflow: [
+      "Before markup, write a task map: the user's main tasks, their steps, and where a first-time user would hesitate",
+      "Cover every hesitation point: > 3 steps → step-by-step flow naming the next step (trinh-tu); first use → \"Bắt đầu\" checklist (bat-dau); unclear control → just-in-time tip beside it (bat-dau); empty screen → teach the first action (trang-thai); reversible action → Undo (thong-bao)",
+      "No up-front tour; smart defaults; errors say how to fix. Make each guided state reachable (?buoc=2, ?lan-dau=1 or <page>.steps.json) so the gate measures it",
+    ],
     help: [
+      "Write the task map first (skill design-kit, section 2b), then build from the closest block",
       "Run `design-kit check <file|dir|url>` before calling a page done",
       ...(existsSync(join(rt.cwd, "DESIGN.md")) ? [] : [`Copy a direction: cp ${root.replace(/\\/g, "/")}/design/<dem|giay|dam>/DESIGN.md ./DESIGN.md`]),
     ],

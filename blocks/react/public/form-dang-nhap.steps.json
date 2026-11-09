@@ -1,0 +1,3 @@
+[
+  { "name": "loi", "do": [{ "click": "button[type=submit]" }] }
+]

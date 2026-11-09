@@ -1,0 +1,3 @@
+[
+  { "name": "tat-het", "do": [{ "click": "[data-f=nghiem-trong]" }, { "click": "[data-f=canh-bao]" }] }
+]

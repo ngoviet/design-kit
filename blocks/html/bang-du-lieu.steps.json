@@ -1,0 +1,5 @@
+[
+  { "name": "sap-xep", "viewports": [1280], "do": [{ "click": "button.sort[data-k='3']" }] },
+  { "name": "sap-xep-hep", "viewports": [320, 390], "do": [{ "select": ["#xep", "3:descending"] }] },
+  { "name": "khong-thay", "do": [{ "fill": ["#tim", "zzz"] }] }
+]
