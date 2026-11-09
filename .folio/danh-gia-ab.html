@@ -25,7 +25,14 @@
   .shot img { display: block; width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); }
   .shot figcaption { margin-top: var(--sp-2); font: 400 var(--fs-sm)/1.5 var(--font-ui); color: var(--text-2); }
   .phones { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
-  .links { font: 400 var(--fs-sm)/1.5 var(--font-ui); margin: 0; }
+  .reveal { margin: var(--sp-6) 0 var(--sp-4); padding-top: var(--sp-5); border-top: 2px solid var(--accent); }
+  .reveal h2 { margin-bottom: var(--sp-3); }
+  .reveal .caveat { margin: 0; padding: var(--sp-3) var(--sp-4); background: var(--warn-soft); border-radius: var(--r-md); }
+  .tbl { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--r-md); margin: 0 0 var(--sp-4); }
+  .tbl table { width: 100%; border-collapse: collapse; font: 400 var(--fs-sm)/1.5 var(--font-ui); }
+  .tbl th, .tbl td { padding: var(--sp-2) var(--sp-3); text-align: left; border-bottom: 1px solid var(--border); }
+  .tbl tr:last-child td { border-bottom: 0; }
+  .tbl th { background: var(--surface-2); }
 </style>
 </head>
 <body>
@@ -34,10 +41,22 @@
     <h1>Chấm mù: có design-kit và không có design-kit</h1>
     <p>Ba đề bài, mỗi đề hai bản do hai agent cùng model Opus làm độc lập. Một bản làm theo skill design-kit, bản kia làm như Opus mặc định. Nhãn X và Y được bốc ngẫu nhiên riêng cho từng đề.</p>
   </header>
-  <div class="how">
-    <p><strong>Cách chấm:</strong> với mỗi đề, chọn bản thấy đẹp hơn và dễ dùng hơn. Có thể mở trang thật bằng các đường dẫn dưới ảnh để bấm thử, kể cả trên điện thoại.</p>
-    <p>Điểm máy đo và đáp án X/Y sẽ được công bố sau khi chủ chấm xong, để không ảnh hưởng tới lựa chọn.</p>
-  </div>
+  <section class="reveal" aria-labelledby="kq">
+    <h2 id="kq">Kết quả (chủ chấm 09/11/2026)</h2>
+    <p><strong>Chủ chọn Y ở cả 3 đề. Y là bản làm theo design-kit ở cả 3 đề.</strong></p>
+    <div class="tbl" tabindex="0" role="region" aria-label="Bảng kết quả, cuộn ngang được">
+      <table>
+        <thead><tr><th scope="col">Đề</th><th scope="col">Chủ chọn</th><th scope="col">X: Opus mặc định</th><th scope="col">Y: design-kit</th></tr></thead>
+        <tbody>
+          <tr><td>Landing</td><td>Y</td><td class="num">11 cứng, 34 mềm</td><td class="num">0 cứng, 0 mềm</td></tr>
+          <tr><td>Dashboard</td><td>Y</td><td class="num">1 cứng, 4 mềm</td><td class="num">0 cứng, 0 mềm</td></tr>
+          <tr><td>Form</td><td>Y</td><td class="num">0 cứng, 10 mềm</td><td class="num">0 cứng, 7 mềm</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Lỗi cứng của bản mặc định đúng là các "dấu hiệu UI do AI làm" mà nghiên cứu đã chỉ ra: 4 nhãn eyebrow phía trên tiêu đề, 3 ô icon xếp chồng, nút cam chữ trắng chỉ đạt 2,5:1, thẻ lồng trong thẻ. Bản design-kit tốn gấp khoảng 2–3 lần thời gian (200–310 giây so với 100–120 giây) và khoảng 1,4 lần token (105–127 nghìn so với 78 nghìn).</p>
+    <p class="caveat"><strong>Giới hạn của phép thử:</strong> khoá ngẫu nhiên tình cờ ra cùng một kiểu cho cả 3 đề (xác suất 1/4), nên bản design-kit luôn nằm ở cột bên phải. Vì vậy chưa loại được thiên lệch vị trí. Mẫu cũng nhỏ: 3 đề, 1 người chấm. Muốn chắc hơn, cần làm lại với vị trí đảo và thêm đề.</p>
+  </section>
 
   <section class="brief" aria-labelledby="b1">
     <h2 id="b1">Đề 1: Trang giới thiệu "Bếp Xanh"</h2>

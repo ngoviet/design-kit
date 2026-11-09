@@ -200,7 +200,7 @@
       <p>Phương án C gồm skill <code>design-kit</code>, lệnh kiểm <code>design-kit check</code> nằm trong design-kit, ba hướng thẩm mỹ, và khối mẫu có cả bản HTML/CSS thuần lẫn React + shadcn/ui. Đợt 1 đã xây xong, kết quả ở mục <a href="#giai-doan-2">Giai đoạn 2</a>.</p>
       <ul>
         <li>Lý do của cách làm: chỉ dẫn thẩm mỹ cụ thể giúp Claude tốt lên ngay [s4]. Nhưng LLM tự chấm UI chưa bằng người [s20] và khó tự cải thiện đều qua nhiều vòng [s21]. Vì vậy phần đo được giao cho máy, phần đẹp giao cho chủ.</li>
-        <li>Đã thêm quy tắc vào <code>~/.claude/CLAUDE.md</code> (chủ đồng ý 09/11/2026): mọi phiên làm giao diện đều gọi skill và chạy cổng.</li>
+        <li>Đã thêm quy tắc vào <code>~/.claude/CLAUDE.md</code> (chủ đồng ý 09/11/2026). Đánh giá A/B: chủ chấm mù và chọn bản design-kit ở cả 3/3 đề.</li>
       </ul>
     </section>
 
@@ -465,11 +465,33 @@
       <h3>Duyệt bằng mắt bắt thêm</h3>
       <p>Bốn thẻ trong khối <code>trang-thai</code> lệch đỉnh nhau 20–50px. Tiêu đề ở trang đầu trang dính sát đoạn văn. Máy báo đạt cả hai trường hợp, chỉ ảnh chụp mới cho thấy. Cả hai đã sửa.</p>
 
+      <h3>Đợt 2 và đánh giá A/B (09/11/2026)</h3>
+      <ul>
+        <li><strong>Đợt 2 khối mẫu:</strong> <code>hero</code>, <code>bai-viet</code>, <code>thanh-ben</code>, <code>thong-bao</code>, <code>bo-loc</code> (kèm phân trang). Bản React có thêm bảng dữ liệu và hộp thoại. Toàn thư viện có 11 khối HTML và 4 khối React. Cổng chạy trên 54 trang (3 hướng, có cả trạng thái mở): 0 lỗi cứng.</li>
+        <li><strong>Cổng nhanh hơn khoảng 10 lần</strong> nhờ chạy song song (<code>--jobs</code>). Có thêm phép đo <code>inner-scroll</code> để bắt bảng bị cắt cột trong vùng cuộn ngang.</li>
+        <li><strong>Đánh giá A/B</strong>, chi tiết trên trang Folio "Chấm mù A/B": 3 đề, mỗi đề 2 agent Opus.
+          <ul>
+            <li>Bản mặc định: 12 lỗi cứng, 48 lỗi mềm. Bản design-kit: 0 lỗi cứng, 7 lỗi mềm.</li>
+            <li>Chủ chấm mù, chọn bản design-kit ở cả 3/3 đề.</li>
+            <li>Giới hạn: bản design-kit tình cờ luôn ở cột phải, nên chưa loại được thiên lệch vị trí.</li>
+            <li>Chi phí của bản design-kit: thời gian gấp 2–3 lần, token gấp khoảng 1,4 lần.</li>
+          </ul>
+        </li>
+        <li><strong>Bài học đã đưa vào kit:</strong>
+          <ul>
+            <li><code>[hidden]</code> bị <code>display:grid</code> đè.</li>
+            <li>Cổng chỉ đo lần render đầu, nên trạng thái phải mở được bằng URL.</li>
+            <li><code>tailwind-merge</code> thay thế lớp chứ không cộng thêm.</li>
+            <li><code>shadcn add</code> lần nào cũng cài lại gói <code>cn</code>.</li>
+            <li>Python trên Windows ghi CRLF, làm hỏng frontmatter của skill.</li>
+          </ul>
+        </li>
+      </ul>
       <h3>Còn lại</h3>
       <ol class="steps">
-        <li><strong>Đợt 2 khối mẫu</strong><p>Hero landing (hướng Đậm), trang bài viết dài (hướng Giấy), thanh bên, toast, bộ lọc, phân trang. Bản React cho bảng và hộp thoại.</p></li>
-        <li><strong>Đánh giá A/B</strong><p>Ba trang thử (landing, dashboard, form tiếng Việt), mỗi trang làm hai bản: có skill và không có skill. Chấm bằng cổng, chủ xem mù hai bản. Ghi kết quả vào kho tri thức.</p></li>
-        <li><strong>Báo lỗi shadow DOM cho Impeccable</strong><p>Gửi kèm trang tái hiện <code>test/fixtures/loi.html</code>. Trong lúc chờ, design-kit đã bù phần này bằng probe và axe.</p></li>
+        <li><strong>Lặp lại A/B với vị trí đảo</strong><p>Thêm 3 đề mới, đặt bản design-kit ở cột trái, để loại thiên lệch vị trí.</p></li>
+        <li><strong>Kịch bản trạng thái cho cổng</strong><p>Thêm tuỳ chọn <code>--steps</code>: tự bấm qua lỗi, đang gửi, xác nhận, thay cho việc agent tự viết script.</p></li>
+        <li><strong>Báo lỗi shadow DOM cho Impeccable</strong><p>Gửi kèm trang tái hiện <code>test/fixtures/loi.html</code>.</p></li>
       </ol>
     </section>
 
