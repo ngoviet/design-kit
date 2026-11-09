@@ -13,6 +13,8 @@ export default defineConfig({
       input: {
         "form-dang-nhap": path.resolve(import.meta.dirname, "form-dang-nhap.html"),
         "trang-thai": path.resolve(import.meta.dirname, "trang-thai.html"),
+        "bang-du-lieu": path.resolve(import.meta.dirname, "bang-du-lieu.html"),
+        "hop-thoai": path.resolve(import.meta.dirname, "hop-thoai.html"),
       },
     },
   },

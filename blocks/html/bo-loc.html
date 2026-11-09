@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khối: bộ lọc và phân trang</title>
+<script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,k=q.get("dk"),t=q.get("theme");if(k&&/^(dem|giay|dam)$/.test(k))d.dataset.dk=k;if(t==="light"||t==="dark")d.dataset.theme=t;})();</script>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<link rel="stylesheet" href="../../tokens/giay.css">
+<link rel="stylesheet" href="../../tokens/dam.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  /* ---- Khối: bộ lọc (nút bật/tắt aria-pressed, đếm kết quả qua aria-live) ---- */
+  .filters { display: grid; gap: var(--sp-4); padding: var(--sp-4) var(--sp-5); }
+  .filters fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .filters legend { font: 600 var(--fs-sm)/1.4 var(--font-ui, var(--font-body)); margin-bottom: var(--sp-2); padding: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  .chip {
+    display: inline-flex; align-items: center; gap: var(--sp-1); min-height: 36px; padding: 0 var(--sp-3);
+    border: 1px solid var(--border-strong); border-radius: var(--r-full); background: var(--surface); color: var(--text);
+    font: 500 var(--fs-sm)/1 var(--font-ui, var(--font-body)); cursor: pointer;
+  }
+  .chip svg { width: 14px; height: 14px; display: none; }
+  .chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); }
+  .chip[aria-pressed="true"] svg { display: block; }
+  .filter-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); border-top: 1px solid var(--border); padding-top: var(--sp-3); }
+  .result { margin: 0; font: 400 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); color: var(--text-2); }
+  .result b { color: var(--text); font-weight: 600; }
+
+  /* ---- Khối: phân trang (aria-current, nút trước/sau, dấu lược, chọn cỡ trang) ---- */
+  .pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-top: var(--sp-6); }
+  .pager ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-1); align-items: center; }
+  .pager a, .pager .gap { display: inline-grid; place-items: center; min-width: var(--hit); min-height: var(--hit); padding: 0 var(--sp-2); border-radius: var(--r-sm); font: 500 var(--fs-sm)/1 var(--font-ui, var(--font-body)); color: var(--text); text-decoration: none; }
+  .pager a:hover { background: var(--surface-2); }
+  .pager a[aria-current="page"] { background: var(--accent); color: var(--on-accent); }
+  .pager a[aria-disabled="true"] { color: var(--text-2); pointer-events: none; opacity: 0.6; }
+  .pager .gap { color: var(--text-2); }
+  .pager .prevnext { gap: var(--sp-1); display: inline-flex; padding: 0 var(--sp-3); }
+  .pager .prevnext svg { width: 16px; height: 16px; }
+  .size { display: flex; align-items: center; gap: var(--sp-2); font: 400 var(--fs-sm)/1.4 var(--font-ui, var(--font-body)); color: var(--text-2); }
+  .size select.input { width: auto; min-height: var(--hit); }
+  @media (max-width: 30rem) { .pager .num-page:not([aria-current]) { display: none; } .pager .gap { display: none; } }
+</style>
+</head>
+<body>
+  <main class="demo">
+    <h1>Cảnh báo</h1>
+    <p class="lede">Bộ lọc dùng nút bật/tắt, không dùng ô chọn ẩn. Số kết quả được đọc lại cho trình đọc màn hình mỗi khi đổi bộ lọc. Phân trang ghi rõ đang xem hàng nào trên tổng số bao nhiêu.</p>
+
+    <!-- KHỐI BẮT ĐẦU: bo-loc -->
+    <section class="filters surface" aria-label="Bộ lọc cảnh báo">
+      <fieldset>
+        <legend>Mức độ</legend>
+        <div class="chips">
+          <button class="chip" type="button" aria-pressed="true" data-f="nghiem-trong"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Nghiêm trọng</button>
+          <button class="chip" type="button" aria-pressed="true" data-f="canh-bao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Cảnh báo</button>
+          <button class="chip" type="button" aria-pressed="false" data-f="thong-tin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Thông tin</button>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Thời gian</legend>
+        <div class="chips">
+          <button class="chip" type="button" aria-pressed="false" data-t>24 giờ</button>
+          <button class="chip" type="button" aria-pressed="true" data-t><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>7 ngày</button>
+          <button class="chip" type="button" aria-pressed="false" data-t>30 ngày</button>
+        </div>
+      </fieldset>
+      <div class="filter-foot">
+        <p class="result" aria-live="polite"><b id="so">312</b> cảnh báo khớp bộ lọc</p>
+        <button class="btn btn-ghost btn-sm" type="button" id="xoa-loc">Xoá bộ lọc</button>
+      </div>
+    </section>
+    <!-- KHỐI KẾT THÚC: bo-loc -->
+
+    <!-- KHỐI BẮT ĐẦU: phan-trang -->
+    <nav class="pager" aria-label="Phân trang cảnh báo">
+      <p class="result">Hiển thị <b>21–40</b> trên <b>312</b></p>
+      <ol>
+        <li><a class="prevnext" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>Trước</a></li>
+        <li><a class="num-page" href="#" aria-label="Trang 1">1</a></li>
+        <li><a class="num-page" href="#" aria-label="Trang 2" aria-current="page">2</a></li>
+        <li><a class="num-page" href="#" aria-label="Trang 3">3</a></li>
+        <li><span class="gap" aria-hidden="true">…</span></li>
+        <li><a class="num-page" href="#" aria-label="Trang 16">16</a></li>
+        <li><a class="prevnext" href="#">Sau<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a></li>
+      </ol>
+      <label class="size">Mỗi trang
+        <select class="input"><option>20</option><option>50</option><option>100</option></select>
+      </label>
+    </nav>
+    <!-- KHỐI KẾT THÚC: phan-trang -->
+  </main>
+  <script>
+    // Bộ lọc mức độ: bật/tắt độc lập. Thời gian: chọn một. Số kết quả giả lập theo tổ hợp.
+    const W = { "nghiem-trong": 41, "canh-bao": 271, "thong-tin": 905 };
+    const so = document.getElementById("so");
+    const recount = () => {
+      const on = [...document.querySelectorAll("[data-f][aria-pressed=true]")].map((b) => W[b.dataset.f]);
+      const days = [1, 7, 30][[...document.querySelectorAll("[data-t]")].findIndex((b) => b.getAttribute("aria-pressed") === "true")] ?? 7;
+      so.textContent = Math.round(on.reduce((a, b) => a + b, 0) * days / 7).toLocaleString("vi-VN");
+    };
+    const tick = (b, v) => { b.setAttribute("aria-pressed", String(v)); };
+    document.querySelectorAll("[data-f]").forEach((b) => b.addEventListener("click", () => { tick(b, b.getAttribute("aria-pressed") !== "true"); recount(); }));
+    document.querySelectorAll("[data-t]").forEach((b) => b.addEventListener("click", () => {
+      document.querySelectorAll("[data-t]").forEach((x) => tick(x, x === b));
+      document.querySelectorAll("[data-t]").forEach((x) => { const has = x.querySelector("svg"); if (x === b && !has) x.insertAdjacentHTML("afterbegin", '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>'); });
+      recount();
+    }));
+    document.getElementById("xoa-loc").addEventListener("click", () => { document.querySelectorAll("[data-f]").forEach((b) => tick(b, true)); recount(); });
+  </script>
+</body>
+</html>

@@ -26,7 +26,7 @@ flags[12]:
   --help: this help
 gates[3]:
   hard: overflow at 320px, axe serious/critical (contrast, target size, labels…), text < 12px, heading line-height < 1.2 in Vietnamese, missing lang="vi", animation that ignores reduced motion, Impeccable slop rules and quality rules a user trips on (low-contrast, tiny-text, overflow, occlusion, script errors)
-  soft: axe moderate/minor, body text < 16px or line-height < 1.5, lines > 80ch, web font not loaded, focus ring missing or hidden, LCP > 2.5s, CLS > 0.1, other Impeccable quality rules and advisories
+  soft: axe moderate/minor, body text < 16px or line-height < 1.5, lines > 80ch, a scroll box hiding content (cut-off table), web font not loaded, focus ring missing or hidden, LCP > 2.5s, CLS > 0.1, other Impeccable quality rules and advisories
   human: hierarchy and taste: open the screenshots
 notes[3]:
   Local files are served over http://127.0.0.1 from the nearest folder with .git or package.json, so ../ links resolve
@@ -73,7 +73,7 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 const CHECKS: Array<[string, Gate]> = [
   ["overflow", "hard"], ["axe", "hard"], ["text-min", "hard"], ["heading-lh", "hard"], ["lang", "hard"], ["motion", "hard"],
   ["impeccable", "hard"], ["body-size", "soft"], ["body-lh", "soft"], ["measure", "soft"], ["font", "soft"],
-  ["focus", "soft"], ["lcp", "soft"], ["cls", "soft"],
+  ["focus", "soft"], ["inner-scroll", "soft"], ["lcp", "soft"], ["cls", "soft"],
 ];
 
 /**
@@ -175,6 +175,7 @@ async function checkPage(
         hits(r, "soft", "body-lh", p.bodyTight, "line-height", render);
         hits(r, "soft", "measure", p.measure, "line length", render, 3);
         hits(r, "soft", "font", p.fontFallback, "web font not loaded:", render, 3);
+        hits(r, "soft", "inner-scroll", p.innerScroll, "horizontal scroll hides content:", render, 3);
         if (p.vietnamese) {
           hits(r, "hard", "heading-lh", p.headingTight, "line-height", render);
           if (!/^vi\b/i.test(p.lang)) add(r, "hard", "lang", "<html>", `Vietnamese text but lang="${p.lang}"`, render);

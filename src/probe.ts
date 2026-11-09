@@ -18,6 +18,7 @@ export interface ProbeResult {
   headingTight: ProbeHit[];
   measure: ProbeHit[];
   fontFallback: ProbeHit[];
+  innerScroll: ProbeHit[];
 }
 
 export function probePage(): ProbeResult {
@@ -33,6 +34,7 @@ export function probePage(): ProbeResult {
     headingTight: [],
     measure: [],
     fontFallback: [],
+    innerScroll: [],
   };
   const all: Element[] = [];
   const walk = (root: Document | ShadowRoot): void => {
@@ -107,6 +109,13 @@ export function probePage(): ProbeResult {
       seenFont.add(key);
       if (!GENERIC.test(first) && !loaded.has(key)) out.fontFallback.push({ where: label(el), value: first });
     }
+  }
+  // Vùng cuộn ngang đang giấu nội dung (bảng bị cắt cột): không tràn trang nhưng người dùng phải cuộn trong khung.
+  for (const el of all) {
+    const cs = getComputedStyle(el);
+    if (!/(auto|scroll)/.test(cs.overflowX) || !visible(el, cs)) continue;
+    const hidden = el.scrollWidth - el.clientWidth;
+    if (hidden > 8) out.innerScroll.push({ where: label(el), value: `${hidden}px hidden of ${el.scrollWidth}px` });
   }
   // Chữ trong SVG co theo viewBox: 13px khai báo trong SVG rộng 900 hiện ở 390px chỉ còn ~5px.
   for (const el of all) {

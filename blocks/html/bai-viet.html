@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="vi" data-dk="giay">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khối: trang bài viết dài</title>
+<script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,k=q.get("dk"),t=q.get("theme");if(k&&/^(dem|giay|dam)$/.test(k))d.dataset.dk=k;if(t==="light"||t==="dark")d.dataset.theme=t;})();</script>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<link rel="stylesheet" href="../../tokens/giay.css">
+<link rel="stylesheet" href="../../tokens/dam.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  /* ---- Khối: bài viết dài (một cột đọc, mục lục dính ở màn rộng) ---- */
+  .article-wrap { max-width: 70rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4) var(--sp-9); display: grid; gap: var(--sp-7); }
+  @media (min-width: 64rem) { .article-wrap { grid-template-columns: minmax(0, 1fr) 14rem; } .toc { order: 2; } }
+  .crumbs ol { list-style: none; padding: 0; margin: 0 0 var(--sp-5); display: flex; flex-wrap: wrap; gap: var(--sp-2); font: 400 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); color: var(--text-2); }
+  .crumbs li { margin: 0; }
+  .crumbs li + li::before { content: "/"; margin-right: var(--sp-2); color: var(--border-strong); }
+  article { min-width: 0; }
+  article h1 { font-size: var(--fs-2xl); max-width: 20ch; }
+  .meta { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); margin: var(--sp-4) 0 var(--sp-6); color: var(--text-2); font: 400 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); }
+  .lead { font-size: var(--fs-md); line-height: 1.6; color: var(--text-2); }
+  article h2 { font-size: var(--fs-xl); margin: var(--sp-7) 0 var(--sp-3); scroll-margin-top: var(--sp-5); }
+  article p, article li { max-width: var(--measure); }
+  article ul { padding-left: 1.25em; margin: 0 0 var(--sp-4); }
+  article li + li { margin-top: var(--sp-2); }
+  blockquote { margin: var(--sp-6) 0; padding: var(--sp-4) var(--sp-5); background: var(--surface-2); border-radius: var(--r-md); max-width: var(--measure); }
+  blockquote p { margin: 0 0 var(--sp-2); font-style: italic; }
+  blockquote footer { font: 400 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); color: var(--text-2); }
+  article figure { margin: var(--sp-6) 0; max-width: var(--measure); }
+  article figcaption { margin-top: var(--sp-2); font: 400 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); color: var(--text-2); }
+  .tbl { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--r-md); }
+  .tbl table { border-collapse: collapse; width: 100%; font: 400 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); }
+  .tbl th, .tbl td { padding: var(--sp-2) var(--sp-3); text-align: left; border-bottom: 1px solid var(--border); }
+  .tbl tr:last-child td { border-bottom: 0; }
+  .tbl th { background: var(--surface-2); font-weight: 600; }
+  .tbl td.r, .tbl th.r { text-align: right; }
+  .tbl:focus-visible { outline-offset: 2px; }
+  code { font: 400 0.88em/1 var(--font-mono); background: var(--surface-2); padding: 2px 5px; border-radius: var(--r-sm); }
+  .note { margin: var(--sp-6) 0; padding: var(--sp-4) var(--sp-5); border-radius: var(--r-md); background: var(--info-soft); max-width: var(--measure); }
+  .note p { margin: 0; }
+  .note strong { color: var(--info); }
+  .toc nav { font: 400 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); }
+  @media (min-width: 64rem) { .toc nav { position: sticky; top: var(--sp-6); } }
+  .toc p { font-weight: 600; margin: 0 0 var(--sp-2); }
+  .toc ol { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--sp-1); }
+  .toc a { display: block; padding: 6px var(--sp-3); border-radius: var(--r-sm); color: var(--text-2); text-decoration: none; }
+  .toc a:hover { background: var(--surface-2); color: var(--text); }
+</style>
+</head>
+<body>
+  <!-- KHỐI BẮT ĐẦU: bai-viet -->
+  <div class="article-wrap">
+    <aside class="toc" aria-label="Mục lục bài viết">
+      <nav>
+        <p>Trong bài</p>
+        <ol>
+          <li><a href="#vi-sao">Vì sao mạng chậm vào buổi tối</a></li>
+          <li><a href="#do">Đo trước khi đổi</a></li>
+          <li><a href="#sua">Ba cách sửa theo thứ tự</a></li>
+        </ol>
+      </nav>
+    </aside>
+    <article aria-labelledby="bv-h">
+      <nav class="crumbs" aria-label="Đường dẫn"><ol><li><a href="#">Hướng dẫn</a></li><li><a href="#">Mạng gia đình</a></li><li aria-current="page">Mạng chậm buổi tối</li></ol></nav>
+      <h1 id="bv-h">Vì sao mạng nhà chậm vào buổi tối, và sửa thế nào</h1>
+      <p class="meta"><span>Ngô Việt</span><span>09/11/2026</span><span>7 phút đọc</span></p>
+      <p class="lead">Phần lớn trường hợp không phải lỗi nhà mạng. Thủ phạm thường là một thiết bị trong nhà đang tải nặng, hoặc điểm phát Wi‑Fi đặt sai chỗ.</p>
+
+      <h2 id="vi-sao">Vì sao mạng chậm vào buổi tối</h2>
+      <p>Buổi tối là lúc cả nhà cùng dùng: TV phát video độ nét cao, điện thoại tự sao lưu ảnh, camera đẩy hình lên đám mây. Mỗi thứ chỉ chiếm một phần, nhưng cộng lại có thể vượt quá đường truyền.</p>
+      <blockquote>
+        <p>Đo lưu lượng theo từng thiết bị trong một tuần, tôi thấy chiếc camera sân trước dùng nhiều hơn cả TV.</p>
+        <footer>Một người dùng Mạng nhà ở Hà Nội</footer>
+      </blockquote>
+
+      <h2 id="do">Đo trước khi đổi</h2>
+      <p>Trước khi mua bộ phát mới, hãy đo xem thiết bị nào đang dùng bao nhiêu. Bảng dưới là số đo một tối điển hình, từ 20:00 đến 22:00.</p>
+      <figure>
+        <div class="tbl" tabindex="0" role="region" aria-label="Bảng lưu lượng, cuộn ngang được">
+          <table>
+            <thead><tr><th scope="col">Thiết bị</th><th scope="col" class="r">Tải xuống</th><th scope="col" class="r">Tải lên</th></tr></thead>
+            <tbody>
+              <tr><td>TV phòng khách</td><td class="r num">35,2 Mb/s</td><td class="r num">0,9 Mb/s</td></tr>
+              <tr><td>Camera cổng</td><td class="r num">0,4 Mb/s</td><td class="r num">6,2 Mb/s</td></tr>
+              <tr><td>NAS lưu trữ</td><td class="r num">41,7 Mb/s</td><td class="r num">88,3 Mb/s</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <figcaption>Lưu lượng trung bình từ 20:00 đến 22:00, đo bằng Mạng nhà.</figcaption>
+      </figure>
+
+      <h2 id="sua">Ba cách sửa theo thứ tự</h2>
+      <ul>
+        <li>Hẹn giờ sao lưu cho NAS và điện thoại vào lúc 2:00 sáng.</li>
+        <li>Giảm độ phân giải tải lên của camera xuống 1080p. Với camera cổng, như vậy là đủ.</li>
+        <li>Chỉ khi hai bước trên chưa đủ mới cân nhắc nâng gói cước, hoặc thêm điểm phát Wi‑Fi.</li>
+      </ul>
+      <div class="note"><p><strong>Lưu ý:</strong> lệnh <code>speedtest</code> chỉ đo đường ra Internet, không cho biết thiết bị nào trong nhà đang chiếm băng thông.</p></div>
+    </article>
+  </div>
+  <!-- KHỐI KẾT THÚC: bai-viet -->
+</body>
+</html>

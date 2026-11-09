@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="vi" data-dk="dam">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khối: hero trang giới thiệu</title>
+<script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,k=q.get("dk"),t=q.get("theme");if(k&&/^(dem|giay|dam)$/.test(k))d.dataset.dk=k;if(t==="light"||t==="dark")d.dataset.theme=t;})();</script>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<link rel="stylesheet" href="../../tokens/giay.css">
+<link rel="stylesheet" href="../../tokens/dam.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  /* ---- Khối: hero (một ý, một lời kêu gọi chính, một hình sản phẩm thật) ---- */
+  .hero { container: hero / inline-size; max-width: 76rem; margin: 0 auto; padding: var(--sp-8) var(--sp-4) var(--sp-7); }
+  .hero-grid { display: grid; gap: var(--sp-7); align-items: center; }
+  @container hero (min-width: 56rem) { .hero-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); } }
+  .hero h1 { font-size: var(--fs-3xl); line-height: var(--lh-tight); max-width: 14ch; }
+  .hero .lead { font-size: var(--fs-md); line-height: 1.55; color: var(--text-2); margin: var(--sp-5) 0 var(--sp-6); max-width: 30em; }
+  .cta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-5); }
+  .cta .btn-primary { min-height: 52px; padding: 0 var(--sp-6); font-size: var(--fs-base); }
+  .proof { margin-top: var(--sp-6); display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); color: var(--text-2); font: 400 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); list-style: none; padding: 0; }
+  .proof li { display: inline-flex; align-items: center; gap: var(--sp-2); margin: 0; }
+  .proof svg { width: 16px; height: 16px; color: var(--ok); flex: none; }
+
+  /* Hình sản phẩm: mô phỏng màn hình thật bằng HTML (không ảnh trang trí) */
+  .shot { border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow-2); overflow: hidden; }
+  .shot-bar { display: flex; gap: 6px; padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border); background: var(--surface-2); }
+  .shot-bar span { width: 10px; height: 10px; border-radius: 50%; background: var(--border-strong); }
+  .shot-body { padding: var(--sp-5); display: grid; gap: var(--sp-4); }
+  /* Sơ đồ bằng HTML/CSS: chữ giữ đúng cỡ ở mọi khổ (SVG co theo viewBox thì chữ nhỏ dưới 12px) */
+  .tp { --gap: var(--sp-5); display: grid; justify-items: center; gap: var(--gap); }
+  .tp .node { position: relative; padding: var(--sp-2) var(--sp-3); border: 1.5px solid var(--border-strong); border-radius: var(--r-md); background: var(--surface); font: 500 var(--fs-sm)/1.3 var(--font-ui, var(--font-body)); text-align: center; min-width: 0; }
+  .tp .root::after { content: ""; position: absolute; left: 50%; top: 100%; height: calc(var(--gap) / 2); border-left: 2px solid var(--accent); }
+  .tp .kids { position: relative; width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3); }
+  .tp .kids::before { content: ""; position: absolute; top: calc(var(--gap) / -2); left: 16.66%; right: 16.66%; border-top: 2px solid var(--border-strong); }
+  .tp .kids .node::before { content: ""; position: absolute; left: 50%; bottom: 100%; height: calc(var(--gap) / 2); border-left: 2px solid var(--border-strong); }
+  .tp .kids .hot { border-color: var(--accent); }
+  .tp .kids .hot::before { border-color: var(--accent); }
+  .shot .row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3); }
+  .shot .m { padding: var(--sp-3); border-radius: var(--r-md); background: var(--surface-2); min-width: 0; }
+  .shot .m b { display: block; font: 500 var(--fs-md)/1.2 var(--font-mono); color: var(--text); }
+  .shot .m span { font: 400 var(--fs-xs)/1.4 var(--font-ui, var(--font-body)); color: var(--text-2); }
+  @media (prefers-reduced-motion: no-preference) {
+    .shot { animation: len var(--dur-3) var(--ease-out) both 120ms; }
+    @keyframes len { from { opacity: 0; transform: translateY(12px); } }
+  }
+
+  /* Lý do: danh sách hai cột, không phải ba thẻ giống nhau */
+  .why { max-width: 76rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4) var(--sp-8); border-top: 1px solid var(--border); }
+  .why h2 { max-width: 20ch; margin-bottom: var(--sp-6); }
+  .why dl { display: grid; gap: var(--sp-5) var(--sp-7); grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); margin: 0; }
+  .why dt { font: 600 var(--fs-md)/1.35 var(--font-display); margin-bottom: var(--sp-2); }
+  .why dd { margin: 0; color: var(--text-2); }
+</style>
+</head>
+<body>
+  <!-- KHỐI BẮT ĐẦU: hero -->
+  <main>
+    <section class="hero" aria-labelledby="hero-h">
+      <div class="hero-grid">
+        <div>
+          <h1 id="hero-h">Thấy cả mạng nhà trong một màn hình</h1>
+          <p class="lead">Mạng nhà vẽ sơ đồ mọi thiết bị, lưu lượng từng cổng và báo ngay khi một điểm phát mất kết nối. Chạy trên Home Assistant bạn đang có.</p>
+          <div class="cta">
+            <a class="btn btn-primary" href="#">Cài miễn phí</a>
+            <a href="#">Xem bản trình diễn</a>
+          </div>
+          <ul class="proof">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Mã nguồn mở</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Không gửi dữ liệu ra ngoài</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Tiếng Việt đầy đủ</li>
+          </ul>
+        </div>
+        <figure class="shot" aria-label="Màn hình Mạng nhà: sơ đồ 5 thiết bị và 3 chỉ số">
+          <div class="shot-bar" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div class="shot-body">
+            <div class="tp" aria-hidden="true">
+              <div class="node root">Router</div>
+              <div class="kids">
+                <div class="node">Camera</div>
+                <div class="node">NAS</div>
+                <div class="node hot">Wi‑Fi</div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="m"><b>23/26</b><span>trực tuyến</span></div>
+              <div class="m"><b>182</b><span>Mb/s xuống</span></div>
+              <div class="m"><b>3</b><span>cảnh báo</span></div>
+            </div>
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <section class="why" aria-labelledby="why-h">
+      <h2 id="why-h">Làm cho người không phải dân mạng</h2>
+      <dl>
+        <div><dt>Tự tìm thiết bị</dt><dd>Quét mạng một lần, sơ đồ tự vẽ theo cổng của switch và bộ định tuyến.</dd></div>
+        <div><dt>Biết cổng nào đang nghẽn</dt><dd>Sợi dây to dần theo lưu lượng, nhìn là thấy ai đang dùng nhiều nhất.</dd></div>
+        <div><dt>Báo đúng lúc</dt><dd>Chỉ báo khi thiết bị mất kết nối quá 2 phút, không làm phiền vì chập chờn thoáng qua.</dd></div>
+      </dl>
+    </section>
+  </main>
+  <!-- KHỐI KẾT THÚC: hero -->
+</body>
+</html>

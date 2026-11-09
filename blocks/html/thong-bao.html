@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khối: thông báo nổi</title>
+<script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,k=q.get("dk"),t=q.get("theme");if(k&&/^(dem|giay|dam)$/.test(k))d.dataset.dk=k;if(t==="light"||t==="dark")d.dataset.theme=t;})();</script>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<link rel="stylesheet" href="../../tokens/giay.css">
+<link rel="stylesheet" href="../../tokens/dam.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  .actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  /* ---- Khối: thông báo nổi (vùng aria-live; dừng đếm giờ khi trỏ/focus; có Hoàn tác) ---- */
+  .toasts { position: fixed; z-index: 20; right: var(--sp-4); bottom: var(--sp-4); left: var(--sp-4); display: grid; gap: var(--sp-2); justify-items: end; pointer-events: none; margin: 0; padding: 0; }
+  .toast {
+    pointer-events: auto; width: min(100%, 24rem); display: grid; grid-template-columns: auto 1fr auto; gap: var(--sp-3); align-items: start;
+    padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); box-shadow: var(--shadow-2); font: 400 var(--fs-sm)/1.5 var(--font-ui, var(--font-body));
+  }
+  .toast > svg { width: 20px; height: 20px; margin-top: 1px; }
+  .toast.ok > svg { color: var(--ok); }
+  .toast.bad > svg { color: var(--bad); }
+  .toast strong { display: block; font-weight: 600; }
+  .toast .tools { display: flex; gap: var(--sp-1); align-items: center; }
+  .toast .btn-sm { min-height: 32px; padding: 0 var(--sp-3); }
+  .toast .x { min-width: 32px; min-height: 32px; padding: 0; }
+  @media (prefers-reduced-motion: no-preference) {
+    .toast { animation: vao var(--dur-2) var(--ease-out); }
+    @keyframes vao { from { opacity: 0; transform: translateY(8px); } }
+  }
+</style>
+</head>
+<body>
+  <main class="demo">
+    <h1>Thông báo nổi</h1>
+    <p class="lede">Dùng cho kết quả của một thao tác. Thông báo tự ẩn sau 6 giây, nhưng dừng đếm khi chuột hoặc focus đang ở trên nó. Lỗi thì không tự ẩn. Khi xoá, luôn có nút Hoàn tác.</p>
+    <div class="actions">
+      <button class="btn btn-secondary" type="button" data-kind="ok">Lưu cài đặt</button>
+      <button class="btn btn-secondary" type="button" data-kind="undo">Xoá thiết bị</button>
+      <button class="btn btn-secondary" type="button" data-kind="bad">Gây lỗi kết nối</button>
+    </div>
+  </main>
+
+  <!-- KHỐI BẮT ĐẦU: thong-bao -->
+  <div class="toasts" role="region" aria-live="polite" aria-relevant="additions" aria-label="Thông báo"></div>
+  <!-- KHỐI KẾT THÚC: thong-bao -->
+
+  <script>
+    const ICON = {
+      ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.5 2.5L16 9.5"/></svg>',
+      bad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>',
+    };
+    const box = document.querySelector(".toasts");
+    function toast({ kind, title, body, action }) {
+      const li = document.createElement("div");
+      li.className = `toast ${kind === "bad" ? "bad" : "ok"}`;
+      if (kind === "bad") li.setAttribute("role", "alert");
+      li.innerHTML = `${ICON[kind === "bad" ? "bad" : "ok"]}<div><strong></strong><span></span></div><div class="tools"></div>`;
+      li.querySelector("strong").textContent = title;
+      li.querySelector("span").textContent = body;
+      const tools = li.querySelector(".tools");
+      if (action) {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "btn btn-ghost btn-sm"; b.textContent = action;
+        b.addEventListener("click", () => close());
+        tools.append(b);
+      }
+      const x = document.createElement("button");
+      x.type = "button"; x.className = "btn btn-ghost x"; x.setAttribute("aria-label", "Đóng thông báo");
+      x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="16" height="16"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+      x.addEventListener("click", () => close());
+      tools.append(x);
+      box.append(li);
+      let left = 6000, t0 = Date.now(), timer;
+      const close = () => { clearTimeout(timer); li.remove(); };
+      const start = () => { if (kind === "bad") return; t0 = Date.now(); timer = setTimeout(close, left); };
+      const pause = () => { clearTimeout(timer); left -= Date.now() - t0; };
+      li.addEventListener("mouseenter", pause); li.addEventListener("mouseleave", start);
+      li.addEventListener("focusin", pause); li.addEventListener("focusout", start);
+      start();
+    }
+    const DATA = {
+      ok: { kind: "ok", title: "Đã lưu cài đặt", body: "Ngưỡng cảnh báo mới có hiệu lực ngay." },
+      undo: { kind: "ok", title: "Đã xoá Camera cổng", body: "Lịch sử lưu lượng được giữ 30 ngày.", action: "Hoàn tác" },
+      bad: { kind: "bad", title: "Không lưu được", body: "Mất kết nối tới bộ định tuyến. Thử lại sau khi mạng ổn định." },
+    };
+    document.querySelectorAll("[data-kind]").forEach((b) => b.addEventListener("click", () => toast(DATA[b.dataset.kind])));
+    // ?mo=1: hiện sẵn ba thông báo để cổng kiểm đo cả trạng thái có thông báo.
+    if (new URLSearchParams(location.search).get("mo") === "1") { toast(DATA.ok); toast(DATA.undo); toast(DATA.bad); }
+  </script>
+</body>
+</html>
