@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ô chọn tuỳ biến không có vòng focus</title>
+<link rel="stylesheet" href="../../tokens/fonts-local.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<style>
+  body { margin: 0; background: var(--bg); color: var(--text); font: 400 var(--fs-body)/var(--lh-body) var(--font-body); }
+  main { max-width: 40rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4); }
+  h1 { font: var(--weight-display) var(--fs-2xl)/var(--lh-tight) var(--font-display); margin: 0 0 var(--sp-4); }
+  /* Lỗi cố ý: input trong suốt, span vẽ ô chọn nhưng không có quy tắc focus nào. */
+  label { position: relative; display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--hit-lg); }
+  label input { position: absolute; opacity: 0; margin: 0; }
+  .box { width: 20px; height: 20px; border: 2px solid var(--border-strong); border-radius: var(--r-sm); }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Đăng nhập</h1>
+    <label><input type="checkbox" id="nho"><span class="box"></span> Nhớ tôi</label>
+  </main>
+</body>
+</html>

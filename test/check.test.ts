@@ -89,7 +89,14 @@ describe("check on real pages", () => {
     expect(out).toMatch(/text-min,.*p#loi.*10\.0px/);
     // Công tắc tuỳ biến (input trong suốt, span vẽ thay) không bị báo nhầm là focus lạc
     expect(out).not.toContain("nobody can see");
+    expect(out).not.toContain("no visible focus ring");
     expect(code).toBe(1);
+  }, 120_000);
+
+  it("a custom checkbox whose visible box draws no focus ring is still reported", async () => {
+    const { out } = await run(["check", "test/fixtures/khong-vong.html", ...FAST, "--full"]);
+    expect(out).toMatch(/focus,input#nho.*no visible focus ring/);
+    expect(out).not.toContain("nobody can see");
   }, 120_000);
 
   it("a step that cannot be done is a hard failure, and --no-steps skips the file", async () => {

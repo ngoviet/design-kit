@@ -203,8 +203,8 @@ export function probeFocus(): { where: string; indicator: boolean; obscured: boo
   while (el && el.shadowRoot && el.shadowRoot.activeElement) el = el.shadowRoot.activeElement;
   if (!el || el === document.body || el === document.documentElement) return null;
   const cs = getComputedStyle(el);
-  const outline = cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) >= 2;
-  const ring = cs.boxShadow !== "none" && cs.boxShadow !== "";
+  const hasRing = (s: CSSStyleDeclaration): boolean =>
+    (s.outlineStyle !== "none" && parseFloat(s.outlineWidth) >= 2) || (s.boxShadow !== "none" && s.boxShadow !== "");
   const id = el.id ? `#${el.id}` : "";
   const txt = (el.textContent || (el as HTMLInputElement).placeholder || el.getAttribute("aria-label") || "").trim().slice(0, 28);
   const where = `${el.tagName.toLowerCase()}${id}${txt ? ` "${txt}"` : ""}`;
@@ -233,7 +233,7 @@ export function probeFocus(): { where: string; indicator: boolean; obscured: boo
     const mine = (n: Element): boolean => n === el || el.contains(n) || n.contains(el) || n === target || target.contains(n) || n.contains(target);
     obscured = !!hit && !mine(hit) && !(hit.shadowRoot && hit.shadowRoot.contains(el));
   }
-  return { where, indicator: outline || ring || !!proxy, obscured, hidden };
+  return { where, indicator: hasRing(cs) || (!!proxy && hasRing(getComputedStyle(proxy))), obscured, hidden };
 }
 
 /**
