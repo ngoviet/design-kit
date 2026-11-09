@@ -1,0 +1,76 @@
+/* design-kit · hướng ĐẬM: landing, marketing, trang giới thiệu. Sáng trước, có bản tối.
+   Trung tính ấm rất nhẹ (h 40, C ≤ 0.015), màu nhấn đỏ son (h 32). Tiêu đề Bricolage Grotesque cỡ lớn. */
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
+
+[data-dk="dam"] {
+  --font-body: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", "Be Vietnam Pro", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --fs-body: 1.0625rem;
+  --weight-display: 750;
+  --tracking-display: -0.02em;
+
+  color-scheme: light;
+  --bg:          oklch(0.985 0.003 40);
+  --surface:     oklch(0.997 0.001 40);
+  --surface-2:   oklch(0.950 0.008 40);
+  --border:      oklch(0.880 0.012 40);
+  --border-strong: oklch(0.58 0.015 40);
+  --text:        oklch(0.200 0.015 40);
+  --text-2:      oklch(0.440 0.015 40);
+  --accent:      oklch(0.530 0.190 32);
+  --accent-text: oklch(0.510 0.180 32);
+  --on-accent:   oklch(0.990 0.004 32);
+  --accent-soft: oklch(0.955 0.022 32);
+  --ok:   oklch(0.480 0.120 150); --ok-soft:   oklch(0.955 0.035 150);
+  --warn: oklch(0.500 0.100 65);  --warn-soft: oklch(0.960 0.034 80);
+  --bad:  oklch(0.500 0.170 20);  --bad-soft:  oklch(0.955 0.020 20);
+  --info: oklch(0.490 0.120 250); --info-soft: oklch(0.955 0.020 250);
+  --focus: oklch(0.510 0.180 32);
+  --shadow-1: 0 1px 2px oklch(0.2 0.015 40 / 0.08);
+  --shadow-2: 0 10px 30px -10px oklch(0.2 0.015 40 / 0.22);
+}
+@media (prefers-color-scheme: dark) {
+  [data-dk="dam"]:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg:          oklch(0.160 0.010 40);
+    --surface:     oklch(0.200 0.012 40);
+    --surface-2:   oklch(0.240 0.014 40);
+    --border:      oklch(0.330 0.016 40);
+    --border-strong: oklch(0.55 0.016 40);
+    --text:        oklch(0.940 0.008 40);
+    --text-2:      oklch(0.770 0.012 40);
+    --accent:      oklch(0.720 0.170 38);
+    --accent-text: oklch(0.760 0.145 38);
+    --on-accent:   oklch(0.160 0.030 38);
+    --accent-soft: oklch(0.290 0.060 38);
+    --ok:   oklch(0.790 0.140 150); --ok-soft:   oklch(0.270 0.045 150);
+    --warn: oklch(0.830 0.120 80);  --warn-soft: oklch(0.280 0.045 80);
+    --bad:  oklch(0.760 0.140 22);  --bad-soft:  oklch(0.280 0.055 22);
+    --info: oklch(0.780 0.100 250); --info-soft: oklch(0.270 0.045 250);
+    --focus: oklch(0.720 0.170 38);
+    --shadow-1: 0 1px 2px oklch(0 0 0 / 0.4);
+    --shadow-2: 0 12px 32px -10px oklch(0 0 0 / 0.6);
+  }
+}
+[data-dk="dam"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg:          oklch(0.160 0.010 40);
+  --surface:     oklch(0.200 0.012 40);
+  --surface-2:   oklch(0.240 0.014 40);
+  --border:      oklch(0.330 0.016 40);
+  --border-strong: oklch(0.55 0.016 40);
+  --text:        oklch(0.940 0.008 40);
+  --text-2:      oklch(0.770 0.012 40);
+  --accent:      oklch(0.720 0.170 38);
+  --accent-text: oklch(0.760 0.145 38);
+  --on-accent:   oklch(0.160 0.030 38);
+  --accent-soft: oklch(0.290 0.060 38);
+  --ok:   oklch(0.790 0.140 150); --ok-soft:   oklch(0.270 0.045 150);
+  --warn: oklch(0.830 0.120 80);  --warn-soft: oklch(0.280 0.045 80);
+  --bad:  oklch(0.760 0.140 22);  --bad-soft:  oklch(0.280 0.055 22);
+  --info: oklch(0.780 0.100 250); --info-soft: oklch(0.270 0.045 250);
+  --focus: oklch(0.720 0.170 38);
+  --shadow-1: 0 1px 2px oklch(0 0 0 / 0.4);
+  --shadow-2: 0 12px 32px -10px oklch(0 0 0 / 0.6);
+}

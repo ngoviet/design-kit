@@ -1,0 +1,47 @@
+/* design-kit · token lõi, dùng chung cho mọi hướng thẩm mỹ.
+   Màu và font nằm ở tệp hướng (dem.css, giay.css, dam.css); tệp này chỉ có nhịp, thang, chuyển động.
+   Nguồn ngưỡng: docs/tieu-chi.md. */
+:root {
+  /* Khoảng cách: bậc 4px, 9 giá trị. Không dùng số lẻ ngoài thang. */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px; --sp-5: 24px;
+  --sp-6: 32px; --sp-7: 48px; --sp-8: 64px; --sp-9: 96px;
+
+  /* Bo góc */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 16px; --r-full: 999px;
+
+  /* Thang chữ tỉ lệ 1.25, co giãn giữa 360px và 1280px. Nhỏ nhất 12px (nhãn), thân 16px. */
+  --fs-xs:  0.75rem;                                   /* 12px: nhãn, chú thích */
+  --fs-sm:  0.875rem;                                  /* 14px: chữ phụ, ô bảng */
+  --fs-base: 1rem;                                     /* 16px: thân */
+  --fs-md:  1.25rem;                                   /* 20px */
+  --fs-lg:  clamp(1.375rem, 1.2rem + 0.6vw, 1.5625rem);  /* 22 → 25 */
+  --fs-xl:  clamp(1.625rem, 1.35rem + 1.1vw, 1.95rem);   /* 26 → 31 */
+  --fs-2xl: clamp(2rem, 1.55rem + 1.9vw, 2.45rem);       /* 32 → 39 */
+  --fs-3xl: clamp(2.5rem, 1.7rem + 3.4vw, 3.8rem);       /* 40 → 61, chỉ cho hero */
+
+  /* Giãn dòng: tiếng Việt có dấu chồng nên tiêu đề không dưới 1.2 */
+  --lh-tight: 1.2; --lh-snug: 1.35; --lh-body: 1.6;
+
+  /* Độ dài dòng */
+  --measure: 66ch;
+
+  /* Chuyển động: ngắn, easing ra, không nảy */
+  --dur-1: 120ms; --dur-2: 200ms; --dur-3: 320ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Vùng bấm (WCAG 2.5.8 ≥ 24px; nút chính 44px) */
+  --hit-min: 24px; --hit: 40px; --hit-lg: 44px;
+
+  --focus-w: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
