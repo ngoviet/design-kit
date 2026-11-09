@@ -1,11 +1,11 @@
 # Bản nháp báo lỗi gửi Impeccable: detector bỏ qua shadow DOM
 
-- Trạng thái: **bản nháp, chưa gửi**. Chỉ gửi khi chủ đồng ý.
+- Trạng thái: **chủ đồng ý gửi (09/11/2026), chưa gửi được.** Bộ phân loại của chế độ tự động trong Claude Code chặn lệnh `gh issue create` vì đó là tạo nội dung công khai. Chủ tự chạy lệnh dưới đây, hoặc thêm quyền cho lệnh này.
 - Nơi gửi: `pbakaus/impeccable`. Đã tìm ngày 09/11/2026 với từ khoá "shadow" và "shadow root web component": chưa có issue nào trùng.
 - Tái hiện lại ngày 09/11/2026: skill 4.8.1, engine 0.1.19, Windows 11 x64.
-- Lệnh gửi, sau khi chủ duyệt:
+- Lệnh gửi (chạy ở thư mục gốc repo; phần thân là mọi thứ từ dòng `**What happens**` trở xuống):
   ```bash
-  gh issue create -R pbakaus/impeccable --title "<tiêu đề>" --body-file <tệp chứa phần dưới đây>
+  sed -n '/^\*\*What happens\*\*/,$p' docs/bao-loi-impeccable-shadow-dom.md > /tmp/issue.md && gh issue create -R pbakaus/impeccable --title "[Bug] detect: findings inside open shadow roots are never reported (Lit / Home Assistant cards look clean)" --body-file /tmp/issue.md
   ```
 
 ---

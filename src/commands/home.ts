@@ -34,7 +34,7 @@ export async function homeView(args: string[], rt: Runtime): Promise<Record<stri
     kit: root.replace(/\\/g, "/"),
     directions: directions.length ? directions.map((d) => `${d} (design/${d}/DESIGN.md)`).join(", ") : "0 directions found",
     blocks: `${html.length} html: ${html.join(", ") || "none"}; ${react.length} react: ${react.join(", ") || "none"}`,
-    impeccable: imp ? tilde(imp) : "not found: install the impeccable skill or set IMPECCABLE_BIN",
+    impeccable: imp ? tilde(imp) : "not found: run `design-kit setup`, or set IMPECCABLE_BIN",
     browser: rt.env["DK_BROWSER"] ? `DK_BROWSER=${rt.env["DK_BROWSER"]}` : "Edge, else Chrome (playwright-core channel)",
     project: `${rt.cwd.replace(/\\/g, "/")}: DESIGN.md ${existsSync(join(rt.cwd, "DESIGN.md")) ? "yes" : "no"}, PRODUCT.md ${existsSync(join(rt.cwd, "PRODUCT.md")) ? "yes" : "no"}`,
     // Chủ yêu cầu 09/11/2026: mọi quy trình, phức tạp đến mấy, phải dễ như phần hướng dẫn trong game.

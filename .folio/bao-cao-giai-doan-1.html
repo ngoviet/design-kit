@@ -182,6 +182,7 @@
         <li><a href="#vong">Vòng tự kiểm</a></li>
         <li><a href="#phuong-an">Ba phương án</a></li>
         <li><a href="#giai-doan-2">Giai đoạn 2</a></li>
+        <li><a href="#dong-goi">Chạy độc lập</a></li>
         <li><a href="#nguon">Nguồn</a></li>
       </ol>
     </nav>
@@ -530,8 +531,32 @@
 
       <h3>Còn lại</h3>
       <ol class="steps">
-        <li><strong>Gửi báo lỗi shadow DOM cho Impeccable</strong><p>Bản nháp đã sẵn, kèm trang tái hiện. Gửi lên GitHub là việc công khai, nên chỉ gửi khi chủ đồng ý.</p></li>
+        <li><strong>Gửi báo lỗi shadow DOM cho Impeccable</strong><p>Chủ đã đồng ý gửi. Chế độ tự động của Claude Code chặn lệnh tạo issue, nên chủ tự chạy lệnh ghi trong <code>docs/bao-loi-impeccable-shadow-dom.md</code>.</p></li>
       </ol>
+    </section>
+
+    <section id="dong-goi" aria-labelledby="dong-goi-h">
+      <h2 id="dong-goi-h">Gộp phụ thuộc để chạy độc lập?</h2>
+      <p>Mục tiêu "độc lập": trên một máy Windows hay Linux bất kỳ, chỉ cần <code>git clone</code> rồi <code>npm install</code> là cổng chạy đủ. Có máy đường dẫn <code>D:\code</code> hay không cũng vậy, và không cần các dự án khác của chủ.</p>
+      <p><strong>Nguyên tắc chọn:</strong> gộp những gì design-kit tự sở hữu, hoặc nhỏ và ít đổi (dữ liệu, font, thư viện npm, bằng chứng). Không chép vào những thứ là sản phẩm riêng, có vòng đời riêng hoặc nặng (trình duyệt, engine Impeccable, các skill khác). Với nhóm này: ghim phiên bản, tải khi cần, thiếu thì cổng vẫn chạy và báo rõ.</p>
+      <div class="tbl wide" tabindex="0" role="region" aria-label="Bảng phụ thuộc, cuộn ngang được">
+        <table>
+          <thead><tr><th scope="col">Thành phần</th><th scope="col">Hiện tại</th><th scope="col">Đề xuất</th><th scope="col">Lý do</th></tr></thead>
+          <tbody>
+            <tr><td>Script đổi màu, kiểm cặp màu (<code>colorjs.io</code>)</td><td>Skill gọi <code>node D:/code/design-kit/scripts/doi-mau.mjs</code>. <code>colorjs.io</code> chỉ là devDependency.</td><td><span class="tag std">Gộp</span> Đưa vào dependencies, thêm lệnh con <code>design-kit doi-mau</code>, <code>design-kit kiem-mau</code>.</td><td>Đây là lỗi độc lập có thật: cài như một gói (không có devDependency) thì lệnh đổi màu hỏng ngay.</td></tr>
+            <tr><td>Đường dẫn cứng trong skill</td><td>2 chỗ <code>D:\code\design-kit</code></td><td><span class="tag std">Gộp</span> Skill hỏi <code>design-kit</code> lấy đường dẫn của kit, rồi gọi lệnh con.</td><td>Máy khác, phiên cloud không có ổ D.</td></tr>
+            <tr><td>Font (Be Vietnam Pro, Literata, Bricolage Grotesque, JetBrains Mono)</td><td>Tải từ Google Fonts</td><td><span class="tag std">Gộp</span> Thêm bản tự host: woff2 chỉ gồm bộ chữ Latin và tiếng Việt. Ước chừng 1 MB, cần đo lại. Có hai tệp, <code>fonts.css</code> (CDN) và <code>fonts-local.css</code>.</td><td>Card Home Assistant và trang Folio chạy trong mạng nhà, có lúc không ra Internet. Không gọi bên thứ ba thì riêng tư hơn. Cả bốn font dùng giấy phép OFL, được phép chép.</td></tr>
+            <tr><td>Bằng chứng cho ngưỡng (s1–s36, c29–c36)</td><td>Nằm trong kho tri thức <code>research-hub</code></td><td><span class="tag std">Gộp bản xuất</span> Xuất ra <code>docs/nguon.md</code>: mỗi nguồn kèm URL và câu trích đã kiểm.</td><td><code>tieu-chi.md</code> đang trỏ tới một kho ở ngoài repo. Kho vẫn là bản gốc, repo giữ một bản chụp.</td></tr>
+            <tr><td>Lint DESIGN.md (<code>@google/design.md</code>)</td><td>Tải bằng <code>npx -p</code> mỗi lần chạy</td><td><span class="tag std">Gộp</span> Thêm vào devDependencies, chạy bằng <code>npm run lint:design</code>.</td><td>Ghim được phiên bản, chạy được khi không có mạng.</td></tr>
+            <tr><td>Trình duyệt</td><td>Edge, không có thì Chrome có sẵn trên máy</td><td><span class="tag conv">Không gộp</span> Thêm đường lùi: không có Edge hay Chrome thì dùng Chromium của Playwright (<code>npx playwright install chromium</code>).</td><td>Trình duyệt nặng hơn 150 MB và cần cập nhật bảo mật. Container Linux của Woodpecker không có Edge.</td></tr>
+            <tr><td>Engine Impeccable</td><td>Lấy từ skill <code>impeccable</code>. Tệp 20,8 MB, chỉ có bản Windows.</td><td><span class="tag soft">Tải khi cần</span> Ghim phiên bản, tải từ trang release của <code>pbakaus/impeccable</code> về bộ nhớ đệm, kiểm checksum. Không có thì cổng báo "skipped", như hiện nay.</td><td>Giấy phép Apache-2.0 cho phép chép, nhưng mỗi lần cập nhật sẽ đẩy thêm 20 MB vào lịch sử git. Engine cũng đang chờ sửa lỗi shadow DOM, nên cần cập nhật theo bản mới.</td></tr>
+            <tr><td>Skill <code>impeccable</code>, <code>palette-axi</code>, <code>folio</code>, <code>research-axi</code></td><td>Công cụ riêng của chủ</td><td><span class="tag conv">Không gộp</span> Có thì dùng, không có thì bỏ qua.</td><td>Đó là sản phẩm độc lập. Chép vào thì thành hai bản lệch nhau.</td></tr>
+            <tr><td><code>axe-core</code>, <code>playwright-core</code>, <code>axi-sdk-js</code></td><td>Gói npm từ registry</td><td><span class="tag std">Đã gộp</span> Giữ nguyên.</td><td>Cả ba lấy từ registry công khai, đã có trong <code>package.json</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>Đã làm (09/11/2026, bản 0.2.0):</strong> làm đúng theo bảng trên. Đã thử cài từ gói ra một thư mục tạm, tách khỏi repo: <code>design-kit</code>, <code>doi-mau</code> và <code>check</code> đều chạy. Bản tải engine Impeccable khớp sha256. Plugin qua <code>claude plugin validate</code>. Font tự host chỉ 414 KB, vì ba trong bốn họ font là font biến thiên. Còn chờ chủ: bật repo trong Woodpecker, cài plugin trên PC1.</p>
+      <div class="note"><p>Làm cùng lúc với việc đóng gói thành plugin: đẩy lên repo riêng tư, thêm Woodpecker CI, plugin gồm skill và hook nhắc. CI chạy trên Linux là phép thử "độc lập" thật: nếu repo còn dựa vào thứ gì chỉ có trên PC1, CI sẽ đỏ.</p></div>
     </section>
 
     <section id="nguon" aria-labelledby="nguon-h">

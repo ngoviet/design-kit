@@ -1,5 +1,5 @@
 /* Token design-kit là nguồn duy nhất; shadcn/ui đọc chúng qua tên biến của shadcn. */
-@import "../../../tokens/fonts.css";
+@import "../../../tokens/fonts-local.css";
 @import "../../../tokens/core.css";
 @import "../../../tokens/dem.css";
 @import "../../../tokens/giay.css";

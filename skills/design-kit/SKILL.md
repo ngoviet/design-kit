@@ -5,9 +5,11 @@ description: Build web or app UI that is beautiful, modern and usable on the fir
 
 # design-kit: chuẩn + cổng cho giao diện do agent làm
 
-Kit at `D:\code\design-kit` (run `design-kit` for its path, directions and blocks). Pair it with the
-`impeccable` skill: impeccable gives direction and critique; design-kit gives the numbers, the tokens,
-the gated blocks and the gate. Never call a UI task done on "it renders".
+Run `design-kit` (no arguments) first: it prints the kit's folder (`kit:`), the directions, the blocks and
+the `workflow` checklist. Paths below (`design/`, `tokens/`, `blocks/`) are inside that folder.
+Not installed → `npm i -g github:ngoviet/design-kit`, then `design-kit setup` (browser + Impeccable engine).
+Pair it with the `impeccable` skill: impeccable gives direction and critique; design-kit gives the numbers,
+the tokens, the gated blocks and the gate. Never call a UI task done on "it renders".
 
 ## 1. Pick the direction (before any markup)
 
@@ -21,6 +23,9 @@ the gated blocks and the gate. Never call a UI task done on "it renders".
 - No `DESIGN.md` → copy `design/<x>/DESIGN.md` to the project root and `tokens/fonts.css`, `tokens/core.css`,
   `tokens/<x>.css` next to the styles; set `<html lang="vi" data-dk="<x>">`. Ask the owner only when the
   surface fits two directions.
+- Fonts: `tokens/fonts.css` loads Google Fonts. For a page on the home network, a Home Assistant card, an
+  offline page or anything that must not call third parties, copy `tokens/fonts-local.css` **and** the
+  `tokens/fonts/` folder instead (self-hosted woff2, Latin + Vietnamese, ~410 KB, SIL OFL). Load it first.
 - Use tokens only: `var(--accent)`, `var(--sp-4)`, `var(--fs-lg)`… no raw hex, no font outside DESIGN.md.
   Text in the accent color uses `--accent-text`; fills use `--accent` with `--on-accent` text.
 
@@ -35,9 +40,10 @@ the one brief the kit lost to plain Opus, whose warm brown fit a bakery.
   Use a hue the brand already has when there is one.
 - Generate the swapped tokens, which re-solve lightness so every pair stays ≥ 4.5:1:
   ```bash
-  node D:/code/design-kit/scripts/doi-mau.mjs --huong dem --nhan 45 --trung-tinh 60 --ra ./dem.css
+  design-kit doi-mau --huong dem --nhan 45 --trung-tinh 60 --ra ./dem.css
   ```
   Link that file instead of `tokens/dem.css`. Status colors (ok/warn/bad/info) keep their meaning hues.
+  Re-check any hand-edited token file with `design-kit kiem-mau ./dem.css --huong dem`.
 - Keep the default hue only when nothing about the brand points elsewhere.
 
 ## 2. Start from a gated block

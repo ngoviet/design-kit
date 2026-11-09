@@ -12,7 +12,7 @@ Cổng có ba mức:
 - **mềm**: phải sửa, hoặc ghi lý do không sửa.
 - **người**: chủ duyệt trên ảnh chụp.
 
-Bằng chứng nằm trong kho tri thức, chủ đề `tieu-chuan-va-cach-huong-dan-ai-lam-giao-dien-web-dep-de-dun` (s1–s22). Mọi trích dẫn đã được kiểm lại bằng `research-axi kb verify`.
+Mã nguồn `s…` và luận điểm `c…` tra trong [`docs/nguon.md`](nguon.md): bản xuất có URL và câu trích. Bản gốc nằm trong kho tri thức, chủ đề `tieu-chuan-va-cach-huong-dan-ai-lam-giao-dien-web-dep-de-dun` (s1–s28, c1–c36). Mọi trích dẫn đã được kiểm lại bằng `research-axi kb verify`.
 
 | Tiêu chí | Ngưỡng | Đo bằng (`design-kit check`) | Cổng | Loại, nguồn |
 | --- | --- | --- | --- | --- |

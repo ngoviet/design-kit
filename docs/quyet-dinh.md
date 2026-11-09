@@ -75,3 +75,26 @@ Chủ nhắc lại yêu cầu: khi chạy design-kit, chính công cụ phải n
 - **Báo lỗi shadow DOM cho Impeccable**, việc còn lại thứ hai:
   - Đã tái hiện với bản 4.8.1 và soạn issue ở `docs/bao-loi-impeccable-shadow-dom.md`.
   - **Chưa gửi**, vì gửi lên GitHub là việc công khai, cần chủ duyệt.
+
+## 09/11/2026: chủ đồng ý gửi báo lỗi và thêm quy tắc dẫn đường vào CLAUDE.md toàn cục
+
+- `~/.claude/CLAUDE.md`, mục "Giao diện", có thêm đoạn: quy trình phức tạp đến mấy cũng phải dễ như phần hướng dẫn trong game. Trước khi dựng, lập bản đồ tác vụ và gắn mỗi chỗ dễ lúng túng với một mẫu dẫn đường; không dùng tour mở đầu; báo cáo phải nêu bản đồ này.
+- Báo lỗi Impeccable: lệnh `gh issue create` bị bộ phân loại của chế độ tự động chặn (tạo nội dung công khai). Chủ tự chạy lệnh trong `docs/bao-loi-impeccable-shadow-dom.md`.
+
+## 09/11/2026: gộp phụ thuộc để chạy độc lập, đóng gói thành plugin (0.2.0)
+
+Chủ hỏi có nên đóng gói và gộp các phụ thuộc vào dự án để nó chạy độc lập không. Trả lời: **có, nhưng chọn lọc**. Gộp những gì design-kit tự sở hữu, hoặc nhỏ và ít thay đổi. Những thứ là sản phẩm riêng, nặng, hoặc đổi thường xuyên thì ghim phiên bản và tải khi cần. Chủ bấm "Làm ở đây".
+
+| Thành phần | Đã làm |
+| --- | --- |
+| Script màu | `colorjs.io` chuyển sang dependencies. Thêm lệnh `design-kit doi-mau` và `kiem-mau`, cả hai dùng chung lõi `scripts/doi-mau-lib.mjs`. Đầu ra trùng khớp từng byte với bản cũ ở 3 phép thử. |
+| Đường dẫn cứng | Skill không còn ghi `D:\code`. Muốn biết đường dẫn thì hỏi `design-kit`. |
+| Font | `tokens/fonts-local.css` cùng 16 tệp woff2 (414 KB, giấy phép OFL), sinh bằng `npm run fonts`. Khối mẫu và fixture chuyển sang bản tự host. |
+| Bằng chứng | `docs/nguon.md` xuất từ kho tri thức: 28 nguồn, 36 luận điểm. |
+| Lint DESIGN.md | `@google/design.md` thành devDependency, chạy bằng `npm run lint:design`. |
+| Trình duyệt | Không gộp. Thêm đường lùi: Chromium của Playwright. |
+| Engine Impeccable | Không gộp. Ghim bản 0.1.19 và sha256; `design-kit setup` tải khi thiếu. Đã thử tải thật, sha256 khớp. |
+| Skill khác | Không gộp. |
+| Plugin | `.claude-plugin/` gồm plugin và marketplace. Có `skills/design-kit/` và hook `hooks/nhac-giao-dien.mjs`: nhắc khi sửa tệp giao diện, chặn "báo xong" một lần nếu chưa chạy cổng. `claude plugin validate` đạt. |
+| Gói npm | Thêm trường `files`, vì `.gitignore` sẽ làm rơi `dist/`. Đã thử cài từ gói ra một thư mục tạm: `design-kit`, `doi-mau` và `check` đều chạy. |
+| CI | `.woodpecker/ci.yaml` dùng image Playwright 1.65.0, gồm check, token, lint, setup và cổng ba hướng. **Chưa chạy lần nào**: chủ phải Enable repo trong Woodpecker. |

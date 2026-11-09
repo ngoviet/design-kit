@@ -13,14 +13,28 @@ Khi không có hướng dẫn, mô hình ngôn ngữ chọn lựa chọn phổ b
 
 | Phần | Ở đâu | Làm gì |
 | --- | --- | --- |
-| Token | `tokens/` | Gồm `fonts.css` (nạp đầu tiên), `core.css` (khoảng cách bậc 4px, thang chữ 1.25, chuyển động, độ dài dòng 32em), và ba hướng màu cùng font: `dem.css`, `giay.css`, `dam.css`. Mỗi hướng có bản sáng và tối. |
+| Token | `tokens/` | Gồm `fonts.css` (Google Fonts) hoặc `fonts-local.css` cùng thư mục `fonts/` (font tự host, chỉ bộ chữ Latin và tiếng Việt, 414 KB, giấy phép OFL). Tệp font nạp đầu tiên. Tiếp theo là `core.css` (khoảng cách bậc 4px, thang chữ 1.25, chuyển động, độ dài dòng 32em), và ba hướng màu cùng font: `dem.css`, `giay.css`, `dam.css`. Mỗi hướng có bản sáng và tối. |
 | Ba hướng thẩm mỹ | `design/<huong>/DESIGN.md` | **Đêm**: ứng dụng, dashboard. **Giấy**: tài liệu, báo cáo. **Đậm**: landing, marketing. Theo đặc tả DESIGN.md của Google. Sinh tự động từ token, lint sạch. |
 | Khối mẫu HTML/CSS | `blocks/html/` | 13 khối: `dau-trang`, `form-dang-nhap`, `bang-du-lieu`, `trang-thai`, `chi-so`, `hop-thoai`, `hero`, `bai-viet`, `thanh-ben`, `thong-bao`, `bo-loc`, `trinh-tu` (từng bước), `bat-dau` (danh sách bắt đầu + mẹo đúng lúc). Đổi hướng bằng `?dk=dem\|giay\|dam`. |
 | Khối mẫu React | `blocks/react/` | Bốn khối `FormDangNhap`, `TrangThai`, `BangDuLieu`, `HopThoai`, viết bằng React + shadcn/ui, dùng chung token. |
 | Cổng kiểm | `design-kit check` | Render ở 320/390/1280 px, cả sáng lẫn tối. Chạy axe-core (WCAG 2.2 AA) và probe đo chữ, dòng, tiếng Việt (đi xuyên shadow DOM). Kiểm giảm chuyển động, focus (khổ 1280 và 390), dẫn đường (`guide`), LCP/CLS, chạy Impeccable, rồi chụp ảnh. Đo cả các trạng thái sau thao tác ghi trong `<trang>.steps.json`. |
 | Nhắc dẫn đường | `design-kit`, `design-kit check` | Màn không đối số in mục `workflow`. Mỗi lần kiểm kết thúc bằng lời nhắc: lập bản đồ tác vụ, gắn mỗi chỗ dễ lúng túng với một mẫu dẫn đường (như phần hướng dẫn trong game). |
-| Skill | `skill/SKILL.md` | Cài ở `~/.claude/skills/design-kit` (junction). Gồm quy trình chọn hướng, chọn khối, chạy cổng, và các bẫy đã gặp. |
-| Tiêu chí | `docs/tieu-chi.md` | Ngưỡng, cách đo, loại cổng và nguồn của từng tiêu chí. |
+| Đổi màu | `design-kit doi-mau`, `design-kit kiem-mau` | Đổi sắc màu nhấn theo thương hiệu mà vẫn giữ mọi cặp đạt WCAG; kiểm cặp màu của tệp token bất kỳ. |
+| Plugin Claude Code | `.claude-plugin/`, `skills/design-kit/`, `hooks/` | Skill (chọn hướng, chọn khối, dẫn đường như game, chạy cổng, các bẫy đã gặp) và hook: nhắc ngay khi AI sửa tệp giao diện, chặn "báo xong" khi chưa chạy `design-kit check`. Repo này cũng là marketplace. |
+| Tiêu chí | `docs/tieu-chi.md`, `docs/nguon.md` | Ngưỡng, cách đo, loại cổng của từng tiêu chí; nguồn và câu trích (xuất từ kho tri thức). |
+
+## Cài
+
+Cần Node ≥ 20 và Edge hoặc Chrome. Không có hai trình duyệt này thì cổng dùng Chromium của Playwright: `npx playwright install chromium`.
+
+```bash
+npm install -g github:ngoviet/design-kit     # CLI; repo riêng tư nên cần quyền đọc repo
+design-kit setup                             # tìm trình duyệt; tải engine Impeccable ghim nếu thiếu (sha256)
+```
+
+Trong Claude Code, cài plugin (skill + hook) bằng: `/plugin install design-kit --marketplace ngoviet/design-kit`
+
+Hoặc làm hai bước: `/plugin marketplace add ngoviet/design-kit`, rồi `/plugin install design-kit@design-kit`.
 
 ## Dùng
 
@@ -76,7 +90,22 @@ Các trạng thái sau thao tác ghi trong tệp `<trang>.steps.json` đặt c�
     - `--steps` và tệp `<trang>.steps.json`. Đã viết cho 9 khối HTML và 3 khối React.
     - Focus được kiểm ở cả khổ 390, và báo khi focus rơi vào phần tử vô hình.
     - Cách đo mới tìm ra ba lỗi thật, đã sửa: bảng không sắp xếp được trên điện thoại, kết quả tìm rỗng không có nút gỡ, bộ lọc về 0 mà không nói lý do.
-  - Còn lại: gửi báo lỗi shadow DOM cho Impeccable. Bản nháp ở `docs/bao-loi-impeccable-shadow-dom.md`, chờ chủ duyệt.
+  - `~/.claude/CLAUDE.md` có thêm quy tắc dẫn đường như game (chủ đồng ý 09/11/2026).
+  - **Chạy độc lập và đóng gói (0.2.0):**
+    - lệnh `doi-mau`, `kiem-mau`, `setup`;
+    - font tự host;
+    - bằng chứng xuất ra `docs/nguon.md`;
+    - đường lùi Chromium;
+    - engine Impeccable ghim phiên bản, có kiểm sha256;
+    - plugin Claude Code gồm skill và hook;
+    - Woodpecker CI;
+    - trường `files` để cài từ git.
+
+    Đã thử cài từ gói ra một thư mục tạm, tách khỏi repo: cả ba lệnh chạy được.
+  - Còn lại:
+    - Gửi báo lỗi shadow DOM cho Impeccable. Chủ đã đồng ý, nhưng chế độ tự động chặn lệnh tạo issue; lệnh để chủ tự chạy nằm trong `docs/bao-loi-impeccable-shadow-dom.md`.
+    - Bật repo trong Woodpecker (https://ci.bepmamnon.com). Chủ phải làm vì cần đăng nhập GitHub.
+    - Cài plugin trên PC1. Sau khi cài thì gỡ junction `~/.claude/skills/design-kit` để skill không bị nạp hai lần.
 
 ## Nguyên tắc
 

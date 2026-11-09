@@ -1,6 +1,6 @@
 {
   "name": "design-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Design gate for agent-built UI: renders a page at 320/390/1280 px in light and dark, runs axe-core (WCAG 2.2 AA), text/motion/focus probes through shadow DOM, Impeccable and Core Web Vitals, takes screenshots, prints a TOON verdict",
   "type": "module",
@@ -9,27 +9,48 @@
   "bin": {
     "design-kit": "dist/bin/design-kit.js"
   },
+  "files": [
+    "dist",
+    "scripts",
+    "tokens",
+    "design",
+    "docs",
+    "skills",
+    "hooks",
+    ".claude-plugin",
+    "blocks/html",
+    "blocks/react/src",
+    "blocks/react/public",
+    "blocks/react/*.html",
+    "blocks/react/*.json",
+    "blocks/react/vite.config.ts"
+  ],
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "build": "tsup",
+    "prepare": "tsup",
     "typecheck": "tsc -p tsconfig.json",
     "lint": "eslint .",
     "test": "vitest run",
     "check": "tsc -p tsconfig.json && eslint . && vitest run",
     "tokens": "node scripts/kiem-cap-mau.mjs && node scripts/tao-design-md.mjs",
+    "lint:design": "designmd lint design/dem/DESIGN.md && designmd lint design/giay/DESIGN.md && designmd lint design/dam/DESIGN.md",
+    "fonts": "node scripts/tai-font.mjs",
+    "nguon": "node scripts/xuat-nguon.mjs",
     "gate": "node dist/bin/design-kit.js check blocks/html --query dk=dem,dk=giay,dk=dam --strict"
   },
   "dependencies": {
     "axe-core": "^4.10.3",
     "axi-sdk-js": "^0.1.14",
+    "colorjs.io": "^0.5.2",
     "playwright-core": "^1.56.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@google/design.md": "^0.4.0",
     "@types/node": "^26.6.6",
-    "colorjs.io": "^0.5.2",
     "eslint": "^10.14.0",
     "tsup": "^8.5.1",
     "typescript": "~6.0.3",

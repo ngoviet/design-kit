@@ -342,7 +342,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
           add(r, impGate(f), "impeccable", f.antipattern, (f.snippet ?? f.name ?? "").slice(0, 200), `light/${vp.split("x")[0]}`);
         }
       }
-      if (!impBin && !p.bool("no-impeccable")) r.notes.push("impeccable: engine not found (install the skill or set IMPECCABLE_BIN)");
+      if (!impBin && !p.bool("no-impeccable")) r.notes.push("impeccable: engine not found, run `design-kit setup` (downloads the pinned engine) or set IMPECCABLE_BIN");
       if (impBin && state) r.notes.push("states (#name): every check except Impeccable and LCP/CLS, which run on the initial state");
       if (shotsDir) r.notes.push(`screenshots: ${relative(rt.cwd, shotsDir).replace(/\\/g, "/")} (${r.shots})`);
     };
