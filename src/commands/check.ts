@@ -11,7 +11,7 @@ import type { Runtime } from "../runtime.js";
 
 export const CHECK_HELP = `usage: design-kit check <file|dir|url>... [flags]
 description: Design gate. Renders each page at 320/390/1280 px in light and dark, then measures what a person would hit: axe-core (WCAG 2.2 AA), horizontal overflow, text size and line height (through open shadow roots), Vietnamese lang and fonts, line length, reduced motion, keyboard focus, LCP/CLS, and the Impeccable detector. Prints one verdict per page: hard failures block "done", soft ones need a reason
-flags[11]:
+flags[12]:
   --query <q,q>: run each page once per query string (e.g. dk=dem,dk=giay,dk=dam for design-kit blocks)
   --viewports <w,w>: widths in px (default 320,390,1280; 320 is used for overflow only)
   --schemes <light,dark>: color schemes to render (default light,dark)
@@ -20,6 +20,7 @@ flags[11]:
   --no-impeccable: skip the Impeccable detector (faster)
   --focus <n>: Tab stops to inspect (default 15)
   --strict: exit 1 when any page has a hard failure
+  --jobs <n>: pages checked at once (default 3, max 8)
   --limit <n>: findings to show (default 25)
   --full: every finding
   --help: this help
@@ -46,6 +47,7 @@ const FLAGS: Record<string, FlagSpec> = {
   "no-impeccable": { type: "boolean", hint: "--no-impeccable" },
   focus: { type: "string", hint: "--focus <n>" },
   strict: { type: "boolean", hint: "--strict" },
+  jobs: { type: "string", hint: "--jobs <n>" },
 };
 
 type Gate = "hard" | "soft";
@@ -223,6 +225,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const queries = listFlag(p, "query") ?? [""];
   const focusStops = Number(p.str("focus") ?? 15);
   if (!Number.isInteger(focusStops) || focusStops < 0) fail("--focus must be a whole number", "VALIDATION_ERROR");
+  if (!/^[1-8]$/.test(p.str("jobs") ?? "3")) fail("--jobs must be 1 to 8", "VALIDATION_ERROR");
   const limit = p.global.full ? Infinity : (p.global.limit ?? 25);
   const targets = expandTargets(p.positionals, rt.cwd);
   const shotsBase = p.bool("no-shots") ? undefined : resolve(rt.cwd, p.str("shots") ?? ".design-kit/shots");
@@ -232,7 +235,9 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const impBin = p.bool("no-impeccable") ? undefined : findImpeccable(rt.env);
   const { browser, via } = await launchBrowser(rt.env);
   const servers = new Map<string, { origin: string; close: () => void }>();
-  const reports: PageReport[] = [];
+  const jobsN = Number(p.str("jobs") ?? 3);
+  // Bước 1: danh sách việc (máy chủ tĩnh dựng tuần tự). Bước 2: chạy song song có giới hạn, giữ thứ tự kết quả.
+  const jobs: Array<{ url: string; label: string; r: PageReport; shotsDir?: string }> = [];
   try {
     for (const t of targets) {
       let base = t;
@@ -256,25 +261,37 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
           shotsDir = join(shotsBase, slug || basename(t, extname(t)));
           mkdirSync(shotsDir, { recursive: true });
         }
-        await checkPage(browser, url, label, { viewports, schemes, focusStops, axeSource, ...(shotsDir ? { shotsDir } : {}) }, r);
-        if (impBin) {
-          for (const vp of [`${Math.max(...viewports)}x800`, ...(viewports.includes(390) ? ["390x844"] : [])]) {
-            const res = await runImpeccable(impBin, url, vp);
-            if (res.error) r.notes.push(`impeccable ${vp}: ${res.error}`);
-            for (const f of res.findings ?? []) {
-              add(r, impGate(f), "impeccable", f.antipattern, (f.snippet ?? f.name ?? "").slice(0, 200), `light/${vp.split("x")[0]}`);
-            }
-          }
-        } else if (!p.bool("no-impeccable")) r.notes.push("impeccable: engine not found (install the skill or set IMPECCABLE_BIN)");
-        if (shotsDir) r.notes.push(`screenshots: ${relative(rt.cwd, shotsDir).replace(/\\/g, "/")} (${r.shots})`);
-        reports.push(r);
+        jobs.push({ url, label, r, ...(shotsDir ? { shotsDir } : {}) });
       }
     }
+    const runJob = async ({ url, label, r, shotsDir }: (typeof jobs)[number]): Promise<void> => {
+      const imp = impBin
+        ? Promise.all(
+            [`${Math.max(...viewports)}x800`, ...(viewports.includes(390) ? ["390x844"] : [])].map(async (vp) => ({ vp, res: await runImpeccable(impBin, url, vp) })),
+          )
+        : Promise.resolve([]);
+      await checkPage(browser, url, label, { viewports, schemes, focusStops, axeSource, ...(shotsDir ? { shotsDir } : {}) }, r);
+      for (const { vp, res } of await imp) {
+        if (res.error) r.notes.push(`impeccable ${vp}: ${res.error}`);
+        for (const f of res.findings ?? []) {
+          add(r, impGate(f), "impeccable", f.antipattern, (f.snippet ?? f.name ?? "").slice(0, 200), `light/${vp.split("x")[0]}`);
+        }
+      }
+      if (!impBin && !p.bool("no-impeccable")) r.notes.push("impeccable: engine not found (install the skill or set IMPECCABLE_BIN)");
+      if (shotsDir) r.notes.push(`screenshots: ${relative(rt.cwd, shotsDir).replace(/\\/g, "/")} (${r.shots})`);
+    };
+    let next = 0;
+    await Promise.all(
+      Array.from({ length: Math.min(jobsN, jobs.length) }, async () => {
+        while (next < jobs.length) await runJob(jobs[next++]!);
+      }),
+    );
   } finally {
     await browser.close();
     for (const s of servers.values()) s.close();
   }
 
+  const reports = jobs.map((j) => j.r);
   // ---- Tổng hợp TOON ----
   const count = (r: PageReport, g: Gate) => [...r.findings.values()].filter((f) => f.gate === g).length;
   const hardPages = reports.filter((r) => count(r, "hard") > 0).length;
