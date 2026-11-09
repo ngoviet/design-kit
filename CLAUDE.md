@@ -7,7 +7,7 @@ Chuẩn và cổng cho giao diện do agent làm.
 - Đóng gói:
   - Plugin Claude Code: `.claude-plugin/` (plugin và marketplace), `skills/design-kit/SKILL.md`, `hooks/`.
   - CLI: clone, `npm ci` (prepare build `dist/`), `npm install -g .`. Trường `files` quyết định gói npm gồm những gì (cài từ tarball).
-  - Trên PC1 skill vẫn nối bằng junction `~/.claude/skills/design-kit → skills/design-kit`. Cài plugin rồi thì gỡ junction.
+  - Trên PC1 plugin cài từ marketplace thư mục `D:\code\design-kit` (`claude plugin marketplace add D:/code/design-kit`, `claude plugin install design-kit@design-kit`). Claude Code đọc thẳng repo, nên sửa skill hay hook là có hiệu lực ở phiên mới. Không còn junction trong `~/.claude/skills/`, đừng tạo lại, vì skill sẽ bị nạp hai lần.
 - Lý do và quyết định: `docs/quyet-dinh.md`. Ngưỡng: `docs/tieu-chi.md`. Nguồn: `docs/nguon.md`, sinh bằng `npm run nguon` từ kho research-hub, không sửa tay.
 - CI: `.woodpecker/ci.yaml`, chạy trên container Linux sạch. Đây cũng là phép thử chạy độc lập.
 

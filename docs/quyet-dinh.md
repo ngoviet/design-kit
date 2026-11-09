@@ -100,3 +100,15 @@ Chủ hỏi có nên đóng gói và gộp các phụ thuộc vào dự án đ�
 | CI | `.woodpecker/ci.yaml` dùng image Playwright 1.65.0, gồm check, token, lint, setup và cổng ba hướng. **Chưa chạy lần nào**: chủ phải Enable repo trong Woodpecker. |
 
 Đã thử thêm cách cài toàn cục từ git (`npm install -g git+file://…`): **hỏng**. Lệnh `npm install` mà npm chạy bên trong bản clone thừa hưởng chế độ global, nên `prepare` không có `tsup`. Đổi hướng dẫn cài sang: clone, `npm ci`, `npm install -g .`. Đã thử trên một bản clone sạch: `--version`, `setup`, `kiem-mau` đều chạy.
+
+## 10/11/2026: cài plugin trên PC1
+
+Chủ bấm "Cài plugin".
+
+- Thêm marketplace thư mục: `claude plugin marketplace add D:/code/design-kit`. Cài `design-kit@design-kit` ở phạm vi người dùng.
+- `claude plugin details` thấy 1 skill và 2 hook (PostToolUse, Stop). Chi phí thường trực khoảng 406 token, bằng phần mô tả skill trước đây.
+- Đã gỡ junction `~/.claude/skills/design-kit` để skill không bị nạp hai lần.
+- Thử từ đầu đến cuối bằng một phiên `claude -p` (Haiku) trong thư mục tạm, cho nó ghi một tệp HTML:
+  - phiên nhận lời nhắc chạy `design-kit check … --strict` và lập bản đồ tác vụ;
+  - khi phiên định dừng, hook Stop chặn lại để chạy cổng.
+- Khi repo đã lên GitHub, có thể đổi marketplace sang `ngoviet/design-kit` cho máy khác. PC1 giữ marketplace thư mục để sửa là có hiệu lực ngay.

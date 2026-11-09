@@ -109,7 +109,7 @@ Các trạng thái sau thao tác ghi trong tệp `<trang>.steps.json` đặt c�
   - Còn lại:
     - Gửi báo lỗi shadow DOM cho Impeccable. Chủ đã đồng ý, nhưng chế độ tự động chặn lệnh tạo issue; lệnh để chủ tự chạy nằm trong `docs/bao-loi-impeccable-shadow-dom.md`.
     - Bật repo trong Woodpecker (https://ci.bepmamnon.com). Chủ phải làm vì cần đăng nhập GitHub.
-    - Cài plugin trên PC1. Sau khi cài thì gỡ junction `~/.claude/skills/design-kit` để skill không bị nạp hai lần.
+  - **Plugin đã cài trên PC1 (10/11/2026)** từ marketplace thư mục `D:\code\design-kit` (Claude Code đọc thẳng repo). Junction cũ đã gỡ. Đã thử bằng một phiên Claude chạy nền: ghi một tệp HTML thì nhận lời nhắc, định dừng thì hook Stop chặn để chạy cổng.
 
 ## Nguyên tắc
 
