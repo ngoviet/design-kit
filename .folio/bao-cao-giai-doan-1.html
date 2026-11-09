@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>design-kit · Giai đoạn 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light dark;
+    /* Trung tính nhuốm sắc lam (h 250, C ≤ 0.02), một màu nhấn xanh rêu (h 160) */
+    --bg:        oklch(0.985 0.004 250);
+    --surface:   oklch(0.965 0.007 250);
+    --surface-2: oklch(0.935 0.010 250);
+    --line:      oklch(0.86 0.012 250);
+    --text:      oklch(0.24 0.020 250);
+    --text-2:    oklch(0.42 0.018 250);
+    --accent:    oklch(0.48 0.110 160);
+    --accent-bg: oklch(0.94 0.035 160);
+    --hard:      oklch(0.50 0.160 25);
+    --hard-bg:   oklch(0.95 0.025 25);
+    --soft:      oklch(0.50 0.110 70);
+    --soft-bg:   oklch(0.95 0.040 80);
+    --human:     oklch(0.48 0.120 255);
+    --human-bg:  oklch(0.95 0.025 255);
+    --radius: 10px;
+    --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 72px;
+    /* Thang chữ tỉ lệ 1.25, gốc 17px */
+    --fs-sm: 0.875rem; --fs-base: 1.0625rem; --fs-md: 1.25rem; --fs-lg: 1.5625rem; --fs-xl: 1.95rem; --fs-2xl: 2.45rem;
+    --font: "Be Vietnam Pro", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:        oklch(0.170 0.012 250);
+      --surface:   oklch(0.205 0.014 250);
+      --surface-2: oklch(0.245 0.016 250);
+      --line:      oklch(0.330 0.018 250);
+      --text:      oklch(0.930 0.010 250);
+      --text-2:    oklch(0.760 0.015 250);
+      --accent:    oklch(0.780 0.110 160);
+      --accent-bg: oklch(0.270 0.040 160);
+      --hard:      oklch(0.760 0.120 25);
+      --hard-bg:   oklch(0.270 0.050 25);
+      --soft:      oklch(0.800 0.110 80);
+      --soft-bg:   oklch(0.280 0.045 80);
+      --human:     oklch(0.780 0.090 255);
+      --human-bg:  oklch(0.270 0.045 255);
+    }
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 400 var(--fs-base)/1.65 var(--font);
+    font-kerning: normal;
+  }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  code, .mono { font-family: var(--mono); font-size: 0.88em; }
+  code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
+  h1, h2, h3 { line-height: 1.25; font-weight: 650; text-wrap: balance; margin: 0; }
+  h1 { font-size: var(--fs-2xl); letter-spacing: -0.015em; }
+  h2 { font-size: var(--fs-xl); letter-spacing: -0.01em; margin-block: var(--s8) var(--s4); scroll-margin-top: var(--s5); }
+  h3 { font-size: var(--fs-md); margin-block: var(--s6) var(--s3); }
+  p, li { max-width: 68ch; }
+  p { margin: 0 0 var(--s4); text-wrap: pretty; }
+  ul, ol { padding-left: 1.3em; margin: 0 0 var(--s4); }
+  li + li { margin-top: var(--s2); }
+  .muted { color: var(--text-2); }
+  .small { font-size: var(--fs-sm); line-height: 1.55; }
+
+  .shell { max-width: 76rem; margin: 0 auto; padding: var(--s7) var(--s4) var(--s8); display: grid; gap: var(--s7); }
+  @media (min-width: 1100px) { .shell { grid-template-columns: 14rem minmax(0, 1fr); padding-inline: var(--s6); } }
+  .toc { font-size: var(--fs-sm); }
+  @media (min-width: 1100px) { .toc nav { position: sticky; top: var(--s6); } }
+  .toc ol { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--s1); }
+  .toc li + li { margin: 0; }
+  .toc a { display: block; padding: 6px var(--s3); border-radius: 6px; color: var(--text-2); text-decoration: none; min-height: 32px; }
+  .toc a:hover { background: var(--surface-2); color: var(--text); }
+  .toc .label { font-weight: 600; color: var(--text); margin: 0 0 var(--s2) var(--s3); }
+  @media (max-width: 1099px) {
+    .shell { gap: var(--s5); }
+    .toc .label { margin-left: 0; }
+    .toc ol { display: flex; flex-wrap: wrap; gap: var(--s2); }
+    .toc a { padding: 5px var(--s3); min-height: 30px; background: var(--surface-2); border-radius: 999px; }
+  }
+  main { min-width: 0; }
+
+  header.top p.lede { font-size: var(--fs-md); line-height: 1.55; color: var(--text-2); margin-top: var(--s4); }
+  .meta { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); font-size: var(--fs-sm); color: var(--text-2); margin-top: var(--s5); }
+
+  .decision { margin-top: var(--s6); background: var(--accent-bg); border-radius: var(--radius); padding: var(--s5); }
+  .decision h2 { margin: 0 0 var(--s3); font-size: var(--fs-lg); }
+  .decision p:last-child, .decision ul:last-child { margin-bottom: 0; }
+
+  .tbl { overflow-x: auto; margin: var(--s4) 0 var(--s5); }
+  table { border-collapse: separate; border-spacing: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; width: 100%; font-size: var(--fs-sm); line-height: 1.5; }
+  th, td { text-align: left; vertical-align: top; padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+  tr:last-child td { border-bottom: 0; }
+  th { font-weight: 600; background: var(--surface-2); white-space: nowrap; }
+  td:first-child { font-weight: 600; min-width: 9rem; }
+  td.num { white-space: nowrap; font-family: var(--mono); font-size: 0.8125rem; }
+  .tbl.wide table { min-width: 760px; }
+
+  .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; line-height: 1; padding: 5px 8px; border-radius: 999px; white-space: nowrap; }
+  .tag.hard  { color: var(--hard);  background: var(--hard-bg); }
+  .tag.soft  { color: var(--soft);  background: var(--soft-bg); }
+  .tag.human { color: var(--human); background: var(--human-bg); }
+  .tag.std   { color: var(--accent); background: var(--accent-bg); }
+  .tag.conv  { color: var(--text-2); background: var(--surface-2); }
+
+  .grid-2 { display: grid; gap: var(--s4); }
+  @media (min-width: 760px) { .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .panel { border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s5); background: var(--surface); min-width: 0; }
+  .panel h3 { margin-top: 0; }
+  .panel p:last-child, .panel ul:last-child { margin-bottom: 0; }
+
+  .options { display: grid; gap: var(--s4); margin-top: var(--s5); }
+  @media (min-width: 960px) { .options { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .opt { border: 1px solid var(--line); border-radius: var(--radius); padding: var(--s5); background: var(--surface); display: flex; flex-direction: column; gap: var(--s3); min-width: 0; }
+  .opt.pick { border: 2px solid var(--accent); }
+  .opt h3 { margin: 0; }
+  .opt .what { color: var(--text-2); margin: 0; }
+  .opt dl { margin: 0; display: grid; gap: var(--s2); font-size: var(--fs-sm); }
+  .opt dt { font-weight: 600; }
+  .opt dd { margin: 0 0 var(--s2); color: var(--text-2); }
+  .verdict { font-weight: 600; color: var(--accent); }
+
+  figure { margin: var(--s5) 0; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption { font-size: var(--fs-sm); color: var(--text-2); margin-top: var(--s3); max-width: 68ch; }
+  .fig-node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+  .fig-node.gate rect { fill: var(--hard-bg); stroke: var(--hard); }
+  .fig-node.human rect { fill: var(--human-bg); stroke: var(--human); }
+  .fig-node.input rect { fill: var(--accent-bg); stroke: var(--accent); }
+  .fig-t { fill: var(--text); font: 600 15px var(--font); }
+  .fig-s { fill: var(--text-2); font: 400 13px var(--font); }
+  .fig-edge { stroke: var(--text-2); stroke-width: 1.5; fill: none; }
+  .fig-edge.back { stroke: var(--hard); stroke-dasharray: 5 4; }
+  .fig-lbl { fill: var(--text-2); font: 500 13px var(--font); }
+
+  .steps { counter-reset: st; list-style: none; padding: 0; display: grid; gap: var(--s4); }
+  .steps > li { counter-increment: st; max-width: none; margin: 0; padding: var(--s4) var(--s5) var(--s4) 3.4rem; position: relative; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  .steps > li::before { content: counter(st); position: absolute; left: var(--s4); top: var(--s4); width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); font-weight: 600; font-size: var(--fs-sm); }
+  .steps strong { display: block; margin-bottom: var(--s1); }
+  .steps p { margin: 0; color: var(--text-2); }
+
+  .src { font-size: var(--fs-sm); display: grid; gap: var(--s2); padding: 0; list-style: none; }
+  .src li { max-width: none; margin: 0; padding-left: 3rem; text-indent: -3rem; }
+  .src .id { font-family: var(--mono); display: inline-block; width: 3rem; text-indent: 0; color: var(--text-2); }
+  .note { border: 1px dashed var(--line); border-radius: var(--radius); padding: var(--s4) var(--s5); margin: var(--s4) 0; background: var(--surface); }
+  .note p:last-child { margin: 0; }
+  footer { margin-top: var(--s8); padding-top: var(--s5); border-top: 1px solid var(--line); }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="toc" aria-label="Mục lục">
+    <nav>
+      <p class="label">Trong báo cáo</p>
+      <ol>
+        <li><a href="#chot">Cần chủ chốt</a></li>
+        <li><a href="#vi-sao">Vì sao UI "chạy được"</a></li>
+        <li><a href="#kiem-ke">Kiểm kê công cụ</a></li>
+        <li><a href="#tieu-chuan">Tiêu chuẩn kèm nguồn</a></li>
+        <li><a href="#tieu-chi">Bộ tiêu chí có ngưỡng</a></li>
+        <li><a href="#vong">Vòng tự kiểm</a></li>
+        <li><a href="#phuong-an">Ba phương án</a></li>
+        <li><a href="#giai-doan-2">Kế hoạch giai đoạn 2</a></li>
+        <li><a href="#nguon">Nguồn</a></li>
+      </ol>
+    </nav>
+  </aside>
+
+  <main>
+    <header class="top">
+      <h1>Hướng dẫn AI làm giao diện đẹp và dễ dùng</h1>
+      <p class="lede">Báo cáo giai đoạn 1 của <code>design-kit</code>: nghiên cứu chuẩn hiện hành, kiểm kê công cụ trên PC1, rút ra bộ tiêu chí đo được và đề xuất cách để Opus dùng chúng mặc định.</p>
+      <div class="meta">
+        <span>Ngày 09/11/2026</span>
+        <span>22 nguồn đã đọc, 28 trích dẫn đã kiểm lại</span>
+        <span>Kho tri thức: <code>tieu-chuan-va-cach-huong-dan-ai-lam-giao-dien-web-dep-de-dun</code></span>
+      </div>
+    </header>
+
+    <section class="decision" id="chot" aria-labelledby="chot-h">
+      <h2 id="chot-h">Cần chủ chốt trước khi xây</h2>
+      <p>Khuyến nghị <strong>phương án B</strong>: một skill <code>design-kit</code> cùng lệnh kiểm <code>design-kit check</code> làm cổng cứng. Trong <code>~/.claude/CLAUDE.md</code> chỉ thêm hai dòng trỏ tới skill. Khối mẫu (phương án C) làm dần, mỗi đợt 5–6 khối, sau khi cổng chạy ổn.</p>
+      <ul>
+        <li>Lý do chính: chỉ dẫn thẩm mỹ cụ thể giúp Claude tốt lên ngay [s4]. Nhưng LLM tự chấm UI chưa bằng người [s20] và khó tự cải thiện đều qua nhiều vòng [s21]. Vì vậy phần đo được giao cho máy, phần đẹp giao cho chủ.</li>
+        <li>Bốn câu hỏi cần trả lời nằm ở cuối mục <a href="#phuong-an">Ba phương án</a>.</li>
+      </ul>
+    </section>
+
+    <section id="vi-sao" aria-labelledby="vi-sao-h">
+      <h2 id="vi-sao-h">Vì sao Opus thường dừng ở "chạy được"</h2>
+      <p>Anthropic gọi đây là <em>hội tụ phân phối</em>. Khi không có chỉ dẫn, mô hình chọn lựa chọn phổ biến nhất trong dữ liệu. Với landing page, đó gần như luôn là font Inter, gradient tím trên nền trắng và chuyển động tối thiểu [s4]. Bài viết cũng cho thấy hai điều có thể dùng ngay:</p>
+      <ul>
+        <li><strong>Mô hình nghe theo chỉ dẫn.</strong> Chỉ cần dặn "tránh Inter và Roboto" hay "dùng nền có chiều sâu" là kết quả khá lên ngay [s4].</li>
+        <li><strong>Chỉ dẫn phải quy ra mã được.</strong> Hướng dẫn càng gắn với CSS và token cụ thể thì Claude làm càng đúng [s4].</li>
+      </ul>
+      <p>Thiếu sót thứ ba nằm ở quy trình. Hiện chưa có bước nào đo trang <em>đã render</em> trước khi báo xong. Phiên lan-topo-card là ví dụ: thẻ có tương phản 3,6:1 và chữ 9,9px vẫn lọt qua. Hướng dẫn của Claude Code cũng khuyên đòi bằng chứng (lệnh đã chạy kèm output, hoặc ảnh chụp) khi Claude báo xong [s13].</p>
+    </section>
+
+    <section id="kiem-ke" aria-labelledby="kiem-ke-h">
+      <h2 id="kiem-ke-h">Kiểm kê công cụ trên PC1</h2>
+      <p>Đã có sẵn nhiều thứ. Phần còn thiếu nằm ở ba chỗ: kiểm a11y trên DOM đã render, đo hiệu năng, và một quy trình nối các công cụ lại với nhau.</p>
+      <div class="tbl wide">
+        <table>
+          <thead><tr><th scope="col">Công cụ</th><th scope="col">Làm được</th><th scope="col">Còn thiếu</th></tr></thead>
+          <tbody>
+            <tr><td>Skill <code>impeccable</code> 4.8.1 (engine 0.1.19)</td>
+              <td>24 lệnh con (shape, critique, audit, polish, typeset, layout…). PRODUCT.md và DESIGN.md theo đặc tả Google. Bộ dò có 62 luật: 31 luật dấu hiệu AI ("slop") và 31 luật chất lượng. Ngưỡng: tương phản 4,5:1, chữ &lt; 12px, dòng ~80 ký tự, giãn dòng &lt; 1,3. <code>audit</code> chấm /20, <code>critique</code> chấm /40 theo 10 heuristic Nielsen. Có 4 agent phụ.</td>
+              <td>Hook bộ dò chưa bật. Luật cần render chỉ chạy với <code>.html</code> đã build hoặc URL. Không có kiểm a11y kiểu axe, không đo CWV. Phần "đẹp" do agent tự chấm qua ảnh chụp.</td></tr>
+            <tr><td>CLI <code>imp-axi</code> 0.1.0</td>
+              <td>Bọc <code>impeccable detect</code> thành TOON gọn: tổng, luật kèm cách sửa, số lỗi theo tệp. Lệnh <code>detect</code>, <code>rules</code>, <code>patch-skill</code>. Chuyển tiếp <code>--viewport</code> và <code>--cdp</code>.</td>
+              <td>Không chụp ảnh. Không tự trải phẳng shadow DOM (chỉ chuyển tiếp cho engine). Xem ghi chú bên dưới.</td></tr>
+            <tr><td><code>palette-axi</code> 0.2.0</td>
+              <td>Kiểm và sinh bảng màu OKLCH theo 7 luật: trung tính nhuốm sắc, nền, dải màu nhấn, thang, ý nghĩa màu trạng thái, APCA Lc ≥ 60 cho chữ, gamut sRGB, cặp <code>on-X</code>. Xuất CSS và Tailwind.</td>
+              <td>Chỉ đọc văn bản tĩnh: bỏ qua <code>var()</code> và <code>color-mix()</code>, không biết màu nào thực sự nằm trên nền nào.</td></tr>
+            <tr><td>Plugin <code>frontend-design</code> 1.1.1</td>
+              <td>Hướng dẫn 72 dòng: lập kế hoạch token trước khi code, liệt kê 5 cụm mặc định của AI cần tránh, dòng &lt; 80 ký tự, chỉ một điểm chuyển động, tự chụp màn hình để phê bình.</td>
+              <td>Không có máy đo. Nội dung trùng phần lớn với impeccable.</td></tr>
+            <tr><td>Skill <code>artifact-design</code></td>
+              <td>Skill dựng sẵn của ứng dụng: hợp đồng trang Artifact (tiêu đề, token sáng/tối, CDN được phép, chạy được trên điện thoại).</td>
+              <td>Không có tệp trên đĩa nên không đối chiếu được. Chỉ dùng cho Artifact.</td></tr>
+            <tr><td>Plugin <code>modern-web-guidance</code> 0.0.194</td>
+              <td>Tìm theo ngữ nghĩa trong bộ hướng dẫn API web hiện đại (dialog, popover, view transitions, CWV, form). Coi tính năng "Baseline widely available" là dùng được không cần fallback.</td>
+              <td>Cần mạng mỗi lần chạy (<code>npx @latest</code>). Chỉ nói về API, không nói về thẩm mỹ.</td></tr>
+            <tr><td>Môi trường</td>
+              <td><code>chrome-devtools-axi</code> 0.1.44 (chụp màn hình, DOM, hiệu năng), Playwright Python 1.63 kèm Chromium, Claude Browser và Claude in Chrome.</td>
+              <td>Không có axe-core, Lighthouse, công cụ so sánh ảnh hay <code>@google/design.md</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <p><strong>Cần kiểm thực tế:</strong> phiên lan-topo-card ghi nhận <code>imp-axi</code> quét URL báo 0 lỗi vì không vào shadow DOM. Mã engine Impeccable lại cho thấy có duyệt <code>node.shadowRoot</code> khi root đang mở. Bước chụp thì đánh dấu phần tử có shadow là <code>unsupported</code>. Có thể lỗi chỉ xảy ra ở một số luật, hoặc do card Lit dùng closed root. Nên tái hiện trước khi sửa trong imp-axi. Thẻ đề xuất sửa imp-axi đã có.</p>
+      </div>
+    </section>
+
+    <section id="tieu-chuan" aria-labelledby="tieu-chuan-h">
+      <h2 id="tieu-chuan-h">Tiêu chuẩn hiện hành kèm nguồn</h2>
+      <p>Nhãn <span class="tag std">chuẩn</span> là văn bản của W3C hoặc Google. <span class="tag std">nghiên cứu</span> là nghiên cứu có kiểm chứng (Baymard, Anthropic, bài báo). <span class="tag conv">quy ước</span> là ngưỡng của công cụ hoặc thông lệ ngành, chưa có nguồn sơ cấp trong kho tri thức.</p>
+
+      <h3>Công năng</h3>
+      <div class="tbl wide">
+        <table>
+          <thead><tr><th scope="col">Nhóm</th><th scope="col">Yêu cầu</th><th scope="col">Loại</th><th scope="col">Nguồn</th></tr></thead>
+          <tbody>
+            <tr><td>Tương phản chữ</td><td>WCAG 1.4.3 (AA): 4,5:1, chữ lớn (≥ 18pt, hoặc 14pt đậm) 3:1. Không làm tròn: 4,499:1 là trượt.</td><td><span class="tag std">chuẩn</span></td><td>s5</td></tr>
+            <tr><td>Tương phản phi chữ</td><td>WCAG 1.4.11: viền ô nhập, icon, trạng thái ≥ 3:1.</td><td><span class="tag std">chuẩn</span></td><td>s6</td></tr>
+            <tr><td>APCA</td><td>Đo tương phản đều theo cảm nhận, hợp với dark mode. Là ứng viên WCAG 3, chưa thành chuẩn: dùng kèm, không thay WCAG 2.</td><td><span class="tag conv">quy ước</span></td><td>chủ đề màu KB c10</td></tr>
+            <tr><td>Vùng bấm</td><td>WCAG 2.2 SC 2.5.8 (AA, mới): ≥ 24×24 CSS px, hoặc đủ khoảng cách. Mức AAA 2.5.5 là 44×44.</td><td><span class="tag std">chuẩn</span></td><td>s1</td></tr>
+            <tr><td>Focus</td><td>2.4.11 (AA, mới ở 2.2): phần tử đang focus không bị che hoàn toàn (ví dụ bởi header dính). 2.4.13 (AAA): chỉ báo focus ≥ viền 2 CSS px.</td><td><span class="tag std">chuẩn</span></td><td>s9, s10</td></tr>
+            <tr><td>Reflow</td><td>WCAG 1.4.10: ở bề rộng 320 CSS px, nội dung dàn lại, không cuộn ngang.</td><td><span class="tag std">chuẩn</span></td><td>s8</td></tr>
+            <tr><td>Core Web Vitals</td><td>LCP ≤ 2,5 s, INP ≤ 200 ms, CLS ≤ 0,1, xét ở phân vị 75. INP thay FID từ 2024.</td><td><span class="tag std">chuẩn</span></td><td>s2</td></tr>
+            <tr><td>Responsive</td><td>Container queries: <code>container-type: inline-size</code> và đơn vị <code>cq*</code>, để thành phần tự co theo khung chứa thay vì theo màn hình.</td><td><span class="tag std">chuẩn</span></td><td>s3</td></tr>
+            <tr><td>Form và autofill</td><td>Ô email đăng nhập dùng <code>autocomplete="username"</code>. Mật khẩu đăng nhập dùng <code>current-password</code>, đăng ký hoặc đổi mật khẩu dùng <code>new-password</code>. PIN dùng <code>inputmode="numeric"</code>.</td><td><span class="tag std">chuẩn</span></td><td>s14</td></tr>
+            <tr><td>Giảm chuyển động</td><td>Tôn trọng <code>prefers-reduced-motion</code>. Người rối loạn tiền đình bật tuỳ chọn này.</td><td><span class="tag std">chuẩn</span></td><td>s11, s15</td></tr>
+            <tr><td>Dark mode</td><td><code>light-dark()</code> (Baseline 2024) cùng <code>color-scheme</code>. Cả hai theme phải đạt tương phản.</td><td><span class="tag std">chuẩn</span></td><td>s16</td></tr>
+            <tr><td>Tiếng Việt</td><td>Font phải có đủ dấu chồng (ví dụ ể, ỗ, ự) và chịu được giãn dòng chặt mà không cắt dấu. Đặt <code>lang="vi"</code>. Nhiều trang web hỏng dấu.</td><td><span class="tag conv">quy ước</span></td><td>s18</td></tr>
+            <tr><td>Trạng thái</td><td>Mỗi vùng dữ liệu có đủ trạng thái rỗng, đang tải, lỗi (kèm cách khắc phục) và không có quyền.</td><td><span class="tag conv">quy ước</span></td><td>impeccable <code>craft-floor.md</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Thẩm mỹ</h3>
+      <div class="tbl wide">
+        <table>
+          <thead><tr><th scope="col">Nhóm</th><th scope="col">Yêu cầu</th><th scope="col">Loại</th><th scope="col">Nguồn</th></tr></thead>
+          <tbody>
+            <tr><td>Độ dài dòng</td><td>Thân bài 50–75 ký tự (khoảng <code>max-width: 65ch</code>). WCAG 1.4.8 (AAA) cho phép tối đa 80.</td><td><span class="tag std">nghiên cứu</span></td><td>s17</td></tr>
+            <tr><td>Thang chữ</td><td>Định nghĩa thang cho màn nhỏ và màn lớn rồi nội suy bằng <code>clamp()</code>. Các bậc cách nhau ≥ 1,25 lần, nếu thấp hơn impeccable báo "phân cấp phẳng".</td><td><span class="tag conv">quy ước</span></td><td>s19, impeccable</td></tr>
+            <tr><td>Cỡ chữ tối thiểu</td><td>Thân bài ≥ 16px. Nhãn phụ ≥ 12px: impeccable báo lỗi dưới 12px và lỗi nặng dưới 11px.</td><td><span class="tag conv">quy ước</span></td><td>impeccable</td></tr>
+            <tr><td>Màu OKLCH</td><td>Một sắc chủ đạo nhuốm trung tính (C 0,01–0,06). Nền tối không đen tuyền (L 0,13–0,20). Màu nhấn cùng một dải L. Màu trạng thái theo ý nghĩa. Có kiểm gamut.</td><td><span class="tag conv">quy ước</span></td><td>chủ đề màu KB, palette-axi</td></tr>
+            <tr><td>Nhịp khoảng cách</td><td>Bậc 4px, ít giá trị. impeccable báo lỗi khi khoảng cách đơn điệu.</td><td><span class="tag conv">quy ước</span></td><td>impeccable</td></tr>
+            <tr><td>Dấu hiệu "UI do AI làm"</td><td>Font Inter mặc định, gradient tím, chữ gradient, eyebrow hay kicker trên tiêu đề, thẻ lồng thẻ, viền trái màu, nền lưới, glow tối, easing nảy, lạm dụng gạch ngang dài. Bộ dò có 31 luật cho nhóm này.</td><td><span class="tag std">nghiên cứu</span></td><td>s4, impeccable</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Design system mã nguồn mở và giấy phép</h3>
+      <p>Giấy phép đo bằng GitHub API ngày 09/11/2026. Không nên dựa vào một design system duy nhất: lấy nguyên tắc và token của nhiều bên, còn primitive có a11y thì lấy từ Radix.</p>
+      <div class="tbl">
+        <table>
+          <thead><tr><th scope="col">Nguồn</th><th scope="col">Giấy phép</th><th scope="col">Dùng vào việc gì</th></tr></thead>
+          <tbody>
+            <tr><td>shadcn/ui</td><td class="num">MIT</td><td>Mã chép thẳng vào dự án (React, Tailwind, Radix). Hợp làm khối mẫu cho dự án React.</td></tr>
+            <tr><td>Radix Primitives / Themes</td><td class="num">MIT</td><td>Primitive đã lo phần a11y. Thang màu 12 bậc.</td></tr>
+            <tr><td>Tailwind CSS v4</td><td class="num">MIT</td><td>Khai báo token bằng <code>@theme</code>, palette OKLCH 11 bậc.</td></tr>
+            <tr><td>DaisyUI</td><td class="num">MIT</td><td>Class thành phần trên Tailwind, đổi theme bằng biến CSS. Folio đang dùng.</td></tr>
+            <tr><td>Fluent 2 (microsoft/fluentui)</td><td class="num">MIT</td><td>Token và Web Components. GitHub ghi NOASSERTION nhưng tệp LICENSE là MIT.</td></tr>
+            <tr><td>Material 3 (material-web)</td><td class="num">Apache-2.0</td><td>README ghi đang ở chế độ bảo trì, chờ người duy trì mới. Chỉ mượn nguyên tắc và token.</td></tr>
+            <tr><td>IBM Carbon, Adobe Spectrum</td><td class="num">Apache-2.0</td><td>Tài liệu a11y và token rất tốt để tham khảo.</td></tr>
+            <tr><td>Apple HIG</td><td class="num">Độc quyền</td><td>Chỉ học nguyên tắc. Giấy phép tài nguyên (06/2023) dành cho ứng dụng nền tảng Apple. Chưa đọc hết PDF.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Cách hướng dẫn AI hiệu quả</h3>
+      <div class="grid-2">
+        <div class="panel">
+          <h3>DESIGN.md là cầu nối</h3>
+          <p>Đặc tả của Google Labs ghép token YAML (máy đọc) với phần lý do viết bằng markdown (người đọc). "Token là giá trị chuẩn" [s12]. CLI <code>@google/design.md lint</code> bắt tham chiếu token hỏng và kiểm tương phản WCAG, có thể xuất sang Tailwind v4 <code>@theme</code> hoặc W3C DTCG [s12]. Impeccable cũng theo đặc tả này. Lưu ý: đặc tả còn ở bản <strong>alpha</strong>.</p>
+        </div>
+        <div class="panel">
+          <h3>Ví dụ mẫu và vòng phản hồi</h3>
+          <p>Thêm ví dụ mẫu và nhắc bằng hình ảnh giúp LLM góp ý UI tốt hơn 55%, nhưng vẫn chưa bằng người chấm [s20]. Phản hồi tự động từ trình biên dịch và mô hình đa phương thức giúp mô hình sinh mã UI tốt hơn [s22]. Mô hình mạnh nhất vẫn khó tự cải thiện đều qua nhiều vòng [s21]. Kết luận: dùng máy đo làm cổng, giới hạn số vòng, phần thẩm mỹ để chủ duyệt.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="tieu-chi" aria-labelledby="tieu-chi-h">
+      <h2 id="tieu-chi-h">Bộ tiêu chí kiểm được</h2>
+      <p>Mỗi dòng ghi ngưỡng, cách đo và loại cổng. <span class="tag hard">cứng</span>: trượt thì chưa được báo xong. <span class="tag soft">mềm</span>: báo cáo, sửa nếu không có lý do. <span class="tag human">người</span>: chủ duyệt trên ảnh chụp.</p>
+      <div class="tbl wide">
+        <table>
+          <thead><tr><th scope="col">Tiêu chí</th><th scope="col">Ngưỡng</th><th scope="col">Đo bằng</th><th scope="col">Cổng</th></tr></thead>
+          <tbody>
+            <tr><td>Tương phản chữ</td><td class="num">≥ 4.5:1 (lớn ≥ 3:1), cả sáng lẫn tối</td><td>imp-axi detect trên trang render, axe-core</td><td><span class="tag hard">cứng</span></td></tr>
+            <tr><td>Tương phản thân chữ APCA</td><td class="num">|Lc| ≥ 60 (màu nhấn ≥ 45)</td><td>palette-axi</td><td><span class="tag soft">mềm</span></td></tr>
+            <tr><td>Phi chữ</td><td class="num">≥ 3:1</td><td>axe-core</td><td><span class="tag hard">cứng</span></td></tr>
+            <tr><td>Vùng bấm</td><td class="num">≥ 24×24 px; nút chính trên di động ≥ 44</td><td>axe <code>target-size</code>, script đo DOM</td><td><span class="tag hard">cứng</span></td></tr>
+            <tr><td>Reflow</td><td class="num">320 px: scrollWidth ≤ clientWidth</td><td>chụp ở 320, 390, 1280 px</td><td><span class="tag hard">cứng</span></td></tr>
+            <tr><td>Nhãn và autocomplete</td><td class="num">100% ô nhập có nhãn; autocomplete đúng loại</td><td>axe-core</td><td><span class="tag hard">cứng</span></td></tr>
+            <tr><td>Focus</td><td class="num">Thấy được, ≥ 2px, không bị header che</td><td>script Tab qua trang, chụp ảnh</td><td><span class="tag soft">mềm</span></td></tr>
+            <tr><td>Giảm chuyển động</td><td class="num">Có nhánh reduce cho mọi animation</td><td>giả lập reduce, so ảnh</td><td><span class="tag hard">cứng</span></td></tr>
+            <tr><td>CWV (lab)</td><td class="num">LCP ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 200 ms</td><td>chrome-devtools-axi trace</td><td><span class="tag soft">mềm</span></td></tr>
+            <tr><td>Tiếng Việt</td><td class="num">lang="vi"; font có subset vietnamese; giãn dòng thân ≥ 1.5, tiêu đề ≥ 1.2</td><td>script kiểm computed style</td><td><span class="tag hard">cứng</span></td></tr>
+            <tr><td>Cỡ chữ</td><td class="num">Thân ≥ 16px; nhãn ≥ 12px</td><td>imp-axi (tiny-text)</td><td><span class="tag hard">cứng</span></td></tr>
+            <tr><td>Độ dài dòng</td><td class="num">≤ 75ch (mục tiêu 60–70)</td><td>imp-axi (line-length)</td><td><span class="tag soft">mềm</span></td></tr>
+            <tr><td>Thang chữ, khoảng cách</td><td class="num">Tỉ lệ bậc ≥ 1.2; ≤ 7 cỡ chữ; khoảng cách theo bậc 4px</td><td>so với token DESIGN.md (luật design-system của impeccable)</td><td><span class="tag soft">mềm</span></td></tr>
+            <tr><td>Dấu hiệu AI</td><td class="num">0 lỗi slop, hoặc có lý do ghi trong DESIGN.md</td><td>imp-axi detect</td><td><span class="tag hard">cứng</span></td></tr>
+            <tr><td>Trạng thái</td><td class="num">Đủ rỗng, tải, lỗi, không quyền cho mỗi vùng dữ liệu</td><td>danh sách kiểm, agent tự liệt kê</td><td><span class="tag soft">mềm</span></td></tr>
+            <tr><td>Phân cấp, cá tính, "đẹp"</td><td class="num">Một điểm nhấn chính mỗi màn; khớp hướng trong DESIGN.md</td><td>ảnh chụp 3 viewport × sáng/tối</td><td><span class="tag human">người</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted">Lab CWV không thay được số đo thật ở p75. TBT chỉ là chỉ số thay thế cho INP khi đo trong phòng thí nghiệm. Ngưỡng "mềm" có thể nâng thành "cứng" sau khi chạy thử trên vài dự án.</p>
+    </section>
+
+    <section id="vong" aria-labelledby="vong-h">
+      <h2 id="vong-h">Vòng tự kiểm đề xuất</h2>
+      <p>Đo trên trang đã render, không đo mã nguồn: nhiều luật (tương phản, cỡ chữ, tràn ngang) chỉ có nghĩa khi trình duyệt đã tính style. Với Web Component, trải phẳng shadow DOM trước khi quét.</p>
+      <figure>
+        <svg viewBox="0 0 900 300" role="img" aria-labelledby="loop-t loop-d">
+          <title id="loop-t">Vòng dựng, đo, chụp, sửa</title>
+          <desc id="loop-d">DESIGN.md và PRODUCT.md đưa vào bước dựng. Trang được render rồi đo bằng máy. Trượt cổng cứng thì quay lại sửa, tối đa 3 vòng. Đạt thì chụp ảnh để chủ duyệt.</desc>
+          <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor" style="color: var(--text-2)"/></marker></defs>
+          <g id="n-in" class="fig-node input"><title>Đầu vào</title><rect x="10" y="40" width="160" height="78" rx="10"/><text class="fig-t" x="90" y="72" text-anchor="middle">DESIGN.md</text><text class="fig-s" x="90" y="96" text-anchor="middle">+ PRODUCT.md</text></g>
+          <g id="n-build" class="fig-node"><title>Dựng</title><rect x="215" y="40" width="150" height="78" rx="10"/><text class="fig-t" x="290" y="72" text-anchor="middle">Opus dựng</text><text class="fig-s" x="290" y="96" text-anchor="middle">theo token, khối mẫu</text></g>
+          <g id="n-render" class="fig-node"><title>Render</title><rect x="410" y="40" width="150" height="78" rx="10"/><text class="fig-t" x="485" y="72" text-anchor="middle">Render</text><text class="fig-s" x="485" y="96" text-anchor="middle">trải phẳng shadow</text></g>
+          <g id="n-gate" class="fig-node gate"><title>Cổng máy đo</title><rect x="605" y="40" width="150" height="78" rx="10"/><text class="fig-t" x="680" y="72" text-anchor="middle">Cổng máy đo</text><text class="fig-s" x="680" y="96" text-anchor="middle">imp-axi, axe, CWV</text></g>
+          <g id="n-human" class="fig-node human"><title>Chủ duyệt</title><rect x="605" y="200" width="150" height="78" rx="10"/><text class="fig-t" x="680" y="232" text-anchor="middle">Chủ duyệt</text><text class="fig-s" x="680" y="256" text-anchor="middle">ảnh 3 viewport</text></g>
+          <path class="fig-edge" d="M170 79H213" marker-end="url(#ar)"/>
+          <path class="fig-edge" d="M365 79H408" marker-end="url(#ar)"/>
+          <path class="fig-edge" d="M560 79H603" marker-end="url(#ar)"/>
+          <path class="fig-edge" d="M680 118V198" marker-end="url(#ar)"/>
+          <text class="fig-lbl" x="690" y="145">đạt</text>
+          <path class="fig-edge back" d="M757 79H840V170H290V120" marker-end="url(#ar)"/>
+          <text class="fig-lbl" x="305" y="160">trượt cổng cứng: sửa, tối đa 3 vòng</text>
+        </svg>
+        <figcaption>Giới hạn 3 vòng vì mô hình khó tự cải thiện đều qua nhiều vòng [s21]. Hết 3 vòng mà vẫn trượt thì báo chủ, kèm danh sách lỗi còn lại.</figcaption>
+      </figure>
+    </section>
+
+    <section id="phuong-an" aria-labelledby="phuong-an-h">
+      <h2 id="phuong-an-h">Ba phương án để Opus dùng mặc định</h2>
+      <p>Ba phương án không loại trừ nhau. Đúng hơn, đây là ba mức đầu tư, mức sau dựa trên mức trước.</p>
+      <div class="options">
+        <article class="opt">
+          <h3>A. Quy tắc trong CLAUDE.md</h3>
+          <p class="what">Thêm khoảng 30 dòng ngưỡng vào <code>~/.claude/CLAUDE.md</code>, kèm một DESIGN.md mẫu để chép sang từng dự án.</p>
+          <dl>
+            <dt>Được</dt><dd>Luôn được nạp, làm trong một buổi, không cần mã.</dd>
+            <dt>Mất</dt><dd>Tốn ngữ cảnh ở mọi phiên, kể cả phiên không làm UI. Không có cổng đo, nên vẫn có thể lọt lỗi 9,9px như trước.</dd>
+            <dt>Công sức</dt><dd>~0,5 ngày</dd>
+          </dl>
+        </article>
+        <article class="opt pick">
+          <h3>B. Skill design-kit + lệnh kiểm</h3>
+          <p class="what">Skill nạp khi làm UI: bộ tiêu chí, DESIGN.md gốc, quy trình vòng tự kiểm. Lệnh <code>design-kit check &lt;url|html&gt;</code> theo chuẩn AXI gộp các bước render, trải phẳng shadow, imp-axi, axe-core, CWV lab và chụp 3 viewport. CLAUDE.md chỉ thêm 2 dòng trỏ tới skill.</p>
+          <dl>
+            <dt>Được</dt><dd>Có cổng cứng thật. Không tốn ngữ cảnh khi không làm UI. Tận dụng impeccable, imp-axi, palette-axi thay vì viết lại.</dd>
+            <dt>Mất</dt><dd>Phải viết và bảo trì một CLI. Cần cài axe-core và Playwright cho Node. Skill có thể không được gọi nếu mô tả kém, nên cần kiểm tra khả năng kích hoạt.</dd>
+            <dt>Công sức</dt><dd>~2–3 ngày</dd>
+          </dl>
+          <p class="verdict">Khuyến nghị</p>
+        </article>
+        <article class="opt">
+          <h3>C. B + thư viện khối mẫu</h3>
+          <p class="what">Thêm 15–20 khối HTML/CSS thuần dùng token (đầu trang, form, bảng, trạng thái rỗng/lỗi/tải, thẻ số liệu, điều hướng), mỗi khối đã qua cổng. Skill đưa 2–3 khối gần nhất làm ví dụ.</p>
+          <dl>
+            <dt>Được</dt><dd>Ví dụ mẫu là đòn bẩy mạnh nhất có bằng chứng [s20]. Kết quả đồng đều giữa các dự án.</dd>
+            <dt>Mất</dt><dd>Dễ làm mọi dự án trông giống nhau, tức lại một kiểu hội tụ. Cần nhiều biến thể theo từng "chế độ" (marketing, ứng dụng, tài liệu).</dd>
+            <dt>Công sức</dt><dd>+3–5 ngày</dd>
+          </dl>
+        </article>
+      </div>
+
+      <h3>Vì sao chọn B</h3>
+      <p>Phương án A chỉ sửa được nửa đầu vấn đề, tức chỉ dẫn [s4], mà không có bằng chứng (lệnh và ảnh chụp) như Claude Code khuyên [s13]. Phương án C có lợi thật, nhưng chỉ đáng làm khi đã có cổng đo để mọi khối mẫu được kiểm. Làm C trước khi có B thì sẽ tạo ra khối mẫu "trông đẹp" mà chưa ai đo. Lập luận mạnh nhất cho A: rẻ và luôn có hiệu lực. Vì vậy B vẫn giữ 2 dòng trong CLAUDE.md để skill luôn được gọi khi làm UI.</p>
+
+      <h3>Câu hỏi cho chủ</h3>
+      <ol>
+        <li><strong>Chọn phương án nào:</strong> B (khuyến nghị), A, hay đi thẳng C?</li>
+        <li><strong>Lệnh kiểm đặt ở đâu:</strong> trong design-kit (<code>design-kit check</code>, gọi imp-axi) hay mở rộng imp-axi thành <code>imp-axi check</code>? Khuyến nghị đặt trong design-kit, để imp-axi chỉ làm một việc là quét.</li>
+        <li><strong>Hướng thẩm mỹ gốc</strong> cho DESIGN.md mẫu: theo kiểu lan-topo-card (tối, nhuốm lam, một màu nhấn), hay làm 2–3 hướng để chọn theo dự án?</li>
+        <li><strong>Khung kỹ thuật cho khối mẫu</strong> (nếu làm C): HTML/CSS thuần (chạy được ở mọi nơi, kể cả Lit/HA), hay React + shadcn/ui?</li>
+      </ol>
+    </section>
+
+    <section id="giai-doan-2" aria-labelledby="gd2-h">
+      <h2 id="gd2-h">Kế hoạch giai đoạn 2 (nếu chọn B)</h2>
+      <ol class="steps">
+        <li><strong>Tái hiện lỗi shadow DOM của imp-axi</strong><p>Quét card Lit của lan-topo-card bằng URL và bằng DOM đã trải phẳng, rồi so kết quả. Bước này quyết định "trải phẳng" nằm trong design-kit hay cần sửa engine.</p></li>
+        <li><strong>DESIGN.md gốc và token</strong><p>Token OKLCH (qua palette-axi), thang chữ, nhịp 4px, font tiếng Việt (Be Vietnam Pro, OFL). Kiểm bằng <code>npx @google/design.md lint</code>, xuất <code>@theme</code> cho Tailwind.</p></li>
+        <li><strong>CLI <code>design-kit check</code> theo chuẩn AXI</strong><p>Playwright mở trang ở 320/390/1280 px, sáng và tối, rồi chạy axe-core, imp-axi (trên HTML đã trải phẳng), đo CLS/LCP và chụp ảnh. Output dạng TOON: tổng, lỗi cứng, lỗi mềm, đường dẫn ảnh, gợi ý bước tiếp. Mã thoát 0/1/2.</p></li>
+        <li><strong>Skill <code>design-kit</code> và 2 dòng CLAUDE.md</strong><p>Quy trình: đọc DESIGN.md, dựng, chạy <code>check</code>, sửa tối đa 3 vòng, gửi ảnh để chủ duyệt. Có kiểm tra để chắc skill tự kích hoạt khi làm UI.</p></li>
+        <li><strong>Đánh giá A/B</strong><p>Ba trang thử (landing, dashboard, form đăng nhập tiếng Việt), mỗi trang làm hai bản: có skill và không có skill. Chấm bằng bộ tiêu chí, chủ xem mù hai bản. Ghi kết quả vào kho tri thức.</p></li>
+      </ol>
+    </section>
+
+    <section id="nguon" aria-labelledby="nguon-h">
+      <h2 id="nguon-h">Nguồn</h2>
+      <p class="small muted">Đọc ngày 09/11/2026. Mọi trích dẫn dùng trong báo cáo đã kiểm lại bằng <code>research-axi kb verify</code> (28/28 khớp). Trang w3.org bị Cloudflare chặn, nên các tiêu chí WCAG đọc từ repo chính thức <code>w3c/wcag</code>.</p>
+      <ul class="src">
+        <li><span class="id">s1</span><a href="https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html">W3C: Understanding 2.5.8 Target Size (Minimum)</a></li>
+        <li><span class="id">s2</span><a href="https://web.dev/articles/vitals">web.dev: Web Vitals</a>, P. Walton, cập nhật 31/10/2024</li>
+        <li><span class="id">s3</span><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_queries">MDN: CSS container queries</a></li>
+        <li><span class="id">s4</span><a href="https://www.claude.com/blog/improving-frontend-design-through-skills">Anthropic: Improving frontend design through Skills</a>, 12/11/2025</li>
+        <li><span class="id">s5</span><a href="https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html">W3C: Understanding 1.4.3 Contrast (Minimum)</a></li>
+        <li><span class="id">s6</span><a href="https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html">W3C: Understanding 1.4.11 Non-text Contrast</a></li>
+        <li><span class="id">s8</span><a href="https://www.w3.org/WAI/WCAG22/Understanding/reflow.html">W3C: Understanding 1.4.10 Reflow</a></li>
+        <li><span class="id">s9</span><a href="https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html">W3C: Understanding 2.4.11 Focus Not Obscured</a></li>
+        <li><span class="id">s10</span><a href="https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html">W3C: Understanding 2.4.13 Focus Appearance</a></li>
+        <li><span class="id">s11</span><a href="https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions.html">W3C: Understanding 2.3.3 Animation from Interactions</a></li>
+        <li><span class="id">s12</span><a href="https://github.com/google-labs-code/design.md">Google Labs: đặc tả DESIGN.md</a> (bản alpha)</li>
+        <li><span class="id">s13</span><a href="https://code.claude.com/docs/en/best-practices">Anthropic: Best practices for Claude Code</a></li>
+        <li><span class="id">s14</span><a href="https://web.dev/articles/sign-in-form-best-practices">web.dev: Sign-in form best practices</a></li>
+        <li><span class="id">s15</span><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion">MDN: prefers-reduced-motion</a></li>
+        <li><span class="id">s16</span><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/light-dark">MDN: light-dark()</a></li>
+        <li><span class="id">s17</span><a href="https://baymard.com/blog/line-length-readability">Baymard: Readability, the optimal line length</a>, 2022</li>
+        <li><span class="id">s18</span><a href="https://vietnamesetypography.com/">Donny Trương: Vietnamese Typography</a></li>
+        <li><span class="id">s19</span><a href="https://utopia.fyi/blog/designing-with-fluid-type-scales">Utopia: Designing with fluid type scales</a></li>
+        <li><span class="id">s20</span><a href="https://arxiv.org/abs/2407.08850">Duan và cộng sự: UICrit</a>, UIST 2024</li>
+        <li><span class="id">s21</span><a href="https://arxiv.org/abs/2410.16232">Li, Zhang, Yang: Sketch2Code</a>, 2024</li>
+        <li><span class="id">s22</span><a href="https://arxiv.org/abs/2406.07739">Wu và cộng sự: UICoder</a>, 2024</li>
+      </ul>
+      <p class="small muted">Bỏ không dùng: s7 (WCAG 1.4.12, không trích được ngưỡng), s23 (trang điều khoản Apple trả 404), s24 (trang Material 3 dựng bằng JS, không lấy được chữ). Đã có từ trước: chủ đề <code>nguyen-tac-tao-bang-mau-dep-va-skill-palette-theo-axi</code> (OKLCH, APCA, gamut).</p>
+    </section>
+
+    <footer class="small muted">
+      <p>Trang này tự áp bộ tiêu chí của nó: token OKLCH có bản sáng và tối, chữ thân 17px, dòng ≤ 68ch, nhãn ≥ 12px, font Be Vietnam Pro đủ dấu, có <code>prefers-reduced-motion</code>. Kết quả quét bằng imp-axi ghi trong README của repo.</p>
+    </footer>
+  </main>
+</div>
+</body>
+</html>

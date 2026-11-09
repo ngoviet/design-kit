@@ -1,0 +1,3 @@
+node_modules/
+.folio/*.json
+.folio/.state/
