@@ -57,6 +57,8 @@ the one brief the kit lost to plain Opus, whose warm brown fit a bakery.
 | `bai-viet` | long article: breadcrumb, meta, lead, sticky TOC on wide screens, quote, table in a focusable scroll region, note |
 | `thanh-ben` | app shell: sticky sidebar ≥ 60rem, `<dialog>` drawer below, grouped nav with `aria-current` |
 | `thong-bao` | toasts in an `aria-live` region, pause on hover/focus, errors stay, Undo on delete |
+| `trinh-tu` | step-by-step flow: named steps, "Bước 2/4" + time left, next button names the next step, Back keeps input, draft in sessionStorage, review step with "Sửa", `?buoc=N` |
+| `bat-dau` | first-run "Bắt đầu" checklist that ticks itself, hide/reopen from Help; just-in-time tip inline under the control (never overlapping), "Đã hiểu" / "Tắt mẹo", `?lan-dau=1` |
 | `bo-loc` | filter chips (`aria-pressed`), result count via `aria-live`, pagination with `aria-current` and "21–40 of 312" |
 
 Every data region you build needs all four states from `trang-thai`.
@@ -64,6 +66,35 @@ Every data region you build needs all four states from `trang-thai`.
 **Dashboards: keep the glance.** Before writing, list what the user must see without scrolling (today's
 numbers, what needs action now: low stock, next deliveries, alerts) and put it in the first screen at
 1280 px, beside or above the long table, never below it. A long table goes last or gets its own column.
+
+## 2b. Make every workflow easy: guide like a good game
+
+The owner's rule: however complex the process, the user must never feel lost. Good games teach by
+playing, one thing at a time, exactly when it is needed. Plan this before markup, not after.
+
+**First write a task map** in your plan or report, 3–6 lines: the user's main tasks, the steps of each,
+and where a first-time user would hesitate (a field they don't understand, a choice with consequences,
+an empty screen). Every hesitation point gets one of the patterns below.
+
+| Situation | Pattern | Block |
+| --- | --- | --- |
+| A task with > 3 steps, or one done only occasionally (sign-up, booking, setup, import) | **Step-by-step flow**: named steps visible, "Bước 2/4", the next button says where it goes ("Tiếp: Chọn giờ khám"), Back keeps what was typed, a draft survives reload, last step = review with "Sửa" links | `trinh-tu` |
+| First use of an app | **"Bắt đầu" checklist**, like a quest log: 3–5 real tasks, ticks itself when the task is done, progress bar, can be hidden and reopened from Help | `bat-dau` |
+| A control that is new or easy to misread | **Just-in-time tip**: a small bubble next to that control the first time the user reaches it, one tip at a time, "Đã hiểu" + "Tắt mẹo", never blocks the page | `bat-dau` |
+| An empty screen | **Empty state that teaches** the first action (not "No data") | `trang-thai` |
+| Many options, few used | **Progressive disclosure**: common options first, "Tuỳ chọn nâng cao" collapsed | — |
+| A reversible action | **Undo** in a toast instead of an "Are you sure?" dialog; keep confirm dialogs for the irreversible | `thong-bao`, `hop-thoai` |
+
+Rules backed by research (KB `tieu-chuan-va-cach-huong-dan-ai-…`, claims c29–c36):
+- **No up-front tour.** NN/g found swipe-through tutorials did not improve task performance; people don't
+  remember them. Teach in context instead, at the moment of use (Gee: information "just in time, on demand").
+- Onboarding must be skippable and show progress.
+- In flows, never label buttons just "Tiếp"/"Trước": name the next step.
+- Also: smart defaults (pre-fill what you can infer), errors that say how to fix, and a "?" beside any
+  field whose meaning is not obvious, with the answer inline rather than on another page.
+
+Make each guidance state reachable by URL for the gate (`?lan-dau=1` first run, `?buoc=3` a step) and
+pass them with `--query`. Your report names the task map and which pattern covers each hesitation point.
 
 ## 3. Gate: measure, fix, show
 
@@ -105,6 +136,9 @@ LCP ≤ 2.5 s, INP ≤ 200 ms, CLS ≤ 0.1 · 0 Impeccable slop findings.
   `shadcn add`, grep for `from "cn"` and fix to `@/lib/utils`; resize inputs/buttons to 44 px (`h-11`).
 - **`[hidden]` loses to `display:grid/flex`** set by a class: hidden panels show anyway. `_base.css` has
   `[hidden]{display:none!important}`; keep it when you write your own CSS.
+- **A tip must not cover the next control.** A floating bubble over the settings below hid a switch and
+  failed contrast; put tips in the flow right under the control they explain. Watch CSS inheritance too:
+  `.setting p { color: var(--text-2) }` also greys the text inside a tip.
 - **The gate measures the first render only.** Give every state a URL switch (`?trang-thai=tai|loi|quyen`,
   `?mo=1` for open dialogs/toasts) and pass them with `--query`, or script the clicks (Playwright) for
   error → sending → success. Both A/B agents who did this found bugs the default run missed.

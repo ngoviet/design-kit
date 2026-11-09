@@ -30,3 +30,15 @@ Chủ chọn **phương án C**. Phương án này gồm toàn bộ B, cộng th
 ## 09/11/2026: thêm quy tắc vào CLAUDE.md toàn cục
 
 Chủ đồng ý. Đã thêm mục "Giao diện: dùng skill design-kit" vào `~/.claude/CLAUDE.md`. Từ nay mọi phiên làm giao diện đều đi qua skill và chạy cổng kiểm.
+
+## 09/11/2026: quy trình dễ dùng, dẫn đường như game
+
+Chủ muốn AI luôn tìm cách làm quy trình đơn giản cho người dùng: có hướng dẫn từng bước, làm đến đâu hướng dẫn đến đấy, giống phần hướng dẫn trong game.
+
+Đã làm:
+
+- Skill thêm mục 2b: viết bản đồ tác vụ, rồi gắn mỗi chỗ người dùng dễ lúng túng với một mẫu dẫn đường.
+- Thêm hai khối `trinh-tu` và `bat-dau`.
+- Thêm phép đo mềm `long-form`.
+- Bộ tiêu chí thêm dòng "Quy trình có dẫn đường" (cổng người duyệt).
+- Bằng chứng: NN/g về wizard, onboarding và progressive disclosure; nguyên tắc "đúng lúc, khi cần" của James Paul Gee. Ghi trong kho tri thức, claims c29–c36.

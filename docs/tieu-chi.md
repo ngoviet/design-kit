@@ -33,6 +33,8 @@ Bằng chứng nằm trong kho tri thức, chủ đề `tieu-chuan-va-cach-huong
 | Độ dài dòng | ≤ 75–80 ký tự. Đặt `--measure: 32em`, **không dùng `ch`** | `measure`, Impeccable `line-length` | mềm | nghiên cứu: Baymard 50–75 (s17) |
 | Dấu hiệu UI do AI làm | 0 luật "slop" của Impeccable, trừ `cream-palette` (mềm: thuộc khẩu vị, chủ chấm A/B chọn bản nền kem) | `impeccable` | cứng | nghiên cứu (s4); A/B 09/11/2026 |
 | Màu hợp thương hiệu | Sắc nhấn theo lĩnh vực hoặc thương hiệu, không mặc định theo loại màn hình | `scripts/doi-mau.mjs` + ảnh chụp | người | A/B đợt 2: thua ở đề tiệm bánh vì màu xanh ngọc lạnh |
+| Quy trình có dẫn đường | Có bản đồ tác vụ. Tác vụ trên 3 bước có trình tự từng bước, ghi tên bước kế tiếp. Lần đầu dùng có danh sách "Bắt đầu". Chỗ dễ lúng túng có mẹo đúng lúc. Không có tour mở đầu bắt buộc | ảnh chụp các trạng thái `?lan-dau=1`, `?buoc=N` | người | nghiên cứu: NN/g (s25–s27), Gee (s28) |
+| Form dài một màn | Không quá 12 ô nhập hiện cùng lúc. Nếu nhiều hơn, chia bước hoặc ẩn bớt phần nâng cao | `long-form` | mềm | nghiên cứu: NN/g (s25, s27) |
 | Màn nhìn nhanh | Dashboard: số liệu hôm nay và việc cần làm ngay nằm ở màn đầu 1280px, không nằm dưới bảng dài | ảnh chụp 1280px | người | A/B đợt 2 |
 | Phân cấp, cá tính | Mỗi màn có một điểm nhấn chính, khớp DESIGN.md | ảnh chụp 3 khổ × sáng/tối | người | nghiên cứu: LLM tự chấm chưa bằng người (s20, s21) |
 

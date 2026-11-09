@@ -15,7 +15,7 @@ Khi không có hướng dẫn, mô hình ngôn ngữ chọn lựa chọn phổ b
 | --- | --- | --- |
 | Token | `tokens/` | Gồm `fonts.css` (nạp đầu tiên), `core.css` (khoảng cách bậc 4px, thang chữ 1.25, chuyển động, độ dài dòng 32em), và ba hướng màu cùng font: `dem.css`, `giay.css`, `dam.css`. Mỗi hướng có bản sáng và tối. |
 | Ba hướng thẩm mỹ | `design/<huong>/DESIGN.md` | **Đêm**: ứng dụng, dashboard. **Giấy**: tài liệu, báo cáo. **Đậm**: landing, marketing. Theo đặc tả DESIGN.md của Google. Sinh tự động từ token, lint sạch. |
-| Khối mẫu HTML/CSS | `blocks/html/` | 11 khối: `dau-trang`, `form-dang-nhap`, `bang-du-lieu`, `trang-thai`, `chi-so`, `hop-thoai`, `hero`, `bai-viet`, `thanh-ben`, `thong-bao`, `bo-loc`. Đổi hướng bằng `?dk=dem\|giay\|dam`. |
+| Khối mẫu HTML/CSS | `blocks/html/` | 13 khối: `dau-trang`, `form-dang-nhap`, `bang-du-lieu`, `trang-thai`, `chi-so`, `hop-thoai`, `hero`, `bai-viet`, `thanh-ben`, `thong-bao`, `bo-loc`, `trinh-tu` (từng bước), `bat-dau` (danh sách bắt đầu + mẹo đúng lúc). Đổi hướng bằng `?dk=dem\|giay\|dam`. |
 | Khối mẫu React | `blocks/react/` | Bốn khối `FormDangNhap`, `TrangThai`, `BangDuLieu`, `HopThoai`, viết bằng React + shadcn/ui, dùng chung token. |
 | Cổng kiểm | `design-kit check` | Render ở 320/390/1280 px, cả sáng lẫn tối. Chạy axe-core (WCAG 2.2 AA) và probe đo chữ, dòng, tiếng Việt (đi xuyên shadow DOM). Kiểm giảm chuyển động, focus, LCP/CLS, chạy Impeccable, rồi chụp ảnh. |
 | Skill | `skill/SKILL.md` | Cài ở `~/.claude/skills/design-kit` (junction). Gồm quy trình chọn hướng, chọn khối, chạy cổng, và các bẫy đã gặp. |
@@ -56,6 +56,16 @@ Kết quả in dạng TOON: mỗi trang có một dòng phán quyết, kèm bả
     - `scripts/doi-mau.mjs` đổi màu nhấn và trung tính theo thương hiệu mà vẫn giữ tương phản;
     - skill buộc chọn màu theo thương hiệu, giữ màn nhìn nhanh cho dashboard, và sửa lỗi tại chỗ chứ không dời bố cục;
     - `cream-palette` hạ xuống mềm.
+  - **Quy trình dễ dùng, dẫn đường như game** (chủ yêu cầu 09/11/2026):
+    - Skill có mục 2b. Trước khi dựng, AI phải viết bản đồ tác vụ, rồi gắn mỗi chỗ người dùng dễ lúng túng với một mẫu:
+      - trình tự từng bước;
+      - danh sách "Bắt đầu";
+      - mẹo đúng lúc;
+      - trạng thái rỗng biết hướng dẫn;
+      - ẩn bớt phần nâng cao;
+      - Hoàn tác thay vì hỏi xác nhận.
+    - Không dùng tour hướng dẫn mở đầu, vì NN/g đo được tour không giúp người dùng làm việc tốt hơn.
+    - Có thêm hai khối `trinh-tu` và `bat-dau`, và phép đo mềm `long-form` (cảnh báo khi một màn có hơn 12 ô nhập).
   - Còn lại:
     - tuỳ chọn `--steps` để cổng tự bấm qua các trạng thái;
     - báo lỗi shadow DOM cho Impeccable.

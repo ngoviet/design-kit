@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khối: trình tự từng bước</title>
+<script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,k=q.get("dk"),t=q.get("theme");if(k&&/^(dem|giay|dam)$/.test(k))d.dataset.dk=k;if(t==="light"||t==="dark")d.dataset.theme=t;})();</script>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<link rel="stylesheet" href="../../tokens/giay.css">
+<link rel="stylesheet" href="../../tokens/dam.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  /* ---- Khối: trình tự từng bước (wizard): thấy hết các bước, biết còn bao nhiêu, nút ghi tên bước kế ---- */
+  .flow { max-width: 60rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4) var(--sp-8); display: grid; gap: var(--sp-6); }
+  @media (min-width: 52rem) { .flow { grid-template-columns: 15rem minmax(0, 1fr); align-items: start; } .flow > header { grid-column: 1 / -1; } }
+  .flow > header p { color: var(--text-2); margin: var(--sp-2) 0 0; }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-1); counter-reset: b; }
+  .steps li { counter-increment: b; margin: 0; }
+  .steps a { display: grid; grid-template-columns: 28px 1fr; gap: var(--sp-3); align-items: center; padding: var(--sp-2) var(--sp-3); border-radius: var(--r-md); text-decoration: none; color: var(--text-2); font: 500 var(--fs-sm)/1.35 var(--font-ui, var(--font-body)); min-height: var(--hit); }
+  .steps a::before { content: counter(b); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--border-strong); font: 600 var(--fs-xs)/1 var(--font-mono); }
+  .steps a[aria-current="step"] { background: var(--accent-soft); color: var(--accent-text); }
+  .steps a[aria-current="step"]::before { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+  .steps a.done { color: var(--text); }
+  .steps a.done::before { content: "✓"; border-color: var(--ok); color: var(--ok); }
+  .steps a[aria-disabled="true"] { pointer-events: none; }
+  @media (max-width: 51.99rem) {
+    .steps { grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--sp-1); }
+    .steps a { grid-template-columns: 1fr; justify-items: center; text-align: center; padding: var(--sp-2) var(--sp-1); font-size: var(--fs-xs); }
+    .steps a .label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .steps a[aria-current="step"] .label { position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal; }
+  }
+  .panel { padding: var(--sp-5); display: grid; gap: var(--sp-5); min-width: 0; }
+  .progress { display: flex; justify-content: space-between; gap: var(--sp-3); align-items: baseline; font: 500 var(--fs-sm)/1.4 var(--font-ui, var(--font-body)); color: var(--text-2); }
+  .bar { height: 6px; border-radius: var(--r-full); background: var(--surface-2); overflow: hidden; margin-top: calc(-1 * var(--sp-3)); }
+  .bar span { display: block; height: 100%; background: var(--accent); transition: width var(--dur-3) var(--ease-out); }
+  .panel h2 { font-size: var(--fs-lg); }
+  .panel h2:focus { outline: none; }
+  .fields { display: grid; gap: var(--sp-4); }
+  .two { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
+  .choice { display: grid; gap: var(--sp-3); }
+  .choice label { display: grid; grid-template-columns: auto 1fr auto; gap: var(--sp-3); align-items: start; padding: var(--sp-3) var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--r-md); cursor: pointer; }
+  .choice label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .choice input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); }
+  .choice b { display: block; }
+  .choice small { color: var(--text-2); font-size: var(--fs-sm); }
+  .choice .price { font: 600 var(--fs-sm)/1.4 var(--font-mono); white-space: nowrap; }
+  .help summary { cursor: pointer; display: inline-flex; align-items: center; gap: var(--sp-1); min-height: var(--hit-min); color: var(--accent-text); font: 500 var(--fs-sm)/1.4 var(--font-ui, var(--font-body)); }
+  .help p { margin: var(--sp-2) 0 0; padding: var(--sp-3) var(--sp-4); background: var(--surface-2); border-radius: var(--r-md); font-size: var(--fs-sm); color: var(--text-2); }
+  .slots { display: flex; flex-wrap: wrap; gap: var(--sp-2); border: 0; margin: 0; padding: 0; }
+  .slots legend { font: 600 var(--fs-sm)/1.4 var(--font-ui, var(--font-body)); margin-bottom: var(--sp-2); padding: 0; }
+  .slots label { display: inline-flex; align-items: center; min-height: var(--hit); padding: 0 var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--r-full); cursor: pointer; font: 500 var(--fs-sm)/1 var(--font-ui, var(--font-body)); }
+  .slots label:has(input:checked) { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .slots label:has(input:focus-visible) { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
+  .slots input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .review { margin: 0; display: grid; gap: var(--sp-3); }
+  .review > div { display: grid; grid-template-columns: 9rem 1fr auto; gap: var(--sp-3); align-items: baseline; padding-bottom: var(--sp-3); border-bottom: 1px solid var(--border); }
+  @media (max-width: 30rem) { .review > div { grid-template-columns: 1fr auto; } .review dt { grid-column: 1 / -1; } }
+  .review dt { color: var(--text-2); font-size: var(--fs-sm); }
+  .review dd { margin: 0; }
+  .review > div:last-child { border-bottom: 0; padding-bottom: 0; }
+  .nav { display: flex; flex-wrap: wrap-reverse; justify-content: space-between; gap: var(--sp-3); padding-top: var(--sp-4); border-top: 1px solid var(--border); }
+  .nav .saved { margin: 0; align-self: center; font-size: var(--fs-sm); color: var(--text-2); }
+  .done-box { text-align: left; }
+</style>
+</head>
+<body>
+  <!-- KHỐI BẮT ĐẦU: trinh-tu -->
+  <main class="flow">
+    <header>
+      <h1>Đặt lịch lắp đặt mạng</h1>
+      <p>Khoảng 2 phút. Thông tin bạn nhập được giữ lại nếu tải lại trang.</p>
+    </header>
+
+    <nav aria-label="Các bước">
+      <ol class="steps">
+        <li><a href="#" data-to="1"><span class="label">Chọn gói</span></a></li>
+        <li><a href="#" data-to="2"><span class="label">Địa chỉ lắp đặt</span></a></li>
+        <li><a href="#" data-to="3"><span class="label">Ngày và giờ</span></a></li>
+        <li><a href="#" data-to="4"><span class="label">Xem lại và gửi</span></a></li>
+      </ol>
+    </nav>
+
+    <form class="panel surface" novalidate>
+      <div class="progress"><span id="buoc-chu">Bước 1/4</span><span id="con-lai">Còn khoảng 2 phút</span></div>
+      <div class="bar" aria-hidden="true"><span id="bar" style="width:25%"></span></div>
+
+      <section data-step="1" aria-labelledby="h1b">
+        <h2 id="h1b" tabindex="-1">Chọn gói lắp đặt</h2>
+        <div class="choice" role="radiogroup" aria-labelledby="h1b" style="margin-top:var(--sp-4)">
+          <label><input type="radio" name="goi" value="Cơ bản" checked><span><b>Cơ bản</b><small>1 bộ định tuyến, phủ căn hộ đến 70 m²</small></span><span class="price">490.000 đ</span></label>
+          <label><input type="radio" name="goi" value="Gia đình"><span><b>Gia đình</b><small>Bộ định tuyến và 2 điểm phát mesh, nhà 2–3 tầng</small></span><span class="price">1.290.000 đ</span></label>
+          <label><input type="radio" name="goi" value="Văn phòng nhỏ"><span><b>Văn phòng nhỏ</b><small>Switch 8 cổng, Wi‑Fi riêng cho khách</small></span><span class="price">2.150.000 đ</span></label>
+        </div>
+        <details class="help" style="margin-top:var(--sp-3)"><summary>Không biết chọn gói nào?</summary><p>Nhà có hơn một tầng hoặc tường dày thì chọn Gia đình. Kỹ thuật viên sẽ đo sóng tại nhà; nếu cần đổi gói, bạn chỉ trả phần chênh lệch.</p></details>
+      </section>
+
+      <section data-step="2" aria-labelledby="h2b" hidden>
+        <h2 id="h2b" tabindex="-1">Địa chỉ lắp đặt</h2>
+        <div class="fields" style="margin-top:var(--sp-4)">
+          <div class="field"><label class="label" for="ten">Họ và tên</label><input class="input" id="ten" name="ten" autocomplete="name" required aria-describedby="ten-loi"><p class="error-text" id="ten-loi" hidden>Nhập họ và tên người nhận lịch hẹn.</p></div>
+          <div class="field"><label class="label" for="sdt">Số điện thoại</label><input class="input" id="sdt" name="sdt" type="tel" inputmode="tel" autocomplete="tel" required aria-describedby="sdt-goi-y sdt-loi"><p class="hint" id="sdt-goi-y">Kỹ thuật viên gọi trước 30 phút khi đến.</p><p class="error-text" id="sdt-loi" hidden>Số di động gồm 10 chữ số, ví dụ 0912 345 678.</p></div>
+          <div class="field"><label class="label" for="dc">Địa chỉ</label><input class="input" id="dc" name="dc" autocomplete="street-address" required aria-describedby="dc-loi"><p class="error-text" id="dc-loi" hidden>Nhập số nhà và tên đường.</p></div>
+        </div>
+      </section>
+
+      <section data-step="3" aria-labelledby="h3b" hidden>
+        <h2 id="h3b" tabindex="-1">Ngày và giờ</h2>
+        <div class="fields" style="margin-top:var(--sp-4)">
+          <div class="field"><label class="label" for="ngay">Ngày</label><select class="input" id="ngay" name="ngay"><option>Thứ Ba, 11/11</option><option>Thứ Tư, 12/11</option><option>Thứ Năm, 13/11</option></select></div>
+          <fieldset class="slots"><legend>Khung giờ còn trống</legend>
+            <label><input type="radio" name="gio" value="8:00–10:00" checked>8:00–10:00</label>
+            <label><input type="radio" name="gio" value="10:00–12:00">10:00–12:00</label>
+            <label><input type="radio" name="gio" value="14:00–16:00">14:00–16:00</label>
+            <label><input type="radio" name="gio" value="16:00–18:00">16:00–18:00</label>
+          </fieldset>
+        </div>
+      </section>
+
+      <section data-step="4" aria-labelledby="h4b" hidden>
+        <h2 id="h4b" tabindex="-1">Xem lại trước khi gửi</h2>
+        <dl class="review" style="margin-top:var(--sp-4)" id="xem-lai"></dl>
+      </section>
+
+      <section data-step="5" aria-labelledby="h5b" hidden class="done-box">
+        <h2 id="h5b" tabindex="-1">Đã đặt lịch</h2>
+        <p>Mã lịch hẹn <b class="num">LD-2611</b>. Chúng tôi đã gửi tin nhắn xác nhận tới số điện thoại của bạn.</p>
+      </section>
+
+      <div class="nav">
+        <button class="btn btn-ghost" type="button" id="lui" hidden>Quay lại</button>
+        <p class="saved" id="da-luu" aria-live="polite"></p>
+        <button class="btn btn-primary" type="button" id="tiep">Tiếp: Địa chỉ lắp đặt</button>
+      </div>
+    </form>
+  </main>
+  <!-- KHỐI KẾT THÚC: trinh-tu -->
+
+  <script>
+    const NAMES = ["Chọn gói", "Địa chỉ lắp đặt", "Ngày và giờ", "Xem lại và gửi"];
+    const MIN = ["2 phút", "90 giây", "1 phút", "30 giây"];
+    const form = document.querySelector("form");
+    const KEY = "dk-trinh-tu";
+    let step = 1, maxStep = 1;
+    const save = () => { try { sessionStorage.setItem(KEY, JSON.stringify(Object.fromEntries(new FormData(form)))); document.getElementById("da-luu").textContent = "Đã lưu nháp"; } catch { /* không có bộ nhớ ⇒ bỏ qua */ } };
+    const load = () => { try { const d = JSON.parse(sessionStorage.getItem(KEY) || "{}"); for (const [k, v] of Object.entries(d)) { const el = form.elements[k]; if (!el) continue; if (el instanceof RadioNodeList) { [...el].forEach((r) => (r.checked = r.value === v)); } else el.value = v; } } catch { /* bỏ qua */ } };
+    const RULES = { ten: (v) => v.trim().split(/\s+/).length >= 2, sdt: (v) => /^0\d{9}$/.test(v.replace(/\s/g, "")), dc: (v) => v.trim().length >= 6 };
+    function valid(n) {
+      if (n !== 2) return true;
+      const bad = Object.entries(RULES).filter(([k, f]) => { const ok = f(form.elements[k].value); form.elements[k].setAttribute("aria-invalid", String(!ok)); document.getElementById(`${k}-loi`).hidden = ok; return !ok; });
+      if (bad.length) form.elements[bad[0][0]].focus();
+      return !bad.length;
+    }
+    function review() {
+      const d = new FormData(form);
+      const rows = [["Gói", d.get("goi"), 1], ["Người nhận", `${d.get("ten")} · ${d.get("sdt")}`, 2], ["Địa chỉ", d.get("dc"), 2], ["Lịch hẹn", `${d.get("ngay")}, ${d.get("gio")}`, 3]];
+      document.getElementById("xem-lai").innerHTML = rows.map(([k, v, s]) => `<div><dt>${k}</dt><dd></dd><dd><button class="btn btn-ghost btn-sm" type="button" data-to="${s}">Sửa<span class="sr-only"> ${k.toLowerCase()}</span></button></dd></div>`).join("");
+      [...document.querySelectorAll("#xem-lai dd:nth-of-type(1)")].forEach((dd, i) => (dd.textContent = rows[i][1]));
+    }
+    function go(n, focus = true) {
+      step = n; maxStep = Math.max(maxStep, Math.min(n, 4));
+      form.querySelectorAll("[data-step]").forEach((s) => (s.hidden = Number(s.dataset.step) !== n));
+      document.querySelectorAll(".steps a").forEach((a) => {
+        const t = Number(a.dataset.to);
+        a.toggleAttribute("aria-current", t === n); if (t === n) a.setAttribute("aria-current", "step");
+        a.classList.toggle("done", t < n || n === 5);
+        a.setAttribute("aria-disabled", String(t > maxStep || n === 5));
+      });
+      const done = n === 5;
+      document.getElementById("buoc-chu").textContent = done ? "Hoàn tất" : `Bước ${n}/4`;
+      document.getElementById("con-lai").textContent = done ? "" : `Còn khoảng ${MIN[n - 1]}`;
+      document.getElementById("bar").style.width = `${done ? 100 : n * 25}%`;
+      document.getElementById("lui").hidden = n === 1 || done;
+      const tiep = document.getElementById("tiep");
+      tiep.hidden = done;
+      tiep.textContent = n === 4 ? "Gửi đặt lịch" : `Tiếp: ${NAMES[n]}`;
+      if (n === 4) review();
+      if (focus) document.querySelector(`[data-step="${n}"] h2`).focus();
+    }
+    document.getElementById("tiep").addEventListener("click", () => { if (!valid(step)) return; save(); if (step === 4) { try { sessionStorage.removeItem(KEY); } catch { /* bỏ qua */ } go(5); } else go(step + 1); });
+    document.getElementById("lui").addEventListener("click", () => go(step - 1));
+    document.addEventListener("click", (e) => { const a = e.target.closest("[data-to]"); if (!a) return; e.preventDefault(); const t = Number(a.dataset.to); if (t <= maxStep) go(t); });
+    form.addEventListener("change", save);
+    load();
+    // ?buoc=N mở thẳng bước N với dữ liệu mẫu, để cổng kiểm đo từng bước.
+    const q = Number(new URLSearchParams(location.search).get("buoc"));
+    if (q >= 2 && q <= 5) { form.elements.ten.value ||= "Nguyễn Thu Hà"; form.elements.sdt.value ||= "0912 345 678"; form.elements.dc.value ||= "14 Trần Quang Diệu, Quận 3"; maxStep = 4; go(q, false); } else go(1, false);
+  </script>
+</body>
+</html>

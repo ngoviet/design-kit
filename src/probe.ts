@@ -19,6 +19,8 @@ export interface ProbeResult {
   measure: ProbeHit[];
   fontFallback: ProbeHit[];
   innerScroll: ProbeHit[];
+  /** Số ô nhập đang hiện cùng lúc (form dài một màn ⇒ nên chia bước). */
+  visibleFields: number;
 }
 
 export function probePage(): ProbeResult {
@@ -35,6 +37,7 @@ export function probePage(): ProbeResult {
     measure: [],
     fontFallback: [],
     innerScroll: [],
+    visibleFields: 0,
   };
   const all: Element[] = [];
   const walk = (root: Document | ShadowRoot): void => {
@@ -112,6 +115,16 @@ export function probePage(): ProbeResult {
       seenFont.add(key);
       if (!GENERIC.test(first) && !loaded.has(key)) out.fontFallback.push({ where: label(el), value: first });
     }
+  }
+  // Ô nhập đang hiện (bỏ hidden, nút, ô chọn trong nhóm radio tính một lần theo name)
+  const radioNames = new Set<string>();
+  for (const el of all) {
+    if (!/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) continue;
+    const inp = el as HTMLInputElement;
+    if (["hidden", "submit", "button", "reset", "image"].includes(inp.type)) continue;
+    if (!visible(el, getComputedStyle(el)) && inp.type !== "radio" && inp.type !== "checkbox") continue;
+    if (inp.type === "radio") { if (radioNames.has(inp.name)) continue; radioNames.add(inp.name); }
+    out.visibleFields++;
   }
   // Vùng cuộn ngang đang giấu nội dung (bảng bị cắt cột): không tràn trang nhưng người dùng phải cuộn trong khung.
   for (const el of all) {
