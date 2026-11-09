@@ -37,7 +37,8 @@ Kết quả in dạng TOON: mỗi trang có một dòng phán quyết, kèm bả
 - **Giai đoạn 1** (nghiên cứu và đề xuất) đã xong. Báo cáo ở [`.folio/bao-cao-giai-doan-1.html`](.folio/bao-cao-giai-doan-1.html). Bằng chứng nằm trong kho tri thức, chủ đề `tieu-chuan-va-cach-huong-dan-ai-lam-giao-dien-web-dep-de-dun`.
 - **Giai đoạn 2, phương án C** do chủ chốt (xem `docs/quyet-dinh.md`):
   - Đã có: token, ba hướng thẩm mỹ, CLI cổng kiểm, đợt 1 khối mẫu (6 khối HTML, 2 khối React), skill.
-  - Còn lại: đề xuất thêm dòng vào `~/.claude/CLAUDE.md` (chờ chủ đồng ý), đợt khối mẫu tiếp theo, đánh giá A/B.
+  - Đã thêm quy tắc vào `~/.claude/CLAUDE.md` (chủ đồng ý 09/11/2026).
+  - Còn lại: đợt khối mẫu tiếp theo, đánh giá A/B.
 
 ## Nguyên tắc
 

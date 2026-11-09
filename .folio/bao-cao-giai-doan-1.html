@@ -200,7 +200,7 @@
       <p>Phương án C gồm skill <code>design-kit</code>, lệnh kiểm <code>design-kit check</code> nằm trong design-kit, ba hướng thẩm mỹ, và khối mẫu có cả bản HTML/CSS thuần lẫn React + shadcn/ui. Đợt 1 đã xây xong, kết quả ở mục <a href="#giai-doan-2">Giai đoạn 2</a>.</p>
       <ul>
         <li>Lý do của cách làm: chỉ dẫn thẩm mỹ cụ thể giúp Claude tốt lên ngay [s4]. Nhưng LLM tự chấm UI chưa bằng người [s20] và khó tự cải thiện đều qua nhiều vòng [s21]. Vì vậy phần đo được giao cho máy, phần đẹp giao cho chủ.</li>
-        <li>Còn một việc chờ chủ đồng ý: thêm hai dòng vào <code>~/.claude/CLAUDE.md</code> để mọi phiên làm UI đều gọi skill.</li>
+        <li>Đã thêm quy tắc vào <code>~/.claude/CLAUDE.md</code> (chủ đồng ý 09/11/2026): mọi phiên làm giao diện đều gọi skill và chạy cổng.</li>
       </ul>
     </section>
 
@@ -467,7 +467,6 @@
 
       <h3>Còn lại</h3>
       <ol class="steps">
-        <li><strong>Hai dòng trong <code>~/.claude/CLAUDE.md</code></strong><p>Để mọi phiên làm UI đều gọi skill design-kit. Chờ chủ đồng ý mới ghi.</p></li>
         <li><strong>Đợt 2 khối mẫu</strong><p>Hero landing (hướng Đậm), trang bài viết dài (hướng Giấy), thanh bên, toast, bộ lọc, phân trang. Bản React cho bảng và hộp thoại.</p></li>
         <li><strong>Đánh giá A/B</strong><p>Ba trang thử (landing, dashboard, form tiếng Việt), mỗi trang làm hai bản: có skill và không có skill. Chấm bằng cổng, chủ xem mù hai bản. Ghi kết quả vào kho tri thức.</p></li>
         <li><strong>Báo lỗi shadow DOM cho Impeccable</strong><p>Gửi kèm trang tái hiện <code>test/fixtures/loi.html</code>. Trong lúc chờ, design-kit đã bù phần này bằng probe và axe.</p></li>

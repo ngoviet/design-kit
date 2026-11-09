@@ -26,3 +26,7 @@ Chủ chọn **phương án C**. Phương án này gồm toàn bộ B, cộng th
 4. Chạy cổng trên mọi khối, sửa cho đến khi đạt.
 5. Skill `design-kit`. Đề xuất 2 dòng thêm vào `~/.claude/CLAUDE.md`, nhưng chỉ ghi vào khi chủ đồng ý.
 6. Đánh giá A/B: làm thử ba trang, mỗi trang hai bản (có skill và không có skill).
+
+## 09/11/2026: thêm quy tắc vào CLAUDE.md toàn cục
+
+Chủ đồng ý. Đã thêm mục "Giao diện: dùng skill design-kit" vào `~/.claude/CLAUDE.md`. Từ nay mọi phiên làm giao diện đều đi qua skill và chạy cổng kiểm.
