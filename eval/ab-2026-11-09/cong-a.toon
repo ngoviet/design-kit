@@ -1,0 +1,84 @@
+status: "fail: 2 of 3 pages have hard failures"
+renders: "light+dark × 320/390/1280 px via msedge, impeccable on"
+pages[3]{page,verdict,hard,soft}:
+  eval/ab-2026-11-09/landing/a/index.html,fail,11,34
+  eval/ab-2026-11-09/dashboard/a/index.html,fail,1,4
+  eval/ab-2026-11-09/form/a/index.html,pass,0,10
+checks[15]{check,gate,result}:
+  overflow,hard,ok
+  axe,hard,3 hard
+  text-min,hard,ok
+  heading-lh,hard,ok
+  lang,hard,ok
+  motion,hard,ok
+  impeccable,hard,"9 hard, 18 soft"
+  body-size,soft,12 soft
+  body-lh,soft,ok
+  measure,soft,7 soft
+  font,soft,ok
+  focus,soft,10 soft
+  inner-scroll,soft,ok
+  lcp,soft,ok
+  cls,soft,1 soft
+findings[60]{gate,page,check,where,detail,renders}:
+  hard,eval/ab-2026-11-09/landing/a/index.html,axe,color-contrast,".tag: Element has insufficient color contrast of 2.51 (foreground color: #ffffff, background color: #f08a24, font size: 9.6pt (12.8px), font weight: bold). Expected contrast ratio of 4.5:1",light/390 light/1280 dark/390 dark/1280
+  hard,eval/ab-2026-11-09/landing/a/index.html,axe,color-contrast,".faq-wrap > .section-head > .eyebrow: Element has insufficient color contrast of 4.38 (foreground color: #23845a, background color: #f3faf6, font size: 10.2pt (13.6px), font weight: bold). Expected contrast ratio of 4.5:",light/390 light/1280 dark/390 dark/1280
+  hard,eval/ab-2026-11-09/landing/a/index.html,axe,color-contrast,"button: Element has insufficient color contrast of 2.51 (foreground color: #ffffff, background color: #f08a24, font size: 12.0pt (16px), font weight: bold). Expected contrast ratio of 4.5:1",light/390 light/1280 dark/390 dark/1280
+  hard,eval/ab-2026-11-09/landing/a/index.html,impeccable,icon-tile-stack,"52x52px icon tile above h3 \"Dinh dưỡng đúng chuẩn, tự động\"",light/1280 light/390
+  hard,eval/ab-2026-11-09/landing/a/index.html,impeccable,icon-tile-stack,"52x52px icon tile above h3 \"Tiết kiệm 4–5 giờ mỗi tuần\"",light/1280 light/390
+  hard,eval/ab-2026-11-09/landing/a/index.html,impeccable,icon-tile-stack,"52x52px icon tile above h3 \"Minh bạch tiền ăn với phụ huynh\"",light/1280 light/390
+  hard,eval/ab-2026-11-09/landing/a/index.html,impeccable,low-contrast,"2.5:1 (need 4.5:1) — text #ffffff on #f08a24 (and 4 more)",light/1280 light/390
+  hard,eval/ab-2026-11-09/landing/a/index.html,impeccable,kicker-above-heading,"kicker \"Câu hỏi thường gặp\" above h2 \"Thầy cô hay hỏi chúng tôi\"",light/1280 light/390
+  hard,eval/ab-2026-11-09/landing/a/index.html,impeccable,kicker-above-heading,"kicker \"Lợi ích chính\" above h2 \"Bớt sổ sách, thêm thời gian chăm trẻ\"",light/1280 light/390
+  hard,eval/ab-2026-11-09/landing/a/index.html,impeccable,kicker-above-heading,"kicker \"Cách hoạt động\" above h2 \"Ba bước, từ thực đơn đến sổ kiểm thực\"",light/1280 light/390
+  hard,eval/ab-2026-11-09/landing/a/index.html,impeccable,kicker-above-heading,"kicker \"Bảng giá\" above h2 \"Giá rõ ràng, tính theo năm học\"",light/1280 light/390
+  hard,eval/ab-2026-11-09/dashboard/a/index.html,impeccable,nested-cards,Card inside card (and 3 more),light/1280 light/390
+  soft,eval/ab-2026-11-09/landing/a/index.html,body-size,"p.fact \"Tách riêng nhà trẻ và mẫu gi\"",body text 14.4px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,body-size,"p.fact \"Trung bình cô nuôi dưỡng tiế\"",body text 14.4px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,body-size,"p.fact \"Hiệu trưởng xem báo cáo của \"",body text 14.4px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,body-size,"p.price-sub \"Thanh toán theo năm học: 2.5\"",body text 14.4px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,body-size,"li \"Thực đơn tuần, tính calo và \"",body text 15.5px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,body-size,"li \"2 tài khoản (hiệu trưởng và \"",body text 15.5px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,body-size,+9 more,body text,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,measure,"p \"Thành phần dinh dưỡng của th\"",line length ~88 chars/line,light/1280 dark/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,measure,"p \"Không. Bếp Xanh không thu th\"",line length ~88 chars/line,light/1280 dark/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,measure,"p \"Được. Giao diện chữ to, ít n\"",line length ~91 chars/line,light/1280 dark/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,measure,+3 more,line length,light/1280 dark/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,focus,"a \"Bếp Xanh\"",no visible focus ring (outline ≥ 2px or box-shadow),light/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,focus,"a \"Lợi ích\"",no visible focus ring (outline ≥ 2px or box-shadow),light/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,focus,"a \"Cách hoạt động\"",no visible focus ring (outline ≥ 2px or box-shadow),light/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,focus,"a \"Bảng giá\"",no visible focus ring (outline ≥ 2px or box-shadow),light/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,focus,"a \"Hỏi đáp\"",no visible focus ring (outline ≥ 2px or box-shadow),light/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,focus,"a \"028 7300 8686\"",no visible focus ring (outline ≥ 2px or box-shadow),light/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,straggler,"\"huynh.\" alone on the last of 4 lines (11% of the measure)",light/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,unbalanced-heading,last of 2 lines is 19% as wide as the line above,light/1280 light/390
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,unbalanced-heading,last of 2 lines is 24% as wide as the line above,light/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,unbalanced-heading,last of 2 lines is 14% as wide as the line above,light/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,straggler,"\"trường.\" alone on the last of 2 lines (10% of the measure)",light/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,straggler,"\"tháng)\" alone on the last of 2 lines (15% of the measure)",light/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,straggler,"\"vào\" alone on the last of 2 lines (9% of the measure)",light/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,low-contrast,"4.4:1 (need 4.5:1) — text #23845a on #f3faf6",light/1280 light/390
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,unbalanced-heading,last of 2 lines is 11% as wide as the line above,light/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,straggler,"\"trường.\" alone on the last of 3 lines (11% of the measure)",light/1280
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,unbalanced-heading,last of 2 lines is 33% as wide as the line above,light/390
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,straggler,"\"soạn.\" alone on the last of 5 lines (14% of the measure)",light/390
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,unbalanced-heading,last of 2 lines is 15% as wide as the line above,light/390
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,straggler,"\"động\" alone on the last of 2 lines (15% of the measure)",light/390
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,straggler,"\"dưỡng)\" alone on the last of 2 lines (21% of the measure)",light/390
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,straggler,"\"bếp\" alone on the last of 2 lines (11% of the measure)",light/390
+  soft,eval/ab-2026-11-09/landing/a/index.html,impeccable,unbalanced-heading,last of 2 lines is 30% as wide as the line above,light/390
+  soft,eval/ab-2026-11-09/dashboard/a/index.html,cls,page,CLS 0.169 > 0.1,light/1280
+  soft,eval/ab-2026-11-09/dashboard/a/index.html,focus,input,no visible focus ring (outline ≥ 2px or box-shadow),light/1280
+  soft,eval/ab-2026-11-09/dashboard/a/index.html,focus,input,focused element is covered by other content,light/1280
+  soft,eval/ab-2026-11-09/dashboard/a/index.html,impeccable,flat-type-hierarchy,"Role sizes: body 15px, h2 16px, h1 18px (largest adjacent step 1.13:1; target 1.25:1; weight separates headings from body text)",light/1280 light/390
+  soft,eval/ab-2026-11-09/form/a/index.html,body-size,"p \"Hotline: 1900 6868 · Mở cửa \"",body text 14.4px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/form/a/index.html,body-size,"p#email-hint \"Để nhận phiếu hẹn và nhắc lị\"",body text 13.6px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/form/a/index.html,body-size,"p#slotsEmpty \"Vui lòng chọn chuyên khoa và\"",body text 14.4px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/form/a/index.html,body-size,"p#symptoms-hint \"Nêu triệu chứng chính, thời \"",body text 13.6px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/form/a/index.html,body-size,"p.note \"Trường hợp khẩn cấp (khó thở\"",body text 13.6px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/form/a/index.html,measure,"p.lead \"Điền thông tin bên dưới, phò\"",line length ~81 chars/line,light/1280 dark/1280
+  soft,eval/ab-2026-11-09/form/a/index.html,measure,"p#slotsEmpty \"Vui lòng chọn chuyên khoa và\"",line length ~83 chars/line,light/1280 dark/1280
+  soft,eval/ab-2026-11-09/form/a/index.html,measure,"p.note \"Trường hợp khẩn cấp (khó thở\"",line length ~99 chars/line,light/1280 dark/1280
+  soft,eval/ab-2026-11-09/form/a/index.html,focus,"a \"điều khoản sử dụng\"",no visible focus ring (outline ≥ 2px or box-shadow),light/1280
+  soft,eval/ab-2026-11-09/form/a/index.html,focus,"a \"chính sách bảo mật thông tin\"",no visible focus ring (outline ≥ 2px or box-shadow),light/1280
+help[2]: "Fix hard failures, then rerun the same command; soft ones need a fix or a written reason",Open the screenshots under .design-kit/shots and judge hierarchy before calling the page done

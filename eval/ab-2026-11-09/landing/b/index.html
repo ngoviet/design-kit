@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="vi" data-dk="dam">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bếp Xanh: lên thực đơn và tính khẩu phần cho bếp ăn mầm non</title>
+<meta name="description" content="Bếp Xanh giúp trường mầm non lên thực đơn tuần, tự tính khẩu phần và năng lượng theo nhóm tuổi, in phiếu đi chợ và sổ sách. Dùng thử 30 ngày.">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="dam.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  .wrap { max-width: 72rem; margin: 0 auto; padding-inline: var(--sp-4); }
+
+  /* Đầu trang */
+  .appbar { container: appbar / inline-size; position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .appbar-in { display: flex; align-items: center; gap: var(--sp-4); min-height: 64px; }
+  .brand { display: inline-flex; align-items: center; gap: var(--sp-2); font: 700 var(--fs-md)/1.2 var(--font-display); color: var(--text); text-decoration: none; min-height: var(--hit); }
+  .brand svg { width: 28px; height: 28px; color: var(--ok); flex: none; }
+  .nav { flex: 1; min-width: 0; }
+  .nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: var(--sp-1); justify-content: center; }
+  .nav a { display: inline-flex; align-items: center; min-height: var(--hit); padding: 0 var(--sp-3); border-radius: var(--r-sm); color: var(--text-2); text-decoration: none; font: 500 var(--fs-sm)/1.2 var(--font-body); transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out); }
+  .nav a:hover { background: var(--surface-2); color: var(--text); }
+  .appbar .btn { margin-left: auto; }
+  @container appbar (max-width: 50rem) { .nav { display: none; } }
+
+  section { scroll-margin-top: 80px; }
+  .sec { padding-block: var(--sp-8); border-top: 1px solid var(--border); }
+  .sec-head { margin-bottom: var(--sp-6); }
+  .sec-head h2 { font-size: var(--fs-2xl); max-width: 22ch; }
+  .sec-head p { color: var(--text-2); margin: var(--sp-3) 0 0; }
+
+  /* Mở đầu */
+  .hero { container: hero / inline-size; padding-block: var(--sp-8) var(--sp-8); }
+  .hero-grid { display: grid; gap: var(--sp-7); align-items: center; }
+  @container hero (min-width: 56rem) { .hero-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); } }
+  .hero h1 { font-size: var(--fs-3xl); max-width: 15ch; }
+  .lead { font-size: var(--fs-md); line-height: 1.55; color: var(--text-2); margin: var(--sp-5) 0 var(--sp-6); max-width: 30em; }
+  .cta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-5); }
+  .cta .btn-primary { min-height: 52px; padding: 0 var(--sp-6); font-size: var(--fs-base); }
+  .cta a:not(.btn) { display: inline-flex; align-items: center; min-height: var(--hit); font-weight: 500; }
+  .proof { list-style: none; padding: 0; margin: var(--sp-6) 0 0; display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; }
+  .proof li { display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .proof svg { width: 16px; height: 16px; color: var(--ok); flex: none; }
+
+  /* Màn hình sản phẩm dựng bằng HTML */
+  .shot { margin: 0; border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow-2); overflow: hidden; }
+  .shot-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border); background: var(--surface-2); font-size: var(--fs-sm); line-height: 1.4; }
+  .shot-bar b { font-weight: 600; }
+  .shot-body { padding: var(--sp-4); display: grid; gap: var(--sp-4); }
+  .meals { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
+  .meals li { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 1px solid var(--border); font-size: var(--fs-base); line-height: 1.5; }
+  .meals li:last-child { border-bottom: 0; }
+  .meals span { color: var(--text-2); }
+  .nutri { display: grid; gap: var(--sp-3); padding: var(--sp-4); border-radius: var(--r-md); background: var(--surface-2); }
+  .nutri-top { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; }
+  .nutri-top b { font: 500 var(--fs-lg)/1.2 var(--font-mono); }
+  .nutri-top small { color: var(--text-2); font-size: var(--fs-xs); line-height: 1.4; }
+  .bar { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr) 6.5rem; align-items: center; gap: var(--sp-2); font-size: var(--fs-xs); line-height: 1.4; }
+  .bar .track { height: 8px; border-radius: var(--r-full); background: var(--border); overflow: hidden; }
+  .bar .fill { display: block; height: 100%; background: var(--ok); border-radius: inherit; }
+  .bar .v { font-family: var(--font-mono); color: var(--text-2); text-align: right; }
+  @media (prefers-reduced-motion: no-preference) {
+    .shot { animation: len var(--dur-3) var(--ease-out) both 120ms; }
+    @keyframes len { from { opacity: 0; transform: translateY(12px); } }
+  }
+
+  /* Lợi ích: một ý lớn bên trái, hai ý bên phải */
+  .benefits { display: grid; gap: var(--sp-6); }
+  @media (min-width: 60rem) { .benefits { grid-template-columns: 1.2fr 1fr; gap: var(--sp-7); } }
+  .benefit-main { padding: var(--sp-6); border-radius: var(--r-lg); background: var(--accent-soft); }
+  .benefit-main h3 { font-size: var(--fs-xl); letter-spacing: var(--tracking-display); line-height: var(--lh-tight); margin-bottom: var(--sp-3); }
+  .benefit-main p { color: var(--text); }
+  .calc { margin-top: var(--sp-5); border-top: 2px solid var(--text); }
+  .calc table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); line-height: 1.4; }
+  .calc caption { text-align: left; padding: var(--sp-3) 0; font-weight: 600; border-bottom: 1px solid var(--border); }
+  .calc th, .calc td { padding: var(--sp-2) var(--sp-3) var(--sp-2) 0; border-bottom: 1px solid color-mix(in oklch, var(--accent), var(--bg) 70%); text-align: left; }
+  .calc tr:last-child th, .calc tr:last-child td { border-bottom: 0; }
+  .calc th[scope="col"] { color: var(--text-2); font-weight: 500; font-size: var(--fs-xs); }
+  .calc td.n { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .benefit-list { display: grid; gap: var(--sp-6); align-content: start; }
+  .benefit-list h3 { margin-bottom: var(--sp-2); }
+  .benefit-list p { color: var(--text-2); margin: 0; }
+  .benefit-list .fact { display: inline-block; margin-top: var(--sp-3); font-size: var(--fs-sm); font-weight: 600; color: var(--text); }
+  .benefit-list > div { padding-bottom: var(--sp-6); border-bottom: 1px solid var(--border); }
+  .benefit-list > div:last-child { border-bottom: 0; padding-bottom: 0; }
+
+  /* Ba bước */
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-6); grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); counter-reset: buoc; }
+  .steps li { counter-increment: buoc; position: relative; padding-top: var(--sp-7); }
+  .steps li::before { content: counter(buoc); position: absolute; top: 0; left: 0; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font: 700 var(--fs-md)/1 var(--font-display); }
+  .steps li::after { content: ""; position: absolute; top: 20px; left: 52px; right: 0; border-top: 2px dashed var(--border-strong); }
+  .steps li:last-child::after { display: none; }
+  .steps h3 { margin-bottom: var(--sp-2); }
+  .steps p { color: var(--text-2); margin: 0; }
+  .steps .time { display: block; margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--text); font-weight: 500; }
+
+  /* Bảng giá */
+  .plans { display: grid; gap: var(--sp-5); grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); max-width: 60rem; }
+  .plan { display: flex; flex-direction: column; padding: var(--sp-6); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--border); }
+  .plan.goi-y { border: 2px solid var(--accent); box-shadow: var(--shadow-2); }
+  .plan-head { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+  .plan h3 { font-size: var(--fs-lg); letter-spacing: var(--tracking-display); }
+  .badge-accent { background: var(--accent-soft); color: var(--accent-text); }
+  .plan .for { color: var(--text-2); margin: var(--sp-2) 0 var(--sp-5); }
+  .price { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--sp-1) var(--sp-2); margin: 0; }
+  .price b { font: 750 var(--fs-2xl)/1.1 var(--font-display); letter-spacing: var(--tracking-display); }
+  .price span { color: var(--text-2); }
+  .plan .year { font-size: var(--fs-sm); color: var(--text-2); margin: var(--sp-2) 0 var(--sp-5); }
+  .feat { list-style: none; margin: 0 0 var(--sp-6); padding: 0; display: grid; gap: var(--sp-3); }
+  .feat li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: var(--sp-3); align-items: start; }
+  .feat svg { width: 18px; height: 18px; margin-top: 4px; color: var(--ok); }
+  .plan .btn { margin-top: auto; width: 100%; font-size: var(--fs-base); }
+  .plans-note { margin-top: var(--sp-5); color: var(--text-2); }
+
+  /* Hỏi đáp */
+  .faq { max-width: 48rem; display: grid; gap: 0; border-top: 1px solid var(--border); }
+  .faq details { border-bottom: 1px solid var(--border); }
+  .faq summary { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-4); min-height: var(--hit-lg); padding: var(--sp-4) 0; cursor: pointer; list-style: none; font: 600 var(--fs-md)/1.35 var(--font-display); }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary svg { width: 20px; height: 20px; flex: none; color: var(--text-2); transition: transform var(--dur-2) var(--ease-out); }
+  .faq details[open] summary svg { transform: rotate(180deg); }
+  .faq details p { color: var(--text-2); margin: 0 0 var(--sp-5); }
+
+  /* Kêu gọi cuối + chân trang */
+  .closing { padding-block: var(--sp-8); border-top: 1px solid var(--border); }
+  .closing-box { padding: var(--sp-7) var(--sp-6); border-radius: var(--r-lg); background: var(--surface-2); display: grid; gap: var(--sp-5); align-items: center; }
+  @media (min-width: 52rem) { .closing-box { grid-template-columns: minmax(0, 1fr) auto; } }
+  .closing-box h2 { font-size: var(--fs-xl); max-width: 24ch; }
+  .closing-box p { color: var(--text-2); margin: var(--sp-3) 0 0; }
+  .closing-box .btn { min-height: 52px; padding: 0 var(--sp-6); font-size: var(--fs-base); }
+  footer { background: var(--surface); border-top: 1px solid var(--border); padding-block: var(--sp-7) var(--sp-6); }
+  .foot-grid { display: grid; gap: var(--sp-6); grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
+  footer h2 { font-size: var(--fs-base); letter-spacing: 0; margin-bottom: var(--sp-3); }
+  footer p { margin: 0 0 var(--sp-2); color: var(--text-2); }
+  footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-1); }
+  footer ul a { display: inline-flex; align-items: center; min-height: var(--hit-min); }
+  footer address { font-style: normal; color: var(--text-2); }
+  .copy { margin-top: var(--sp-6); padding-top: var(--sp-4); border-top: 1px solid var(--border); color: var(--text-2); }
+</style>
+</head>
+<body>
+  <a class="skip-link btn btn-primary" href="#noi-dung">Bỏ qua điều hướng</a>
+
+  <header class="appbar">
+    <div class="wrap appbar-in">
+      <a class="brand" href="#" aria-label="Bếp Xanh, về đầu trang">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14Z"/><path d="M5 19 13 11"/></svg>
+        Bếp Xanh
+      </a>
+      <nav class="nav" aria-label="Điều hướng chính">
+        <ul>
+          <li><a href="#loi-ich">Lợi ích</a></li>
+          <li><a href="#cach-lam">Cách hoạt động</a></li>
+          <li><a href="#bang-gia">Bảng giá</a></li>
+          <li><a href="#hoi-dap">Hỏi đáp</a></li>
+        </ul>
+      </nav>
+      <a class="btn btn-primary btn-sm" href="#dung-thu">Dùng thử 30 ngày</a>
+    </div>
+  </header>
+
+  <main id="noi-dung">
+    <section class="hero" aria-labelledby="hero-h">
+      <div class="wrap hero-grid">
+        <div>
+          <h1 id="hero-h">Thực đơn tuần đủ chất, lên xong trong 20 phút</h1>
+          <p class="lead">Bếp Xanh gợi ý món theo mùa, tự tính năng lượng và tỉ lệ đạm, béo, bột cho từng nhóm tuổi, rồi in luôn phiếu đi chợ theo sĩ số hôm đó. Cô nuôi dưỡng bớt cộng sổ, hiệu trưởng duyệt thực đơn ngay trên điện thoại.</p>
+          <div class="cta" id="dung-thu">
+            <a class="btn btn-primary" href="#bang-gia">Dùng thử 30 ngày</a>
+            <a href="#cach-lam">Xem cách hoạt động</a>
+          </div>
+          <ul class="proof">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Không cần thẻ thanh toán</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Kho 640 món ăn mầm non</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>412 trường đang dùng</li>
+          </ul>
+        </div>
+
+        <figure class="shot" aria-label="Màn hình Bếp Xanh: thực đơn thứ Ba của nhóm mẫu giáo và bảng kiểm dinh dưỡng">
+          <div class="shot-bar">
+            <span><b>Thứ Ba, 12/11</b> · Mẫu giáo 3–6 tuổi · 186 trẻ</span>
+            <span class="badge badge-ok">Cân đối</span>
+          </div>
+          <div class="shot-body">
+            <ul class="meals">
+              <li><span>Bữa sáng</span>Cháo thịt bằm nấu bí đỏ</li>
+              <li><span>Bữa trưa</span>Cơm, cá basa sốt cà chua, canh rau ngót nấu thịt, su su xào</li>
+              <li><span>Bữa xế</span>Bún mọc nấu nấm, chuối tiêu</li>
+              <li><span>Tráng miệng</span>Sữa chua uống</li>
+            </ul>
+            <div class="nutri">
+              <div class="nutri-top">
+                <b>652 kcal</b>
+                <small>Mục tiêu ở trường: 615–726 kcal</small>
+              </div>
+              <div class="bar"><span>Đạm</span><span class="track"><span class="fill" style="width: 15%"></span></span><span class="v">15% (13–20)</span></div>
+              <div class="bar"><span>Béo</span><span class="track"><span class="fill" style="width: 28%"></span></span><span class="v">28% (25–35)</span></div>
+              <div class="bar"><span>Bột</span><span class="track"><span class="fill" style="width: 57%"></span></span><span class="v">57% (52–60)</span></div>
+            </div>
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <section class="sec" id="loi-ich" aria-labelledby="loi-ich-h">
+      <div class="wrap">
+        <div class="sec-head">
+          <h2 id="loi-ich-h">Bớt việc sổ sách, bữa ăn của trẻ vẫn đủ chuẩn</h2>
+          <p>Ba việc tốn thời gian nhất của tổ nuôi dưỡng, Bếp Xanh làm thay.</p>
+        </div>
+        <div class="benefits">
+          <div class="benefit-main">
+            <h3>Nhập sĩ số, ra ngay số thực phẩm cần mua</h3>
+            <p>Mỗi sáng cô nuôi dưỡng chỉ cần nhập số trẻ có mặt. Bếp Xanh nhân định lượng từng món, cộng hao hụt khi sơ chế và làm tròn theo đơn vị nhà cung cấp bán.</p>
+            <div class="calc">
+              <table>
+                <caption>Phiếu đi chợ thứ Ba · 186 trẻ</caption>
+                <thead><tr><th scope="col">Thực phẩm</th><th scope="col">Định lượng/trẻ</th><th scope="col" style="text-align:right">Cần mua</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">Cá basa phi lê</th><td>45 g</td><td class="n">8,8 kg</td></tr>
+                  <tr><th scope="row">Thịt nạc vai</th><td>30 g</td><td class="n">5,9 kg</td></tr>
+                  <tr><th scope="row">Rau ngót</th><td>25 g</td><td class="n">5,6 kg</td></tr>
+                  <tr><th scope="row">Gạo tẻ</th><td>70 g</td><td class="n">13,1 kg</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="benefit-list">
+            <div>
+              <h3>Đúng nhu cầu dinh dưỡng theo độ tuổi</h3>
+              <p>Tính sẵn mức năng lượng ở trường cho nhà trẻ (600–651 kcal) và mẫu giáo (615–726 kcal) theo Chương trình Giáo dục mầm non. Món nào làm lệch tỉ lệ đạm, béo, bột thì báo ngay kèm món gợi ý thay.</p>
+              <span class="fact">Cảnh báo khi lệch quá 2% so với mức khuyến nghị</span>
+            </div>
+            <div>
+              <h3>Sổ sách in ra là nộp được</h3>
+              <p>Sổ tính khẩu phần, phiếu kê chợ, sổ kiểm thực ba bước và bảng công khai thực đơn cho phụ huynh đều theo mẫu thường dùng của phòng giáo dục. Xuất PDF hoặc Excel.</p>
+              <span class="fact">Tiết kiệm khoảng 6 giờ sổ sách mỗi tuần</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="cach-lam" aria-labelledby="cach-lam-h">
+      <div class="wrap">
+        <div class="sec-head">
+          <h2 id="cach-lam-h">Ba bước, mỗi tuần một lần</h2>
+          <p>Không cần cài đặt. Mở trên máy tính ở văn phòng hoặc điện thoại của cô nuôi dưỡng đều được.</p>
+        </div>
+        <ol class="steps">
+          <li>
+            <h3>Khai báo trường</h3>
+            <p>Nhập số lớp, sĩ số từng nhóm tuổi và giá thực phẩm của nhà cung cấp. Có sẵn bảng giá tham khảo theo tỉnh để sửa nhanh.</p>
+            <span class="time">Làm một lần, khoảng 30 phút</span>
+          </li>
+          <li>
+            <h3>Lên thực đơn tuần</h3>
+            <p>Chọn món từ kho 640 món hoặc bấm “Gợi ý tuần” để Bếp Xanh xếp sẵn, không trùng món trong 2 tuần, vừa mức tiền ăn của trường.</p>
+            <span class="time">Mỗi tuần khoảng 20 phút</span>
+          </li>
+          <li>
+            <h3>Duyệt và in</h3>
+            <p>Hiệu trưởng duyệt trên điện thoại. Cô nuôi dưỡng in phiếu đi chợ mỗi sáng theo sĩ số thực tế, thực đơn tự đăng lên bảng công khai.</p>
+            <span class="time">Mỗi sáng dưới 5 phút</span>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="sec" id="bang-gia" aria-labelledby="bang-gia-h">
+      <div class="wrap">
+        <div class="sec-head">
+          <h2 id="bang-gia-h">Hai gói, giá theo quy mô trường</h2>
+          <p>Cả hai gói đều được dùng thử đủ tính năng trong 30 ngày, hết hạn không tự trừ tiền.</p>
+        </div>
+        <div class="plans">
+          <article class="plan" aria-labelledby="goi-1">
+            <div class="plan-head"><h3 id="goi-1">Cơ bản</h3></div>
+            <p class="for">Trường và nhóm lớp đến 150 trẻ, một điểm trường.</p>
+            <p class="price"><b>290.000 ₫</b><span>/ tháng</span></p>
+            <p class="year">Trả theo năm: 2.900.000 ₫ (tặng 2 tháng)</p>
+            <ul class="feat">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Thực đơn và tính khẩu phần cho 2 nhóm tuổi</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Phiếu đi chợ, sổ tính khẩu phần, sổ kiểm thực</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>2 tài khoản: hiệu trưởng và cô nuôi dưỡng</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Hỗ trợ qua Zalo trong giờ hành chính</li>
+            </ul>
+            <a class="btn btn-secondary" href="#dung-thu">Dùng thử gói Cơ bản</a>
+          </article>
+          <article class="plan goi-y" aria-labelledby="goi-2">
+            <div class="plan-head"><h3 id="goi-2">Toàn trường</h3><span class="badge badge-accent">Nhiều trường chọn</span></div>
+            <p class="for">Trường trên 150 trẻ hoặc có nhiều điểm trường.</p>
+            <p class="price"><b>590.000 ₫</b><span>/ tháng</span></p>
+            <p class="year">Trả theo năm: 5.900.000 ₫ (tặng 2 tháng)</p>
+            <ul class="feat">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Không giới hạn số trẻ, tối đa 5 điểm trường</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Mọi tính năng gói Cơ bản, thêm quản lý kho và quyết toán tiền ăn</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>8 tài khoản, phân quyền duyệt theo điểm trường</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Một buổi hướng dẫn trực tiếp tại trường</li>
+            </ul>
+            <a class="btn btn-primary" href="#dung-thu">Dùng thử gói Toàn trường</a>
+          </article>
+        </div>
+        <p class="plans-note">Giá chưa gồm thuế GTGT. Có xuất hoá đơn điện tử cho trường công lập và tư thục.</p>
+      </div>
+    </section>
+
+    <section class="sec" id="hoi-dap" aria-labelledby="hoi-dap-h">
+      <div class="wrap">
+        <div class="sec-head">
+          <h2 id="hoi-dap-h">Câu hỏi thường gặp</h2>
+        </div>
+        <div class="faq">
+          <details>
+            <summary>Hết 30 ngày dùng thử, dữ liệu của trường có mất không?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p>Không. Thực đơn, sổ sách và danh sách món đã nhập được giữ 90 ngày sau khi hết hạn dùng thử. Trường đăng ký gói trong thời gian đó thì dùng tiếp ngay, không phải nhập lại.</p>
+          </details>
+          <details>
+            <summary>Mức năng lượng và tỉ lệ dinh dưỡng lấy theo đâu?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p>Theo nhu cầu khuyến nghị cho trẻ nhà trẻ và mẫu giáo trong Chương trình Giáo dục mầm non hiện hành, cùng bảng thành phần dinh dưỡng thực phẩm Việt Nam của Viện Dinh dưỡng. Khi văn bản thay đổi, chúng tôi cập nhật và báo trong phần mềm.</p>
+          </details>
+          <details>
+            <summary>Cô nuôi dưỡng không rành máy tính có dùng được không?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p>Được. Việc hằng ngày chỉ là nhập sĩ số và bấm in. Mỗi trường mới có một nhân viên hỗ trợ gọi điện hướng dẫn trong tuần đầu, kèm video ngắn cho từng thao tác.</p>
+          </details>
+          <details>
+            <summary>Trường đang dùng phần mềm khác, có chuyển dữ liệu sang được không?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p>Được. Gửi cho chúng tôi tệp Excel danh sách món và định lượng đang dùng, đội hỗ trợ nhập giúp miễn phí trong 3 ngày làm việc.</p>
+          </details>
+          <details>
+            <summary>Có đổi gói hoặc ngừng dùng giữa chừng được không?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p>Được. Nâng gói có hiệu lực ngay, chỉ trả phần chênh lệch cho số ngày còn lại. Gói trả theo tháng ngừng lúc nào cũng được, không mất phí.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="closing" aria-labelledby="closing-h">
+      <div class="wrap">
+        <div class="closing-box">
+          <div>
+            <h2 id="closing-h">Thử lên thực đơn tuần sau bằng Bếp Xanh</h2>
+            <p>30 ngày đủ tính năng, không cần thẻ thanh toán. Đăng ký xong, nhân viên hỗ trợ gọi lại trong ngày.</p>
+          </div>
+          <a class="btn btn-primary" href="#dung-thu">Dùng thử 30 ngày</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div class="foot-grid">
+        <div>
+          <h2>Bếp Xanh</h2>
+          <p>Phần mềm lên thực đơn và tính khẩu phần dinh dưỡng cho bếp ăn trường mầm non.</p>
+        </div>
+        <div>
+          <h2>Liên hệ</h2>
+          <address>
+            <p>Công ty TNHH Phần mềm Bếp Xanh<br>Tầng 4, 25 Nguyễn Văn Trỗi, Phường Phú Nhuận, TP. Hồ Chí Minh</p>
+            <ul>
+              <li><a href="tel:02838124567">Điện thoại: 028 3812 4567</a></li>
+              <li><a href="mailto:hotro@bepxanh.vn">hotro@bepxanh.vn</a></li>
+            </ul>
+          </address>
+        </div>
+        <div>
+          <h2>Giờ hỗ trợ</h2>
+          <p>Thứ Hai đến thứ Bảy<br>7:00 – 17:00</p>
+        </div>
+        <div>
+          <h2>Thông tin</h2>
+          <ul>
+            <li><a href="#bang-gia">Bảng giá</a></li>
+            <li><a href="#hoi-dap">Câu hỏi thường gặp</a></li>
+            <li><a href="#">Chính sách bảo mật</a></li>
+          </ul>
+        </div>
+      </div>
+      <p class="copy">© 2026 Công ty TNHH Phần mềm Bếp Xanh.</p>
+    </div>
+  </footer>
+</body>
+</html>

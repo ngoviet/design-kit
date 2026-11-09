@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="vi" data-dk="giay">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đặt lịch khám · Phòng khám Nhi An Bình</title>
+<meta name="description" content="Đặt lịch khám trực tuyến cho bé tại Phòng khám Nhi An Bình.">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="giay.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { font-family: var(--font-ui); }
+
+  /* Thanh trên */
+  .topbar { border-bottom: 1px solid var(--border); background: var(--surface); }
+  .topbar-inner { max-width: 68rem; margin: 0 auto; padding: var(--sp-3) var(--sp-4); display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: var(--sp-2); color: var(--text); text-decoration: none; font: 700 var(--fs-base)/1.3 var(--font-ui); }
+  .brand svg { width: 28px; height: 28px; color: var(--accent-text); flex: none; }
+  .hotline { font: 500 var(--fs-sm)/1.5 var(--font-ui); color: var(--text-2); }
+  .hotline a { font-weight: 600; }
+
+  /* Bố cục trang */
+  .page { max-width: 68rem; margin: 0 auto; padding: var(--sp-6) var(--sp-4) var(--sp-8); display: grid; gap: var(--sp-6); }
+  @media (min-width: 60rem) {
+    .page { grid-template-columns: minmax(0, 1fr) 18rem; align-items: start; column-gap: var(--sp-7); padding-top: var(--sp-7); }
+    .intro { grid-column: 1 / -1; }
+    .aside { position: sticky; top: var(--sp-5); }
+  }
+  .intro { display: grid; gap: var(--sp-3); }
+  .eyebrow { margin: 0; font: 600 var(--fs-sm)/1.4 var(--font-ui); color: var(--accent-text); }
+  .intro p.lede { font: 400 var(--fs-body)/var(--lh-body) var(--font-body); color: var(--text-2); margin: 0; }
+
+  /* Form */
+  .card { padding: var(--sp-6); display: grid; gap: var(--sp-6); }
+  @media (max-width: 30rem) { .card { padding: var(--sp-5) var(--sp-4); } }
+  .card[hidden] { display: none; }
+  form { display: grid; gap: var(--sp-6); }
+  fieldset.section { border: 0; margin: 0; padding: 0; display: grid; gap: var(--sp-4); min-width: 0; }
+  fieldset.section + fieldset.section { border-top: 1px solid var(--border); padding-top: var(--sp-6); }
+  legend.section-title { float: left; width: 100%; padding: 0; margin: 0; display: flex; align-items: baseline; gap: var(--sp-3); font: 600 var(--fs-md)/var(--lh-snug) var(--font-display); }
+  .step { font: 600 var(--fs-sm)/1.5 var(--font-mono); color: var(--accent-text); }
+  .grid-2 { display: grid; gap: var(--sp-4); align-items: start; }
+  @media (min-width: 36rem) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+  .opt { font-weight: 400; color: var(--text-2); }
+  .req { color: var(--bad); }
+  select.input { appearance: none; padding-right: var(--sp-7);
+    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%; background-size: 6px 6px; background-repeat: no-repeat; }
+  textarea.input { min-height: 8rem; padding: var(--sp-3); line-height: 1.6; resize: vertical; }
+  .count { font: 400 var(--fs-sm)/1.5 var(--font-ui); color: var(--text-2); margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+  .field-foot { display: flex; justify-content: space-between; gap: var(--sp-3); align-items: start; }
+  .field-foot .hint { flex: 1; }
+  input[type="date"].input { padding-right: var(--sp-3); }
+
+  /* Nhóm chọn ngày / giờ */
+  .choice-group { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: var(--sp-2); }
+  .choice-group > legend { padding: 0; margin-bottom: var(--sp-2); }
+  .chips { display: grid; gap: var(--sp-2); grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr)); }
+  #ds-ngay { grid-template-columns: repeat(auto-fill, minmax(4.25rem, 1fr)); }
+  .chip { position: relative; }
+  .chip input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .chip span { display: grid; place-items: center; text-align: center; min-height: var(--hit-lg); padding: var(--sp-2); border: 1px solid var(--border-strong); border-radius: var(--r-sm); background: var(--surface); font: 500 var(--fs-sm)/1.35 var(--font-ui); transition: background-color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out); }
+  .chip span small { display: block; font-size: var(--fs-xs); font-weight: 400; color: var(--text-2); }
+  .chip input:hover:not(:disabled) + span { background: var(--surface-2); }
+  .chip input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .chip input:checked + span small { color: var(--on-accent); }
+  .chip input:focus-visible + span { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
+  .chip input:disabled { cursor: not-allowed; }
+  .chip input.full + span { background: var(--surface-2); border-style: dashed; border-color: var(--border); color: var(--text-2); text-decoration: line-through; }
+  .chip input.full + span small { text-decoration: none; }
+  .choice-group[aria-invalid="true"] .chip span { border-color: var(--bad); }
+  .slot-note { margin: 0; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: var(--surface-2); color: var(--text-2); font: 400 var(--fs-base)/1.5 var(--font-ui); max-width: var(--measure); }
+  .period { margin: var(--sp-2) 0 0; font: 600 var(--fs-xs)/1.5 var(--font-ui); color: var(--text-2); }
+
+  /* Đồng ý */
+  .check { display: flex; align-items: flex-start; gap: var(--sp-3); font: 400 var(--fs-sm)/1.6 var(--font-ui); cursor: pointer; }
+  .check input { width: 22px; height: 22px; margin: 1px 0 0; flex: none; accent-color: var(--accent); }
+  .check input[aria-invalid="true"] { outline: var(--focus-w) solid var(--bad); outline-offset: 2px; }
+
+  /* Tóm tắt lỗi */
+  .alert { display: grid; gap: var(--sp-2); padding: var(--sp-4); border-radius: var(--r-md); background: var(--bad-soft); color: var(--text); font: 400 var(--fs-sm)/1.5 var(--font-ui); }
+  .alert[hidden] { display: none; }
+  .alert h2 { font: 600 var(--fs-base)/1.4 var(--font-ui); color: var(--bad); display: flex; gap: var(--sp-2); align-items: center; letter-spacing: 0; }
+  .alert h2 svg { width: 20px; height: 20px; flex: none; }
+  .alert ul { margin: 0; padding-left: var(--sp-5); }
+  .alert a { color: var(--bad); font-weight: 500; }
+  .alert li + li { margin-top: var(--sp-1); }
+
+  .actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; }
+  .actions .hint { flex: 1 1 14rem; }
+  .submit { min-width: 12rem; }
+  @media (max-width: 30rem) { .submit { width: 100%; } }
+  .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; }
+  @media (prefers-reduced-motion: no-preference) { .spinner { animation: quay 0.8s linear infinite; } }
+  @keyframes quay { to { transform: rotate(1turn); } }
+  form[aria-busy="true"] fieldset { opacity: 0.7; }
+
+  /* Cột bên */
+  .aside { display: grid; gap: var(--sp-5); padding: var(--sp-5); background: var(--surface-2); border-radius: var(--r-lg); }
+  .aside h2 { font: 600 var(--fs-base)/1.4 var(--font-ui); letter-spacing: 0; }
+  .aside dl { margin: 0; display: grid; gap: var(--sp-3); font: 400 var(--fs-sm)/1.5 var(--font-ui); }
+  .aside dt { color: var(--text-2); }
+  .aside dd { margin: 0; font-weight: 500; }
+  .aside ol { margin: 0; padding-left: var(--sp-5); font: 400 var(--fs-sm)/1.6 var(--font-ui); display: grid; gap: var(--sp-2); }
+  .aside .urgent { margin: 0; padding-top: var(--sp-4); border-top: 1px solid var(--border); font: 400 var(--fs-sm)/1.6 var(--font-ui); }
+  .aside .urgent strong { color: var(--bad); }
+
+  /* Màn hình xác nhận */
+  .done { padding: var(--sp-6); display: grid; gap: var(--sp-5); }
+  .done[hidden] { display: none; }
+  @media (max-width: 30rem) { .done { padding: var(--sp-5) var(--sp-4); } }
+  .done-head { display: grid; gap: var(--sp-3); justify-items: start; }
+  .done-icon { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--ok-soft); color: var(--ok); }
+  .done-icon svg { width: 28px; height: 28px; }
+  .done h2 { font-size: var(--fs-xl); }
+  .done h2:focus { outline: none; }
+  .done h2:focus-visible { outline: var(--focus-w) solid var(--focus); outline-offset: 4px; }
+  .done p { font: 400 var(--fs-base)/1.6 var(--font-ui); color: var(--text-2); }
+  .code { display: inline-block; padding: var(--sp-1) var(--sp-3); border-radius: var(--r-sm); background: var(--accent-soft); color: var(--accent-text); font: 500 var(--fs-md)/1.4 var(--font-mono); letter-spacing: 0.04em; }
+  .summary { margin: 0; display: grid; grid-template-columns: minmax(7rem, auto) 1fr; gap: var(--sp-2) var(--sp-5); padding: var(--sp-4) 0; border-block: 1px solid var(--border); font: 400 var(--fs-base)/1.5 var(--font-ui); }
+  .summary dt { color: var(--text-2); }
+  .summary dd { margin: 0; font-weight: 500; overflow-wrap: anywhere; }
+  @media (max-width: 26rem) { .summary { grid-template-columns: 1fr; gap: 0; } .summary dd + dt { margin-top: var(--sp-3); } }
+
+  .footer { max-width: 68rem; margin: 0 auto; padding: 0 var(--sp-4) var(--sp-6); color: var(--text-2); font: 400 var(--fs-sm)/1.5 var(--font-ui); }
+</style>
+</head>
+<body>
+  <a class="skip-link btn btn-primary" href="#dat-lich">Bỏ qua, đến form đặt lịch</a>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#" aria-label="Phòng khám Nhi An Bình, trang chủ">
+        <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 27s-10-6.2-10-13.2A5.8 5.8 0 0 1 16 10a5.8 5.8 0 0 1 10 3.8C26 20.8 16 27 16 27Z"/><path d="M16 14v7M12.5 17.5h7"/></svg>
+        Phòng khám Nhi An Bình
+      </a>
+      <p class="hotline" style="margin:0">Tổng đài: <a href="tel:02838123456">028 3812 3456</a></p>
+    </div>
+  </header>
+
+  <main class="page" id="noi-dung">
+    <div class="intro">
+      <p class="eyebrow">Đặt lịch khám trực tuyến</p>
+      <h1>Đặt lịch khám cho bé</h1>
+      <p class="lede">Điền thông tin dưới đây, mất khoảng 3&nbsp;phút. Phòng khám sẽ gọi lại xác nhận trong vòng 30&nbsp;phút vào giờ làm việc.</p>
+    </div>
+
+    <div>
+      <section class="card surface" id="dat-lich" aria-labelledby="tieu-de-form">
+        <h2 class="sr-only" id="tieu-de-form">Form đặt lịch khám</h2>
+
+        <div class="alert" id="tom-tat-loi" role="alert" tabindex="-1" hidden>
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+            <span id="tom-tat-tieu-de">Còn thông tin cần sửa</span>
+          </h2>
+          <ul id="ds-loi"></ul>
+        </div>
+
+        <form id="form" novalidate>
+          <p class="hint" style="margin:0">Ô có dấu <span class="req" aria-hidden="true">*</span> là bắt buộc.</p>
+
+          <fieldset class="section">
+            <legend class="section-title"><span class="step" aria-hidden="true">01</span> Thông tin của bé</legend>
+            <div class="grid-2">
+              <div class="field">
+                <label class="label" for="ten-be">Họ và tên bé <span class="req" aria-hidden="true">*</span></label>
+                <input class="input" id="ten-be" name="tenBe" type="text" autocomplete="off" required aria-describedby="ten-be-loi">
+                <p class="error-text" id="ten-be-loi" hidden></p>
+              </div>
+              <div class="field">
+                <label class="label" for="ngay-sinh">Ngày sinh của bé <span class="req" aria-hidden="true">*</span></label>
+                <input class="input" id="ngay-sinh" name="ngaySinh" type="date" required aria-describedby="ngay-sinh-goi-y ngay-sinh-loi">
+                <p class="hint" id="ngay-sinh-goi-y">Phòng khám nhận bé từ sơ sinh đến dưới 16 tuổi.</p>
+                <p class="error-text" id="ngay-sinh-loi" hidden></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="section">
+            <legend class="section-title"><span class="step" aria-hidden="true">02</span> Phụ huynh liên hệ</legend>
+            <div class="field">
+              <label class="label" for="ten-ph">Họ và tên phụ huynh <span class="req" aria-hidden="true">*</span></label>
+              <input class="input" id="ten-ph" name="tenPhuHuynh" type="text" autocomplete="name" required aria-describedby="ten-ph-loi">
+              <p class="error-text" id="ten-ph-loi" hidden></p>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label class="label" for="sdt">Số điện thoại <span class="req" aria-hidden="true">*</span></label>
+                <input class="input" id="sdt" name="soDienThoai" type="tel" inputmode="tel" autocomplete="tel" required aria-describedby="sdt-goi-y sdt-loi">
+                <p class="hint" id="sdt-goi-y">Ví dụ 0912 345 678. Phòng khám gọi số này để xác nhận.</p>
+                <p class="error-text" id="sdt-loi" hidden></p>
+              </div>
+              <div class="field">
+                <label class="label" for="email">Email <span class="opt">(không bắt buộc)</span></label>
+                <input class="input" id="email" name="email" type="email" inputmode="email" autocomplete="email" spellcheck="false" aria-describedby="email-goi-y email-loi">
+                <p class="hint" id="email-goi-y">Để nhận bản xác nhận và lời nhắc trước giờ khám.</p>
+                <p class="error-text" id="email-loi" hidden></p>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="section">
+            <legend class="section-title"><span class="step" aria-hidden="true">03</span> Chuyên khoa và lịch khám</legend>
+            <div class="field">
+              <label class="label" for="chuyen-khoa">Chuyên khoa <span class="req" aria-hidden="true">*</span></label>
+              <select class="input" id="chuyen-khoa" name="chuyenKhoa" required aria-describedby="chuyen-khoa-loi">
+                <option value="">Chọn chuyên khoa</option>
+                <option>Nhi tổng quát</option>
+                <option>Hô hấp nhi</option>
+                <option>Tiêu hoá nhi</option>
+                <option>Da liễu nhi</option>
+                <option>Tai mũi họng nhi</option>
+                <option>Dinh dưỡng và tăng trưởng</option>
+                <option>Tiêm chủng</option>
+              </select>
+              <p class="error-text" id="chuyen-khoa-loi" hidden></p>
+            </div>
+
+            <fieldset class="choice-group" id="nhom-ngay" aria-describedby="ngay-loi">
+              <legend class="label">Ngày khám <span class="req" aria-hidden="true">*</span></legend>
+              <div class="chips" id="ds-ngay"></div>
+              <p class="error-text" id="ngay-loi" hidden></p>
+            </fieldset>
+
+            <fieldset class="choice-group" id="nhom-gio" aria-describedby="gio-trong gio-loi">
+              <legend class="label">Khung giờ còn trống <span class="req" aria-hidden="true">*</span></legend>
+              <div id="ds-gio" aria-live="polite"></div>
+              <p class="hint" id="gio-trong"></p>
+              <p class="error-text" id="gio-loi" hidden></p>
+            </fieldset>
+          </fieldset>
+
+          <fieldset class="section">
+            <legend class="section-title"><span class="step" aria-hidden="true">04</span> Tình trạng của bé</legend>
+            <div class="field">
+              <label class="label" for="trieu-chung">Mô tả triệu chứng <span class="req" aria-hidden="true">*</span></label>
+              <textarea class="input" id="trieu-chung" name="trieuChung" maxlength="500" required aria-describedby="tc-goi-y tc-loi" placeholder="Ví dụ: Bé sốt 38,5 độ từ tối qua, ho có đờm, ăn kém."></textarea>
+              <div class="field-foot">
+                <p class="hint" id="tc-goi-y">Ghi triệu chứng chính, từ khi nào, bé đã dùng thuốc gì.</p>
+                <p class="count" id="dem-ky-tu" aria-live="polite">0/500</p>
+              </div>
+              <p class="error-text" id="tc-loi" hidden></p>
+            </div>
+          </fieldset>
+
+          <fieldset class="section">
+            <legend class="sr-only">Xác nhận</legend>
+            <div class="field">
+              <label class="check">
+                <input type="checkbox" id="dong-y" name="dongY" required aria-describedby="dong-y-loi">
+                <span>Tôi đồng ý với <a href="#">điều khoản đặt lịch</a> và cho phép phòng khám dùng thông tin trên để liên hệ, chuẩn bị buổi khám. <span class="req" aria-hidden="true">*</span></span>
+              </label>
+              <p class="error-text" id="dong-y-loi" hidden></p>
+            </div>
+            <div class="actions">
+              <button class="btn btn-primary submit" type="submit" id="nut-gui">Gửi yêu cầu đặt lịch</button>
+              <p class="hint">Chưa mất phí. Bạn thanh toán tại quầy khi đến khám.</p>
+            </div>
+          </fieldset>
+        </form>
+      </section>
+
+      <section class="done surface" id="xac-nhan" aria-labelledby="xn-tieu-de" hidden>
+        <div class="done-head">
+          <div class="done-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg></div>
+          <h2 id="xn-tieu-de" tabindex="-1">Đã nhận yêu cầu đặt lịch</h2>
+          <p>Mã lịch hẹn của bạn: <span class="code" id="xn-ma"></span></p>
+          <p id="xn-loi-nhan"></p>
+        </div>
+        <dl class="summary" id="xn-chi-tiet"></dl>
+        <p>Vui lòng đến trước giờ hẹn 15&nbsp;phút, mang theo sổ khám bệnh hoặc sổ tiêm chủng của bé. Muốn đổi hoặc huỷ lịch, gọi <a href="tel:02838123456">028 3812 3456</a> và đọc mã lịch hẹn.</p>
+        <div class="actions">
+          <button class="btn btn-secondary" type="button" id="dat-tiep">Đặt lịch cho bé khác</button>
+        </div>
+      </section>
+    </div>
+
+    <aside class="aside" aria-label="Thông tin phòng khám">
+      <div>
+        <h2>Giờ làm việc</h2>
+        <dl style="margin-top: var(--sp-3)">
+          <div><dt>Thứ Hai đến Thứ Bảy</dt><dd>7:30 – 11:30 · 13:30 – 19:30</dd></div>
+          <div><dt>Chủ nhật</dt><dd>Nghỉ, chỉ trực cấp cứu</dd></div>
+          <div><dt>Địa chỉ</dt><dd>128 đường An Bình, phường 5, quận 5, TP. Hồ Chí Minh</dd></div>
+        </dl>
+      </div>
+      <div>
+        <h2>Sau khi gửi</h2>
+        <ol style="margin-top: var(--sp-3)">
+          <li>Bạn nhận mã lịch hẹn ngay trên màn hình.</li>
+          <li>Điều dưỡng gọi lại xác nhận trong 30&nbsp;phút.</li>
+          <li>Đến trước giờ hẹn 15&nbsp;phút để làm thủ tục.</li>
+        </ol>
+      </div>
+      <p class="urgent"><strong>Bé khó thở, co giật, sốt cao li bì?</strong> Đừng đặt lịch, hãy gọi 115 hoặc đưa bé đến cơ sở cấp cứu gần nhất.</p>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    <p style="margin:0">© 2026 Phòng khám Nhi An Bình. Thông tin của bạn chỉ dùng cho việc khám chữa bệnh.</p>
+  </footer>
+
+  <script>
+  (() => {
+    const ICON_LOI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>';
+    const THU = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+    const THU_DAY = ["Chủ nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+    const GIO = { "Buổi sáng": ["07:30", "08:15", "09:00", "09:45", "10:30"], "Buổi chiều": ["13:30", "14:15", "15:00", "16:30", "17:15", "18:00", "18:45"] };
+
+    const form = document.getElementById("form");
+    const $ = (id) => document.getElementById(id);
+    const pad = (n) => String(n).padStart(2, "0");
+    const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const vnDate = (d) => `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+
+    // Ngày sinh: không quá hôm nay
+    const homNay = new Date(); homNay.setHours(0, 0, 0, 0);
+    $("ngay-sinh").max = iso(homNay);
+
+    // 7 ngày làm việc tới (bỏ Chủ nhật)
+    const ngays = [];
+    for (let d = new Date(homNay); ngays.length < 7;) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0) ngays.push(new Date(d)); }
+    // Giả lập khung đã kín: cố định theo ngày để lần nào cũng như nhau; một ngày kín hẳn để thấy trạng thái rỗng
+    const kin = (d, g, i) => ngays.indexOf(d) === 4 || ((d.getDate() * 7 + i * 3) % 5 === 0) || (d.getDay() === 6 && g === "Buổi chiều" && i > 3);
+
+    $("ds-ngay").innerHTML = ngays.map((d, i) =>
+      `<label class="chip"><input type="radio" name="ngay" value="${iso(d)}" data-i="${i}"><span>${THU[d.getDay()]}<small>${pad(d.getDate())}/${pad(d.getMonth() + 1)}</small></span></label>`).join("");
+
+    function veGio() {
+      const chon = form.querySelector('input[name="ngay"]:checked');
+      const box = $("ds-gio"), note = $("gio-trong");
+      if (!chon) { box.innerHTML = '<p class="slot-note">Chọn ngày khám trước để xem khung giờ còn trống.</p>'; note.textContent = ""; return; }
+      const d = ngays[+chon.dataset.i];
+      let trong = 0, html = "", idx = 0;
+      for (const [buoi, ds] of Object.entries(GIO)) {
+        html += `<p class="period">${buoi}</p><div class="chips">`;
+        html += ds.map((g) => { const k = kin(d, buoi, idx++); if (!k) trong++;
+          return `<label class="chip"><input type="radio" name="gio" value="${g}" ${k ? 'class="full" disabled' : ""}><span>${g}${k ? "<small>Đã kín</small>" : ""}</span></label>`; }).join("");
+        html += "</div>";
+      }
+      if (!trong) { box.innerHTML = `<p class="slot-note">${THU_DAY[d.getDay()]} ${vnDate(d)} đã kín lịch. Vui lòng chọn ngày khác, hoặc gọi tổng đài để được xếp lịch chờ.</p>`; note.textContent = ""; return; }
+      box.innerHTML = html;
+      note.textContent = `Còn ${trong} khung giờ trống ngày ${vnDate(d)}. Mỗi lượt khám khoảng 30 phút.`;
+    }
+    veGio();
+    $("ds-ngay").addEventListener("change", () => { veGio(); kiem("ngay"); if (daGui) capNhatTomTat(); });
+    $("ds-gio").addEventListener("change", () => { kiem("gio"); if (daGui) capNhatTomTat(); });
+
+    // Đếm ký tự
+    const tc = $("trieu-chung");
+    tc.addEventListener("input", () => { $("dem-ky-tu").textContent = `${tc.value.length}/500`; });
+
+    // Quy tắc kiểm
+    const giaTri = (n) => (form.elements[n] && form.elements[n].value || "").trim();
+    const sdtSach = (v) => v.replace(/[\s.\-()]/g, "").replace(/^\+84/, "0");
+    const RULES = {
+      tenBe: { el: "ten-be", err: "ten-be-loi", nhan: "Họ và tên bé", check: (v) => !v ? "Nhập họ và tên của bé." : v.split(/\s+/).length < 2 ? "Nhập đủ họ và tên, ví dụ Nguyễn Minh An." : "" },
+      ngaySinh: { el: "ngay-sinh", err: "ngay-sinh-loi", nhan: "Ngày sinh của bé", check: (v) => {
+        if (!v) return "Chọn ngày sinh của bé.";
+        const d = new Date(v + "T00:00:00"); if (isNaN(d)) return "Ngày sinh chưa đúng định dạng.";
+        if (d > homNay) return "Ngày sinh không thể sau hôm nay.";
+        const moc = new Date(homNay); moc.setFullYear(moc.getFullYear() - 16);
+        if (d <= moc) return "Phòng khám nhi nhận bé dưới 16 tuổi. Với trẻ lớn hơn, vui lòng gọi tổng đài.";
+        return ""; } },
+      tenPhuHuynh: { el: "ten-ph", err: "ten-ph-loi", nhan: "Họ và tên phụ huynh", check: (v) => !v ? "Nhập họ và tên phụ huynh." : v.split(/\s+/).length < 2 ? "Nhập đủ họ và tên." : "" },
+      soDienThoai: { el: "sdt", err: "sdt-loi", nhan: "Số điện thoại", check: (v) => !v ? "Nhập số điện thoại để phòng khám gọi xác nhận." : !/^0(3|5|7|8|9)\d{8}$/.test(sdtSach(v)) ? "Số điện thoại di động gồm 10 chữ số, bắt đầu bằng 03, 05, 07, 08 hoặc 09." : "" },
+      email: { el: "email", err: "email-loi", nhan: "Email", check: (v) => v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? "Email chưa đúng dạng ten@vidu.vn. Có thể để trống." : "" },
+      chuyenKhoa: { el: "chuyen-khoa", err: "chuyen-khoa-loi", nhan: "Chuyên khoa", check: (v) => !v ? "Chọn chuyên khoa phù hợp. Chưa rõ thì chọn Nhi tổng quát." : "" },
+      ngay: { el: "nhom-ngay", err: "ngay-loi", nhan: "Ngày khám", group: true, focus: () => form.querySelector('input[name="ngay"]'), check: () => form.querySelector('input[name="ngay"]:checked') ? "" : "Chọn một ngày khám." },
+      gio: { el: "nhom-gio", err: "gio-loi", nhan: "Khung giờ", group: true, focus: () => form.querySelector('input[name="gio"]:not(:disabled)') || form.querySelector('input[name="ngay"]'), check: () => {
+        if (!form.querySelector('input[name="ngay"]:checked')) return "Chọn ngày khám trước, rồi chọn khung giờ.";
+        if (!form.querySelector('input[name="gio"]:not(:disabled)')) return "Ngày đã chọn kín lịch. Chọn ngày khác.";
+        return form.querySelector('input[name="gio"]:checked') ? "" : "Chọn một khung giờ còn trống."; } },
+      trieuChung: { el: "trieu-chung", err: "tc-loi", nhan: "Mô tả triệu chứng", check: (v) => !v ? "Mô tả ngắn triệu chứng của bé để bác sĩ chuẩn bị." : v.length < 10 ? "Mô tả thêm một chút (ít nhất 10 ký tự)." : "" },
+      dongY: { el: "dong-y", err: "dong-y-loi", nhan: "Đồng ý điều khoản", check: () => $("dong-y").checked ? "" : "Cần đồng ý điều khoản để gửi yêu cầu." },
+    };
+
+    function kiem(ten) {
+      const r = RULES[ten], msg = r.check(giaTri(ten)), el = $(r.el), err = $(r.err);
+      el.setAttribute("aria-invalid", String(!!msg));
+      err.hidden = !msg;
+      err.innerHTML = msg ? `${ICON_LOI}<span>${msg}</span>` : "";
+      return msg;
+    }
+
+    let daGui = false;
+    Object.entries(RULES).forEach(([ten, r]) => {
+      if (r.group) return;
+      const el = $(r.el);
+      el.addEventListener(el.type === "checkbox" || el.tagName === "SELECT" ? "change" : "blur", () => {
+        if (el.value || daGui || el.type === "checkbox") { kiem(ten); if (daGui) capNhatTomTat(); }
+      });
+    });
+
+    function capNhatTomTat() {
+      const loi = Object.keys(RULES).map((t) => [t, RULES[t].check(giaTri(t))]).filter(([, m]) => m);
+      const box = $("tom-tat-loi");
+      if (!loi.length) { box.hidden = true; return loi; }
+      $("tom-tat-tieu-de").textContent = `Còn ${loi.length} mục cần sửa trước khi gửi`;
+      $("ds-loi").innerHTML = loi.map(([t, m]) => `<li><a href="#${RULES[t].el}" data-ten="${t}">${RULES[t].nhan}</a>: ${m}</li>`).join("");
+      box.hidden = false;
+      return loi;
+    }
+    $("ds-loi").addEventListener("click", (e) => {
+      const a = e.target.closest("a[data-ten]"); if (!a) return;
+      e.preventDefault();
+      const r = RULES[a.dataset.ten];
+      (r.focus ? r.focus() : $(r.el)).focus();
+    });
+
+    const nut = $("nut-gui");
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      daGui = true;
+      Object.keys(RULES).forEach(kiem);
+      const loi = capNhatTomTat();
+      if (loi.length) { $("tom-tat-loi").focus(); return; }
+
+      // Trạng thái đang gửi
+      form.setAttribute("aria-busy", "true");
+      form.querySelectorAll("fieldset").forEach((f) => (f.disabled = true));
+      nut.innerHTML = '<span class="spinner" aria-hidden="true"></span> Đang gửi yêu cầu…';
+
+      setTimeout(() => {
+        const d = ngays[+form.querySelector('input[name="ngay"]:checked').dataset.i];
+        const gio = form.querySelector('input[name="gio"]:checked').value;
+        const ma = "AB-" + pad(d.getDate()) + pad(d.getMonth() + 1) + "-" + String(Math.floor(1000 + Math.random() * 9000));
+        const email = giaTri("email");
+        const ns = new Date(giaTri("ngaySinh") + "T00:00:00");
+        $("xn-ma").textContent = ma;
+        $("xn-loi-nhan").textContent = `Điều dưỡng sẽ gọi số ${giaTri("soDienThoai")} trong vòng 30 phút để xác nhận.` + (email ? ` Bản xác nhận đã gửi tới ${email}.` : "");
+        const hang = [
+          ["Bé", `${giaTri("tenBe")} (sinh ${vnDate(ns)})`],
+          ["Phụ huynh", giaTri("tenPhuHuynh")],
+          ["Chuyên khoa", giaTri("chuyenKhoa")],
+          ["Thời gian", `${gio}, ${THU_DAY[d.getDay()]} ${vnDate(d)}`],
+          ["Triệu chứng", giaTri("trieuChung")],
+        ];
+        const dl = $("xn-chi-tiet"); dl.textContent = "";
+        hang.forEach(([k, v]) => { const dt = document.createElement("dt"), dd = document.createElement("dd"); dt.textContent = k; dd.textContent = v; dl.append(dt, dd); });
+
+        $("dat-lich").hidden = true;
+        $("xac-nhan").hidden = false;
+        $("xn-tieu-de").focus();
+        window.scrollTo({ top: 0 });
+      }, 1200);
+    });
+
+    $("dat-tiep").addEventListener("click", () => {
+      form.reset(); daGui = false;
+      form.removeAttribute("aria-busy");
+      form.querySelectorAll("fieldset").forEach((f) => (f.disabled = false));
+      form.querySelectorAll("[aria-invalid]").forEach((el) => el.removeAttribute("aria-invalid"));
+      form.querySelectorAll(".error-text").forEach((el) => (el.hidden = true));
+      $("tom-tat-loi").hidden = true;
+      nut.textContent = "Gửi yêu cầu đặt lịch";
+      $("dem-ky-tu").textContent = "0/500";
+      veGio();
+      $("xac-nhan").hidden = true;
+      $("dat-lich").hidden = false;
+      $("ten-be").focus();
+    });
+  })();
+  </script>
+</body>
+</html>

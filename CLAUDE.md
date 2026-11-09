@@ -42,6 +42,10 @@ Chuẩn và cổng cho giao diện do agent làm.
 - **Playwright Python** có Chromium lệch phiên bản. CLI dùng `channel: msedge`, không tải trình duyệt riêng.
 - **Heredoc Git Bash** làm mất `\\`. Tệp có backslash thì viết bằng Write/Edit.
 
+- **Python trên Windows** mở tệp ở chế độ văn bản (`open(p, "w")`) sẽ ghi CRLF. Frontmatter của SKILL.md có CRLF thì harness không đọc được `description` (gặp 09/11/2026). Phải dùng `open(p, "w", newline="\n")` hoặc ghi ở chế độ nhị phân.
+- **`shadcn add`** lần nào cũng cài lại gói `cn` (đã lặp 3 lần). Sau mỗi lần add: grep `from "cn"`, rồi `npm uninstall cn`.
+- **`design-kit check` chỉ đo lần render đầu.** Trạng thái tương tác phải mở được bằng URL (`?mo=1`, `?trang-thai=loi`) rồi truyền qua `--query`.
+
 ## Quy tắc
 
 - Không ghi công Claude trong commit hay tài liệu.

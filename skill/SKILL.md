@@ -33,10 +33,15 @@ the gated blocks and the gate. Never call a UI task done on "it renders".
 | --- | --- |
 | `dau-trang` | sticky app bar, nav with `aria-current`, container-query collapse to a Menu button, skip link |
 | `form-dang-nhap` (+React) | labels, `autocomplete="username"`/`current-password`, inline errors with `aria-invalid`, show-password, busy button |
-| `bang-du-lieu` | sortable table (`aria-sort`), tabular numbers right-aligned, search + filter, rows become labelled stacks under 40rem |
+| `bang-du-lieu` (+React) | sortable table (`aria-sort`), tabular numbers right-aligned, search + filter, rows become labelled stacks under 40rem |
 | `trang-thai` (+React) | the four states of any data region: empty, loading skeleton, error with cause + retry + code, no permission |
 | `chi-so` | KPI strip in one surface (not identical cards), deltas with arrow + words, sparkline |
-| `hop-thoai` | native `<dialog>` confirm: safe button focused first, says what is lost |
+| `hop-thoai` (+React) | native `<dialog>` confirm: safe button focused first, says what is lost |
+| `hero` | landing hero: one idea, one primary CTA, a real product view built in HTML (not SVG text), reasons as a list not 3 cards |
+| `bai-viet` | long article: breadcrumb, meta, lead, sticky TOC on wide screens, quote, table in a focusable scroll region, note |
+| `thanh-ben` | app shell: sticky sidebar ≥ 60rem, `<dialog>` drawer below, grouped nav with `aria-current` |
+| `thong-bao` | toasts in an `aria-live` region, pause on hover/focus, errors stay, Undo on delete |
+| `bo-loc` | filter chips (`aria-pressed`), result count via `aria-live`, pagination with `aria-current` and "21–40 of 312" |
 
 Every data region you build needs all four states from `trang-thai`.
 
@@ -74,4 +79,13 @@ LCP ≤ 2.5 s, INP ≤ 200 ms, CLS ≤ 0.1 · 0 Impeccable slop findings.
 - **Label in name** (WCAG 2.5.3): a button showing "NV" needs "NV" inside its `aria-label`.
 - **shadcn CLI** once wrote `import { cn } from "cn"` and installed an unrelated npm package `cn`: after
   `shadcn add`, grep for `from "cn"` and fix to `@/lib/utils`; resize inputs/buttons to 44 px (`h-11`).
+- **`[hidden]` loses to `display:grid/flex`** set by a class: hidden panels show anyway. `_base.css` has
+  `[hidden]{display:none!important}`; keep it when you write your own CSS.
+- **The gate measures the first render only.** Give every state a URL switch (`?trang-thai=tai|loi|quyen`,
+  `?mo=1` for open dialogs/toasts) and pass them with `--query`, or script the clicks (Playwright) for
+  error → sending → success. Both A/B agents who did this found bugs the default run missed.
+- **A table can pass the gate yet hide columns** inside its own horizontal scroll (`inner-scroll` soft
+  finding): under ~40rem turn rows into labelled stacks, as `bang-du-lieu` does.
+- **tailwind-merge replaces, not adds**: `className="max-w-md"` on a shadcn dialog drops its
+  `max-w-[calc(100%-2rem)]` mobile margin. Use `sm:max-w-md`.
 - `npx @google/design.md lint` silently does nothing: use `npx -p @google/design.md designmd lint DESIGN.md`.

@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tủ thuốc nhà – Tổng quan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f7f6;
+    --surface: #ffffff;
+    --text: #1d2a2b;
+    --muted: #5b6b6c;
+    --border: #dfe7e6;
+    --primary: #0f766e;
+    --primary-ink: #ffffff;
+    --primary-soft: #e0f2ef;
+    --danger: #b42318;
+    --danger-soft: #fdecea;
+    --warn: #9a5b00;
+    --warn-soft: #fff4dc;
+    --ok: #1f7a3a;
+    --ok-soft: #e6f4ea;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(16,40,40,.06), 0 4px 16px rgba(16,40,40,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1717;
+      --surface: #172222;
+      --text: #e6eeed;
+      --muted: #9fb0af;
+      --border: #263434;
+      --primary: #2dd4bf;
+      --primary-ink: #062b27;
+      --primary-soft: #133a35;
+      --danger: #ff8a80;
+      --danger-soft: #3a1d1b;
+      --warn: #f5c060;
+      --warn-soft: #3a2e14;
+      --ok: #7ad69a;
+      --ok-soft: #173322;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--text);
+    background: var(--bg);
+  }
+  button, input, select { font: inherit; color: inherit; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px 48px; }
+
+  /* Header */
+  header.top {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .top-inner { max-width: 1180px; margin: 0 auto; padding: 12px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-right: auto; }
+  .logo { width: 38px; height: 38px; border-radius: 10px; background: var(--primary); color: var(--primary-ink); display: grid; place-items: center; }
+  .brand h1 { font-size: 18px; margin: 0; line-height: 1.2; }
+  .brand p { margin: 0; font-size: 13px; color: var(--muted); }
+  .search { position: relative; flex: 1 1 260px; max-width: 420px; }
+  .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+  .search input {
+    width: 100%; padding: 10px 12px 10px 38px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--surface);
+  }
+  .search input:focus, select:focus, .field input:focus { outline: 2px solid var(--primary); outline-offset: 1px; border-color: transparent; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer;
+    padding: 10px 16px; border-radius: 10px; font-weight: 600; white-space: nowrap;
+  }
+  .btn-primary { background: var(--primary); color: var(--primary-ink); }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); }
+  .btn:focus-visible, .chip:focus-visible, .dose input:focus-visible + span { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); }
+  .stat .label { font-size: 13px; color: var(--muted); }
+  .stat .value { font-size: 26px; font-weight: 700; line-height: 1.2; margin-top: 2px; }
+  .stat.danger .value { color: var(--danger); }
+  .stat.warn .value { color: var(--warn); }
+  .stat.ok .value { color: var(--ok); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; min-width: 0; }
+  .card h2 { font-size: 16px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+  .card h2 .count { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--primary-soft); color: var(--primary); }
+
+  /* Alerts */
+  .alert-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .alert { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; }
+  .alert.danger { background: var(--danger-soft); }
+  .alert.warn { background: var(--warn-soft); }
+  .alert .ico { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700; color: #fff; }
+  .alert.danger .ico { background: var(--danger); color: var(--danger-soft); }
+  .alert.warn .ico { background: var(--warn); color: var(--warn-soft); }
+  .alert b { display: block; }
+  .alert small { color: var(--muted); font-size: 13px; }
+  .alert-group-title { font-size: 13px; font-weight: 600; color: var(--muted); margin: 12px 0 6px; text-transform: uppercase; letter-spacing: .03em; }
+  .alert-group-title:first-of-type { margin-top: 0; }
+  .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+
+  /* Schedule */
+  .members { display: grid; gap: 12px; }
+  .member { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+  .member-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; color: #fff; flex: none; }
+  .member-head .name { font-weight: 600; }
+  .member-head .progress { margin-left: auto; font-size: 13px; color: var(--muted); }
+  .bar { height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+  .bar i { display: block; height: 100%; background: var(--primary); transition: width .3s; }
+  .dose { display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer; border-top: 1px dashed var(--border); }
+  .dose:first-of-type { border-top: 0; }
+  .dose input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .dose .check { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--border); display: grid; place-items: center; flex: none; }
+  .dose input:checked + .check { background: var(--primary); border-color: var(--primary); }
+  .dose input:checked + .check::after { content: ""; width: 6px; height: 11px; border: solid var(--primary-ink); border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px,-1px); }
+  .dose .time { font-variant-numeric: tabular-nums; font-weight: 600; width: 48px; flex: none; }
+  .dose .what { flex: 1; min-width: 0; }
+  .dose .what small { display: block; color: var(--muted); font-size: 13px; }
+  .dose input:checked ~ .what { text-decoration: line-through; color: var(--muted); }
+  .tag { font-size: 12px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; font-weight: 500; }
+  .tag.late { background: var(--danger-soft); color: var(--danger); }
+  .tag.next { background: var(--primary-soft); color: var(--primary); }
+
+  /* Inventory */
+  .inv { margin-top: 16px; }
+  .inv-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+  .chip { border: 1px solid var(--border); background: var(--surface); padding: 6px 12px; border-radius: 99px; cursor: pointer; font-size: 14px; }
+  .chip[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+  .inv-tools select { margin-left: auto; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  th { font-size: 13px; color: var(--muted); font-weight: 600; }
+  tbody tr:hover { background: color-mix(in srgb, var(--primary-soft) 45%, transparent); }
+  td .mname { font-weight: 600; }
+  td .mform { font-size: 13px; color: var(--muted); }
+  .qty { display: flex; align-items: center; gap: 8px; }
+  .qty .meter { width: 60px; height: 6px; background: var(--border); border-radius: 6px; overflow: hidden; flex: none; }
+  .qty .meter i { display: block; height: 100%; background: var(--ok); }
+  .qty.low .meter i { background: var(--danger); }
+  .qty.low span { color: var(--danger); font-weight: 600; }
+  .exp.danger { color: var(--danger); font-weight: 600; }
+  .exp.warn { color: var(--warn); font-weight: 600; }
+  .exp small { display: block; font-size: 12px; font-weight: 400; color: var(--muted); }
+  .who { display: flex; gap: 4px; flex-wrap: wrap; }
+  .who span { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--primary-soft); color: var(--primary); white-space: nowrap; }
+
+  /* Dialog */
+  dialog { border: 0; border-radius: 16px; padding: 0; width: min(480px, calc(100vw - 32px)); background: var(--surface); color: var(--text); }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  .dlg-body { padding: 20px; }
+  .dlg-body h2 { margin: 0 0 14px; font-size: 18px; }
+  .field { display: grid; gap: 4px; margin-bottom: 12px; }
+  .field label { font-size: 13px; font-weight: 600; }
+  .field input, .field select { padding: 9px 11px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); width: 100%; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; opacity: 0; transition: .25s; pointer-events: none; max-width: calc(100vw - 32px); }
+  .toast.show { opacity: 1; transform: translateX(-50%); }
+
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 680px) {
+    .brand { width: 100%; }
+    .search { max-width: none; }
+    .btn-add-label { display: none; }
+    .inv-tools select { margin-left: 0; }
+    thead { display: none; }
+    table, tbody, tr, td { display: block; }
+    tr { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+    td { border: 0; padding: 4px 0; display: flex; justify-content: space-between; gap: 12px; }
+    td::before { content: attr(data-label); color: var(--muted); font-size: 13px; flex: none; }
+    td:first-child { display: block; padding-bottom: 6px; border-bottom: 1px dashed var(--border); margin-bottom: 4px; }
+    td:first-child::before { content: none; }
+    td > div { text-align: right; }
+    .who { justify-content: flex-end; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="6" width="18" height="15" rx="2"/><path d="M8 6V4h8v2M12 10v7M8.5 13.5h7"/></svg>
+      </div>
+      <div>
+        <h1>Tủ thuốc nhà</h1>
+        <p id="today"></p>
+      </div>
+    </div>
+    <label class="search">
+      <span class="sr" style="position:absolute;left:-9999px">Tìm thuốc</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Tìm tên thuốc, công dụng, người dùng…" autocomplete="off">
+    </label>
+    <button class="btn btn-primary" id="addBtn" aria-label="Thêm thuốc">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span class="btn-add-label">Thêm thuốc</span>
+    </button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="stats" aria-label="Số liệu tổng quan">
+    <div class="stat"><div class="label">Tổng số loại thuốc</div><div class="value" id="sTotal">0</div></div>
+    <div class="stat danger"><div class="label">Sắp hết hạn (≤ 30 ngày)</div><div class="value" id="sExp">0</div></div>
+    <div class="stat warn"><div class="label">Sắp hết thuốc</div><div class="value" id="sLow">0</div></div>
+    <div class="stat ok"><div class="label">Liều đã uống hôm nay</div><div class="value" id="sDose">0/0</div></div>
+  </section>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="hAlert">
+      <h2 id="hAlert">Cảnh báo <span class="count" id="alertCount">0</span></h2>
+      <div id="alerts"></div>
+    </section>
+    <section class="card" aria-labelledby="hSched">
+      <h2 id="hSched">Lịch uống thuốc hôm nay</h2>
+      <div class="members" id="schedule"></div>
+    </section>
+  </div>
+
+  <section class="card inv" aria-labelledby="hInv">
+    <h2 id="hInv">Danh sách thuốc <span class="count" id="invCount">0</span></h2>
+    <div class="inv-tools">
+      <div id="memberChips" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      <select id="sort" aria-label="Sắp xếp">
+        <option value="exp">Sắp xếp: Hạn dùng gần nhất</option>
+        <option value="qty">Sắp xếp: Số lượng ít nhất</option>
+        <option value="name">Sắp xếp: Tên A–Z</option>
+      </select>
+    </div>
+    <table>
+      <thead><tr><th>Tên thuốc</th><th>Công dụng</th><th>Còn lại</th><th>Hạn dùng</th><th>Người dùng</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <p class="empty" id="noResult" hidden>Không tìm thấy thuốc phù hợp.</p>
+  </section>
+</main>
+
+<dialog id="dlg">
+  <form method="dialog" class="dlg-body" id="addForm">
+    <h2>Thêm thuốc mới</h2>
+    <div class="field"><label for="fName">Tên thuốc</label><input id="fName" required placeholder="VD: Paracetamol 500mg"></div>
+    <div class="field"><label for="fUse">Công dụng</label><input id="fUse" required placeholder="VD: Hạ sốt, giảm đau"></div>
+    <div class="row2">
+      <div class="field"><label for="fQty">Số lượng</label><input id="fQty" type="number" min="0" required value="10"></div>
+      <div class="field"><label for="fUnit">Đơn vị</label>
+        <select id="fUnit"><option>viên</option><option>gói</option><option>ml</option><option>lọ</option><option>ống</option></select></div>
+    </div>
+    <div class="field"><label for="fExp">Hạn dùng</label><input id="fExp" type="date" required></div>
+    <div class="field"><label for="fWho">Người dùng</label>
+      <select id="fWho"></select></div>
+    <div class="dlg-actions">
+      <button type="button" class="btn btn-ghost" id="cancel">Huỷ</button>
+      <button type="submit" class="btn btn-primary" value="ok">Lưu thuốc</button>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const today = new Date(); today.setHours(0,0,0,0);
+const addDays = n => { const d = new Date(today); d.setDate(d.getDate() + n); return d; };
+const DAY = 86400000;
+
+const members = [
+  { id: 'bo', name: 'Bố', color: '#2563eb' },
+  { id: 'me', name: 'Mẹ', color: '#c026d3' },
+  { id: 'ba', name: 'Bà nội', color: '#b45309' },
+  { id: 'an', name: 'Bé An', color: '#0f766e' },
+];
+const all = { id: 'ca', name: 'Cả nhà' };
+const memberName = id => id === 'ca' ? 'Cả nhà' : members.find(m => m.id === id).name;
+
+let meds = [
+  { name: 'Paracetamol 500mg', form: 'Viên nén', use: 'Hạ sốt, giảm đau', qty: 18, max: 20, unit: 'viên', low: 6, exp: addDays(210), who: ['ca'] },
+  { name: 'Hapacol 150 Flu', form: 'Gói bột sủi', use: 'Hạ sốt cho trẻ em', qty: 3, max: 24, unit: 'gói', low: 5, exp: addDays(19), who: ['an'] },
+  { name: 'Amlodipin 5mg', form: 'Viên nén', use: 'Điều trị tăng huyết áp', qty: 24, max: 30, unit: 'viên', low: 7, exp: addDays(400), who: ['ba'] },
+  { name: 'Metformin 500mg', form: 'Viên bao phim', use: 'Kiểm soát đường huyết (tiểu đường type 2)', qty: 5, max: 60, unit: 'viên', low: 10, exp: addDays(150), who: ['bo'] },
+  { name: 'Oresol 245', form: 'Gói bột', use: 'Bù nước, điện giải khi tiêu chảy', qty: 8, max: 10, unit: 'gói', low: 3, exp: addDays(-4), who: ['ca'] },
+  { name: 'Vitamin D3 K2 (giọt)', form: 'Dung dịch nhỏ giọt', use: 'Bổ sung vitamin D, hỗ trợ phát triển xương', qty: 6, max: 10, unit: 'ml', low: 2, exp: addDays(26), who: ['an'] },
+  { name: 'Natri clorid 0,9%', form: 'Lọ nhỏ mắt mũi', use: 'Rửa mắt, vệ sinh mũi', qty: 2, max: 10, unit: 'lọ', low: 3, exp: addDays(95), who: ['ca'] },
+  { name: 'Loratadin 10mg', form: 'Viên nén', use: 'Chống dị ứng, viêm mũi dị ứng', qty: 9, max: 10, unit: 'viên', low: 3, exp: addDays(12), who: ['me'] },
+  { name: 'Omeprazol 20mg', form: 'Viên nang', use: 'Giảm tiết axit dạ dày, trào ngược', qty: 11, max: 14, unit: 'viên', low: 4, exp: addDays(280), who: ['bo', 'me'] },
+  { name: 'Calcium Corbiere 10ml', form: 'Ống uống', use: 'Bổ sung canxi', qty: 14, max: 30, unit: 'ống', low: 5, exp: addDays(330), who: ['ba', 'me'] },
+  { name: 'Berberin 100mg', form: 'Viên nén', use: 'Hỗ trợ điều trị tiêu chảy, đau bụng', qty: 40, max: 100, unit: 'viên', low: 10, exp: addDays(520), who: ['ca'] },
+  { name: 'Siro ho Prospan', form: 'Chai siro', use: 'Giảm ho, long đờm', qty: 30, max: 100, unit: 'ml', low: 25, exp: addDays(48), who: ['an', 'ba'] },
+];
+
+const schedule = [
+  { who: 'bo', time: '07:00', med: 'Metformin 500mg', dose: '1 viên, sau ăn sáng' },
+  { who: 'bo', time: '07:30', med: 'Omeprazol 20mg', dose: '1 viên, trước ăn 30 phút' },
+  { who: 'bo', time: '19:00', med: 'Metformin 500mg', dose: '1 viên, sau ăn tối' },
+  { who: 'me', time: '08:00', med: 'Calcium Corbiere 10ml', dose: '1 ống, sau ăn sáng' },
+  { who: 'me', time: '21:00', med: 'Loratadin 10mg', dose: '1 viên trước khi ngủ' },
+  { who: 'ba', time: '06:30', med: 'Amlodipin 5mg', dose: '1 viên, uống cùng giờ mỗi ngày' },
+  { who: 'ba', time: '12:00', med: 'Calcium Corbiere 10ml', dose: '1 ống, sau ăn trưa' },
+  { who: 'ba', time: '20:00', med: 'Siro ho Prospan', dose: '5 ml' },
+  { who: 'an', time: '08:30', med: 'Vitamin D3 K2 (giọt)', dose: '2 giọt, nhỏ vào lưỡi' },
+  { who: 'an', time: '16:00', med: 'Siro ho Prospan', dose: '2,5 ml' },
+].map((s, i) => ({ ...s, id: i, done: false }));
+
+// Đánh dấu sẵn các liều đã qua giờ hơn 1 tiếng (trừ vài liều để minh hoạ "quá giờ")
+(() => {
+  const now = new Date(); const mins = now.getHours() * 60 + now.getMinutes();
+  schedule.forEach((s, i) => { const [h, m] = s.time.split(':').map(Number); if (h * 60 + m < mins - 60 && i % 4 !== 1) s.done = true; });
+})();
+
+const fmtDate = d => d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const daysLeft = d => Math.round((d - today) / DAY);
+const isLow = m => m.qty <= m.low;
+const expState = m => { const n = daysLeft(m.exp); return n < 0 ? 'danger' : n <= 30 ? 'warn' : ''; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+const $ = id => document.getElementById(id);
+$('today').textContent = today.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).replace(/^./, c => c.toUpperCase());
+
+let filterWho = 'all';
+
+function renderStats() {
+  $('sTotal').textContent = meds.length;
+  $('sExp').textContent = meds.filter(m => daysLeft(m.exp) <= 30).length;
+  $('sLow').textContent = meds.filter(isLow).length;
+  $('sDose').textContent = `${schedule.filter(s => s.done).length}/${schedule.length}`;
+}
+
+function renderAlerts() {
+  const expiring = meds.filter(m => daysLeft(m.exp) <= 30).sort((a, b) => a.exp - b.exp);
+  const low = meds.filter(isLow).sort((a, b) => a.qty / a.max - b.qty / b.max);
+  $('alertCount').textContent = expiring.length + low.length;
+  const item = (cls, ico, title, sub) => `<li class="alert ${cls}"><span class="ico" aria-hidden="true">${ico}</span><div><b>${esc(title)}</b><small>${sub}</small></div></li>`;
+  let html = '<div class="alert-group-title">Hết hạn / sắp hết hạn</div>';
+  html += expiring.length ? '<ul class="alert-list">' + expiring.map(m => {
+    const n = daysLeft(m.exp);
+    const txt = n < 0 ? `Đã hết hạn ${-n} ngày (${fmtDate(m.exp)}) — nên bỏ đi` : n === 0 ? 'Hết hạn hôm nay' : `Còn ${n} ngày — hết hạn ${fmtDate(m.exp)}`;
+    return item(n < 0 ? 'danger' : 'warn', '!', m.name, txt);
+  }).join('') + '</ul>' : '<p class="empty">Không có thuốc nào sắp hết hạn.</p>';
+  html += '<div class="alert-group-title">Sắp hết thuốc</div>';
+  html += low.length ? '<ul class="alert-list">' + low.map(m =>
+    item(m.qty === 0 ? 'danger' : 'warn', '↓', m.name, `Chỉ còn ${m.qty} ${m.unit} — nên mua thêm`)
+  ).join('') + '</ul>' : '<p class="empty">Số lượng thuốc đều đủ dùng.</p>';
+  $('alerts').innerHTML = html;
+}
+
+function renderSchedule() {
+  const now = new Date(); const mins = now.getHours() * 60 + now.getMinutes();
+  $('schedule').innerHTML = members.map(mb => {
+    const list = schedule.filter(s => s.who === mb.id).sort((a, b) => a.time.localeCompare(b.time));
+    const done = list.filter(s => s.done).length;
+    const nextIdx = list.findIndex(s => !s.done && (() => { const [h, m] = s.time.split(':').map(Number); return h * 60 + m >= mins; })());
+    return `<div class="member">
+      <div class="member-head"><span class="avatar" style="background:${mb.color}">${esc(mb.name.split(' ').pop()[0])}</span>
+        <span class="name">${esc(mb.name)}</span><span class="progress">${done}/${list.length} liều</span></div>
+      <div class="bar"><i style="width:${list.length ? done / list.length * 100 : 0}%"></i></div>
+      ${list.map((s, i) => {
+        const [h, m] = s.time.split(':').map(Number);
+        const late = !s.done && h * 60 + m < mins;
+        const tag = late ? '<span class="tag late">Quá giờ</span>' : i === nextIdx ? '<span class="tag next">Sắp tới</span>' : '';
+        return `<label class="dose"><input type="checkbox" data-id="${s.id}" ${s.done ? 'checked' : ''}><span class="check"></span>
+          <span class="time">${s.time}</span><span class="what">${esc(s.med)}<small>${esc(s.dose)}</small></span>${tag}</label>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function renderChips() {
+  const opts = [{ id: 'all', name: 'Tất cả' }, ...members, all];
+  $('memberChips').innerHTML = opts.map(o => `<button class="chip" data-who="${o.id}" aria-pressed="${filterWho === o.id}">${esc(o.name)}</button>`).join('');
+}
+
+function renderTable() {
+  const q = $('q').value.trim().toLowerCase();
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+  const nq = norm(q);
+  let list = meds.filter(m => {
+    if (filterWho !== 'all' && !m.who.includes(filterWho) && !(m.who.includes('ca') && filterWho !== 'ca')) return false;
+    if (!nq) return true;
+    return norm([m.name, m.use, m.form, ...m.who.map(memberName)].join(' ')).includes(nq);
+  });
+  const sort = $('sort').value;
+  list.sort(sort === 'exp' ? (a, b) => a.exp - b.exp : sort === 'qty' ? (a, b) => a.qty / a.max - b.qty / b.max : (a, b) => a.name.localeCompare(b.name, 'vi'));
+  $('invCount').textContent = list.length;
+  $('noResult').hidden = list.length > 0;
+  $('rows').innerHTML = list.map(m => {
+    const n = daysLeft(m.exp), st = expState(m);
+    const note = n < 0 ? `Đã hết hạn ${-n} ngày` : n <= 30 ? `Còn ${n} ngày` : '';
+    return `<tr>
+      <td><div class="mname">${esc(m.name)}</div><div class="mform">${esc(m.form)}</div></td>
+      <td data-label="Công dụng"><div>${esc(m.use)}</div></td>
+      <td data-label="Còn lại"><div class="qty ${isLow(m) ? 'low' : ''}"><span class="meter"><i style="width:${Math.min(100, m.qty / m.max * 100)}%"></i></span><span>${m.qty} ${m.unit}</span></div></td>
+      <td data-label="Hạn dùng"><div class="exp ${st}">${fmtDate(m.exp)}${note ? `<small>${note}</small>` : ''}</div></td>
+      <td data-label="Người dùng"><div class="who">${m.who.map(w => `<span>${esc(memberName(w))}</span>`).join('')}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderAll() { renderStats(); renderAlerts(); renderSchedule(); renderChips(); renderTable(); }
+
+$('q').addEventListener('input', renderTable);
+$('sort').addEventListener('change', renderTable);
+$('memberChips').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; filterWho = b.dataset.who; renderChips(); renderTable(); });
+$('schedule').addEventListener('change', e => {
+  const s = schedule.find(x => x.id === +e.target.dataset.id); if (!s) return;
+  s.done = e.target.checked;
+  // Trừ/hoàn 1 đơn vị thuốc khi đánh dấu đã uống
+  const m = meds.find(x => x.name === s.med);
+  if (m) m.qty = Math.max(0, m.qty + (s.done ? -1 : 1));
+  renderAll();
+  toast(s.done ? `Đã uống: ${s.med}` : `Bỏ đánh dấu: ${s.med}`);
+});
+
+const dlg = $('dlg');
+$('fWho').innerHTML = [...members, all].map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('');
+$('addBtn').addEventListener('click', () => { $('addForm').reset(); $('fExp').value = addDays(365).toISOString().slice(0, 10); dlg.showModal(); $('fName').focus(); });
+$('cancel').addEventListener('click', () => dlg.close());
+$('addForm').addEventListener('submit', e => {
+  const qty = Math.max(0, parseInt($('fQty').value, 10) || 0);
+  const exp = new Date($('fExp').value + 'T00:00:00');
+  meds.push({ name: $('fName').value.trim(), form: 'Mới thêm', use: $('fUse').value.trim(), qty, max: Math.max(qty, 1), unit: $('fUnit').value, low: Math.ceil(qty * 0.25), exp, who: [$('fWho').value] });
+  renderAll();
+  toast(`Đã thêm "${$('fName').value.trim()}" vào tủ thuốc`);
+});
+
+let tt;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2200); }
+
+renderAll();
+</script>
+</body>
+</html>

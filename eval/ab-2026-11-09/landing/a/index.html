@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bếp Xanh – Lên thực đơn và tính khẩu phần cho bếp ăn mầm non</title>
+<meta name="description" content="Bếp Xanh giúp trường mầm non lên thực đơn tuần, tính calo và tỉ lệ P:L:G theo chuẩn Bộ Y tế, in sổ kiểm thực 3 bước chỉ trong vài phút. Dùng thử miễn phí 30 ngày.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-900: #123f2c;
+    --green-700: #1d6b47;
+    --green-600: #23845a;
+    --green-100: #e3f3ea;
+    --green-50: #f3faf6;
+    --orange-500: #f08a24;
+    --orange-100: #fdeedd;
+    --ink: #1c2a24;
+    --muted: #55655d;
+    --line: #dbe6e0;
+    --bg: #fbfdfb;
+    --white: #ffffff;
+    --radius: 16px;
+    --shadow: 0 10px 30px rgba(18, 63, 44, .08);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.6;
+    font-size: 17px;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: var(--green-700); }
+  .container { width: min(1120px, 100% - 32px); margin-inline: auto; }
+  h1, h2, h3 { line-height: 1.25; margin: 0 0 .5em; color: var(--green-900); }
+  h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; letter-spacing: -.02em; }
+  h2 { font-size: clamp(1.6rem, 3.5vw, 2.3rem); font-weight: 800; letter-spacing: -.01em; }
+  h3 { font-size: 1.2rem; font-weight: 700; }
+  p { margin: 0 0 1em; }
+  section { padding: 80px 0; }
+  .eyebrow {
+    display: inline-block; font-size: .85rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--green-600); margin-bottom: 12px;
+  }
+  .section-head { max-width: 680px; margin: 0 auto 48px; text-align: center; }
+  .section-head p { color: var(--muted); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px 26px; border-radius: 999px; font-weight: 700; font-size: 1rem;
+    text-decoration: none; border: 2px solid transparent; cursor: pointer;
+    transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+    font-family: inherit;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:focus-visible { outline: 3px solid var(--orange-500); outline-offset: 3px; }
+  .btn-primary { background: var(--green-700); color: #fff; box-shadow: 0 6px 18px rgba(29,107,71,.28); }
+  .btn-primary:hover { background: var(--green-900); }
+  .btn-ghost { background: transparent; color: var(--green-700); border-color: var(--green-700); }
+  .btn-ghost:hover { background: var(--green-50); }
+
+  /* Header */
+  header.site {
+    position: sticky; top: 0; z-index: 50; background: rgba(251,253,251,.92);
+    backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+  }
+  .nav { display: flex; align-items: center; justify-content: space-between; height: 68px; gap: 16px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.25rem; color: var(--green-900); text-decoration: none; }
+  .logo-mark { width: 36px; height: 36px; border-radius: 10px; background: var(--green-700); display: grid; place-items: center; }
+  .nav-links { display: flex; gap: 28px; list-style: none; margin: 0; padding: 0; }
+  .nav-links a { color: var(--ink); text-decoration: none; font-weight: 500; font-size: .95rem; }
+  .nav-links a:hover { color: var(--green-700); }
+  .nav .btn { padding: 10px 20px; font-size: .95rem; }
+
+  /* Hero */
+  .hero { padding: 72px 0 88px; background: linear-gradient(180deg, var(--green-50) 0%, var(--bg) 100%); }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
+  .hero p.lead { font-size: 1.15rem; color: var(--muted); max-width: 540px; }
+  .hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 20px; }
+  .hero-note { font-size: .92rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .hero-note span::before { content: "✓ "; color: var(--green-600); font-weight: 700; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px; background: var(--orange-100); color: #9a4f08;
+    font-weight: 600; font-size: .88rem; padding: 6px 14px; border-radius: 999px; margin-bottom: 18px;
+  }
+
+  /* Mock app card */
+  .mock { background: var(--white); border-radius: 20px; box-shadow: var(--shadow); border: 1px solid var(--line); overflow: hidden; }
+  .mock-top { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--green-50); }
+  .mock-top strong { font-size: .95rem; color: var(--green-900); }
+  .mock-top small { color: var(--muted); font-size: .8rem; }
+  .mock-body { padding: 18px 20px 22px; }
+  .meal { display: grid; grid-template-columns: 92px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--line); font-size: .92rem; }
+  .meal:last-of-type { border-bottom: 0; }
+  .meal b { color: var(--green-700); font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; padding-top: 2px; }
+  .nutri { margin-top: 16px; display: grid; gap: 10px; }
+  .bar-row { font-size: .82rem; }
+  .bar-row .lbl { display: flex; justify-content: space-between; color: var(--muted); margin-bottom: 4px; }
+  .bar-row .lbl b { color: var(--ink); }
+  .bar { height: 8px; border-radius: 99px; background: var(--green-100); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 99px; background: var(--green-600); }
+  .bar i.o { background: var(--orange-500); }
+  .ok-chip { display: inline-block; margin-top: 14px; background: var(--green-100); color: var(--green-900); font-size: .82rem; font-weight: 600; padding: 6px 12px; border-radius: 8px; }
+
+  /* Trust strip */
+  .trust { padding: 36px 0; border-bottom: 1px solid var(--line); }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; text-align: center; }
+  .stats strong { display: block; font-size: 1.9rem; font-weight: 800; color: var(--green-700); }
+  .stats span { color: var(--muted); font-size: .92rem; }
+
+  /* Benefits */
+  .cards-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; box-shadow: 0 2px 0 rgba(0,0,0,.02); }
+  .icon { width: 52px; height: 52px; border-radius: 14px; background: var(--green-100); display: grid; place-items: center; margin-bottom: 18px; }
+  .card p { color: var(--muted); margin: 0; }
+  .card .fact { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); font-size: .9rem; color: var(--green-900); font-weight: 600; }
+
+  /* Steps */
+  .how { background: var(--green-900); color: #e9f5ee; }
+  .how h2, .how h3 { color: #fff; }
+  .how .section-head p { color: #b8d6c5; }
+  .how .eyebrow { color: #8fd3ad; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; counter-reset: step; }
+  .step { position: relative; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: var(--radius); padding: 28px; }
+  .step-num { width: 44px; height: 44px; border-radius: 50%; background: var(--orange-500); color: #fff; font-weight: 800; display: grid; place-items: center; margin-bottom: 18px; font-size: 1.1rem; }
+  .step p { color: #c9e2d4; margin: 0; }
+  .step .time { display: inline-block; margin-top: 14px; font-size: .85rem; font-weight: 600; color: #8fd3ad; }
+
+  /* Pricing */
+  .pricing-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 420px)); gap: 28px; justify-content: center; }
+  .plan { background: var(--white); border: 1px solid var(--line); border-radius: 20px; padding: 32px; display: flex; flex-direction: column; position: relative; }
+  .plan.featured { border: 2px solid var(--green-700); box-shadow: var(--shadow); }
+  .plan .tag { position: absolute; top: -14px; left: 32px; background: var(--orange-500); color: #fff; font-size: .8rem; font-weight: 700; padding: 4px 12px; border-radius: 999px; }
+  .plan .for { color: var(--muted); font-size: .95rem; margin-bottom: 18px; }
+  .price { font-size: 2.4rem; font-weight: 800; color: var(--green-900); line-height: 1.1; }
+  .price small { font-size: 1rem; font-weight: 500; color: var(--muted); }
+  .price-sub { font-size: .9rem; color: var(--muted); margin: 6px 0 22px; }
+  .plan ul { list-style: none; padding: 0; margin: 0 0 28px; display: grid; gap: 10px; flex: 1; }
+  .plan li { padding-left: 28px; position: relative; font-size: .97rem; }
+  .plan li::before { content: ""; position: absolute; left: 0; top: 5px; width: 18px; height: 18px; border-radius: 50%; background: var(--green-100) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%231d6b47'%3E%3Cpath d='M8.1 13.6 4.6 10l1.2-1.2 2.3 2.3 6-6 1.2 1.2z'/%3E%3C/svg%3E") center/14px no-repeat; }
+  .plan .btn { width: 100%; }
+  .pricing-foot { text-align: center; color: var(--muted); font-size: .92rem; margin-top: 28px; }
+
+  /* FAQ */
+  .faq-wrap { max-width: 800px; margin: 0 auto; }
+  details { background: var(--white); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 12px; }
+  summary { list-style: none; cursor: pointer; padding: 18px 56px 18px 22px; font-weight: 600; position: relative; color: var(--green-900); }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; position: absolute; right: 22px; top: 50%; transform: translateY(-50%); font-size: 1.5rem; font-weight: 500; color: var(--green-700); transition: transform .2s; }
+  details[open] summary::after { content: "−"; }
+  summary:focus-visible { outline: 3px solid var(--orange-500); outline-offset: 2px; border-radius: 12px; }
+  details .ans { padding: 0 22px 20px; color: var(--muted); }
+  details .ans p:last-child { margin: 0; }
+
+  /* CTA band */
+  .cta-band { padding: 64px 0; }
+  .cta-box { background: var(--green-700); color: #fff; border-radius: 24px; padding: 48px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 32px; align-items: center; }
+  .cta-box h2 { color: #fff; }
+  .cta-box p { color: #d5ecdf; margin: 0; }
+  .trial-form { display: grid; gap: 10px; }
+  .trial-form label { font-size: .85rem; font-weight: 600; color: #e6f4ec; }
+  .trial-form input {
+    width: 100%; padding: 13px 16px; border-radius: 10px; border: 0; font: inherit; font-size: 1rem; color: var(--ink);
+  }
+  .trial-form input:focus-visible { outline: 3px solid var(--orange-500); }
+  .trial-form .btn { background: var(--orange-500); color: #fff; margin-top: 6px; }
+  .trial-form .btn:hover { background: #d9761a; }
+  .form-msg { font-size: .9rem; color: #fff; min-height: 1.2em; }
+
+  /* Footer */
+  footer { background: #0e2f21; color: #b9d3c4; padding: 56px 0 28px; font-size: .95rem; }
+  .foot-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 40px; }
+  footer h3 { color: #fff; font-size: 1rem; margin-bottom: 14px; }
+  footer a { color: #e0f0e7; text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  footer ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .foot-bottom { border-top: 1px solid rgba(255,255,255,.12); margin-top: 40px; padding-top: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: .85rem; color: #8fae9c; }
+  footer .logo { color: #fff; margin-bottom: 12px; }
+
+  /* Responsive */
+  @media (max-width: 920px) {
+    .hero-grid, .cta-box { grid-template-columns: 1fr; }
+    .cards-3, .steps { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .foot-grid { grid-template-columns: 1fr 1fr; }
+    .foot-grid > :first-child { grid-column: 1 / -1; }
+    .nav-links { display: none; }
+  }
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    section { padding: 56px 0; }
+    .hero { padding: 40px 0 56px; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    .plan, .card, .step { padding: 24px; }
+    .cta-box { padding: 28px 20px; border-radius: 18px; }
+    .foot-grid { grid-template-columns: 1fr; }
+    .hero-ctas .btn { flex: 1 1 100%; }
+    .meal { grid-template-columns: 76px 1fr; }
+    .nav .btn { padding: 9px 14px; font-size: .88rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .btn { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="container nav">
+    <a href="#" class="logo" aria-label="Bếp Xanh – trang chủ">
+      <span class="logo-mark" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 19c0-8 6-13 14-14-1 8-6 14-14 14Z" fill="#fff"/><path d="M5 19 13 11" stroke="#1d6b47" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </span>
+      Bếp Xanh
+    </a>
+    <ul class="nav-links">
+      <li><a href="#loi-ich">Lợi ích</a></li>
+      <li><a href="#cach-hoat-dong">Cách hoạt động</a></li>
+      <li><a href="#bang-gia">Bảng giá</a></li>
+      <li><a href="#hoi-dap">Hỏi đáp</a></li>
+    </ul>
+    <a href="#dung-thu" class="btn btn-primary">Dùng thử 30 ngày</a>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <span class="badge">🌱 Đã có 1.240 trường mầm non tin dùng</span>
+        <h1>Thực đơn đủ chất cho trẻ, lên xong trong 15 phút mỗi tuần</h1>
+        <p class="lead">Bếp Xanh tự tính calo, đạm, béo, bột đường cho từng bữa theo nhu cầu khuyến nghị của Bộ Y tế, rồi xuất phiếu đi chợ, sổ kiểm thực 3 bước và bảng công khai tài chính cho phụ huynh.</p>
+        <div class="hero-ctas">
+          <a href="#dung-thu" class="btn btn-primary">Dùng thử 30 ngày miễn phí</a>
+          <a href="#cach-hoat-dong" class="btn btn-ghost">Xem cách hoạt động</a>
+        </div>
+        <div class="hero-note">
+          <span>Không cần thẻ thanh toán</span>
+          <span>Có người hướng dẫn qua Zalo</span>
+          <span>Dùng trên máy tính và điện thoại</span>
+        </div>
+      </div>
+
+      <div class="mock" aria-label="Ví dụ thực đơn một ngày trên Bếp Xanh">
+        <div class="mock-top">
+          <strong>Thứ Ba, 11/11 · Mẫu giáo (3–6 tuổi)</strong>
+          <small>186 trẻ</small>
+        </div>
+        <div class="mock-body">
+          <div class="meal"><b>Sáng</b><span>Cháo thịt bò bí đỏ, sữa tươi không đường 180ml</span></div>
+          <div class="meal"><b>Trưa</b><span>Cơm, cá basa sốt cà chua, canh rau ngót nấu thịt, chuối tiêu</span></div>
+          <div class="meal"><b>Chiều</b><span>Bún mọc nấu nấm, sữa chua</span></div>
+          <div class="nutri">
+            <div class="bar-row">
+              <div class="lbl"><span>Năng lượng tại trường</span><b>682 / 615–726 kcal</b></div>
+              <div class="bar"><i style="width:94%"></i></div>
+            </div>
+            <div class="bar-row">
+              <div class="lbl"><span>Đạm (P)</span><b>15,8% · đạt 13–20%</b></div>
+              <div class="bar"><i style="width:79%"></i></div>
+            </div>
+            <div class="bar-row">
+              <div class="lbl"><span>Béo (L)</span><b>26,4% · đạt 25–35%</b></div>
+              <div class="bar"><i class="o" style="width:75%"></i></div>
+            </div>
+            <div class="bar-row">
+              <div class="lbl"><span>Bột đường (G)</span><b>57,8% · đạt 52–60%</b></div>
+              <div class="bar"><i style="width:96%"></i></div>
+            </div>
+          </div>
+          <span class="ok-chip">✓ Cân đối · Tiền ăn 31.500đ/trẻ, dư 0,8%</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST -->
+  <div class="trust">
+    <div class="container stats">
+      <div><strong>1.240</strong><span>trường mầm non</span></div>
+      <div><strong>42</strong><span>tỉnh, thành phố</span></div>
+      <div><strong>2.100+</strong><span>món ăn có sẵn định lượng</span></div>
+      <div><strong>4,8/5</strong><span>điểm hài lòng của cô nuôi dưỡng</span></div>
+    </div>
+  </div>
+
+  <!-- BENEFITS -->
+  <section id="loi-ich">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Lợi ích chính</span>
+        <h2>Bớt sổ sách, thêm thời gian chăm trẻ</h2>
+        <p>Bếp Xanh được làm cùng cô nuôi dưỡng và hiệu trưởng của 12 trường mầm non ở Hà Nội, Đà Nẵng và TP.HCM trong hai năm học.</p>
+      </div>
+      <div class="cards-3">
+        <article class="card">
+          <div class="icon" aria-hidden="true">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1d6b47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="9"/></svg>
+          </div>
+          <h3>Dinh dưỡng đúng chuẩn, tự động</h3>
+          <p>Nhập món và số trẻ, phần mềm tính ngay calo và tỉ lệ P:L:G theo Bảng thành phần thực phẩm Việt Nam của Viện Dinh dưỡng. Bữa nào thiếu hay thừa đều được báo màu cam để cô điều chỉnh.</p>
+          <p class="fact">Tách riêng nhà trẻ và mẫu giáo, có cả suất cho trẻ suy dinh dưỡng, béo phì.</p>
+        </article>
+        <article class="card">
+          <div class="icon" aria-hidden="true">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1d6b47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          </div>
+          <h3>Tiết kiệm 4–5 giờ mỗi tuần</h3>
+          <p>Không còn cộng tay từng gam thịt, từng mớ rau. Từ thực đơn và sĩ số hằng ngày, Bếp Xanh tự ra phiếu đi chợ, định lượng sống – chín và sổ kiểm thực 3 bước theo Quyết định 1246/QĐ-BYT.</p>
+          <p class="fact">Trung bình cô nuôi dưỡng tiết kiệm 4,5 giờ/tuần (khảo sát 318 trường, 2025).</p>
+        </article>
+        <article class="card">
+          <div class="icon" aria-hidden="true">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1d6b47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6"/></svg>
+          </div>
+          <h3>Minh bạch tiền ăn với phụ huynh</h3>
+          <p>Theo dõi tiền ăn từng ngày, cảnh báo khi vượt định mức. Cuối tháng in bảng công khai thu – chi tiền ăn và gửi thực đơn tuần cho phụ huynh qua Zalo chỉ bằng một nút bấm.</p>
+          <p class="fact">Hiệu trưởng xem báo cáo của bếp mọi lúc, ngay trên điện thoại.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="cach-hoat-dong" class="how">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Cách hoạt động</span>
+        <h2>Ba bước, từ thực đơn đến sổ kiểm thực</h2>
+        <p>Không cần biết công thức dinh dưỡng. Cô chỉ cần chọn món quen thuộc của trường.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Chọn món cho tuần</h3>
+          <p>Kéo thả từ hơn 2.100 món có sẵn định lượng, hoặc thêm món riêng của trường. Có thể sao chép thực đơn mẫu theo mùa do chuyên gia dinh dưỡng soạn.</p>
+          <span class="time">⏱ Khoảng 10 phút</span>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Nhập sĩ số mỗi sáng</h3>
+          <p>Giáo viên báo số trẻ ăn trước 8 giờ 30. Phần mềm tính lại khẩu phần, kiểm tra calo, P:L:G và tiền ăn, rồi gợi ý đổi món nếu bữa chưa cân đối.</p>
+          <span class="time">⏱ Khoảng 2 phút mỗi ngày</span>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>In phiếu và báo cáo</h3>
+          <p>Xuất phiếu đi chợ cho nhà cung cấp, sổ kiểm thực 3 bước, bảng tính khẩu phần và công khai tài chính dưới dạng Excel hoặc PDF, đúng mẫu Phòng GD&amp;ĐT thường yêu cầu.</p>
+          <span class="time">⏱ Một nút bấm</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="bang-gia">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Bảng giá</span>
+        <h2>Giá rõ ràng, tính theo năm học</h2>
+        <p>Cả hai gói đều được dùng thử đầy đủ tính năng trong 30 ngày. Giá đã gồm VAT.</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="plan">
+          <h3>Gói Cơ bản</h3>
+          <p class="for">Cho trường, nhóm lớp có đến 150 trẻ</p>
+          <div class="price">250.000đ <small>/ tháng</small></div>
+          <p class="price-sub">Thanh toán theo năm học: 2.500.000đ (tặng 2 tháng)</p>
+          <ul>
+            <li>Thực đơn tuần, tính calo và P:L:G tự động</li>
+            <li>Thư viện 2.100+ món có định lượng</li>
+            <li>Phiếu đi chợ, sổ kiểm thực 3 bước</li>
+            <li>Bảng công khai tiền ăn hằng tháng</li>
+            <li>2 tài khoản (hiệu trưởng và cô nuôi dưỡng)</li>
+            <li>Hỗ trợ qua Zalo, 7 giờ – 17 giờ các ngày làm việc</li>
+          </ul>
+          <a href="#dung-thu" class="btn btn-ghost">Dùng thử 30 ngày</a>
+        </div>
+        <div class="plan featured">
+          <span class="tag">Được chọn nhiều nhất</span>
+          <h3>Gói Trường</h3>
+          <p class="for">Cho trường có từ 150 đến 600 trẻ, nhiều điểm lẻ</p>
+          <div class="price">490.000đ <small>/ tháng</small></div>
+          <p class="price-sub">Thanh toán theo năm học: 4.900.000đ (tặng 2 tháng)</p>
+          <ul>
+            <li>Toàn bộ tính năng của Gói Cơ bản</li>
+            <li>Quản lý tối đa 4 điểm trường, sĩ số theo từng lớp</li>
+            <li>Suất ăn riêng cho trẻ suy dinh dưỡng, béo phì, dị ứng</li>
+            <li>Quản lý kho, nhà cung cấp và hoá đơn đầu vào</li>
+            <li>Gửi thực đơn tuần cho phụ huynh qua Zalo</li>
+            <li>Không giới hạn tài khoản</li>
+            <li>Tập huấn trực tuyến 1 buổi cho cả tổ bếp</li>
+          </ul>
+          <a href="#dung-thu" class="btn btn-primary">Dùng thử 30 ngày</a>
+        </div>
+      </div>
+      <p class="pricing-foot">Trường trên 600 trẻ hoặc Phòng GD&amp;ĐT muốn triển khai cho cả quận, huyện: gọi <a href="tel:02873008686">028 7300 8686</a> để nhận báo giá riêng.</p>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="hoi-dap" style="background: var(--green-50);">
+    <div class="container faq-wrap">
+      <div class="section-head">
+        <span class="eyebrow">Câu hỏi thường gặp</span>
+        <h2>Thầy cô hay hỏi chúng tôi</h2>
+      </div>
+      <details>
+        <summary>Số liệu dinh dưỡng trong Bếp Xanh lấy từ đâu?</summary>
+        <div class="ans"><p>Thành phần dinh dưỡng của thực phẩm lấy từ Bảng thành phần thực phẩm Việt Nam (Viện Dinh dưỡng Quốc gia). Mức năng lượng và tỉ lệ P:L:G khuyến nghị tại trường theo Thông tư 28/2016/TT-BGDĐT về Chương trình giáo dục mầm non và nhu cầu dinh dưỡng khuyến nghị cho người Việt Nam của Bộ Y tế. Khi văn bản thay đổi, chúng tôi cập nhật miễn phí.</p></div>
+      </details>
+      <details>
+        <summary>Hết 30 ngày dùng thử thì sao? Có tự trừ tiền không?</summary>
+        <div class="ans"><p>Không. Bếp Xanh không thu thông tin thẻ khi đăng ký. Hết hạn dùng thử, tài khoản chuyển sang chế độ chỉ xem trong 60 ngày để trường cân nhắc; mọi thực đơn và báo cáo đã làm vẫn được giữ nguyên.</p></div>
+      </details>
+      <details>
+        <summary>Cô nuôi dưỡng lớn tuổi, ít dùng máy tính có dùng được không?</summary>
+        <div class="ans"><p>Được. Giao diện chữ to, ít nút, làm việc chủ yếu bằng chọn món và gõ số. Mỗi trường có một nhân viên hỗ trợ riêng qua Zalo, có thể điều khiển máy từ xa để hướng dẫn trực tiếp. Phần lớn các cô dùng thành thạo sau tuần đầu tiên.</p></div>
+      </details>
+      <details>
+        <summary>Trường đang làm bằng Excel, có chuyển dữ liệu sang được không?</summary>
+        <div class="ans"><p>Có. Gửi tệp Excel thực đơn và danh sách món đang dùng, đội ngũ Bếp Xanh sẽ nhập giúp miễn phí trong 2 ngày làm việc, kể cả định lượng các món riêng của trường.</p></div>
+      </details>
+      <details>
+        <summary>Dữ liệu của trường được lưu ở đâu, có an toàn không?</summary>
+        <div class="ans"><p>Dữ liệu lưu trên máy chủ đặt tại Việt Nam, sao lưu tự động mỗi ngày và mã hoá khi truyền. Bếp Xanh chỉ lưu sĩ số theo lớp, không yêu cầu họ tên hay thông tin cá nhân của trẻ nếu trường không dùng tính năng suất ăn riêng.</p></div>
+      </details>
+      <details>
+        <summary>Trường có xuất được hoá đơn để thanh toán bằng kinh phí không?</summary>
+        <div class="ans"><p>Có. Chúng tôi xuất hoá đơn điện tử VAT và cung cấp đủ hợp đồng, biên bản nghiệm thu, thanh lý theo năm học để trường làm hồ sơ thanh toán.</p></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-band" id="dung-thu">
+    <div class="container">
+      <div class="cta-box">
+        <div>
+          <h2>Dùng thử 30 ngày, không mất phí</h2>
+          <p>Để lại số điện thoại, chuyên viên Bếp Xanh sẽ gọi trong giờ hành chính để tạo tài khoản và nhập sẵn thực đơn tuần đầu tiên cho trường.</p>
+        </div>
+        <form class="trial-form" novalidate>
+          <label for="f-school">Tên trường</label>
+          <input id="f-school" name="school" type="text" autocomplete="organization" placeholder="VD: Trường Mầm non Hoa Sen" required>
+          <label for="f-phone">Số điện thoại</label>
+          <input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="VD: 0912 345 678" required>
+          <button type="submit" class="btn">Đăng ký dùng thử</button>
+          <p class="form-msg" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="foot-grid">
+      <div>
+        <a href="#" class="logo">
+          <span class="logo-mark" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 19c0-8 6-13 14-14-1 8-6 14-14 14Z" fill="#fff"/><path d="M5 19 13 11" stroke="#1d6b47" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </span>
+          Bếp Xanh
+        </a>
+        <p>Phần mềm lên thực đơn và tính khẩu phần dinh dưỡng cho bếp ăn trường mầm non.</p>
+        <p>Công ty TNHH Công nghệ Bếp Xanh<br>Tầng 5, 117 Nguyễn Đình Chiểu, Phường Xuân Hoà, TP. Hồ Chí Minh</p>
+      </div>
+      <div>
+        <h3>Liên hệ</h3>
+        <ul>
+          <li>Tổng đài: <a href="tel:02873008686">028 7300 8686</a></li>
+          <li>Zalo hỗ trợ: <a href="tel:0909868686">0909 868 686</a></li>
+          <li>Email: <a href="mailto:hotro@bepxanh.vn">hotro@bepxanh.vn</a></li>
+          <li>Thứ Hai – Thứ Bảy, 7:00 – 17:00</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Tìm hiểu thêm</h3>
+        <ul>
+          <li><a href="#loi-ich">Lợi ích</a></li>
+          <li><a href="#cach-hoat-dong">Cách hoạt động</a></li>
+          <li><a href="#bang-gia">Bảng giá</a></li>
+          <li><a href="#hoi-dap">Câu hỏi thường gặp</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Bếp Xanh. Bảo lưu mọi quyền.</span>
+      <span><a href="#">Chính sách bảo mật</a> · <a href="#">Điều khoản sử dụng</a></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var form = document.querySelector('.trial-form');
+    var msg = form.querySelector('.form-msg');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var school = form.school.value.trim();
+      var phone = form.phone.value.replace(/[\s.]/g, '');
+      if (!school) { msg.textContent = 'Thầy cô vui lòng nhập tên trường.'; form.school.focus(); return; }
+      if (!/^(0|\+84)\d{9,10}$/.test(phone)) { msg.textContent = 'Số điện thoại chưa đúng, thầy cô kiểm tra lại giúp.'; form.phone.focus(); return; }
+      msg.textContent = 'Cảm ơn ' + school + '! Bếp Xanh sẽ gọi lại trong vòng 4 giờ làm việc.';
+      form.reset();
+    });
+  })();
+</script>
+</body>
+</html>

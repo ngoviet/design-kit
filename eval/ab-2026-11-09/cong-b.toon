@@ -1,0 +1,31 @@
+status: "pass: 3 pages, 0 hard failures"
+renders: "light+dark × 320/390/1280 px via msedge, impeccable on"
+pages[3]{page,verdict,hard,soft}:
+  eval/ab-2026-11-09/landing/b/index.html,pass,0,0
+  eval/ab-2026-11-09/dashboard/b/index.html,pass,0,0
+  eval/ab-2026-11-09/form/b/index.html,pass,0,7
+checks[15]{check,gate,result}:
+  overflow,hard,ok
+  axe,hard,ok
+  text-min,hard,ok
+  heading-lh,hard,ok
+  lang,hard,ok
+  motion,hard,ok
+  impeccable,hard,ok
+  body-size,soft,7 soft
+  body-lh,soft,ok
+  measure,soft,ok
+  font,soft,ok
+  focus,soft,ok
+  inner-scroll,soft,ok
+  lcp,soft,ok
+  cls,soft,ok
+findings[7]{gate,page,check,where,detail,renders}:
+  soft,eval/ab-2026-11-09/form/b/index.html,body-size,"p#ngay-sinh-goi-y \"Phòng khám nhận bé từ sơ sin\"",body text 14.0px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/form/b/index.html,body-size,"p#sdt-goi-y \"Ví dụ 0912 345 678. Phòng kh\"",body text 14.0px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/form/b/index.html,body-size,"p#email-goi-y \"Để nhận bản xác nhận và lời \"",body text 14.0px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/form/b/index.html,body-size,"p#tc-goi-y \"Ghi triệu chứng chính, từ kh\"",body text 14.0px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/form/b/index.html,body-size,"p.hint \"Chưa mất phí. Bạn thanh toán\"",body text 14.0px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/form/b/index.html,body-size,"dd \"128 đường An Bình, phường 5,\"",body text 14.0px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09/form/b/index.html,body-size,+4 more,body text,light/390 light/1280 dark/390 dark/1280
+help[1]: Open the screenshots under .design-kit/shots and judge hierarchy before calling the page done

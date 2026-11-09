@@ -25,6 +25,8 @@ a { color: var(--accent-text); text-underline-offset: 3px; }
 :focus-visible { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
 button, input, select, textarea { font: inherit; color: inherit; }
 img, svg { max-width: 100%; }
+/* display:grid/flex của lớp khác đè thuộc tính hidden: hai agent A/B đã vấp (09/11/2026) */
+[hidden] { display: none !important; }
 
 /* Chữ giao diện (nút, nhãn, bảng): hướng Giấy có thân chữ có chân nên tách --font-ui */
 .ui { font-family: var(--font-ui, var(--font-body)); }

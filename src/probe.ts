@@ -77,6 +77,7 @@ export function probePage(): ProbeResult {
       .map((f) => f.family.replace(/["']/g, "").toLowerCase()),
   );
   let viChars = 0;
+  const bodyColor = getComputedStyle(document.body).color;
 
   for (const el of all) {
     const text = ownText(el);
@@ -91,7 +92,9 @@ export function probePage(): ProbeResult {
     if (fs < 12) out.textMin.push({ where: label(el), value: `${fs.toFixed(1)}px` });
     const isBody = tag === "P" || tag === "LI" || tag === "DD" || tag === "BLOCKQUOTE";
     const lines = Math.round(el.getBoundingClientRect().height / lhRaw);
-    if (isBody && text.length > 40 && fs < 16) out.bodySmall.push({ where: label(el), value: `${fs.toFixed(1)}px` });
+    // Chữ phụ (gợi ý dưới ô, chú thích) có màu khác chữ thân: 14px là đúng thang, không tính là thân chữ nhỏ.
+    const secondary = cs.color !== bodyColor;
+    if (isBody && !secondary && text.length > 40 && fs < 16) out.bodySmall.push({ where: label(el), value: `${fs.toFixed(1)}px` });
     if (isBody && lines >= 2 && ratio < 1.5) out.bodyTight.push({ where: label(el), value: ratio.toFixed(2) });
     if (/^H[1-4]$/.test(tag) && ratio < 1.2) out.headingTight.push({ where: label(el), value: ratio.toFixed(2) });
     if (isBody && lines >= 2 && canvas) {

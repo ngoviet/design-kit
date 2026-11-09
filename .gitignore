@@ -6,3 +6,6 @@ build/
 .folio/.state/
 blocks/react/node_modules/
 blocks/react/dist/
+eval/**/.design-kit/
+eval/**/.shots/
+eval/**/.khoa.json

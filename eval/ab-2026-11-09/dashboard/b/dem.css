@@ -1,0 +1,75 @@
+/* design-kit · hướng ĐÊM: ứng dụng, dashboard, công cụ. Tối trước, có bản sáng.
+   Trung tính nhuốm lam (h 250, C ≤ 0.02), một màu nhấn xanh ngọc (h 178). */
+
+[data-dk="dem"] {
+  --font-body: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --fs-body: var(--fs-base);
+  --weight-display: 650;
+  --tracking-display: -0.012em;
+
+  color-scheme: light;
+  --bg:          oklch(0.985 0.004 250);
+  --surface:     oklch(0.997 0.001 250);
+  --surface-2:   oklch(0.955 0.008 250);
+  --border:      oklch(0.885 0.012 250);
+  --border-strong: oklch(0.62 0.02 250);
+  --text:        oklch(0.230 0.020 250);
+  --text-2:      oklch(0.450 0.020 250);
+  --accent:      oklch(0.500 0.088 182);
+  --accent-text: oklch(0.470 0.082 182);
+  --on-accent:   oklch(0.990 0.005 182);
+  --accent-soft: oklch(0.950 0.030 182);
+  --ok:   oklch(0.480 0.120 150); --ok-soft:   oklch(0.955 0.035 150);
+  --warn: oklch(0.500 0.100 65);  --warn-soft: oklch(0.960 0.034 80);
+  --bad:  oklch(0.520 0.170 25);  --bad-soft:  oklch(0.955 0.020 25);
+  --info: oklch(0.490 0.120 250); --info-soft: oklch(0.955 0.020 250);
+  --focus: oklch(0.500 0.088 182);
+  --shadow-1: 0 1px 2px oklch(0.23 0.02 250 / 0.08);
+  --shadow-2: 0 6px 24px -8px oklch(0.23 0.02 250 / 0.18);
+}
+@media (prefers-color-scheme: dark) {
+  [data-dk="dem"]:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg:          oklch(0.170 0.012 250);
+    --surface:     oklch(0.205 0.014 250);
+    --surface-2:   oklch(0.245 0.016 250);
+    --border:      oklch(0.330 0.018 250);
+    --border-strong: oklch(0.55 0.02 250);
+    --text:        oklch(0.930 0.010 250);
+    --text-2:      oklch(0.760 0.015 250);
+    --accent:      oklch(0.780 0.115 178);
+    --accent-text: oklch(0.800 0.105 178);
+    --on-accent:   oklch(0.180 0.030 178);
+    --accent-soft: oklch(0.270 0.040 178);
+    --ok:   oklch(0.790 0.140 150); --ok-soft:   oklch(0.270 0.045 150);
+    --warn: oklch(0.830 0.120 80);  --warn-soft: oklch(0.280 0.045 80);
+    --bad:  oklch(0.770 0.130 25);  --bad-soft:  oklch(0.270 0.050 25);
+    --info: oklch(0.780 0.100 250); --info-soft: oklch(0.270 0.045 250);
+    --focus: oklch(0.780 0.115 178);
+    --shadow-1: 0 1px 2px oklch(0 0 0 / 0.4);
+    --shadow-2: 0 8px 28px -8px oklch(0 0 0 / 0.6);
+  }
+}
+[data-dk="dem"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg:          oklch(0.170 0.012 250);
+  --surface:     oklch(0.205 0.014 250);
+  --surface-2:   oklch(0.245 0.016 250);
+  --border:      oklch(0.330 0.018 250);
+  --border-strong: oklch(0.55 0.02 250);
+  --text:        oklch(0.930 0.010 250);
+  --text-2:      oklch(0.760 0.015 250);
+  --accent:      oklch(0.780 0.115 178);
+  --accent-text: oklch(0.800 0.105 178);
+  --on-accent:   oklch(0.180 0.030 178);
+  --accent-soft: oklch(0.270 0.040 178);
+  --ok:   oklch(0.790 0.140 150); --ok-soft:   oklch(0.270 0.045 150);
+  --warn: oklch(0.830 0.120 80);  --warn-soft: oklch(0.280 0.045 80);
+  --bad:  oklch(0.770 0.130 25);  --bad-soft:  oklch(0.270 0.050 25);
+  --info: oklch(0.780 0.100 250); --info-soft: oklch(0.270 0.045 250);
+  --focus: oklch(0.780 0.115 178);
+  --shadow-1: 0 1px 2px oklch(0 0 0 / 0.4);
+  --shadow-2: 0 8px 28px -8px oklch(0 0 0 / 0.6);
+}
