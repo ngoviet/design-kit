@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phím Ngà — Lớp piano trực tuyến cho người lớn mới bắt đầu</title>
+<meta name="description" content="Phím Ngà: học piano trực tuyến cho người đi làm 25–45 tuổi. Lớp nhỏ, giờ linh hoạt buổi tối và cuối tuần. Đăng ký học thử miễn phí.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Lora:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ivory:#faf6ee;
+    --ivory-2:#f2ebdd;
+    --paper:#ffffff;
+    --ink:#1f1b16;
+    --ink-2:#4a4239;
+    --muted:#6b6157;
+    --line:#e4dacb;
+    --accent:#8a5a2b;      /* nâu gỗ đàn */
+    --accent-dark:#6e4520;
+    --gold:#c99a4b;
+    --ok:#2f6b47;
+    --err:#a33a2a;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(31,27,22,.06),0 8px 24px rgba(31,27,22,.07);
+    --wrap:1120px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+  body{margin:0;background:var(--ivory);color:var(--ink);font-family:"Be Vietnam Pro",system-ui,sans-serif;font-size:17px;line-height:1.65}
+  img{max-width:100%;display:block}
+  a{color:var(--accent-dark)}
+  h1,h2,h3{font-family:"Lora",Georgia,serif;line-height:1.25;margin:0 0 .5em;color:var(--ink);font-weight:600}
+  h1{font-size:clamp(2rem,5.2vw,3.4rem);letter-spacing:-.01em}
+  h2{font-size:clamp(1.6rem,3.6vw,2.3rem)}
+  h3{font-size:1.2rem}
+  p{margin:0 0 1em}
+  .wrap{max-width:var(--wrap);margin:0 auto;padding:0 20px}
+  section{padding:80px 0}
+  .eyebrow{display:inline-block;font-size:.8rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:.8em}
+  .lead{font-size:1.1rem;color:var(--ink-2);max-width:60ch}
+  .section-head{max-width:680px;margin-bottom:44px}
+  .skip{position:absolute;left:-999px;top:8px;background:var(--ink);color:#fff;padding:8px 14px;border-radius:8px;z-index:100}
+  .skip:focus{left:8px}
+  :focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:4px}
+
+  /* Nút */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;min-height:48px;padding:12px 24px;border-radius:999px;font:inherit;font-weight:600;font-size:1rem;text-decoration:none;border:2px solid transparent;cursor:pointer;transition:background .2s,transform .2s,border-color .2s}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:var(--accent-dark);transform:translateY(-1px)}
+  .btn-ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+  .btn-ghost:hover{border-color:var(--ink-2)}
+
+  /* Đầu trang */
+  header.top{position:sticky;top:0;z-index:50;background:rgba(250,246,238,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:68px}
+  .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font-family:"Lora",serif;font-weight:700;font-size:1.3rem}
+  .logo svg{flex:none}
+  nav.menu ul{display:flex;gap:26px;list-style:none;margin:0;padding:0}
+  nav.menu a{text-decoration:none;color:var(--ink-2);font-weight:500;font-size:.95rem}
+  nav.menu a:hover{color:var(--accent)}
+  .top .btn{min-height:42px;padding:8px 18px;font-size:.92rem}
+  @media (max-width:900px){nav.menu{display:none}}
+  @media (max-width:420px){.top .btn{padding:8px 14px}.logo span{font-size:1.15rem}}
+
+  /* Hero */
+  .hero{padding:64px 0 72px;position:relative;overflow:hidden}
+  .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:56px;align-items:center}
+  .hero p.lead{margin-bottom:28px}
+  .hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px}
+  .hero-points{display:flex;flex-wrap:wrap;gap:10px 22px;list-style:none;padding:0;margin:0;color:var(--ink-2);font-size:.95rem}
+  .hero-points li{display:flex;align-items:center;gap:8px}
+  .hero-points li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--gold);flex:none}
+  .hero-card{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:28px;box-shadow:var(--shadow)}
+  .keys{display:flex;height:150px;position:relative;margin-bottom:22px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+  .keys .w{flex:1;background:linear-gradient(#fffdf8,#f4ecdc);border-right:1px solid var(--line)}
+  .keys .w:last-child{border-right:0}
+  .keys .b{position:absolute;top:0;width:8%;height:60%;background:linear-gradient(#2b241d,#14110d);border-radius:0 0 5px 5px}
+  .hero-card .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center}
+  .stat strong{display:block;font-family:"Lora",serif;font-size:1.6rem;color:var(--accent)}
+  .stat span{font-size:.82rem;color:var(--muted);line-height:1.4;display:block}
+  .hero-quote{margin:20px 0 0;padding-top:18px;border-top:1px dashed var(--line);font-size:.95rem;color:var(--ink-2);font-style:italic}
+  @media (max-width:860px){.hero .wrap{grid-template-columns:1fr;gap:40px}.hero{padding-top:40px}}
+
+  /* Vì sao */
+  .why{background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:56px 0}
+  .why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+  .why-item h3{font-size:1.05rem;font-family:"Be Vietnam Pro",sans-serif;font-weight:600;margin-bottom:.3em}
+  .why-item p{font-size:.95rem;color:var(--muted);margin:0}
+  .why-ico{width:44px;height:44px;border-radius:12px;background:var(--ivory-2);display:grid;place-items:center;margin-bottom:14px;color:var(--accent)}
+  @media (max-width:900px){.why-grid{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:520px){.why-grid{grid-template-columns:1fr}}
+
+  /* Giáo viên */
+  .teachers{display:grid;grid-template-columns:repeat(2,1fr);gap:28px}
+  .teacher{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:28px;display:grid;grid-template-columns:110px 1fr;gap:22px;align-items:start}
+  .avatar{width:110px;height:110px;border-radius:50%;display:grid;place-items:center;font-family:"Lora",serif;font-size:2.2rem;font-weight:600;color:#fff}
+  .av-1{background:linear-gradient(135deg,#8a5a2b,#c99a4b)}
+  .av-2{background:linear-gradient(135deg,#3d4a3a,#7d8f6a)}
+  .teacher .role{color:var(--accent);font-weight:600;font-size:.9rem;margin-bottom:.6em}
+  .teacher p{font-size:.96rem;color:var(--ink-2)}
+  .tags{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:0}
+  .tags li{font-size:.8rem;background:var(--ivory-2);color:var(--ink-2);padding:4px 10px;border-radius:999px}
+  @media (max-width:900px){.teachers{grid-template-columns:1fr}}
+  @media (max-width:520px){.teacher{grid-template-columns:1fr}.avatar{width:84px;height:84px;font-size:1.8rem}}
+
+  /* Lộ trình */
+  .path{background:var(--ivory-2)}
+  .levels{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;counter-reset:lv}
+  .level{background:var(--paper);border-radius:var(--radius);padding:28px;border:1px solid var(--line);position:relative}
+  .level .num{font-family:"Lora",serif;font-size:3rem;line-height:1;color:var(--gold);font-weight:600;margin-bottom:10px}
+  .level .dur{display:inline-block;font-size:.82rem;font-weight:600;color:var(--accent-dark);background:#f6ecdb;padding:4px 10px;border-radius:999px;margin-bottom:14px}
+  .level ul{padding-left:1.1em;margin:0 0 16px;color:var(--ink-2);font-size:.95rem}
+  .level ul li{margin-bottom:6px}
+  .level .goal{font-size:.92rem;border-top:1px solid var(--line);padding-top:14px;margin:0;color:var(--ink)}
+  .level .goal b{color:var(--accent-dark)}
+  @media (max-width:900px){.levels{grid-template-columns:1fr}}
+
+  /* Cảm nhận */
+  .reviews{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  .review{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:26px;display:flex;flex-direction:column;margin:0}
+  .stars{color:var(--gold);letter-spacing:2px;margin-bottom:12px;font-size:1rem}
+  .review blockquote{margin:0 0 20px;font-size:.98rem;color:var(--ink-2);flex:1}
+  .review figcaption{display:flex;align-items:center;gap:12px;font-size:.9rem}
+  .mini{width:44px;height:44px;border-radius:50%;background:var(--ivory-2);display:grid;place-items:center;font-weight:700;color:var(--accent);flex:none}
+  .review figcaption b{display:block;color:var(--ink)}
+  .review figcaption span{color:var(--muted);font-size:.85rem}
+  @media (max-width:900px){.reviews{grid-template-columns:1fr}}
+
+  /* Lịch */
+  .schedule{background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .week{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+  .day{border:1px solid var(--line);border-radius:12px;padding:14px 12px;background:var(--ivory);min-height:150px}
+  .day h3{font-family:"Be Vietnam Pro",sans-serif;font-size:.95rem;font-weight:700;margin-bottom:10px}
+  .slot{display:block;font-size:.82rem;padding:7px 9px;border-radius:8px;margin-bottom:7px;line-height:1.35}
+  .slot b{display:block;font-size:.85rem}
+  .s1{background:#f6ecdb;color:#5b3a19}
+  .s2{background:#e6ece0;color:#2f3e2a}
+  .s3{background:#e9e4f0;color:#3c3350}
+  .slot.none{background:transparent;color:var(--muted);padding-left:0}
+  .legend{display:flex;flex-wrap:wrap;gap:10px 20px;margin-top:20px;font-size:.88rem;color:var(--ink-2)}
+  .legend span{display:inline-flex;align-items:center;gap:8px}
+  .legend i{width:14px;height:14px;border-radius:4px;display:inline-block}
+  .note{font-size:.9rem;color:var(--muted);margin-top:12px}
+  @media (max-width:1000px){.week{grid-template-columns:repeat(4,1fr)}}
+  @media (max-width:640px){.week{grid-template-columns:1fr 1fr}.day{min-height:0}}
+  @media (max-width:360px){.week{grid-template-columns:1fr}}
+
+  /* Học phí */
+  .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;align-items:stretch}
+  .plan{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:30px 26px;display:flex;flex-direction:column;position:relative}
+  .plan.featured{border:2px solid var(--accent);box-shadow:var(--shadow)}
+  .badge{position:absolute;top:-13px;left:26px;background:var(--accent);color:#fff;font-size:.78rem;font-weight:600;padding:4px 12px;border-radius:999px}
+  .plan .desc{color:var(--muted);font-size:.93rem;min-height:3em}
+  .price{font-family:"Lora",serif;font-size:2.2rem;font-weight:700;color:var(--ink);line-height:1.1}
+  .price small{font-family:"Be Vietnam Pro",sans-serif;font-size:.9rem;font-weight:500;color:var(--muted)}
+  .per{font-size:.85rem;color:var(--accent-dark);margin:6px 0 20px}
+  .plan ul{list-style:none;padding:0;margin:0 0 26px;flex:1}
+  .plan li{padding:8px 0 8px 28px;position:relative;font-size:.95rem;border-bottom:1px solid #f1eadf;color:var(--ink-2)}
+  .plan li::before{content:"";position:absolute;left:4px;top:15px;width:12px;height:7px;border-left:2px solid var(--ok);border-bottom:2px solid var(--ok);transform:rotate(-45deg)}
+  .plan .btn{width:100%}
+  .fineprint{text-align:center;font-size:.9rem;color:var(--muted);margin-top:24px}
+  @media (max-width:900px){.plans{grid-template-columns:1fr;max-width:480px;margin:0 auto}}
+
+  /* FAQ */
+  .faq{background:var(--ivory-2)}
+  .faq-list{max-width:800px}
+  .faq details{background:var(--paper);border:1px solid var(--line);border-radius:12px;margin-bottom:12px}
+  .faq summary{cursor:pointer;list-style:none;padding:18px 52px 18px 22px;font-weight:600;position:relative}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:"+";position:absolute;right:22px;top:50%;transform:translateY(-50%);font-size:1.5rem;font-weight:400;color:var(--accent)}
+  .faq details[open] summary::after{content:"–"}
+  .faq details p{padding:0 22px 18px;margin:0;color:var(--ink-2);font-size:.97rem}
+
+  /* Form */
+  .signup .wrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:56px;align-items:start}
+  .signup-info ul{list-style:none;padding:0;margin:24px 0 0}
+  .signup-info li{display:flex;gap:12px;margin-bottom:14px;color:var(--ink-2)}
+  .signup-info li b{color:var(--ink)}
+  .step{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:.85rem;font-weight:700;flex:none;margin-top:2px}
+  form.card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:32px;box-shadow:var(--shadow)}
+  .field{margin-bottom:20px}
+  .field label,.field legend{display:block;font-weight:600;margin-bottom:8px;font-size:.95rem}
+  .field input{width:100%;min-height:50px;padding:12px 14px;border:1.5px solid #cfc3b1;border-radius:10px;font:inherit;background:#fff;color:var(--ink)}
+  .field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(138,90,43,.18)}
+  .field input[aria-invalid="true"]{border-color:var(--err)}
+  .hint{font-size:.84rem;color:var(--muted);margin-top:6px}
+  .error{font-size:.86rem;color:var(--err);margin-top:6px;min-height:0}
+  fieldset.field{border:0;padding:0;margin:0 0 20px}
+  .times{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .time{position:relative}
+  .time input{position:absolute;opacity:0;width:1px;height:1px}
+  .time label{display:block;margin:0;padding:12px 14px;border:1.5px solid #cfc3b1;border-radius:10px;cursor:pointer;font-weight:500;font-size:.92rem;line-height:1.35;background:#fff}
+  .time label small{display:block;color:var(--muted);font-weight:400;font-size:.8rem}
+  .time input:checked + label{border-color:var(--accent);background:#fbf3e6;box-shadow:inset 0 0 0 1px var(--accent)}
+  .time input:focus-visible + label{outline:3px solid var(--gold);outline-offset:2px}
+  form .btn{width:100%;min-height:54px;font-size:1.05rem}
+  .privacy{font-size:.82rem;color:var(--muted);margin:14px 0 0;text-align:center}
+  .success{display:none;text-align:center;padding:20px 0}
+  .success.show{display:block}
+  .success .tick{width:64px;height:64px;border-radius:50%;background:#e3efe6;color:var(--ok);display:grid;place-items:center;margin:0 auto 16px;font-size:2rem}
+  @media (max-width:860px){.signup .wrap{grid-template-columns:1fr;gap:32px}}
+  @media (max-width:420px){form.card{padding:22px}.times{grid-template-columns:1fr}}
+
+  /* Chân trang */
+  footer{background:var(--ink);color:#d9cfbf;padding:48px 0 32px;font-size:.93rem}
+  footer .wrap{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:32px}
+  footer h3{color:#fff;font-family:"Be Vietnam Pro",sans-serif;font-size:1rem;margin-bottom:12px}
+  footer a{color:#f1e3c8}
+  footer ul{list-style:none;padding:0;margin:0}
+  footer li{margin-bottom:6px}
+  .copy{border-top:1px solid #3a332b;margin-top:32px;padding-top:20px;text-align:center;font-size:.85rem;color:#a89d8c}
+  @media (max-width:760px){footer .wrap{grid-template-columns:1fr}}
+
+  /* Nút nổi trên điện thoại */
+  .mobile-cta{display:none}
+  @media (max-width:640px){
+    section{padding:60px 0}
+    .mobile-cta{display:block;position:fixed;left:12px;right:12px;bottom:12px;z-index:60;transition:transform .25s,opacity .25s}
+    .mobile-cta .btn{width:100%;box-shadow:0 8px 24px rgba(31,27,22,.25)}
+    .mobile-cta.hide{transform:translateY(140%);opacity:0;pointer-events:none}
+    footer{padding-bottom:96px}
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#dang-ky">Bỏ qua, đến form đăng ký</a>
+
+<header class="top">
+  <div class="wrap">
+    <a href="#" class="logo" aria-label="Phím Ngà — về đầu trang">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="1" y="1" width="32" height="32" rx="9" fill="#1f1b16"/><rect x="7" y="9" width="5" height="16" rx="1.5" fill="#faf6ee"/><rect x="14.5" y="9" width="5" height="16" rx="1.5" fill="#faf6ee"/><rect x="22" y="9" width="5" height="16" rx="1.5" fill="#faf6ee"/><rect x="10.5" y="9" width="3.4" height="9.5" rx="1" fill="#c99a4b"/><rect x="18" y="9" width="3.4" height="9.5" rx="1" fill="#c99a4b"/></svg>
+      <span>Phím Ngà</span>
+    </a>
+    <nav class="menu" aria-label="Điều hướng chính">
+      <ul>
+        <li><a href="#giao-vien">Giáo viên</a></li>
+        <li><a href="#lo-trinh">Lộ trình</a></li>
+        <li><a href="#lich-hoc">Lịch học</a></li>
+        <li><a href="#hoc-phi">Học phí</a></li>
+        <li><a href="#hoi-dap">Hỏi đáp</a></li>
+      </ul>
+    </nav>
+    <a href="#dang-ky" class="btn btn-primary">Học thử miễn phí</a>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow">Lớp piano trực tuyến cho người lớn</span>
+        <h1 id="hero-title">Đi làm cả ngày, tối về vẫn chơi được bản nhạc mình thích.</h1>
+        <p class="lead">Phím Ngà dạy piano từ con số 0 cho người 25–45 tuổi. Lớp tối đa 4 người, mỗi buổi 60 phút qua Zoom, giờ học buổi tối và cuối tuần. Chỉ cần 20 phút tập mỗi ngày.</p>
+        <div class="hero-cta">
+          <a href="#dang-ky" class="btn btn-primary">Đăng ký học thử miễn phí</a>
+          <a href="#lo-trinh" class="btn btn-ghost">Xem lộ trình học</a>
+        </div>
+        <ul class="hero-points">
+          <li>Không cần biết nhạc lý</li>
+          <li>Đàn điện 61 phím là đủ</li>
+          <li>Học bù khi bận đột xuất</li>
+        </ul>
+      </div>
+      <div class="hero-card" aria-hidden="true">
+        <div class="keys">
+          <div class="w"></div><div class="w"></div><div class="w"></div><div class="w"></div><div class="w"></div><div class="w"></div><div class="w"></div>
+          <div class="b" style="left:10%"></div><div class="b" style="left:24.5%"></div><div class="b" style="left:53%"></div><div class="b" style="left:67.3%"></div><div class="b" style="left:81.6%"></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><strong>1.200+</strong><span>học viên đã theo học</span></div>
+          <div class="stat"><strong>12 tuần</strong><span>để chơi trọn bài đầu tiên</span></div>
+          <div class="stat"><strong>4,9/5</strong><span>điểm đánh giá trung bình</span></div>
+        </div>
+        <p class="hero-quote">“Tuần thứ 10 mình đã đàn được ‘Nối vòng tay lớn’ cho cả nhà nghe.” — Chị Hạnh, 38 tuổi</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- VÌ SAO -->
+  <section class="why" aria-label="Vì sao chọn Phím Ngà">
+    <div class="wrap why-grid">
+      <div class="why-item">
+        <div class="why-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <h3>Giờ học hợp người đi làm</h3>
+        <p>Ca tối từ 19:00 và ca cuối tuần. Đổi ca hoặc học bù tối đa 2 buổi/tháng.</p>
+      </div>
+      <div class="why-item">
+        <div class="why-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5M15 19c0-2 1.5-3.5 4-3.5"/></svg></div>
+        <h3>Lớp nhỏ, tối đa 4 người</h3>
+        <p>Giáo viên nhìn tay từng người qua camera thứ hai, sửa thế tay ngay trong buổi.</p>
+      </div>
+      <div class="why-item">
+        <div class="why-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></div>
+        <h3>Học bằng bài bạn thích</h3>
+        <p>Nhạc Trịnh, nhạc phim, pop Việt — bài tập được soạn lại vừa sức người mới.</p>
+      </div>
+      <div class="why-item">
+        <div class="why-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></div>
+        <h3>Nhận xét bài tập mỗi tuần</h3>
+        <p>Quay video 1 phút gửi qua Zalo, giáo viên trả lời bằng ghi chú trong 24 giờ.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- GIÁO VIÊN -->
+  <section id="giao-vien" aria-labelledby="gv-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Giáo viên</span>
+        <h2 id="gv-title">Hai người thầy hiểu người lớn học đàn khó ở đâu</h2>
+        <p class="lead">Cả hai đều từng dạy hàng trăm học viên bắt đầu sau tuổi 25 — những người có ngón tay cứng hơn, ít thời gian hơn nhưng biết rõ mình muốn gì.</p>
+      </div>
+      <div class="teachers">
+        <article class="teacher">
+          <div class="avatar av-1" aria-hidden="true">NA</div>
+          <div>
+            <h3>Cô Nguyễn Ngọc Anh</h3>
+            <p class="role">Sáng lập · Phụ trách cấp độ 1 và 2</p>
+            <p>Tốt nghiệp Học viện Âm nhạc Quốc gia Việt Nam, chuyên ngành piano. 11 năm dạy đàn, trong đó 6 năm chỉ dạy người lớn. Cô nổi tiếng với cách giải thích nhạc lý bằng ví dụ đời thường và những bài khởi động ngón tay 5 phút.</p>
+            <ul class="tags"><li>Piano cổ điển</li><li>Nhạc lý căn bản</li><li>Đọc bản nhạc</li></ul>
+          </div>
+        </article>
+        <article class="teacher">
+          <div class="avatar av-2" aria-hidden="true">QH</div>
+          <div>
+            <h3>Thầy Trần Quang Huy</h3>
+            <p class="role">Phụ trách cấp độ 2 và 3</p>
+            <p>Thạc sĩ biểu diễn piano tại Nhạc viện TP.HCM, nghệ sĩ piano jazz tại các phòng trà Sài Gòn. Thầy dạy đệm hát, hòa âm và cách chơi theo hợp âm — để bạn ngồi vào đàn là chơi được, không cần bản nhạc.</p>
+            <ul class="tags"><li>Đệm hát</li><li>Hợp âm &amp; hòa âm</li><li>Jazz, pop</li></ul>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- LỘ TRÌNH -->
+  <section id="lo-trinh" class="path" aria-labelledby="lt-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Lộ trình 3 cấp độ</span>
+        <h2 id="lt-title">Từ chưa chạm phím đến tự đệm hát trong 9 tháng</h2>
+        <p class="lead">Mỗi cấp độ 12 tuần, 2 buổi/tuần. Cuối mỗi cấp có buổi “trình diễn nhỏ” online để bạn chơi cho cả lớp nghe.</p>
+      </div>
+      <div class="levels">
+        <article class="level">
+          <div class="num">01</div>
+          <h3>Làm quen phím đàn</h3>
+          <span class="dur">12 tuần · 24 buổi</span>
+          <ul>
+            <li>Tư thế ngồi, thế tay, đánh số ngón</li>
+            <li>Đọc nốt khóa Sol, nhịp 2/4, 3/4, 4/4</li>
+            <li>Chơi hai tay đơn giản, giai điệu tay phải</li>
+            <li>Gam Đô trưởng, Sol trưởng</li>
+          </ul>
+          <p class="goal"><b>Đầu ra:</b> chơi trọn “Happy Birthday”, “Ode to Joy” và một bài nhạc Việt tự chọn.</p>
+        </article>
+        <article class="level">
+          <div class="num">02</div>
+          <h3>Hai tay độc lập</h3>
+          <span class="dur">12 tuần · 24 buổi</span>
+          <ul>
+            <li>Đọc khóa Fa, phối hợp hai tay</li>
+            <li>Hợp âm ba, đảo hợp âm cơ bản</li>
+            <li>Sắc thái mạnh nhẹ, dùng pedal</li>
+            <li>Tập theo máy đếm nhịp từ 60 đến 90</li>
+          </ul>
+          <p class="goal"><b>Đầu ra:</b> chơi “River Flows in You” bản rút gọn và “Diễm xưa” có đệm tay trái.</p>
+        </article>
+        <article class="level">
+          <div class="num">03</div>
+          <h3>Đệm hát &amp; chơi theo ý</h3>
+          <span class="dur">12 tuần · 24 buổi</span>
+          <ul>
+            <li>Đọc hợp âm trên lời bài hát (sheet hợp âm)</li>
+            <li>5 kiểu đệm: ballad, slow rock, valse, bossa, pop</li>
+            <li>Dạo đầu, kết bài, chuyển giọng đơn giản</li>
+            <li>Chơi theo tai những bài quen thuộc</li>
+          </ul>
+          <p class="goal"><b>Đầu ra:</b> tự đệm cho mình hoặc người khác hát 10 bài pop, ballad Việt.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- CẢM NHẬN -->
+  <section aria-labelledby="cn-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Học viên nói gì</span>
+        <h2 id="cn-title">Họ cũng từng nghĩ “mình lớn rồi, học không nổi”</h2>
+      </div>
+      <div class="reviews">
+        <figure class="review">
+          <div class="stars" aria-label="5 trên 5 sao">★★★★★</div>
+          <blockquote>“Mình làm kế toán, cuối tháng về muộn liên tục. Cô Ngọc Anh cho học bù ca sáng Chủ nhật nên không bỏ buổi nào. Sau 3 tháng mình đàn được bài ‘Mẹ yêu con’ trong đám giỗ, cả nhà bất ngờ lắm.”</blockquote>
+          <figcaption><span class="mini" aria-hidden="true">TH</span><div><b>Lê Thị Hạnh, 38 tuổi</b><span>Kế toán trưởng · Hà Nội · Cấp độ 2</span></div></figcaption>
+        </figure>
+        <figure class="review">
+          <div class="stars" aria-label="5 trên 5 sao">★★★★★</div>
+          <blockquote>“Mình từng tự học trên YouTube 2 lần và bỏ cả 2. Ở đây có người sửa thế tay ngay, có bài tập đúng sức, và có cả nhóm học cùng nên ngại bỏ. Thầy Huy dạy đệm hát cực dễ hiểu.”</blockquote>
+          <figcaption><span class="mini" aria-hidden="true">MĐ</span><div><b>Phạm Minh Đức, 31 tuổi</b><span>Kỹ sư phần mềm · TP.HCM · Cấp độ 3</span></div></figcaption>
+        </figure>
+        <figure class="review">
+          <div class="stars" aria-label="5 trên 5 sao">★★★★★</div>
+          <blockquote>“Con gái mình học đàn, mình chỉ định học để kèm con. Giờ tối thứ Năm là giờ của riêng mình, 60 phút không nghĩ gì đến công việc. Lớp ít người nên cô nhớ cả bài mình thích.”</blockquote>
+          <figcaption><span class="mini" aria-hidden="true">TL</span><div><b>Võ Thu Loan, 44 tuổi</b><span>Dược sĩ · Đà Nẵng · Cấp độ 1</span></div></figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- LỊCH HỌC -->
+  <section id="lich-hoc" class="schedule" aria-labelledby="lh-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Lịch học trong tuần</span>
+        <h2 id="lh-title">Chọn ca cố định, đổi ca khi cần</h2>
+        <p class="lead">Mỗi lớp học 2 buổi/tuần vào cùng khung giờ. Giờ hiển thị theo giờ Việt Nam (GMT+7).</p>
+      </div>
+      <div class="week">
+        <div class="day"><h3>Thứ Hai</h3>
+          <span class="slot s1"><b>19:00–20:00</b>Cấp độ 1 · Lớp A</span>
+          <span class="slot s2"><b>20:30–21:30</b>Cấp độ 2 · Lớp A</span>
+        </div>
+        <div class="day"><h3>Thứ Ba</h3>
+          <span class="slot s1"><b>19:00–20:00</b>Cấp độ 1 · Lớp B</span>
+          <span class="slot s3"><b>20:30–21:30</b>Cấp độ 3 · Lớp A</span>
+        </div>
+        <div class="day"><h3>Thứ Tư</h3>
+          <span class="slot s2"><b>12:15–13:00</b>Cấp độ 2 · Ca trưa</span>
+          <span class="slot s2"><b>20:30–21:30</b>Cấp độ 2 · Lớp B</span>
+        </div>
+        <div class="day"><h3>Thứ Năm</h3>
+          <span class="slot s1"><b>19:00–20:00</b>Cấp độ 1 · Lớp A</span>
+          <span class="slot s2"><b>20:30–21:30</b>Cấp độ 2 · Lớp A</span>
+        </div>
+        <div class="day"><h3>Thứ Sáu</h3>
+          <span class="slot s1"><b>19:00–20:00</b>Cấp độ 1 · Lớp B</span>
+          <span class="slot s3"><b>20:30–21:30</b>Cấp độ 3 · Lớp A</span>
+        </div>
+        <div class="day"><h3>Thứ Bảy</h3>
+          <span class="slot s1"><b>09:00–10:00</b>Cấp độ 1 · Lớp C</span>
+          <span class="slot s3"><b>15:00–16:00</b>Cấp độ 3 · Lớp B</span>
+          <span class="slot s2"><b>20:00–21:00</b>Cấp độ 2 · Lớp B</span>
+        </div>
+        <div class="day"><h3>Chủ nhật</h3>
+          <span class="slot s1"><b>09:00–10:00</b>Cấp độ 1 · Lớp C</span>
+          <span class="slot s3"><b>15:00–16:00</b>Cấp độ 3 · Lớp B</span>
+          <span class="slot none">Sáng: ca học bù</span>
+        </div>
+      </div>
+      <div class="legend" aria-hidden="true">
+        <span><i style="background:#f6ecdb"></i>Cấp độ 1</span>
+        <span><i style="background:#e6ece0"></i>Cấp độ 2</span>
+        <span><i style="background:#e9e4f0"></i>Cấp độ 3</span>
+      </div>
+      <p class="note">Ca trưa thứ Tư là buổi 45 phút luyện bài, dành cho học viên đăng ký thêm. Khai giảng lớp mới vào thứ Hai đầu mỗi tháng.</p>
+    </div>
+  </section>
+
+  <!-- HỌC PHÍ -->
+  <section id="hoc-phi" aria-labelledby="hp-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Học phí</span>
+        <h2 id="hp-title">Ba gói, trả theo cách bạn thấy thoải mái</h2>
+        <p class="lead">Mọi gói đều gồm tài liệu PDF, bản ghi buổi học và nhóm Zalo hỏi đáp với giáo viên.</p>
+      </div>
+      <div class="plans">
+        <article class="plan">
+          <h3>Gói Tháng</h3>
+          <p class="desc">Học thử nhịp độ, chưa muốn cam kết dài.</p>
+          <div class="price">1.200.000đ <small>/ tháng</small></div>
+          <p class="per">8 buổi · khoảng 150.000đ/buổi</p>
+          <ul>
+            <li>Lớp nhóm tối đa 4 người</li>
+            <li>Học bù 1 buổi/tháng</li>
+            <li>Nhận xét video bài tập mỗi tuần</li>
+            <li>Dừng bất cứ lúc nào</li>
+          </ul>
+          <a href="#dang-ky" class="btn btn-ghost" data-plan="Gói Tháng">Bắt đầu bằng buổi học thử</a>
+        </article>
+        <article class="plan featured">
+          <span class="badge">Được chọn nhiều nhất</span>
+          <h3>Gói Cấp độ</h3>
+          <p class="desc">Trọn một cấp độ 12 tuần, tiết kiệm 15%.</p>
+          <div class="price">3.060.000đ <small>/ 3 tháng</small></div>
+          <p class="per">24 buổi · khoảng 127.500đ/buổi</p>
+          <ul>
+            <li>Mọi quyền lợi của Gói Tháng</li>
+            <li>Học bù 2 buổi/tháng</li>
+            <li>Buổi trình diễn cuối cấp có ghi hình</li>
+            <li>Giữ chỗ cùng lớp suốt cấp độ</li>
+          </ul>
+          <a href="#dang-ky" class="btn btn-primary" data-plan="Gói Cấp độ">Đăng ký học thử miễn phí</a>
+        </article>
+        <article class="plan">
+          <h3>Gói Kèm riêng</h3>
+          <p class="desc">Học 1 kèm 1, chọn giờ và bài theo ý bạn.</p>
+          <div class="price">450.000đ <small>/ buổi</small></div>
+          <p class="per">Mua theo gói 10 buổi: 4.200.000đ</p>
+          <ul>
+            <li>Giờ học linh hoạt, đặt trước 24 giờ</li>
+            <li>Giáo án riêng theo mục tiêu</li>
+            <li>Hủy miễn phí trước 6 giờ</li>
+            <li>Có thể học cùng vợ/chồng (+150.000đ)</li>
+          </ul>
+          <a href="#dang-ky" class="btn btn-ghost" data-plan="Gói Kèm riêng">Bắt đầu bằng buổi học thử</a>
+        </article>
+      </div>
+      <p class="fineprint">Hoàn 100% học phí nếu bạn dừng sau buổi học chính thức đầu tiên. Có xuất hóa đơn cho công ty.</p>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="hoi-dap" class="faq" aria-labelledby="faq-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Câu hỏi thường gặp</span>
+        <h2 id="faq-title">Những điều người mới hay băn khoăn</h2>
+      </div>
+      <div class="faq-list">
+        <details>
+          <summary>Tôi 40 tuổi, chưa từng học nhạc. Có muộn quá không?</summary>
+          <p>Không muộn. Hơn một nửa học viên của Phím Ngà bắt đầu sau 30 tuổi, người lớn tuổi nhất lớp hiện là 58. Người lớn tiến chậm hơn trẻ em ở phần ngón tay, nhưng hiểu nhạc lý nhanh hơn nhiều và biết cách tự tập.</p>
+        </details>
+        <details>
+          <summary>Tôi chưa có đàn, cần mua loại nào?</summary>
+          <p>Với cấp độ 1, đàn điện (keyboard) 61 phím có độ nhạy lực là đủ, giá khoảng 3–5 triệu đồng. Từ cấp độ 2 nên dùng đàn piano điện 88 phím có phím nặng (khoảng 10–15 triệu). Sau buổi học thử, giáo viên sẽ gửi bạn danh sách mẫu đàn gợi ý theo ngân sách.</p>
+        </details>
+        <details>
+          <summary>Học online thì giáo viên sửa tay cho tôi thế nào?</summary>
+          <p>Bạn dùng điện thoại làm camera thứ hai đặt phía trên bàn phím (chúng tôi hướng dẫn cách đặt trong buổi học thử). Giáo viên nhìn rõ ngón tay từng người và sửa trực tiếp. Ngoài giờ học, bạn gửi video bài tập để được nhận xét chi tiết.</p>
+        </details>
+        <details>
+          <summary>Mỗi ngày tôi cần tập bao lâu?</summary>
+          <p>Khoảng 20 phút mỗi ngày, ít nhất 5 ngày một tuần. Tập đều quan trọng hơn tập dài. Mỗi buổi học kết thúc bằng một kế hoạch tập 20 phút chia sẵn từng phần.</p>
+        </details>
+        <details>
+          <summary>Nếu tôi bận đột xuất thì sao?</summary>
+          <p>Báo trước 3 giờ qua Zalo, bạn được học bù ở lớp cùng cấp độ khác giờ hoặc ca bù sáng Chủ nhật. Mọi buổi học đều được ghi hình để bạn xem lại.</p>
+        </details>
+        <details>
+          <summary>Buổi học thử miễn phí gồm những gì?</summary>
+          <p>45 phút học 1 kèm 1 với giáo viên: kiểm tra thiết bị và cách đặt camera, học tư thế và chơi được giai điệu đầu tiên, rồi được tư vấn cấp độ và lớp phù hợp. Không cần chuẩn bị gì, cũng không bắt buộc đăng ký sau buổi thử.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ĐĂNG KÝ -->
+  <section id="dang-ky" class="signup" aria-labelledby="dk-title">
+    <div class="wrap">
+      <div class="signup-info">
+        <span class="eyebrow">Học thử miễn phí</span>
+        <h2 id="dk-title">45 phút để biết piano có dành cho bạn không</h2>
+        <p class="lead">Để lại tên, số điện thoại và giờ rảnh. Không cần có đàn, không cần chuẩn bị gì.</p>
+        <ul>
+          <li><span class="step">1</span><span><b>Gọi xác nhận trong 24 giờ</b> — chúng tôi gọi để chốt giờ cụ thể và gửi link Zoom.</span></li>
+          <li><span class="step">2</span><span><b>Học thử 1 kèm 1</b> — chơi được giai điệu đầu tiên ngay trong buổi.</span></li>
+          <li><span class="step">3</span><span><b>Nhận tư vấn lộ trình</b> — giáo viên gợi ý cấp độ, lớp và mẫu đàn phù hợp.</span></li>
+        </ul>
+      </div>
+
+      <form class="card" id="trial-form" novalidate>
+        <div id="form-body">
+          <div class="field">
+            <label for="name">Họ và tên</label>
+            <input id="name" name="name" type="text" autocomplete="name" placeholder="Ví dụ: Nguyễn Thu Trang" required aria-describedby="name-err">
+            <div class="error" id="name-err" role="alert"></div>
+          </div>
+          <div class="field">
+            <label for="phone">Số điện thoại</label>
+            <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ví dụ: 0912 345 678" required aria-describedby="phone-hint phone-err">
+            <div class="hint" id="phone-hint">Chúng tôi chỉ gọi để hẹn giờ học thử, không gửi quảng cáo.</div>
+            <div class="error" id="phone-err" role="alert"></div>
+          </div>
+          <fieldset class="field" aria-describedby="time-err">
+            <legend>Khung giờ bạn muốn học thử</legend>
+            <div class="times">
+              <div class="time"><input type="radio" name="time" id="t1" value="Tối ngày thường (19:00–21:30)"><label for="t1">Tối ngày thường<small>19:00 – 21:30</small></label></div>
+              <div class="time"><input type="radio" name="time" id="t2" value="Trưa ngày thường (12:00–13:30)"><label for="t2">Trưa ngày thường<small>12:00 – 13:30</small></label></div>
+              <div class="time"><input type="radio" name="time" id="t3" value="Sáng cuối tuần (8:30–11:30)"><label for="t3">Sáng cuối tuần<small>08:30 – 11:30</small></label></div>
+              <div class="time"><input type="radio" name="time" id="t4" value="Chiều cuối tuần (14:00–17:00)"><label for="t4">Chiều cuối tuần<small>14:00 – 17:00</small></label></div>
+            </div>
+            <div class="error" id="time-err" role="alert"></div>
+          </fieldset>
+          <input type="hidden" name="plan" id="plan">
+          <button type="submit" class="btn btn-primary">Đăng ký học thử miễn phí</button>
+          <p class="privacy">Thông tin của bạn chỉ dùng để liên hệ hẹn lịch học thử.</p>
+        </div>
+        <div class="success" id="form-success" role="status" aria-live="polite" tabindex="-1">
+          <div class="tick" aria-hidden="true">✓</div>
+          <h3>Cảm ơn <span id="s-name"></span>!</h3>
+          <p>Phím Ngà sẽ gọi số <b id="s-phone"></b> trong vòng 24 giờ để hẹn buổi học thử vào khung <b id="s-time"></b>.</p>
+          <p class="hint">Cần gấp? Nhắn Zalo 0903 268 147.</p>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <h3>Phím Ngà</h3>
+      <p>Lớp piano trực tuyến cho người lớn mới bắt đầu. Học từ nhà, mỗi tối một chút, đều đặn và vui.</p>
+    </div>
+    <div>
+      <h3>Liên hệ</h3>
+      <ul>
+        <li>Hotline / Zalo: <a href="tel:0903268147">0903 268 147</a></li>
+        <li>Email: <a href="mailto:xinchao@phimnga.vn">xinchao@phimnga.vn</a></li>
+        <li>Giờ tư vấn: 9:00 – 21:30 hằng ngày</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Xem nhanh</h3>
+      <ul>
+        <li><a href="#lo-trinh">Lộ trình 3 cấp độ</a></li>
+        <li><a href="#lich-hoc">Lịch học</a></li>
+        <li><a href="#hoc-phi">Học phí</a></li>
+        <li><a href="#hoi-dap">Câu hỏi thường gặp</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap"><p class="copy" style="grid-column:1/-1">© 2026 Phím Ngà. Bảo lưu mọi quyền.</p></div>
+</footer>
+
+<div class="mobile-cta" id="mobile-cta"><a href="#dang-ky" class="btn btn-primary">Đăng ký học thử miễn phí</a></div>
+
+<script>
+(function(){
+  var form=document.getElementById('trial-form');
+  var nameI=document.getElementById('name');
+  var phoneI=document.getElementById('phone');
+  var planI=document.getElementById('plan');
+
+  // Ghi nhớ gói vừa bấm
+  document.querySelectorAll('[data-plan]').forEach(function(a){
+    a.addEventListener('click',function(){planI.value=a.getAttribute('data-plan');});
+  });
+
+  function setErr(input,id,msg){
+    var el=document.getElementById(id);
+    el.textContent=msg||'';
+    if(input) input.setAttribute('aria-invalid',msg?'true':'false');
+    return !msg;
+  }
+  function normPhone(v){return v.replace(/[\s.\-()]/g,'').replace(/^\+84/,'0').replace(/^84(?=\d{9}$)/,'0');}
+  function checkName(){
+    var v=nameI.value.trim();
+    return setErr(nameI,'name-err',!v?'Vui lòng nhập họ và tên.':(v.length<2?'Tên có vẻ quá ngắn.':''));
+  }
+  function checkPhone(){
+    var v=normPhone(phoneI.value);
+    if(!v) return setErr(phoneI,'phone-err','Vui lòng nhập số điện thoại.');
+    return setErr(phoneI,'phone-err',/^0[35789]\d{8}$/.test(v)?'':'Số điện thoại chưa đúng (10 số, ví dụ 0912 345 678).');
+  }
+  function checkTime(){
+    var c=form.querySelector('input[name="time"]:checked');
+    return setErr(null,'time-err',c?'':'Vui lòng chọn một khung giờ.');
+  }
+  nameI.addEventListener('blur',checkName);
+  phoneI.addEventListener('blur',checkPhone);
+  form.querySelectorAll('input[name="time"]').forEach(function(r){r.addEventListener('change',checkTime);});
+
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var ok=[checkName(),checkPhone(),checkTime()];
+    if(ok.indexOf(false)!==-1){
+      var first=form.querySelector('[aria-invalid="true"]')||form.querySelector('input[name="time"]');
+      if(first) first.focus();
+      return;
+    }
+    var p=normPhone(phoneI.value);
+    document.getElementById('s-name').textContent=nameI.value.trim().split(/\s+/).pop();
+    document.getElementById('s-phone').textContent=p.replace(/(\d{4})(\d{3})(\d{3})/,'$1 $2 $3');
+    document.getElementById('s-time').textContent=form.querySelector('input[name="time"]:checked').value.toLowerCase();
+    document.getElementById('form-body').style.display='none';
+    var s=document.getElementById('form-success');
+    s.classList.add('show');
+    s.focus();
+  });
+
+  // Ẩn nút nổi khi form đang hiện
+  var cta=document.getElementById('mobile-cta');
+  if('IntersectionObserver' in window){
+    var seen={};
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){seen[en.target.id||'hero']=en.isIntersecting;});
+      cta.classList.toggle('hide',!!(seen['dang-ky']||seen['hero']));
+    },{threshold:0.15});
+    io.observe(document.getElementById('dang-ky'));
+    io.observe(document.querySelector('.hero'));
+  }
+})();
+</script>
+</body>
+</html>

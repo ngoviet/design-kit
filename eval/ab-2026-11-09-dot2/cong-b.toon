@@ -1,0 +1,25 @@
+status: "pass: 3 pages, 0 hard failures"
+renders: "light+dark × 320/390/1280 px via msedge, impeccable on"
+pages[3]{page,verdict,hard,soft}:
+  eval/ab-2026-11-09-dot2/landing/b/index.html,pass,0,0
+  eval/ab-2026-11-09-dot2/dashboard/b/index.html,pass,0,1
+  eval/ab-2026-11-09-dot2/caidat/b/index.html,pass,0,0
+checks[15]{check,gate,result}:
+  overflow,hard,ok
+  axe,hard,ok
+  text-min,hard,ok
+  heading-lh,hard,ok
+  lang,hard,ok
+  motion,hard,ok
+  impeccable,hard,ok
+  body-size,soft,ok
+  body-lh,soft,ok
+  measure,soft,ok
+  font,soft,ok
+  focus,soft,ok
+  inner-scroll,soft,ok
+  lcp,soft,ok
+  cls,soft,1 soft
+findings[1]{gate,page,check,where,detail,renders}:
+  soft,eval/ab-2026-11-09-dot2/dashboard/b/index.html,cls,page,CLS 0.236 > 0.1,light/1280
+help[1]: Open the screenshots under .design-kit/shots and judge hierarchy before calling the page done

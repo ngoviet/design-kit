@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bánh Mẹ Làm · Quản lý hôm nay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Lora:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#faf6f0; --surface:#ffffff; --surface-2:#f4ede3;
+    --ink:#2b2118; --muted:#6e6052; --line:#e7dccd;
+    --brand:#a8552a; --brand-ink:#ffffff; --brand-soft:#f6e3d5;
+    --new:#2f6fb3; --new-bg:#e3eefa;
+    --doing:#a86a00; --doing-bg:#fbefd4;
+    --ready:#2e7d4f; --ready-bg:#dff2e6;
+    --done:#5b5f66; --done-bg:#eceef0;
+    --cancel:#b3332f; --cancel-bg:#f9e1df;
+    --radius:14px; --shadow:0 1px 2px rgba(60,40,20,.06),0 4px 16px rgba(60,40,20,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:"Be Vietnam Pro",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5}
+  button,input,select,textarea{font:inherit;color:inherit}
+  :focus-visible{outline:3px solid var(--brand);outline-offset:2px;border-radius:6px}
+  .wrap{max-width:1240px;margin:0 auto;padding:20px 16px 48px}
+
+  /* Header */
+  header.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-bottom:20px}
+  .logo{display:flex;align-items:center;gap:12px;margin-right:auto}
+  .logo-mark{width:44px;height:44px;border-radius:12px;background:var(--brand);color:#fff;display:grid;place-items:center;font-family:Lora,serif;font-weight:700;font-size:20px}
+  .logo h1{font-family:Lora,serif;font-size:22px;margin:0;line-height:1.2}
+  .logo p{margin:0;color:var(--muted);font-size:13px}
+  .actions{display:flex;gap:10px;flex:1 1 380px;max-width:520px}
+  .search{flex:1;position:relative}
+  .search input{width:100%;height:44px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:0 14px 0 40px}
+  .search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted)}
+  .btn{height:44px;border:0;border-radius:12px;padding:0 16px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+  .btn-primary{background:var(--brand);color:var(--brand-ink)}
+  .btn-primary:hover{background:#8f4520}
+  .btn-ghost{background:var(--surface-2);color:var(--ink)}
+
+  /* KPIs */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .kpi{padding:16px 18px}
+  .kpi .label{color:var(--muted);font-size:13px;font-weight:500}
+  .kpi .value{font-size:26px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+  .kpi .sub{font-size:13px;color:var(--muted);margin-top:2px}
+  .up{color:var(--ready);font-weight:600}
+  .down{color:var(--cancel);font-weight:600}
+  .kpi.revenue{grid-column:span 2;display:flex;gap:18px;align-items:center}
+  .kpi.revenue .text{flex:1;min-width:0}
+  .bars{display:flex;align-items:flex-end;gap:14px;height:72px}
+  .bar{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--muted)}
+  .bar span{display:block;width:34px;border-radius:8px 8px 4px 4px;background:var(--line)}
+  .bar.today span{background:var(--brand)}
+
+  /* Layout */
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+  .side{display:flex;flex-direction:column;gap:20px}
+  .section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px 10px;flex-wrap:wrap}
+  .section-head h2{font-size:17px;margin:0}
+  .count{color:var(--muted);font-size:13px}
+
+  /* Filters */
+  .filters{display:flex;gap:8px;padding:0 18px 12px;overflow-x:auto;scrollbar-width:none}
+  .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+  .chip[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .chip b{font-weight:600;opacity:.7;margin-left:4px}
+
+  /* Orders table */
+  table{width:100%;border-collapse:collapse}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:left;font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+  td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  th:first-child,td:first-child{padding-left:18px}
+  th:last-child,td:last-child{padding-right:18px}
+  .oid{font-weight:600;font-variant-numeric:tabular-nums}
+  .cust{font-weight:500}
+  .phone{color:var(--muted);font-size:13px}
+  .items{font-size:14px}
+  .note{color:var(--muted);font-size:13px;font-style:italic}
+  .time{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .total{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+  .ship{font-size:12px;color:var(--muted)}
+  tr.is-cancel .items,tr.is-cancel .cust,tr.is-cancel .total{text-decoration:line-through;color:var(--muted)}
+
+  .status{appearance:none;border:0;border-radius:999px;padding:6px 30px 6px 12px;font-size:13px;font-weight:600;cursor:pointer;
+    background-repeat:no-repeat;background-position:right 10px center;background-size:10px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23333' stroke-width='1.6' fill='none'/%3E%3C/svg%3E")}
+  .s-new{background-color:var(--new-bg);color:var(--new)}
+  .s-doing{background-color:var(--doing-bg);color:var(--doing)}
+  .s-ready{background-color:var(--ready-bg);color:var(--ready)}
+  .s-done{background-color:var(--done-bg);color:var(--done)}
+  .s-cancel{background-color:var(--cancel-bg);color:var(--cancel)}
+  .empty{padding:32px 18px;text-align:center;color:var(--muted)}
+
+  /* Ingredients */
+  .ing{list-style:none;margin:0;padding:0 18px 16px}
+  .ing li{padding:10px 0;border-top:1px solid var(--line)}
+  .ing li:first-child{border-top:0}
+  .ing .row{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+  .ing .name{font-weight:600}
+  .ing .qty{color:var(--muted);font-variant-numeric:tabular-nums}
+  .meter{height:8px;background:var(--surface-2);border-radius:99px;margin-top:6px;overflow:hidden}
+  .meter i{display:block;height:100%;border-radius:99px}
+  .lvl-low i{background:var(--cancel)} .lvl-mid i{background:#d69a1c} .lvl-ok i{background:var(--ready)}
+  .tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;margin-left:6px}
+  .tag.low{background:var(--cancel-bg);color:var(--cancel)}
+  .tag.mid{background:var(--doing-bg);color:var(--doing)}
+  .ing .reorder{margin-top:4px;font-size:12px;color:var(--muted)}
+
+  /* Schedule */
+  .sched{padding:0 18px 16px}
+  .slot{display:grid;grid-template-columns:62px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+  .slot:first-child{border-top:0}
+  .slot.now .slot-time{color:var(--brand)}
+  .slot.now .slot-time::after{content:"Đang tới";display:block;font-size:11px;font-weight:600}
+  .slot-time{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+  .slot-list{display:flex;flex-direction:column;gap:6px}
+  .drop{display:flex;align-items:center;gap:8px;font-size:13px;background:var(--surface-2);border-radius:10px;padding:6px 10px}
+  .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .drop .who{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .drop .when{color:var(--muted);font-variant-numeric:tabular-nums}
+  .slot-empty{color:var(--muted);font-size:13px;padding:6px 0}
+
+  /* Dialog */
+  dialog{border:0;border-radius:18px;padding:0;width:min(520px,calc(100% - 32px));box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  dialog::backdrop{background:rgba(43,33,24,.45)}
+  .dlg-head{padding:18px 20px 6px;display:flex;justify-content:space-between;align-items:center}
+  .dlg-head h2{margin:0;font-size:18px}
+  .x{width:36px;height:36px;border-radius:10px;border:0;background:var(--surface-2);cursor:pointer;font-size:18px}
+  form.f{padding:8px 20px 20px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .f label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:500;color:var(--muted)}
+  .f .full{grid-column:1/-1}
+  .f input,.f select,.f textarea{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;color:var(--ink);font-size:15px}
+  .f textarea{min-height:64px;resize:vertical}
+  .f .btns{grid-column:1/-1;display:flex;justify-content:flex-end;gap:10px;margin-top:4px}
+
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;max-width:calc(100% - 32px)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* Responsive */
+  @media (max-width:1024px){
+    .grid{grid-template-columns:1fr}
+    .side{display:grid;grid-template-columns:1fr 1fr}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:720px){
+    .side{display:flex}
+    .kpi.revenue{grid-column:1/-1}
+    .actions{flex-basis:100%;max-width:none}
+    .btn-primary .lbl-long{display:none}
+    /* table -> cards */
+    thead{display:none}
+    table,tbody,tr,td{display:block;width:100%}
+    tr{border-bottom:1px solid var(--line);padding:12px 16px;display:grid;grid-template-columns:1fr auto;gap:4px 10px}
+    td{border:0;padding:0!important}
+    td.c-id{grid-column:1}
+    td.c-time{grid-column:2;grid-row:1;text-align:right}
+    td.c-cust{grid-column:1/-1}
+    td.c-items{grid-column:1/-1}
+    td.c-total{grid-column:2;grid-row:4;text-align:right;align-self:center}
+    td.c-status{grid-column:1;grid-row:4}
+    .total{text-align:right}
+  }
+  @media (max-width:400px){
+    .kpis{grid-template-columns:1fr}
+    form.f{grid-template-columns:1fr}
+    .bars{height:60px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo">
+      <div class="logo-mark" aria-hidden="true">M</div>
+      <div>
+        <h1>Bánh Mẹ Làm</h1>
+        <p id="today-label">Quản lý hôm nay</p>
+      </div>
+    </div>
+    <div class="actions">
+      <label class="search">
+        <span class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Tìm đơn</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Tìm mã đơn, tên khách, món, SĐT…" autocomplete="off">
+      </label>
+      <button class="btn btn-primary" id="btn-new" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        <span>Tạo đơn<span class="lbl-long"> mới</span></span>
+      </button>
+    </div>
+  </header>
+
+  <section class="kpis" aria-label="Số liệu hôm nay">
+    <div class="card kpi revenue">
+      <div class="text">
+        <div class="label">Doanh thu hôm nay</div>
+        <div class="value" id="rev-today">0 ₫</div>
+        <div class="sub" id="rev-compare"></div>
+      </div>
+      <div class="bars" aria-hidden="true">
+        <div class="bar"><span id="bar-y"></span>Hôm qua</div>
+        <div class="bar today"><span id="bar-t"></span>Hôm nay</div>
+      </div>
+    </div>
+    <div class="card kpi">
+      <div class="label">Đơn hôm nay</div>
+      <div class="value" id="k-orders">0</div>
+      <div class="sub" id="k-orders-sub"></div>
+    </div>
+    <div class="card kpi">
+      <div class="label">Cần làm / chờ giao</div>
+      <div class="value" id="k-pending">0</div>
+      <div class="sub" id="k-pending-sub"></div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="h-orders">
+      <div class="section-head">
+        <h2 id="h-orders">Đơn hàng hôm nay</h2>
+        <span class="count" id="order-count"></span>
+      </div>
+      <div class="filters" role="group" aria-label="Lọc theo trạng thái" id="filters"></div>
+      <table>
+        <thead>
+          <tr><th>Mã đơn</th><th>Khách</th><th>Món</th><th>Giờ giao</th><th style="text-align:right">Tiền</th><th>Trạng thái</th></tr>
+        </thead>
+        <tbody id="orders"></tbody>
+      </table>
+      <div class="empty" id="empty" hidden>Không có đơn nào khớp. Thử từ khoá khác hoặc bỏ bộ lọc.</div>
+    </section>
+
+    <aside class="side">
+      <section class="card" aria-labelledby="h-ing">
+        <div class="section-head">
+          <h2 id="h-ing">Nguyên liệu sắp hết</h2>
+          <span class="count" id="ing-count"></span>
+        </div>
+        <ul class="ing" id="ing"></ul>
+      </section>
+
+      <section class="card" aria-labelledby="h-sched">
+        <div class="section-head">
+          <h2 id="h-sched">Lịch giao trong ngày</h2>
+          <span class="count" id="sched-count"></span>
+        </div>
+        <div class="sched" id="sched"></div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlg-title">
+  <div class="dlg-head">
+    <h2 id="dlg-title">Tạo đơn mới</h2>
+    <button class="x" type="button" id="dlg-close" aria-label="Đóng">×</button>
+  </div>
+  <form class="f" id="form" method="dialog">
+    <label class="full">Tên khách<input name="name" required placeholder="VD: Chị Lan"></label>
+    <label>Số điện thoại<input name="phone" type="tel" inputmode="tel" placeholder="09xx xxx xxx"></label>
+    <label>Giờ giao<input name="time" type="time" required value="15:00" min="07:00" max="20:00"></label>
+    <label class="full">Món<input name="items" required placeholder="VD: 1 bánh kem bắp 16cm"></label>
+    <label>Thành tiền (₫)<input name="total" type="number" min="0" step="1000" required placeholder="250000"></label>
+    <label>Hình thức<select name="ship"><option>Giao tận nơi</option><option>Khách tới lấy</option></select></label>
+    <label class="full">Ghi chú<textarea name="note" placeholder="VD: Ghi chữ 'Mừng sinh nhật mẹ', ít ngọt"></textarea></label>
+    <div class="btns">
+      <button class="btn btn-ghost" type="button" id="dlg-cancel">Huỷ</button>
+      <button class="btn btn-primary" type="submit">Lưu đơn</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const STATUS = {
+  new:{label:"Mới", color:"var(--new)"},
+  doing:{label:"Đang làm", color:"var(--doing)"},
+  ready:{label:"Sẵn sàng", color:"var(--ready)"},
+  done:{label:"Đã giao", color:"var(--done)"},
+  cancel:{label:"Huỷ", color:"var(--cancel)"}
+};
+const YESTERDAY_REVENUE = 4380000;
+
+let orders = [
+  {id:"BM-1101", name:"Chị Nguyễn Thu Hà", phone:"0903 218 457", items:"1 bánh kem bắp 18cm, 6 bánh flan", note:"Ghi chữ “Mừng sinh nhật Bin 5 tuổi”", time:"08:30", total:420000, ship:"Giao tận nơi", status:"done"},
+  {id:"BM-1102", name:"Anh Trần Minh Khoa", phone:"0938 664 102", items:"20 bánh bông lan trứng muối", note:"Đặt cho văn phòng", time:"09:00", total:500000, ship:"Giao tận nơi", status:"done"},
+  {id:"BM-1103", name:"Cô Phạm Thị Lệ", phone:"0912 503 889", items:"2 ổ bánh mì hoa cúc, 1 hũ bơ tỏi", note:"", time:"09:30", total:190000, ship:"Khách tới lấy", status:"done"},
+  {id:"BM-1104", name:"Chị Lê Hoàng Yến", phone:"0977 120 345", items:"1 bánh tiramisu 16cm", note:"Ít ngọt", time:"10:30", total:350000, ship:"Giao tận nơi", status:"ready"},
+  {id:"BM-1105", name:"Anh Võ Đức Thịnh", phone:"0909 741 226", items:"30 bánh su kem, 1 hộp cookie bơ", note:"", time:"11:00", total:465000, ship:"Giao tận nơi", status:"ready"},
+  {id:"BM-1106", name:"Chị Đặng Mỹ Linh", phone:"0868 332 917", items:"1 bánh kem dâu tây 20cm", note:"Ghi chữ “Happy Anniversary”", time:"11:30", total:560000, ship:"Giao tận nơi", status:"cancel"},
+  {id:"BM-1107", name:"Bà Huỳnh Kim Oanh", phone:"0283 846 2210", items:"10 bánh bò nướng lá dứa", note:"Lấy lúc tan chợ", time:"13:00", total:200000, ship:"Khách tới lấy", status:"doing"},
+  {id:"BM-1108", name:"Anh Bùi Quang Huy", phone:"0945 078 613", items:"1 bánh kem sô-cô-la 18cm, nến số 30", note:"", time:"14:00", total:390000, ship:"Giao tận nơi", status:"doing"},
+  {id:"BM-1109", name:"Chị Trịnh Ngọc Ánh", phone:"0932 405 778", items:"12 bánh tart trứng, 12 bánh mì bơ sữa", note:"", time:"14:30", total:336000, ship:"Giao tận nơi", status:"doing"},
+  {id:"BM-1110", name:"Trường MN Hoạ Mi", phone:"0283 911 5502", items:"40 bánh muffin việt quất", note:"Giao cổng sau, gọi cô Thảo", time:"15:00", total:720000, ship:"Giao tận nơi", status:"new"},
+  {id:"BM-1111", name:"Chị Mai Phương Thảo", phone:"0985 663 140", items:"1 bánh mousse chanh dây 16cm", note:"", time:"16:00", total:380000, ship:"Khách tới lấy", status:"new"},
+  {id:"BM-1112", name:"Anh Lý Gia Bảo", phone:"0901 227 093", items:"2 bánh pía sầu riêng (hộp 4), 1 bánh chuối nướng", note:"", time:"17:00", total:260000, ship:"Giao tận nơi", status:"new"},
+  {id:"BM-1113", name:"Chị Hồ Thanh Vân", phone:"0918 554 671", items:"1 bánh kem rau câu dừa 20cm", note:"Ghi chữ “Chúc mừng thăng chức”", time:"18:00", total:480000, ship:"Giao tận nơi", status:"new"},
+  {id:"BM-1114", name:"Anh Đoàn Tấn Phát", phone:"0796 310 284", items:"15 bánh croissant bơ", note:"Nướng sát giờ cho giòn", time:"19:00", total:375000, ship:"Khách tới lấy", status:"new"}
+];
+
+const ingredients = [
+  {name:"Bơ lạt Anchor", qty:1.2, unit:"kg", par:8, supplier:"Đại lý Phú Thịnh"},
+  {name:"Trứng gà", qty:28, unit:"quả", par:180, supplier:"Trại trứng Ba Huân"},
+  {name:"Kem whipping", qty:2, unit:"hộp 1L", par:10, supplier:"Đại lý Phú Thịnh"},
+  {name:"Bột mì số 13", qty:4, unit:"kg", par:20, supplier:"Bột mì Bình Đông"},
+  {name:"Đường cát trắng", qty:5, unit:"kg", par:15, supplier:"Siêu thị Mega"},
+  {name:"Dâu tây Đà Lạt", qty:0.6, unit:"kg", par:2, supplier:"Vựa trái cây cô Út"},
+  {name:"Sữa tươi không đường", qty:6, unit:"hộp 1L", par:12, supplier:"Siêu thị Mega"}
+];
+
+const SLOTS = [
+  {label:"Sáng", from:"07:00", to:"11:00"},
+  {label:"Trưa", from:"11:00", to:"14:00"},
+  {label:"Chiều", from:"14:00", to:"17:00"},
+  {label:"Tối", from:"17:00", to:"20:01"}
+];
+
+const $ = s => document.querySelector(s);
+const vnd = n => n.toLocaleString("vi-VN") + " ₫";
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").toLowerCase();
+
+let filter = "all", query = "";
+
+function render(){
+  // header date
+  const d = new Date();
+  $("#today-label").textContent = "Quản lý hôm nay · " + d.toLocaleDateString("vi-VN",{weekday:"long", day:"numeric", month:"numeric", year:"numeric"});
+
+  // KPIs
+  const valid = orders.filter(o => o.status !== "cancel");
+  const rev = valid.reduce((s,o)=>s+o.total,0);
+  const diff = rev - YESTERDAY_REVENUE;
+  const pct = Math.round(diff / YESTERDAY_REVENUE * 1000)/10;
+  $("#rev-today").textContent = vnd(rev);
+  $("#rev-compare").innerHTML = `<span class="${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'} ${Math.abs(pct).toLocaleString("vi-VN")}%</span> so với hôm qua (${vnd(YESTERDAY_REVENUE)})`;
+  const max = Math.max(rev, YESTERDAY_REVENUE);
+  $("#bar-y").style.height = (YESTERDAY_REVENUE/max*56)+"px";
+  $("#bar-t").style.height = (rev/max*56)+"px";
+
+  const delivered = orders.filter(o=>o.status==="done").length;
+  const cancelled = orders.filter(o=>o.status==="cancel").length;
+  $("#k-orders").textContent = orders.length;
+  $("#k-orders-sub").textContent = `${delivered} đã giao · ${cancelled} huỷ`;
+  const pending = orders.filter(o=>["new","doing","ready"].includes(o.status));
+  $("#k-pending").textContent = pending.length;
+  const next = pending.slice().sort((a,b)=>a.time.localeCompare(b.time))[0];
+  $("#k-pending-sub").textContent = next ? `Đơn kế tiếp: ${next.time} · ${next.id}` : "Đã xong hết đơn";
+
+  // filters
+  const counts = {all:orders.length};
+  Object.keys(STATUS).forEach(k => counts[k] = orders.filter(o=>o.status===k).length);
+  $("#filters").innerHTML = [["all","Tất cả"], ...Object.entries(STATUS).map(([k,v])=>[k,v.label])]
+    .map(([k,l]) => `<button class="chip" type="button" data-f="${k}" aria-pressed="${filter===k}">${l}<b>${counts[k]}</b></button>`).join("");
+
+  // orders
+  const q = norm(query.trim());
+  const list = orders
+    .filter(o => filter==="all" || o.status===filter)
+    .filter(o => !q || norm([o.id,o.name,o.phone,o.items,o.note].join(" ")).includes(q))
+    .sort((a,b)=>a.time.localeCompare(b.time));
+  $("#orders").innerHTML = list.map(o => `
+    <tr class="${o.status==='cancel'?'is-cancel':''}">
+      <td class="c-id"><span class="oid">${o.id}</span></td>
+      <td class="c-cust"><div class="cust">${esc(o.name)}</div><div class="phone">${esc(o.phone)}</div></td>
+      <td class="c-items"><div class="items">${esc(o.items)}</div>${o.note?`<div class="note">${esc(o.note)}</div>`:""}</td>
+      <td class="c-time"><div class="time">${o.time}</div><div class="ship">${o.ship}</div></td>
+      <td class="c-total"><span class="total">${vnd(o.total)}</span></td>
+      <td class="c-status">
+        <select class="status s-${o.status}" data-id="${o.id}" aria-label="Trạng thái đơn ${o.id}">
+          ${Object.entries(STATUS).map(([k,v])=>`<option value="${k}" ${k===o.status?"selected":""}>${v.label}</option>`).join("")}
+        </select>
+      </td>
+    </tr>`).join("");
+  $("#empty").hidden = list.length > 0;
+  $("#order-count").textContent = list.length === orders.length ? `${orders.length} đơn` : `${list.length} / ${orders.length} đơn`;
+
+  // ingredients
+  const ing = ingredients.map(i => ({...i, ratio:i.qty/i.par})).sort((a,b)=>a.ratio-b.ratio);
+  const lowN = ing.filter(i=>i.ratio<0.25).length;
+  $("#ing-count").textContent = `${lowN} cần nhập gấp`;
+  $("#ing").innerHTML = ing.map(i => {
+    const lvl = i.ratio < 0.25 ? "low" : i.ratio < 0.5 ? "mid" : "ok";
+    const tag = lvl==="low" ? `<span class="tag low">Sắp hết</span>` : lvl==="mid" ? `<span class="tag mid">Còn ít</span>` : "";
+    return `<li class="lvl-${lvl}">
+      <div class="row"><span class="name">${i.name}${tag}</span><span class="qty">${i.qty.toLocaleString("vi-VN")} / ${i.par} ${i.unit}</span></div>
+      <div class="meter" role="img" aria-label="Còn ${Math.round(i.ratio*100)}% mức tồn chuẩn"><i style="width:${Math.max(4,Math.min(100,i.ratio*100))}%"></i></div>
+      ${lvl!=="ok"?`<div class="reorder">Đặt thêm ở: ${i.supplier}</div>`:""}
+    </li>`;
+  }).join("");
+
+  // schedule
+  const nowHM = String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  const active = orders.filter(o=>o.status!=="cancel");
+  let nextSlotMarked = false;
+  $("#sched").innerHTML = SLOTS.map(s => {
+    const inSlot = active.filter(o => o.time>=s.from && o.time<s.to).sort((a,b)=>a.time.localeCompare(b.time));
+    let cls = "";
+    if(!nextSlotMarked && nowHM < s.to){ cls="now"; nextSlotMarked=true; }
+    return `<div class="slot ${cls}">
+      <div class="slot-time">${s.from}<div style="font-weight:500;color:var(--muted);font-size:12px">${s.label}</div></div>
+      <div class="slot-list">${inSlot.length ? inSlot.map(o=>`
+        <div class="drop"><span class="dot" style="background:${STATUS[o.status].color}" title="${STATUS[o.status].label}"></span>
+        <span class="when">${o.time}</span><span class="who">${esc(o.name)} · ${o.id}</span></div>`).join("") : `<div class="slot-empty">Không có đơn</div>`}
+      </div></div>`;
+  }).join("");
+  const toGo = active.filter(o=>o.status!=="done").length;
+  $("#sched-count").textContent = `${toGo} đơn chưa giao`;
+}
+
+function toast(msg){
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+document.addEventListener("change", e => {
+  if(e.target.matches("select.status")){
+    const o = orders.find(x=>x.id===e.target.dataset.id);
+    o.status = e.target.value;
+    render();
+    toast(`Đơn ${o.id} → ${STATUS[o.status].label}`);
+    const el = document.querySelector(`select[data-id="${o.id}"]`);
+    if(el) el.focus();
+  }
+});
+$("#filters").addEventListener("click", e => {
+  const b = e.target.closest("[data-f]"); if(!b) return;
+  filter = b.dataset.f; render();
+  document.querySelector(`[data-f="${filter}"]`).focus();
+});
+$("#q").addEventListener("input", e => { query = e.target.value; render(); });
+
+const dlg = $("#dlg");
+$("#btn-new").addEventListener("click", () => { dlg.showModal(); dlg.querySelector("input").focus(); });
+$("#dlg-close").addEventListener("click", () => dlg.close());
+$("#dlg-cancel").addEventListener("click", () => dlg.close());
+$("#form").addEventListener("submit", e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const nextNum = Math.max(...orders.map(o=>+o.id.split("-")[1])) + 1;
+  const o = {
+    id:"BM-"+nextNum, name:f.get("name").trim(), phone:f.get("phone").trim() || "—",
+    items:f.get("items").trim(), note:f.get("note").trim(), time:f.get("time"),
+    total:+f.get("total")||0, ship:f.get("ship"), status:"new"
+  };
+  orders.push(o);
+  e.target.reset();
+  dlg.close();
+  filter = "all"; render();
+  toast(`Đã tạo đơn ${o.id} cho ${o.name}`);
+});
+
+render();
+setInterval(render, 60000);
+</script>
+</body>
+</html>

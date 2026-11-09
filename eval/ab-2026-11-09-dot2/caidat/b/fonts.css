@@ -1,0 +1,2 @@
+/* design-kit · nạp font cho hướng Đêm (chép từ tokens/fonts.css, chỉ giữ dòng Đêm). Nạp trước mọi CSS khác. */
+@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");

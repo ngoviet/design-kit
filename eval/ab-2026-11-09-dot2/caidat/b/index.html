@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cài đặt tài khoản · Nói Mỗi Ngày</title>
+<script>(()=>{const q=new URLSearchParams(location.search),t=q.get("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t;})();</script>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="dem.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  html { scroll-padding-top: calc(64px + var(--sp-4)); scroll-padding-bottom: calc(80px + var(--sp-4)); }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+  svg.i { width: 18px; height: 18px; flex: none; }
+
+  /* Thanh đầu trang */
+  .appbar { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .appbar-in { max-width: 70rem; margin: 0 auto; min-height: 64px; display: flex; align-items: center; gap: var(--sp-3); padding: 0 var(--sp-4); }
+  .brand { display: flex; align-items: center; gap: var(--sp-2); font: 700 var(--fs-base)/1.2 var(--font-display); color: var(--text); text-decoration: none; }
+  .brand-mark { width: 32px; height: 32px; border-radius: var(--r-md); background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .appbar .back { margin-left: auto; }
+
+  /* Khung trang */
+  .wrap { max-width: 70rem; margin: 0 auto; padding: var(--sp-6) var(--sp-4) 0; display: grid; gap: var(--sp-5); }
+  @media (min-width: 60rem) { .wrap { grid-template-columns: 14rem minmax(0, 1fr); gap: var(--sp-7); padding-inline: var(--sp-6); } }
+  .page-head { grid-column: 1 / -1; }
+  .page-head h1 { font-size: var(--fs-xl); margin-bottom: var(--sp-2); }
+  .page-head p { color: var(--text-2); margin: 0; }
+
+  /* Điều hướng mục */
+  .secnav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  .secnav a { display: flex; align-items: center; gap: var(--sp-2); min-height: var(--hit); padding: 0 var(--sp-3); border-radius: var(--r-sm); color: var(--text-2); text-decoration: none; font: 500 var(--fs-sm)/1.2 var(--font-body); border: 1px solid var(--border); background: var(--surface); }
+  .secnav a:hover { color: var(--text); background: var(--surface-2); }
+  .secnav a[aria-current="true"] { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; }
+  .secnav a.danger svg { color: var(--bad); }
+  @media (min-width: 60rem) {
+    .secnav { position: sticky; top: calc(64px + var(--sp-6)); align-self: start; }
+    .secnav ul { display: grid; gap: 2px; }
+    .secnav a { border: 0; background: transparent; }
+  }
+
+  /* Các mục */
+  .sections { display: grid; gap: var(--sp-6); min-width: 0; }
+  .sec { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); }
+  .sec-head { padding: var(--sp-5) var(--sp-5) var(--sp-3); }
+  .sec-head h2 { font-size: var(--fs-lg); }
+  .sec-head p { margin: var(--sp-1) 0 0; color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; }
+  .row { padding: var(--sp-4) var(--sp-5); border-top: 1px solid var(--border); display: grid; gap: var(--sp-3); }
+  .row-split { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3) var(--sp-5); }
+  .row-split > .txt { flex: 1 1 16rem; min-width: 0; }
+  .row-split:has(> .switch) { flex-wrap: nowrap; }
+  .row-split:has(> .switch) > .txt { flex-basis: auto; }
+  .txt strong, .txt label.t { display: block; font-weight: 600; }
+  .txt .hint { margin-top: 2px; }
+  @media (max-width: 30rem) { .sec-head { padding: var(--sp-4) var(--sp-4) var(--sp-3); } .row { padding: var(--sp-4); } }
+
+  /* Ảnh đại diện */
+  .avatar-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4); }
+  .avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); display: grid; place-items: center; font: 700 var(--fs-md)/1 var(--font-display); overflow: hidden; flex: none; }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar-tools { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  .file-in { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .file-in:focus-visible + label { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
+  .fields { display: grid; gap: var(--sp-4); }
+  @media (min-width: 40rem) { .fields.two { grid-template-columns: 1fr 1fr; } }
+
+  /* Mục tiêu mỗi ngày: nhóm nút chọn */
+  .goal { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .goal legend { padding: 0; font-weight: 600; margin-bottom: var(--sp-1); }
+  .goal .hint { margin-bottom: var(--sp-3); }
+  .seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-2); }
+  .seg .opt { position: relative; display: grid; }
+  .seg input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .seg label { display: grid; place-items: center; min-height: var(--hit-lg); padding: var(--sp-2); border: 1px solid var(--border-strong); border-radius: var(--r-md); cursor: pointer; text-align: center; font: 600 var(--fs-sm)/1.3 var(--font-body); background: var(--surface); }
+  .seg label span { display: block; font-weight: 400; color: var(--text-2); font-size: var(--fs-xs); }
+  .seg .opt:hover label { background: var(--surface-2); }
+  .seg input:checked + label { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); box-shadow: inset 0 0 0 1px var(--accent); }
+  .seg input:checked + label span { color: var(--accent-text); }
+  .seg input:focus-visible + label { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
+
+  /* Công tắc */
+  .switch { appearance: none; -webkit-appearance: none; margin: 0; flex: none; width: 48px; height: 28px; border-radius: var(--r-full); border: 1px solid var(--border-strong); background: var(--surface-2); position: relative; cursor: pointer; transition: background-color var(--dur-2) var(--ease-out); }
+  .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--text-2); transition: transform var(--dur-2) var(--ease-out); }
+  .switch:checked { background: var(--accent); border-color: var(--accent); }
+  .switch:checked::after { transform: translateX(20px); background: var(--on-accent); }
+  .switch:disabled { opacity: 0.55; cursor: not-allowed; }
+  .time-in { width: auto; min-width: 9rem; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .sub[aria-disabled="true"] .txt { color: var(--text-2); }
+
+  /* Thiết bị */
+  .devices { list-style: none; margin: 0; padding: 0; }
+  .device { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-4); padding: var(--sp-4) var(--sp-5); border-top: 1px solid var(--border); }
+  @media (max-width: 30rem) { .device { padding: var(--sp-4); } }
+  .device .ico { width: 40px; height: 40px; border-radius: var(--r-md); background: var(--surface-2); color: var(--text-2); display: grid; place-items: center; flex: none; }
+  .device .ico svg { width: 20px; height: 20px; }
+  .device .txt { flex: 1 1 12rem; min-width: 0; }
+  .device .meta { color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; display: block; }
+  .device .btn { margin-left: auto; }
+  .dev-state { padding: var(--sp-5); border-top: 1px solid var(--border); display: grid; gap: var(--sp-3); justify-items: start; }
+  .dev-state p { margin: 0; color: var(--text-2); }
+  .dev-state code { font-family: var(--font-mono); font-size: var(--fs-sm); }
+  .skel { display: flex; gap: var(--sp-4); align-items: center; padding: var(--sp-4) var(--sp-5); border-top: 1px solid var(--border); }
+  .skel i { display: block; background: var(--surface-2); border-radius: var(--r-sm); }
+  .skel .a { width: 40px; height: 40px; }
+  .skel .b { height: 14px; flex: 1; max-width: 16rem; }
+  @media (prefers-reduced-motion: no-preference) { .skel i { animation: mo 1.2s var(--ease-in-out) infinite alternate; } @keyframes mo { to { opacity: 0.5; } } }
+  .row-foot { padding: var(--sp-4) var(--sp-5); border-top: 1px solid var(--border); }
+
+  /* Gói dịch vụ */
+  .plan { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--sp-4); }
+  .plan-name { font: 650 var(--fs-lg)/1.2 var(--font-display); display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+  .plan dl { margin: var(--sp-3) 0 0; display: grid; grid-template-columns: auto 1fr; gap: var(--sp-1) var(--sp-4); font-size: var(--fs-sm); line-height: 1.5; }
+  .plan dt { color: var(--text-2); }
+  .plan dd { margin: 0; font-weight: 600; }
+
+  /* Vùng nguy hiểm */
+  .sec.danger { border-color: color-mix(in oklch, var(--bad), var(--border) 45%); }
+  .sec.danger h2 { color: var(--bad); }
+
+  /* Thanh lưu */
+  .savebar { grid-column: 1 / -1; position: sticky; bottom: 0; z-index: 4; margin: var(--sp-6) calc(-1 * var(--sp-4)) 0; padding: var(--sp-3) var(--sp-4); background: var(--surface); border-top: 1px solid var(--border); box-shadow: var(--shadow-2); }
+  @media (min-width: 60rem) { .savebar { margin-inline: calc(-1 * var(--sp-6)); padding-inline: var(--sp-6); } }
+  .savebar-in { max-width: 70rem; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); }
+  .save-status { flex: 1 1 12rem; max-width: none; margin: 0; display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-sm); line-height: 1.5; color: var(--text-2); }
+  .save-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); flex: none; }
+  .save-status[data-s="dirty"] { color: var(--warn); }
+  .save-status[data-s="dirty"] .dot { background: var(--warn); }
+  .save-status[data-s="saved"] { color: var(--ok); }
+  .save-status[data-s="saved"] .dot { background: var(--ok); }
+  .save-status[data-s="error"] { color: var(--bad); }
+  .save-status[data-s="error"] .dot { background: var(--bad); }
+  .savebar .actions { display: flex; gap: var(--sp-2); }
+  @media (max-width: 30rem) { .savebar .actions { flex: 1 1 100%; } .savebar .actions .btn { flex: 1; } }
+  .spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; }
+  @media (prefers-reduced-motion: no-preference) { .spin { animation: quay 0.8s linear infinite; } @keyframes quay { to { transform: rotate(1turn); } } }
+
+  /* Hộp thoại */
+  .dlg { width: min(100% - 2 * var(--sp-4), 30rem); padding: 0; border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); color: var(--text); box-shadow: var(--shadow-2); }
+  .dlg::backdrop { background: oklch(0.15 0.01 250 / 0.55); }
+  .dlg form { padding: var(--sp-5); display: grid; gap: var(--sp-4); }
+  .dlg h2 { font-size: var(--fs-lg); }
+  .dlg p { margin: 0; color: var(--text-2); }
+  .dlg ul { margin: 0; padding-left: 1.2em; color: var(--text-2); display: grid; gap: var(--sp-1); }
+  .dlg .actions { display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-2); }
+  @media (max-width: 30rem) { .dlg .actions .btn { flex: 1 1 100%; } }
+  @media (prefers-reduced-motion: no-preference) { .dlg[open] { animation: hien var(--dur-2) var(--ease-out); } @keyframes hien { from { opacity: 0; transform: translateY(8px); } } }
+  .pw-wrap { position: relative; }
+  .pw-wrap .input { padding-right: 5.5rem; }
+  .pw-wrap .btn { position: absolute; right: 2px; top: 2px; min-height: 40px; padding: 0 var(--sp-3); }
+  .plans { border: 0; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
+  .plans legend { font-weight: 600; margin-bottom: var(--sp-2); padding: 0; }
+  .plans label { display: grid; grid-template-columns: auto 1fr auto; gap: var(--sp-3); align-items: start; padding: var(--sp-3) var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--r-md); cursor: pointer; }
+  .plans label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .plans input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); }
+  .plans strong { display: block; }
+  .plans .price { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: var(--fs-sm); white-space: nowrap; }
+  .plans .muted { font-size: var(--fs-sm); line-height: 1.5; }
+
+  /* Thông báo nổi */
+  .toasts { position: fixed; z-index: 20; right: var(--sp-4); bottom: calc(80px + var(--sp-3)); left: var(--sp-4); display: grid; gap: var(--sp-2); justify-items: end; pointer-events: none; }
+  .toast { pointer-events: auto; width: min(100%, 24rem); display: grid; grid-template-columns: auto 1fr auto; gap: var(--sp-3); align-items: start; padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow-2); font: 400 var(--fs-sm)/1.5 var(--font-body); }
+  .toast > svg { width: 20px; height: 20px; margin-top: 1px; }
+  .toast.ok > svg { color: var(--ok); }
+  .toast.bad > svg { color: var(--bad); }
+  .toast strong { display: block; font-weight: 600; }
+  .toast .tools { display: flex; gap: var(--sp-1); align-items: center; }
+  .toast .btn-sm { min-height: 32px; padding: 0 var(--sp-3); }
+  .toast .x { min-width: 32px; min-height: 32px; padding: 0; }
+  @media (prefers-reduced-motion: no-preference) { .toast { animation: vao var(--dur-2) var(--ease-out); } @keyframes vao { from { opacity: 0; transform: translateY(8px); } } }
+</style>
+</head>
+<body>
+  <a class="skip-link btn btn-primary" href="#noi-dung">Bỏ qua tới nội dung</a>
+
+  <header class="appbar">
+    <div class="appbar-in">
+      <a class="brand" href="#">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4V5Z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg></span>
+        Nói Mỗi Ngày
+      </a>
+      <a class="btn btn-ghost btn-sm back" href="#">
+        <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Về bài học
+      </a>
+    </div>
+  </header>
+
+  <form class="wrap" id="cai-dat" novalidate>
+    <div class="page-head">
+      <h1>Cài đặt tài khoản</h1>
+      <p>Thay đổi ở hồ sơ và thông báo chỉ có hiệu lực khi bạn bấm Lưu thay đổi.</p>
+    </div>
+
+    <nav class="secnav" aria-label="Các mục cài đặt">
+      <ul>
+        <li><a href="#ho-so" aria-current="true"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Hồ sơ</a></li>
+        <li><a href="#thong-bao"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3a6 6 0 0 1 6 6v4l2 3H4l2-3V9a6 6 0 0 1 6-6Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>Thông báo</a></li>
+        <li><a href="#bao-mat"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Bảo mật</a></li>
+        <li><a href="#goi"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/></svg>Gói dịch vụ</a></li>
+        <li><a href="#nguy-hiem" class="danger"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17v.01"/></svg>Vùng nguy hiểm</a></li>
+      </ul>
+    </nav>
+
+    <main class="sections" id="noi-dung" tabindex="-1">
+      <!-- Hồ sơ -->
+      <section class="sec" id="ho-so" aria-labelledby="ho-so-h">
+        <div class="sec-head">
+          <h2 id="ho-so-h">Hồ sơ</h2>
+          <p>Bạn bè thấy tên và ảnh này trên bảng xếp hạng.</p>
+        </div>
+        <div class="row">
+          <div class="avatar-row">
+            <div class="avatar" id="avatar" aria-hidden="true">LA</div>
+            <div class="txt">
+              <strong>Ảnh đại diện</strong>
+              <p class="hint">JPG hoặc PNG, tối đa 2 MB.</p>
+              <div class="avatar-tools" style="margin-top: var(--sp-2)">
+                <input class="file-in" type="file" id="anh" accept="image/png,image/jpeg">
+                <label class="btn btn-secondary btn-sm" for="anh">Đổi ảnh</label>
+                <button class="btn btn-ghost btn-sm" type="button" id="go-anh" hidden>Gỡ ảnh</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="fields two">
+            <div class="field">
+              <label class="label" for="ten">Tên hiển thị</label>
+              <input class="input" id="ten" name="ten" autocomplete="nickname" value="Lan Anh" maxlength="30" aria-describedby="ten-hint">
+              <p class="hint" id="ten-hint">Tối đa 30 ký tự.</p>
+              <p class="error-text" id="ten-loi" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg><span>Nhập tên hiển thị để bạn bè nhận ra bạn.</span></p>
+            </div>
+            <div class="field">
+              <label class="label" for="email">Email</label>
+              <input class="input" id="email" name="email" type="email" autocomplete="email" inputmode="email" spellcheck="false" value="lananh.nguyen@gmail.com" aria-describedby="email-hint">
+              <p class="hint" id="email-hint">Dùng để đăng nhập và nhận tổng kết tuần.</p>
+              <p class="error-text" id="email-loi" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg><span>Email chưa đúng dạng, ví dụ: ten@gmail.com.</span></p>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <fieldset class="goal">
+            <legend>Mục tiêu học mỗi ngày</legend>
+            <p class="hint">Chuỗi ngày học chỉ tăng khi bạn đạt đủ số phút này.</p>
+            <div class="seg">
+              <span class="opt"><input type="radio" name="muc-tieu" id="mt5" value="5"><label for="mt5">5 phút<span>Nhẹ nhàng</span></label></span>
+              <span class="opt"><input type="radio" name="muc-tieu" id="mt10" value="10" checked><label for="mt10">10 phút<span>Đều đặn</span></label></span>
+              <span class="opt"><input type="radio" name="muc-tieu" id="mt15" value="15"><label for="mt15">15 phút<span>Chăm chỉ</span></label></span>
+              <span class="opt"><input type="radio" name="muc-tieu" id="mt20" value="20"><label for="mt20">20 phút<span>Tăng tốc</span></label></span>
+            </div>
+          </fieldset>
+        </div>
+      </section>
+
+      <!-- Thông báo -->
+      <section class="sec" id="thong-bao" aria-labelledby="thong-bao-h">
+        <div class="sec-head">
+          <h2 id="thong-bao-h">Thông báo</h2>
+          <p>Chọn lúc nào ứng dụng được làm phiền bạn.</p>
+        </div>
+        <div class="row row-split">
+          <div class="txt"><label class="t" for="nhac">Nhắc học mỗi ngày</label><p class="hint" id="nhac-hint">Gửi thông báo nếu hôm đó bạn chưa học.</p></div>
+          <input class="switch" type="checkbox" role="switch" id="nhac" name="nhac" checked aria-describedby="nhac-hint">
+        </div>
+        <div class="row row-split sub" id="gio-row">
+          <div class="txt"><label class="t" for="gio">Giờ nhắc</label><p class="hint" id="gio-hint">Theo giờ trên điện thoại của bạn.</p></div>
+          <input class="input time-in" type="time" id="gio" name="gio" value="20:30" step="900" aria-describedby="gio-hint">
+        </div>
+        <div class="row row-split">
+          <div class="txt"><label class="t" for="tong-ket">Email tổng kết tuần</label><p class="hint" id="tong-ket-hint">Số phút, từ mới và chuỗi ngày, gửi sáng thứ Hai.</p></div>
+          <input class="switch" type="checkbox" role="switch" id="tong-ket" name="tong-ket" checked aria-describedby="tong-ket-hint">
+        </div>
+        <div class="row row-split">
+          <div class="txt"><label class="t" for="ban-be">Khi bạn bè vượt điểm</label><p class="hint" id="ban-be-hint">Báo khi có người vượt bạn trên bảng xếp hạng tuần.</p></div>
+          <input class="switch" type="checkbox" role="switch" id="ban-be" name="ban-be" aria-describedby="ban-be-hint">
+        </div>
+      </section>
+
+      <!-- Bảo mật -->
+      <section class="sec" id="bao-mat" aria-labelledby="bao-mat-h">
+        <div class="sec-head">
+          <h2 id="bao-mat-h">Bảo mật</h2>
+          <p>Các thay đổi ở đây có hiệu lực ngay, không cần bấm Lưu.</p>
+        </div>
+        <div class="row row-split">
+          <div class="txt"><strong>Mật khẩu</strong><p class="hint">Đổi lần cuối ngày 02/08/2026.</p></div>
+          <button class="btn btn-secondary btn-sm" type="button" id="mo-mat-khau" aria-haspopup="dialog">Đổi mật khẩu</button>
+        </div>
+        <div class="row row-split">
+          <div class="txt"><label class="t" for="hai-buoc">Đăng nhập 2 bước</label><p class="hint" id="hai-buoc-hint">Nhập thêm mã gửi qua tin nhắn tới số ••• 482 khi đăng nhập trên thiết bị lạ.</p></div>
+          <input class="switch" type="checkbox" role="switch" id="hai-buoc" aria-describedby="hai-buoc-hint">
+        </div>
+        <div class="row" style="padding-bottom: var(--sp-2)">
+          <div class="txt"><h3 id="tb-h">Thiết bị đang đăng nhập</h3><p class="hint" id="tb-dem" aria-live="polite">3 thiết bị</p></div>
+        </div>
+        <div id="tb-vung" aria-labelledby="tb-h" role="region"></div>
+      </section>
+
+      <!-- Gói dịch vụ -->
+      <section class="sec" id="goi" aria-labelledby="goi-h">
+        <div class="sec-head">
+          <h2 id="goi-h">Gói dịch vụ</h2>
+          <p>Đổi gói có hiệu lực từ kỳ gia hạn tiếp theo.</p>
+        </div>
+        <div class="row">
+          <div class="plan">
+            <div>
+              <p class="hint" style="margin-bottom: var(--sp-1)">Gói hiện tại</p>
+              <div class="plan-name"><span id="goi-ten">Plus · Theo năm</span><span class="badge badge-ok">Đang dùng</span></div>
+              <dl>
+                <dt>Giá</dt><dd class="num" id="goi-gia">899.000 ₫ / năm</dd>
+                <dt>Gia hạn</dt><dd id="goi-han">14/03/2027</dd>
+                <dt>Thanh toán</dt><dd>Ví MoMo</dd>
+              </dl>
+            </div>
+            <button class="btn btn-secondary" type="button" id="mo-goi" aria-haspopup="dialog">Đổi gói</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Vùng nguy hiểm -->
+      <section class="sec danger" id="nguy-hiem" aria-labelledby="nguy-hiem-h">
+        <div class="sec-head">
+          <h2 id="nguy-hiem-h">Vùng nguy hiểm</h2>
+          <p>Thao tác ở đây không hoàn tác được.</p>
+        </div>
+        <div class="row row-split">
+          <div class="txt"><strong>Xoá tài khoản</strong><p class="hint">Xoá vĩnh viễn hồ sơ, chuỗi 47 ngày học và 1.280 từ đã lưu. Gói Plus sẽ bị huỷ, không hoàn tiền.</p></div>
+          <button class="btn btn-danger" type="button" id="mo-xoa" aria-haspopup="dialog">Xoá tài khoản</button>
+        </div>
+      </section>
+    </main>
+
+    <div class="savebar">
+      <div class="savebar-in">
+        <p class="save-status" id="trang-thai-luu" data-s="clean" role="status"><span class="dot" aria-hidden="true"></span><span id="trang-thai-chu">Chưa có thay đổi</span></p>
+        <div class="actions">
+          <button class="btn btn-ghost" type="button" id="huy" hidden>Bỏ thay đổi</button>
+          <button class="btn btn-primary" type="submit" id="luu">Lưu thay đổi</button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <!-- Hộp thoại: đổi mật khẩu -->
+  <dialog class="dlg" id="dlg-mat-khau" aria-labelledby="mk-h">
+    <form method="dialog" id="form-mk" novalidate>
+      <h2 id="mk-h">Đổi mật khẩu</h2>
+      <input type="text" name="username" autocomplete="username" value="lananh.nguyen@gmail.com" hidden>
+      <div class="field">
+        <label class="label" for="mk-cu">Mật khẩu hiện tại</label>
+        <input class="input" type="password" id="mk-cu" autocomplete="current-password" required>
+      </div>
+      <div class="field">
+        <label class="label" for="mk-moi">Mật khẩu mới</label>
+        <div class="pw-wrap">
+          <input class="input" type="password" id="mk-moi" autocomplete="new-password" minlength="8" required aria-describedby="mk-moi-hint">
+          <button class="btn btn-ghost" type="button" id="hien-mk" aria-pressed="false">Hiện</button>
+        </div>
+        <p class="hint" id="mk-moi-hint">Ít nhất 8 ký tự, nên có cả chữ và số.</p>
+        <p class="error-text" id="mk-loi" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg><span></span></p>
+      </div>
+      <div class="actions">
+        <button class="btn btn-secondary" value="huy" formnovalidate autofocus>Huỷ</button>
+        <button class="btn btn-primary" value="doi" id="mk-ok">Đổi mật khẩu</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Hộp thoại: đổi gói -->
+  <dialog class="dlg" id="dlg-goi" aria-labelledby="goi-dlg-h">
+    <form method="dialog">
+      <h2 id="goi-dlg-h">Đổi gói dịch vụ</h2>
+      <fieldset class="plans">
+        <legend class="sr-only">Chọn gói</legend>
+        <label><input type="radio" name="goi" value="free"><span><strong>Miễn phí</strong><span class="muted">5 bài nói mỗi ngày, có quảng cáo</span></span><span class="price">0 ₫</span></label>
+        <label><input type="radio" name="goi" value="thang"><span><strong>Plus · Theo tháng</strong><span class="muted">Không giới hạn bài, chấm phát âm chi tiết</span></span><span class="price">99.000 ₫/th</span></label>
+        <label><input type="radio" name="goi" value="nam" checked><span><strong>Plus · Theo năm</strong><span class="muted">Như gói tháng, rẻ hơn 24%</span></span><span class="price">899.000 ₫/năm</span></label>
+      </fieldset>
+      <p class="small">Gói mới bắt đầu từ ngày <strong id="goi-tu">14/03/2027</strong>. Đến lúc đó bạn vẫn dùng gói hiện tại.</p>
+      <div class="actions">
+        <button class="btn btn-secondary" value="huy" autofocus>Giữ gói hiện tại</button>
+        <button class="btn btn-primary" value="doi">Xác nhận đổi gói</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Hộp thoại: xoá tài khoản -->
+  <dialog class="dlg" id="dlg-xoa" aria-labelledby="xoa-h" aria-describedby="xoa-mo-ta">
+    <form method="dialog" id="form-xoa">
+      <h2 id="xoa-h">Xoá tài khoản Nói Mỗi Ngày?</h2>
+      <p id="xoa-mo-ta">Tài khoản lananh.nguyen@gmail.com và mọi thứ sau sẽ bị xoá vĩnh viễn:</p>
+      <ul>
+        <li>Chuỗi 47 ngày học và lịch sử điểm</li>
+        <li>1.280 từ đã lưu và các bản ghi âm</li>
+        <li>Gói Plus còn đến 14/03/2027, không hoàn tiền</li>
+      </ul>
+      <div class="field">
+        <label class="label" for="xoa-go">Gõ <strong>XOÁ</strong> để xác nhận</label>
+        <input class="input" id="xoa-go" autocomplete="off" spellcheck="false" aria-describedby="xoa-go-hint">
+        <p class="hint" id="xoa-go-hint">Nút xoá chỉ hoạt động khi bạn gõ đúng.</p>
+      </div>
+      <div class="actions">
+        <button class="btn btn-secondary" value="huy" autofocus>Giữ tài khoản</button>
+        <button class="btn btn-danger" value="xoa" id="xoa-ok" aria-disabled="true">Xoá vĩnh viễn</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toasts" role="region" aria-live="polite" aria-relevant="additions" aria-label="Thông báo"></div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const q = new URLSearchParams(location.search);
+  const ICON = {
+    ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.5 2.5L16 9.5"/></svg>',
+    bad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18h2"/></svg>',
+    laptop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg>',
+    tablet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M11 18h2"/></svg>',
+  };
+
+  /* ---------- Thông báo nổi ---------- */
+  const box = $(".toasts");
+  function toast({ kind = "ok", title, body, action, onAction }) {
+    const el = document.createElement("div");
+    el.className = "toast " + (kind === "bad" ? "bad" : "ok");
+    if (kind === "bad") el.setAttribute("role", "alert");
+    el.innerHTML = ICON[kind === "bad" ? "bad" : "ok"] + '<div><strong></strong><span></span></div><div class="tools"></div>';
+    el.querySelector("strong").textContent = title;
+    el.querySelector("span").textContent = body || "";
+    const tools = el.querySelector(".tools");
+    let left = 6000, t0, timer;
+    const close = () => { clearTimeout(timer); el.remove(); };
+    if (action) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "btn btn-ghost btn-sm"; b.textContent = action;
+      b.addEventListener("click", () => { onAction && onAction(); close(); });
+      tools.append(b);
+    }
+    const x = document.createElement("button");
+    x.type = "button"; x.className = "btn btn-ghost x"; x.setAttribute("aria-label", "Đóng thông báo");
+    x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="16" height="16"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+    x.addEventListener("click", close);
+    tools.append(x);
+    box.append(el);
+    const start = () => { if (kind === "bad") return; t0 = Date.now(); timer = setTimeout(close, left); };
+    const pause = () => { clearTimeout(timer); left -= Date.now() - (t0 || Date.now()); };
+    el.addEventListener("mouseenter", pause); el.addEventListener("mouseleave", start);
+    el.addEventListener("focusin", pause); el.addEventListener("focusout", start);
+    start();
+  }
+
+  /* ---------- Điều hướng mục: đánh dấu mục đang xem ---------- */
+  const links = [...document.querySelectorAll(".secnav a")];
+  const setCur = (id) => links.forEach((a) => a.getAttribute("href") === "#" + id ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current"));
+  links.forEach((a) => a.addEventListener("click", () => setCur(a.getAttribute("href").slice(1))));
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver((es) => {
+      es.forEach((e) => { if (e.isIntersecting) setCur(e.target.id); });
+    }, { rootMargin: "-30% 0px -60% 0px" });
+    document.querySelectorAll(".sec").forEach((s) => io.observe(s));
+  }
+
+  /* ---------- Biểu mẫu chính: theo dõi thay đổi, lưu ---------- */
+  const form = $("#cai-dat");
+  const tracked = ["ten", "email", "nhac", "gio", "tong-ket", "ban-be"];
+  const snap = () => {
+    const o = {};
+    tracked.forEach((id) => { const el = document.getElementById(id); o[id] = el.type === "checkbox" ? el.checked : el.value; });
+    o.mucTieu = (form.querySelector('input[name="muc-tieu"]:checked') || {}).value;
+    o.anh = avatarUrl;
+    return o;
+  };
+  let avatarUrl = "";
+  let saved;
+  const status = $("#trang-thai-luu"), statusTxt = $("#trang-thai-chu"), huy = $("#huy"), luu = $("#luu");
+  let lastSavedAt = "";
+  function diffCount() { const now = snap(); return Object.keys(now).filter((k) => now[k] !== saved[k]).length; }
+  function refresh() {
+    const n = diffCount();
+    if (n) { status.dataset.s = "dirty"; statusTxt.textContent = n + " thay đổi chưa lưu"; huy.hidden = false; }
+    else { status.dataset.s = lastSavedAt ? "saved" : "clean"; statusTxt.textContent = lastSavedAt ? "Đã lưu lúc " + lastSavedAt : "Chưa có thay đổi"; huy.hidden = true; }
+  }
+
+  // Giờ nhắc phụ thuộc công tắc nhắc học
+  const nhac = $("#nhac"), gio = $("#gio"), gioRow = $("#gio-row");
+  const syncGio = () => { gio.disabled = !nhac.checked; gioRow.setAttribute("aria-disabled", String(!nhac.checked)); };
+  nhac.addEventListener("change", syncGio);
+
+  // Ảnh đại diện
+  const anh = $("#anh"), av = $("#avatar"), goAnh = $("#go-anh");
+  function renderAvatar() {
+    if (avatarUrl) { av.innerHTML = ""; const img = new Image(); img.alt = ""; img.src = avatarUrl; av.append(img); goAnh.hidden = false; }
+    else { const t = $("#ten").value.trim().split(/\s+/).map((w) => w[0] || "").join("").slice(0, 2).toUpperCase(); av.textContent = t || "?"; goAnh.hidden = true; }
+  }
+  anh.addEventListener("change", () => {
+    const f = anh.files[0]; if (!f) return;
+    if (f.size > 2 * 1024 * 1024) { toast({ kind: "bad", title: "Ảnh quá lớn", body: "Ảnh " + (f.size / 1048576).toFixed(1).replace(".", ",") + " MB, tối đa 2 MB. Chọn ảnh khác hoặc thu nhỏ ảnh." }); anh.value = ""; return; }
+    avatarUrl = URL.createObjectURL(f); renderAvatar(); refresh();
+  });
+  goAnh.addEventListener("click", () => { avatarUrl = ""; anh.value = ""; renderAvatar(); refresh(); $("label[for=anh]").focus?.(); anh.focus(); });
+
+  // Kiểm lỗi
+  function setErr(id, bad) {
+    const el = document.getElementById(id), msg = document.getElementById(id + "-loi");
+    msg.hidden = !bad;
+    if (bad) { el.setAttribute("aria-invalid", "true"); el.setAttribute("aria-describedby", id + "-loi " + id + "-hint"); }
+    else { el.removeAttribute("aria-invalid"); el.setAttribute("aria-describedby", id + "-hint"); }
+    return bad;
+  }
+  function validate() {
+    const badTen = setErr("ten", !$("#ten").value.trim());
+    const badEmail = setErr("email", !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test($("#email").value.trim()));
+    return badTen ? "ten" : badEmail ? "email" : "";
+  }
+
+  form.addEventListener("input", (e) => { if (e.target.id === "ten" && !avatarUrl) renderAvatar(); if (e.target.getAttribute("aria-invalid")) validate(); refresh(); });
+  form.addEventListener("change", refresh);
+
+  let busy = false;
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (busy) return;
+    const first = validate();
+    if (first) {
+      status.dataset.s = "error"; statusTxt.textContent = "Chưa lưu: kiểm tra lại ô báo lỗi";
+      document.getElementById(first).focus();
+      return;
+    }
+    if (!diffCount()) { toast({ title: "Không có gì để lưu", body: "Bạn chưa thay đổi cài đặt nào." }); return; }
+    busy = true; luu.setAttribute("aria-busy", "true"); huy.disabled = true;
+    luu.innerHTML = '<span class="spin" aria-hidden="true"></span>Đang lưu…';
+    setTimeout(() => {
+      busy = false; luu.removeAttribute("aria-busy"); huy.disabled = false; luu.textContent = "Lưu thay đổi";
+      saved = snap();
+      lastSavedAt = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+      refresh();
+      toast({ title: "Đã lưu thay đổi", body: "Hồ sơ và thông báo mới có hiệu lực ngay." });
+    }, 700);
+  });
+  huy.addEventListener("click", () => {
+    tracked.forEach((id) => { const el = document.getElementById(id); if (el.type === "checkbox") el.checked = saved[id]; else el.value = saved[id]; });
+    const r = form.querySelector('input[name="muc-tieu"][value="' + saved.mucTieu + '"]'); if (r) r.checked = true;
+    avatarUrl = saved.anh; renderAvatar(); syncGio(); setErr("ten", false); setErr("email", false); refresh();
+    toast({ title: "Đã bỏ thay đổi", body: "Cài đặt trở lại như lần lưu trước." });
+    luu.focus();
+  });
+  window.addEventListener("beforeunload", (e) => { if (diffCount()) { e.preventDefault(); e.returnValue = ""; } });
+
+  // Đăng nhập 2 bước: có hiệu lực ngay
+  $("#hai-buoc").addEventListener("change", (e) => {
+    toast(e.target.checked
+      ? { title: "Đã bật đăng nhập 2 bước", body: "Lần đăng nhập tới trên thiết bị lạ sẽ cần mã gửi qua tin nhắn." }
+      : { title: "Đã tắt đăng nhập 2 bước", body: "Chỉ cần mật khẩu để đăng nhập." });
+  });
+
+  /* ---------- Thiết bị đang đăng nhập (đủ 4 trạng thái) ---------- */
+  let devices = [
+    { id: "a", ico: "phone", ten: "iPhone 14 · Ứng dụng iOS", noi: "Hà Nội", luc: "Đang hoạt động", me: true },
+    { id: "b", ico: "laptop", ten: "Chrome trên Windows", noi: "Hà Nội", luc: "2 giờ trước" },
+    { id: "c", ico: "tablet", ten: "Samsung Galaxy Tab S7", noi: "Đà Nẵng", luc: "5 ngày trước" },
+  ];
+  const vung = $("#tb-vung"), dem = $("#tb-dem");
+  function renderDevices(state) {
+    if (state === "tai") {
+      dem.textContent = "Đang tải danh sách thiết bị…";
+      vung.setAttribute("aria-busy", "true");
+      vung.innerHTML = '<div class="skel"><i class="a"></i><i class="b"></i></div><div class="skel"><i class="a"></i><i class="b"></i></div>';
+      return;
+    }
+    vung.removeAttribute("aria-busy");
+    if (state === "loi") {
+      dem.textContent = "Không tải được";
+      vung.innerHTML = '<div class="dev-state"><p>Không tải được danh sách thiết bị do mất kết nối tới máy chủ. Kiểm tra mạng rồi thử lại. <code>Mã lỗi: TB-503</code></p><button class="btn btn-secondary btn-sm" type="button" id="tb-thu-lai">Thử lại</button></div>';
+      $("#tb-thu-lai").addEventListener("click", () => { renderDevices("tai"); setTimeout(() => renderDevices(), 600); });
+      return;
+    }
+    if (state === "quyen") {
+      dem.textContent = "Cần xác minh";
+      vung.innerHTML = '<div class="dev-state"><p>Vì an toàn, bạn cần nhập lại mật khẩu trước khi xem các thiết bị đang đăng nhập.</p><button class="btn btn-secondary btn-sm" type="button">Xác minh lại</button></div>';
+      return;
+    }
+    const others = devices.filter((d) => !d.me);
+    dem.textContent = devices.length + " thiết bị";
+    const ul = document.createElement("ul"); ul.className = "devices";
+    devices.forEach((d) => {
+      const li = document.createElement("li"); li.className = "device";
+      li.innerHTML = '<span class="ico">' + ICON[d.ico] + '</span><div class="txt"><strong></strong><span class="meta"></span></div>';
+      li.querySelector("strong").textContent = d.ten;
+      li.querySelector(".meta").textContent = d.noi + " · " + d.luc;
+      if (d.me) {
+        const b = document.createElement("span"); b.className = "badge badge-info"; b.textContent = "Thiết bị này"; li.append(b);
+      } else {
+        const b = document.createElement("button"); b.type = "button"; b.className = "btn btn-secondary btn-sm";
+        b.textContent = "Đăng xuất"; b.setAttribute("aria-label", "Đăng xuất " + d.ten);
+        b.addEventListener("click", () => logout([d]));
+        li.append(b);
+      }
+      ul.append(li);
+    });
+    vung.replaceChildren(ul);
+    if (!others.length) {
+      const p = document.createElement("div"); p.className = "dev-state";
+      p.innerHTML = "<p>Ngoài thiết bị này, tài khoản không đăng nhập ở nơi nào khác.</p>";
+      vung.append(p);
+    } else if (others.length > 1) {
+      const f = document.createElement("div"); f.className = "row-foot";
+      const b = document.createElement("button"); b.type = "button"; b.className = "btn btn-ghost btn-sm";
+      b.textContent = "Đăng xuất mọi thiết bị khác"; b.addEventListener("click", () => logout(others));
+      f.append(b); vung.append(f);
+    }
+  }
+  function logout(list) {
+    const before = devices.slice();
+    devices = devices.filter((d) => !list.includes(d));
+    renderDevices();
+    dem.focus?.();
+    toast({
+      title: list.length === 1 ? "Đã đăng xuất " + list[0].ten : "Đã đăng xuất " + list.length + " thiết bị",
+      body: "Thiết bị đó phải đăng nhập lại để tiếp tục học.",
+      action: "Hoàn tác", onAction: () => { devices = before; renderDevices(); },
+    });
+    const first = vung.querySelector("button"); (first || $("#hai-buoc")).focus();
+  }
+  const tb = q.get("thiet-bi");
+  if (tb === "rong") devices = devices.filter((d) => d.me);
+  renderDevices(tb === "tai" || tb === "loi" || tb === "quyen" ? tb : undefined);
+
+  /* ---------- Hộp thoại ---------- */
+  const dMk = $("#dlg-mat-khau"), dGoi = $("#dlg-goi"), dXoa = $("#dlg-xoa");
+  $("#mo-mat-khau").addEventListener("click", () => { $("#form-mk").reset(); $("#mk-loi").hidden = true; dMk.showModal(); });
+  $("#mo-goi").addEventListener("click", () => dGoi.showModal());
+  $("#mo-xoa").addEventListener("click", () => { $("#xoa-go").value = ""; $("#xoa-ok").setAttribute("aria-disabled", "true"); dXoa.showModal(); });
+  [dMk, dGoi, dXoa].forEach((d) => d.addEventListener("click", (e) => { if (e.target === d) d.close("huy"); }));
+
+  // Đổi mật khẩu
+  $("#hien-mk").addEventListener("click", (e) => {
+    const i = $("#mk-moi"), show = i.type === "password";
+    i.type = show ? "text" : "password"; e.currentTarget.textContent = show ? "Ẩn" : "Hiện"; e.currentTarget.setAttribute("aria-pressed", String(show));
+  });
+  $("#mk-ok").addEventListener("click", (e) => {
+    const cu = $("#mk-cu"), moi = $("#mk-moi"), loi = $("#mk-loi");
+    let msg = "";
+    if (!cu.value) msg = "Nhập mật khẩu hiện tại.";
+    else if (moi.value.length < 8) msg = "Mật khẩu mới cần ít nhất 8 ký tự.";
+    else if (moi.value === cu.value) msg = "Mật khẩu mới phải khác mật khẩu hiện tại.";
+    if (msg) {
+      e.preventDefault(); loi.hidden = false; loi.querySelector("span").textContent = msg;
+      const bad = !cu.value ? cu : moi; bad.setAttribute("aria-invalid", "true"); bad.setAttribute("aria-describedby", "mk-loi"); bad.focus();
+    }
+  });
+  dMk.addEventListener("close", () => {
+    ["#mk-cu", "#mk-moi"].forEach((s) => { $(s).removeAttribute("aria-invalid"); });
+    $("#mk-moi").setAttribute("aria-describedby", "mk-moi-hint"); $("#mk-cu").removeAttribute("aria-describedby");
+    if (dMk.returnValue === "doi") toast({ title: "Đã đổi mật khẩu", body: "Các thiết bị khác cần đăng nhập lại bằng mật khẩu mới." });
+  });
+
+  // Đổi gói
+  const GOI = { free: ["Miễn phí", "0 ₫"], thang: ["Plus · Theo tháng", "99.000 ₫ / tháng"], nam: ["Plus · Theo năm", "899.000 ₫ / năm"] };
+  let goiHienTai = "nam";
+  dGoi.addEventListener("close", () => {
+    const v = (dGoi.querySelector('input[name="goi"]:checked') || {}).value;
+    if (dGoi.returnValue !== "doi") { dGoi.querySelector('input[value="' + goiHienTai + '"]').checked = true; return; }
+    if (v === goiHienTai) { toast({ title: "Không đổi gói", body: "Bạn đã chọn đúng gói đang dùng." }); return; }
+    toast({ title: "Đã đặt lịch đổi gói", body: "Từ 14/03/2027 bạn chuyển sang " + GOI[v][0] + " (" + GOI[v][1] + ")." });
+    $("#goi-han").textContent = "14/03/2027 · sau đó chuyển sang " + GOI[v][0];
+    goiHienTai = v;
+  });
+
+  // Xoá tài khoản: phải gõ đúng XOÁ
+  const xoaGo = $("#xoa-go"), xoaOk = $("#xoa-ok");
+  const okWord = () => xoaGo.value.trim().toUpperCase().normalize("NFC") === "XOÁ".normalize("NFC") || xoaGo.value.trim().toUpperCase() === "XÓA";
+  xoaGo.addEventListener("input", () => xoaOk.setAttribute("aria-disabled", String(!okWord())));
+  xoaOk.addEventListener("click", (e) => { if (!okWord()) { e.preventDefault(); xoaGo.setAttribute("aria-invalid", "true"); xoaGo.focus(); } });
+  dXoa.addEventListener("close", () => {
+    xoaGo.removeAttribute("aria-invalid");
+    if (dXoa.returnValue === "xoa") toast({ kind: "bad", title: "Đã gửi yêu cầu xoá tài khoản", body: "Tài khoản bị khoá ngay và xoá hẳn sau 7 ngày. Đăng nhập lại trong 7 ngày để huỷ yêu cầu." });
+  });
+
+  /* ---------- Khởi tạo + công tắc trạng thái cho cổng kiểm ---------- */
+  syncGio(); renderAvatar();
+  saved = snap();
+  if (q.get("sua") === "1") { $("#ten").value = "Lan Anh Nguyễn"; $("#mt15").checked = true; $("#ban-be").checked = true; renderAvatar(); refresh(); }
+  if (q.get("loi") === "1") { $("#ten").value = ""; $("#email").value = "lananh@"; refresh(); form.requestSubmit(); }
+  if (q.get("luu") === "1") { lastSavedAt = "14:05"; refresh(); toast({ title: "Đã lưu thay đổi", body: "Hồ sơ và thông báo mới có hiệu lực ngay." }); }
+  const mo = q.get("mo");
+  if (mo === "mat-khau") dMk.showModal();
+  if (mo === "goi") dGoi.showModal();
+  if (mo === "xoa") dXoa.showModal();
+})();
+</script>
+</body>
+</html>

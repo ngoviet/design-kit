@@ -44,8 +44,15 @@ Kết quả in dạng TOON: mỗi trang có một dòng phán quyết, kèm bả
   - **Đánh giá A/B** (`eval/ab-2026-11-09/`, trang `.folio/danh-gia-ab.html`):
     - Bản Opus mặc định: 12 lỗi cứng, 48 lỗi mềm. Bản design-kit: 0 lỗi cứng, 7 lỗi mềm.
     - Chủ chấm mù, chọn bản design-kit ở cả 3/3 đề. Giới hạn: bản design-kit luôn nằm ở cột phải.
+  - **Đánh giá A/B đợt 2** (`eval/ab-2026-11-09-dot2/`, trang `.folio/danh-gia-ab-dot2.html`). Lần này bản design-kit đặt ở cột trái, thêm 3 đề mới:
+    - Máy đo: bản mặc định 33 lỗi cứng, bản design-kit 0.
+    - Chủ chấm: landing chọn design-kit, dashboard tiệm bánh chọn bản mặc định, trang cài đặt hoà.
+    - **Gộp 6 đề:** design-kit thắng 4, mặc định thắng 1, hoà 1.
+    - Ở đề thua, nguyên nhân có thể là:
+      - kit chọn hướng theo loại màn hình mà bỏ qua thương hiệu (tiệm bánh lại ra màu xanh ngọc lạnh);
+      - khi sửa lỗi cứng, bố cục mất khả năng nhìn một lần thấy hết;
+      - luật `cream-palette` chặn cứng một lựa chọn thuộc về khẩu vị.
   - Còn lại:
-    - lặp lại A/B với vị trí đảo;
     - tuỳ chọn `--steps` để cổng tự bấm qua các trạng thái;
     - báo lỗi shadow DOM cho Impeccable.
 

@@ -1,0 +1,84 @@
+status: "fail: 3 of 3 pages have hard failures"
+renders: "light+dark × 320/390/1280 px via msedge, impeccable on"
+pages[3]{page,verdict,hard,soft}:
+  eval/ab-2026-11-09-dot2/landing/a/index.html,fail,18,24
+  eval/ab-2026-11-09-dot2/dashboard/a/index.html,fail,8,1
+  eval/ab-2026-11-09-dot2/caidat/a/index.html,fail,7,2
+checks[15]{check,gate,result}:
+  overflow,hard,4 hard
+  axe,hard,7 hard
+  text-min,hard,2 hard
+  heading-lh,hard,ok
+  lang,hard,ok
+  motion,hard,ok
+  impeccable,hard,"20 hard, 17 soft"
+  body-size,soft,3 soft
+  body-lh,soft,ok
+  measure,soft,4 soft
+  font,soft,ok
+  focus,soft,1 soft
+  inner-scroll,soft,ok
+  lcp,soft,ok
+  cls,soft,2 soft
+findings[60]{gate,page,check,where,detail,renders}:
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,axe,color-contrast,".level:nth-child(1) > .num: Element has insufficient color contrast of 2.55 (foreground color: #c99a4b, background color: #ffffff, font size: 36.0pt (48px), font weight: normal). Expected contrast ratio of 3:1",light/390 light/1280 dark/390 dark/1280
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,axe,color-contrast,".level:nth-child(2) > .num: Element has insufficient color contrast of 2.55 (foreground color: #c99a4b, background color: #ffffff, font size: 36.0pt (48px), font weight: normal). Expected contrast ratio of 3:1",light/390 light/1280 dark/390 dark/1280
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,axe,color-contrast,".level:nth-child(3) > .num: Element has insufficient color contrast of 2.55 (foreground color: #c99a4b, background color: #ffffff, font size: 36.0pt (48px), font weight: normal). Expected contrast ratio of 3:1",light/390 light/1280 dark/390 dark/1280
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,hero-eyebrow-chip,"eyebrow chip (tracked-caps) \"Lớp piano trực tuyến cho người lớn\" above h1 \"Đi làm cả ngày, tối về vẫn chơi được bản nhạc mình thích.\"",light/1280
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,icon-tile-stack,"44x44px icon tile above h3 \"Giờ học hợp người đi làm\"",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,icon-tile-stack,"44x44px icon tile above h3 \"Lớp nhỏ, tối đa 4 người\"",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,icon-tile-stack,"44x44px icon tile above h3 \"Học bằng bài bạn thích\"",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,icon-tile-stack,"44x44px icon tile above h3 \"Nhận xét bài tập mỗi tuần\"",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,low-contrast,"2.6:1 (need 3:1) — text #c99a4b on #ffffff (and 2 more)",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,kicker-above-heading,"kicker \"Giáo viên\" above h2 \"Hai người thầy hiểu người lớn học đàn khó ở đâu\"",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,kicker-above-heading,"kicker \"Lộ trình 3 cấp độ\" above h2 \"Từ chưa chạm phím đến tự đệm hát trong 9 tháng\"",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,kicker-above-heading,"kicker \"Học viên nói gì\" above h2 \"Họ cũng từng nghĩ “mình lớn rồi, học không nổi”\"",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,kicker-above-heading,"kicker \"Lịch học trong tuần\" above h2 \"Chọn ca cố định, đổi ca khi cần\"",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,kicker-above-heading,"kicker \"Học phí\" above h2 \"Ba gói, trả theo cách bạn thấy thoải mái\"",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,kicker-above-heading,"kicker \"Câu hỏi thường gặp\" above h2 \"Những điều người mới hay băn khoăn\"",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,kicker-above-heading,"kicker \"Học thử miễn phí\" above h2 \"45 phút để biết piano có dành cho bạn không\"",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,cream-palette,"cream/beige page background rgb(250, 246, 238)",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,kicker-above-heading,"kicker \"Lớp piano trực tuyến cho người lớn\" above h1 \"Đi làm cả ngày, tối về vẫn chơi được bản nhạc mình thích.\"",light/390
+  hard,eval/ab-2026-11-09-dot2/dashboard/a/index.html,overflow,320px,"page is 589px wide, viewport 320px",light/320 dark/320
+  hard,eval/ab-2026-11-09-dot2/dashboard/a/index.html,overflow,390px,"page is 589px wide, viewport 390px",light/390 dark/390
+  hard,eval/ab-2026-11-09-dot2/dashboard/a/index.html,text-min,"span.tag \"Sắp hết\"",font-size 11.0px,light/390 light/1280 dark/390 dark/1280
+  hard,eval/ab-2026-11-09-dot2/dashboard/a/index.html,text-min,"span.tag \"Còn ít\"",font-size 11.0px,light/390 light/1280 dark/390 dark/1280
+  hard,eval/ab-2026-11-09-dot2/dashboard/a/index.html,axe,color-contrast,".lvl-mid:nth-child(5) > .row > .name > .mid.tag: Element has insufficient color contrast of 3.89 (foreground color: #a86a00, background color: #fbefd4, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio",light/390 light/1280 dark/390 dark/1280
+  hard,eval/ab-2026-11-09-dot2/dashboard/a/index.html,axe,color-contrast,".lvl-mid:nth-child(6) > .row > .name > .mid.tag: Element has insufficient color contrast of 3.89 (foreground color: #a86a00, background color: #fbefd4, font size: 8.3pt (11px), font weight: bold). Expected contrast ratio",light/390 light/1280 dark/390 dark/1280
+  hard,eval/ab-2026-11-09-dot2/dashboard/a/index.html,impeccable,low-contrast,"3.9:1 (need 4.5:1) — text #a86a00 on #fbefd4 (and 1 more)",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/dashboard/a/index.html,impeccable,cream-palette,"cream/beige page background rgb(250, 246, 240)",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/caidat/a/index.html,overflow,320px,"page is 709px wide, viewport 320px",light/320 dark/320
+  hard,eval/ab-2026-11-09-dot2/caidat/a/index.html,overflow,390px,"page is 709px wide, viewport 390px",light/390 dark/390
+  hard,eval/ab-2026-11-09-dot2/caidat/a/index.html,axe,color-contrast,"a[href$=\\#ho-so\\]: Element has insufficient color contrast of 3.96 (foreground color: #2f6fed, background color: #e8f0fe, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1",light/390 light/1280 dark/390 dark/1280
+  hard,eval/ab-2026-11-09-dot2/caidat/a/index.html,axe,color-contrast,"label[for=\\g10\\] > span: Element has insufficient color contrast of 3.96 (foreground color: #2f6fed, background color: #e8f0fe, font size: 9.8pt (13px), font weight: normal). Expected contrast ratio of 4.5:1",light/390 light/1280 dark/390 dark/1280
+  hard,eval/ab-2026-11-09-dot2/caidat/a/index.html,impeccable,low-contrast,"4.0:1 (need 4.5:1) — text #2f6fed on #e8f0fe (and 1 more)",light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/caidat/a/index.html,impeccable,nested-cards,Card inside card,light/1280 light/390
+  hard,eval/ab-2026-11-09-dot2/caidat/a/index.html,impeccable,body-text-viewport-edge,"page scrolls sideways at 390px: nav.side reaches 319px past the right edge, and text in 6 blocks runs past it",light/390
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,body-size,"p.goal \"Đầu ra: chơi trọn “Happy Bir\"",body text 14.7px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,body-size,"p.goal \"Đầu ra: chơi “River Flows in\"",body text 14.7px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,body-size,"p.goal \"Đầu ra: tự đệm cho mình hoặc\"",body text 14.7px,light/390 light/1280 dark/390 dark/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,measure,"p \"Không muộn. Hơn một nửa học \"",line length ~99 chars/line,light/1280 dark/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,measure,"p \"Với cấp độ 1, đàn điện (keyb\"",line length ~98 chars/line,light/1280 dark/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,measure,"p \"Bạn dùng điện thoại làm came\"",line length ~100 chars/line,light/1280 dark/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,measure,+4 more,line length,light/1280 dark/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,cls,page,CLS 0.129 > 0.1,light/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,unbalanced-heading,last of 2 lines is 26% as wide as the line above,light/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,straggler,"\"4/4\" alone on the last of 2 lines (12% of the measure)",light/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,straggler,"\"phải\" alone on the last of 2 lines (13% of the measure)",light/1280 light/390
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,straggler,"\"chọn.\" alone on the last of 3 lines (15% of the measure)",light/1280 light/390
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,straggler,"\"90\" alone on the last of 2 lines (8% of the measure)",light/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,straggler,"\"giản\" alone on the last of 2 lines (12% of the measure)",light/1280 light/390
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,unbalanced-heading,last of 2 lines is 29% as wide as the line above,light/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,straggler,"\"(GMT+7).\" alone on the last of 2 lines (13% of the measure)",light/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,unbalanced-heading,last of 2 lines is 10% as wide as the line above,light/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,straggler,"\"viên.\" alone on the last of 2 lines (6% of the measure)",light/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,straggler,"\"dài.\" alone on the last of 2 lines (10% of the measure)",light/1280
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,skipped-heading,"<h1> \"Đi làm cả ngày, tối về vẫn chơi được bản nhạc mình thích.\" followed by <h3> \"Giờ học hợp người đi làm\" (missing h2)",light/1280 light/390
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,unbalanced-heading,last of 2 lines is 13% as wide as the line above,light/390
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,straggler,"\"(GMT+7).\" alone on the last of 3 lines (24% of the measure)",light/390
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,straggler,"\"viên.\" alone on the last of 3 lines (12% of the measure)",light/390
+  soft,eval/ab-2026-11-09-dot2/landing/a/index.html,impeccable,straggler,"\"gì.\" alone on the last of 3 lines (6% of the measure)",light/390
+  soft,eval/ab-2026-11-09-dot2/dashboard/a/index.html,cls,page,CLS 0.342 > 0.1,light/1280
+  soft,eval/ab-2026-11-09-dot2/caidat/a/index.html,focus,input#g10,focused element is covered by other content,light/1280
+  soft,eval/ab-2026-11-09-dot2/caidat/a/index.html,impeccable,flat-type-hierarchy,"Role sizes: body 16px, h1 16px, h2 19px (largest adjacent step 1.19:1; target 1.25:1; weight separates headings from body text)",light/1280
+help[2]: "Fix hard failures, then rerun the same command; soft ones need a fix or a written reason",Open the screenshots under .design-kit/shots and judge hierarchy before calling the page done

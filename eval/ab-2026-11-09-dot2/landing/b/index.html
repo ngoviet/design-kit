@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="vi" data-dk="dam">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phím Ngà · Học piano trực tuyến cho người lớn mới bắt đầu</title>
+<meta name="description" content="Lớp piano trực tuyến cho người đi làm 25–45 tuổi chưa biết nhạc lý. Buổi 45 phút, tối và cuối tuần. Đăng ký học thử miễn phí.">
+<script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,t=q.get("theme");if(t==="light"||t==="dark")d.dataset.theme=t;})();</script>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="dam.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  html { scroll-padding-top: 88px; }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+  .wrap { max-width: 72rem; margin: 0 auto; padding-inline: var(--sp-4); }
+  section.band { padding-block: var(--sp-8); border-top: 1px solid var(--border); }
+  .band-head { margin-bottom: var(--sp-6); }
+  .band-head h2 { max-width: 22ch; margin-bottom: var(--sp-3); }
+  .band-head p { color: var(--text-2); margin: 0; }
+
+  /* ---- Đầu trang (từ khối dau-trang, rút gọn cho landing) ---- */
+  .appbar { container: appbar / inline-size; position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .appbar-in { max-width: 72rem; margin: 0 auto; padding: var(--sp-2) var(--sp-4); display: flex; align-items: center; gap: var(--sp-4); min-height: 64px; }
+  .brand { display: inline-flex; align-items: center; gap: var(--sp-2); font: 750 var(--fs-md)/1.2 var(--font-display); letter-spacing: -0.02em; color: var(--text); text-decoration: none; min-height: var(--hit); }
+  .brand svg { width: 28px; height: 28px; color: var(--accent); flex: none; }
+  .nav { flex: 1; min-width: 0; }
+  .nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: var(--sp-1); justify-content: center; }
+  .nav a { display: inline-flex; align-items: center; min-height: var(--hit); padding: 0 var(--sp-3); border-radius: var(--r-sm); color: var(--text-2); text-decoration: none; font: 500 var(--fs-sm)/1.2 var(--font-body); }
+  .nav a:hover { background: var(--surface-2); color: var(--text); }
+  .appbar .btn-primary { margin-left: auto; }
+  @container appbar (max-width: 52rem) { .nav { display: none; } }
+  @container appbar (max-width: 22rem) { .appbar .btn-primary { padding: 0 var(--sp-3); } .brand { font-size: var(--fs-base); } }
+
+  /* ---- Hero ---- */
+  .hero { container: hero / inline-size; padding-block: var(--sp-8) var(--sp-7); }
+  .hero-grid { display: grid; gap: var(--sp-7); align-items: center; }
+  @container hero (min-width: 56rem) { .hero-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .hero h1 { font-size: var(--fs-3xl); line-height: var(--lh-tight); max-width: 13ch; }
+  .hero .lead { font-size: var(--fs-md); line-height: 1.55; color: var(--text-2); margin: var(--sp-5) 0 var(--sp-6); max-width: 28em; }
+  .cta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-5); }
+  .cta .btn-primary { min-height: 52px; padding: 0 var(--sp-6); font-size: var(--fs-base); }
+  .cta a:not(.btn) { font-weight: 500; }
+  .proof { margin: var(--sp-6) 0 0; display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); color: var(--text-2); font: 400 var(--fs-sm)/1.5 var(--font-body); list-style: none; padding: 0; }
+  .proof li { display: inline-flex; align-items: center; gap: var(--sp-2); }
+  .proof svg { width: 16px; height: 16px; color: var(--ok); flex: none; }
+
+  /* Màn hình buổi học: dựng bằng HTML, chữ giữ cỡ thật ở mọi khổ */
+  .lesson { margin: 0; border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow-2); overflow: hidden; }
+  .lesson-top { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); flex-wrap: wrap; padding: var(--sp-3) var(--sp-4); background: var(--surface-2); border-bottom: 1px solid var(--border); font: 500 var(--fs-sm)/1.4 var(--font-body); }
+  .live { display: inline-flex; align-items: center; gap: var(--sp-2); color: var(--bad); font-weight: 600; }
+  .live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .lesson-body { padding: var(--sp-5); display: grid; gap: var(--sp-4); }
+  .lesson-body .ttl { margin: 0 0 var(--sp-1); color: var(--text); font: 600 var(--fs-md)/1.5 var(--font-display); }
+  .lesson-body p { margin: 0; color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; }
+  .keys { position: relative; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); height: 128px; border: 1px solid var(--border-strong); border-radius: var(--r-sm); overflow: hidden; background: var(--surface); }
+  .keys .w { border-right: 1px solid var(--border-strong); display: flex; align-items: flex-end; justify-content: center; padding-bottom: var(--sp-2); font: 600 var(--fs-xs)/1.2 var(--font-body); color: var(--text-2); background: oklch(0.995 0.002 60); }
+  [data-theme="dark"] .keys .w { background: oklch(0.93 0.006 60); color: oklch(0.32 0.015 40); }
+  @media (prefers-color-scheme: dark) { [data-dk="dam"]:not([data-theme="light"]) .keys .w { background: oklch(0.93 0.006 60); color: oklch(0.32 0.015 40); } }
+  .keys .w:last-of-type { border-right: 0; }
+  .keys .w.on { background: var(--accent-soft); color: var(--accent-text); box-shadow: inset 0 -4px 0 var(--accent); }
+  [data-theme="dark"] .keys .w.on { background: oklch(0.86 0.06 38); color: oklch(0.30 0.10 32); }
+  @media (prefers-color-scheme: dark) { [data-dk="dam"]:not([data-theme="light"]) .keys .w.on { background: oklch(0.86 0.06 38); color: oklch(0.30 0.10 32); } }
+  .keys .b { position: absolute; top: 0; width: 7.5%; height: 60%; background: oklch(0.22 0.012 40); border-radius: 0 0 4px 4px; transform: translateX(-50%); }
+  .chord { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); align-items: center; font: 400 var(--fs-sm)/1.5 var(--font-body); }
+  .bar { flex: 1 1 10rem; height: 8px; border-radius: var(--r-full); background: var(--surface-2); overflow: hidden; }
+  .bar span { display: block; height: 100%; width: 64%; background: var(--ok); border-radius: inherit; }
+  @media (prefers-reduced-motion: no-preference) {
+    .keys .w.on { animation: nhan var(--dur-3) var(--ease-out) both; }
+    .keys .w.on:nth-of-type(3) { animation-delay: 160ms; }
+    .keys .w.on:nth-of-type(5) { animation-delay: 320ms; }
+    @keyframes nhan { from { background: var(--surface); box-shadow: inset 0 0 0 var(--accent); } }
+  }
+
+  /* ---- Lý do (danh sách, không ba thẻ) ---- */
+  .why dl { display: grid; gap: var(--sp-5) var(--sp-7); grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); margin: 0; }
+  .why dt { font: 600 var(--fs-md)/1.35 var(--font-display); margin-bottom: var(--sp-2); }
+  .why dd { margin: 0; color: var(--text-2); }
+
+  /* ---- Giáo viên ---- */
+  .teachers { display: grid; gap: var(--sp-6); grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); }
+  .teacher { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-4) var(--sp-5); align-items: start; padding: var(--sp-5); }
+  .mono { width: 72px; height: 72px; border-radius: var(--r-lg); display: grid; place-items: center; font: 750 var(--fs-lg)/1 var(--font-display); background: var(--accent-soft); color: var(--accent-text); }
+  .teacher:nth-child(2) .mono { background: var(--info-soft); color: var(--info); }
+  .teacher h3 { font-size: var(--fs-lg); margin-bottom: var(--sp-1); }
+  .teacher .role { margin: 0 0 var(--sp-3); color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; }
+  .teacher p { margin-bottom: var(--sp-3); }
+  .facts { grid-column: 1 / -1; list-style: none; margin: 0; padding: var(--sp-4) 0 0; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); font: 400 var(--fs-sm)/1.5 var(--font-body); color: var(--text-2); }
+  .facts b { color: var(--text); font-weight: 600; }
+  @media (max-width: 26rem) { .teacher { grid-template-columns: 1fr; } }
+
+  /* ---- Lộ trình ---- */
+  .path { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: cap; }
+  .step { position: relative; display: grid; grid-template-columns: 56px 1fr; gap: var(--sp-4); padding-bottom: var(--sp-6); }
+  .step:last-child { padding-bottom: 0; }
+  .step::before { counter-increment: cap; content: counter(cap); width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font: 750 var(--fs-lg)/1 var(--font-display); background: var(--surface); border: 2px solid var(--border-strong); color: var(--text); position: relative; z-index: 1; }
+  .step:first-child::before { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .step:not(:last-child)::after { content: ""; position: absolute; left: 27px; top: 56px; bottom: 0; border-left: 2px solid var(--border); }
+  .step h3 { font-size: var(--fs-lg); margin: var(--sp-3) 0 var(--sp-1); }
+  .step .meta { margin: 0 0 var(--sp-3); color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; }
+  .step ul { margin: 0; padding-left: 1.2em; max-width: var(--measure); }
+  .step li { margin-bottom: var(--sp-1); }
+  .step .goal { margin: var(--sp-3) 0 0; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: var(--surface-2); font-size: var(--fs-base); line-height: 1.5; max-width: var(--measure); }
+  @media (min-width: 60rem) {
+    .path-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: var(--sp-8); align-items: start; }
+    .path-grid .band-head { position: sticky; top: 100px; }
+  }
+
+  /* ---- Cảm nhận: một trích dẫn lớn + hai trích dẫn gọn ---- */
+  .quotes { display: grid; gap: var(--sp-5); }
+  @media (min-width: 56rem) { .quotes { grid-template-columns: 1.3fr 1fr; } .quotes .big { grid-row: span 2; } }
+  .quote { margin: 0; padding: var(--sp-5); display: grid; gap: var(--sp-4); align-content: start; }
+  .quote blockquote { margin: 0; }
+  .quote blockquote p { margin: 0; }
+  .quote.big { background: var(--accent-soft); border-color: transparent; padding: var(--sp-6); }
+  .quote.big blockquote p { font: 600 var(--fs-lg)/1.5 var(--font-display); letter-spacing: -0.01em; }
+  .quote figcaption { font: 400 var(--fs-sm)/1.5 var(--font-body); color: var(--text-2); }
+  .quote figcaption b { display: block; color: var(--text); font-weight: 600; font-size: var(--fs-base); }
+
+  /* ---- Lịch học ---- */
+  .week { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr)); }
+  .day { padding: var(--sp-4); display: grid; gap: var(--sp-3); align-content: start; }
+  .day h3 { font-size: var(--fs-base); letter-spacing: 0; }
+  .day ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
+  .slot { padding: var(--sp-2) var(--sp-3); border-radius: var(--r-sm); background: var(--surface-2); font: 400 var(--fs-sm)/1.45 var(--font-body); }
+  .slot b { display: block; font: 500 var(--fs-sm)/1.4 var(--font-mono); color: var(--text); }
+  .slot span { color: var(--text-2); }
+  .slot.full { background: transparent; border: 1px dashed var(--border-strong); }
+  .slot.full span { color: var(--text-2); }
+  .legend { margin: var(--sp-4) 0 0; color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; }
+
+  /* ---- Học phí ---- */
+  .plans { display: grid; gap: var(--sp-5); grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); align-items: stretch; }
+  .plan { padding: var(--sp-6) var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); }
+  .plan h3 { font-size: var(--fs-lg); }
+  .plan .for { margin: 0; color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; }
+  .price { margin: 0; font: 750 var(--fs-xl)/1.2 var(--font-display); letter-spacing: -0.02em; }
+  .price small { font: 400 var(--fs-sm)/1.5 var(--font-body); letter-spacing: 0; color: var(--text-2); }
+  .plan ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); flex: 1; }
+  .plan li { display: flex; gap: var(--sp-2); align-items: flex-start; font-size: var(--fs-base); line-height: 1.5; }
+  .plan li svg { width: 18px; height: 18px; flex: none; margin-top: 4px; color: var(--ok); }
+  .plan .btn { width: 100%; }
+  .plan.pick { border: 2px solid var(--accent); box-shadow: var(--shadow-2); }
+  .plan .badge { align-self: flex-start; background: var(--accent); color: var(--on-accent); }
+  .plan .badge::before { display: none; }
+  .note { margin-top: var(--sp-5); color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; }
+
+  /* ---- Hỏi đáp ---- */
+  .faq { display: grid; gap: 0; max-width: 48rem; border-top: 1px solid var(--border); }
+  .faq details { border-bottom: 1px solid var(--border); }
+  .faq summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; gap: var(--sp-4); align-items: center; min-height: var(--hit-lg); padding: var(--sp-4) 0; font: 600 var(--fs-md)/1.5 var(--font-display); }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary svg { width: 20px; height: 20px; flex: none; color: var(--text-2); transition: transform var(--dur-2) var(--ease-out); }
+  .faq details[open] summary svg { transform: rotate(45deg); }
+  .faq details > div { padding: 0 0 var(--sp-5); color: var(--text-2); }
+  .faq details > div p:last-child { margin-bottom: 0; }
+
+  /* ---- Đăng ký học thử ---- */
+  .signup { background: var(--surface-2); }
+  .signup-grid { display: grid; gap: var(--sp-7); }
+  @media (min-width: 56rem) { .signup-grid { grid-template-columns: 1fr 1fr; align-items: start; } }
+  .signup .band-head h2 { font-size: var(--fs-2xl); }
+  .trial { list-style: none; margin: var(--sp-5) 0 0; padding: 0; display: grid; gap: var(--sp-3); }
+  .trial li { display: flex; gap: var(--sp-3); align-items: flex-start; }
+  .trial li b { flex: none; min-width: 64px; font: 500 var(--fs-sm)/1.7 var(--font-mono); color: var(--accent-text); }
+  .card-form { padding: var(--sp-6); box-shadow: var(--shadow-1); }
+  @media (max-width: 30rem) { .card-form { padding: var(--sp-5) var(--sp-4); } }
+  .card-form form { display: grid; gap: var(--sp-5); }
+  .card-form h3 { font-size: var(--fs-lg); margin-bottom: var(--sp-1); }
+  fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  legend { padding: 0; margin-bottom: var(--sp-2); }
+  .opts { display: grid; gap: var(--sp-2); grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); }
+  .opt { position: relative; display: flex; gap: var(--sp-3); align-items: center; min-height: var(--hit-lg); padding: var(--sp-2) var(--sp-3); border: 1px solid var(--border-strong); border-radius: var(--r-sm); background: var(--surface); cursor: pointer; font: 400 var(--fs-sm)/1.4 var(--font-body); }
+  .opt input { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); flex: none; }
+  .opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .opt b { display: block; font-weight: 600; font-size: var(--fs-base); }
+  fieldset[aria-invalid="true"] .opt { border-color: var(--bad); }
+  .alert { display: flex; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); font: 500 var(--fs-sm)/1.5 var(--font-body); }
+  .alert svg { width: 18px; height: 18px; flex: none; margin-top: 2px; }
+  .alert-bad { background: var(--bad-soft); color: var(--bad); }
+  .done { display: grid; gap: var(--sp-3); }
+  .done .alert { background: var(--ok-soft); color: var(--ok); }
+  .done p { margin: 0; }
+  .submit { width: 100%; min-height: 52px; font-size: var(--fs-base); }
+  .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; }
+  @media (prefers-reduced-motion: no-preference) { .spinner { animation: quay 0.8s linear infinite; } }
+  @keyframes quay { to { transform: rotate(1turn); } }
+  .privacy { margin: 0; color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; }
+
+  /* ---- Chân trang ---- */
+  .foot { padding-block: var(--sp-7); border-top: 1px solid var(--border); color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; }
+  .foot-in { display: flex; flex-wrap: wrap; gap: var(--sp-4) var(--sp-7); justify-content: space-between; }
+  .foot p { margin: 0 0 var(--sp-2); }
+  .foot a { display: inline-flex; align-items: center; min-height: var(--hit-min); }
+</style>
+</head>
+<body>
+  <a class="skip-link btn btn-primary" href="#noi-dung">Bỏ qua điều hướng</a>
+
+  <header class="appbar">
+    <div class="appbar-in">
+      <a class="brand" href="#" aria-label="Phím Ngà, về đầu trang">
+        <svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="2" y="4" width="24" height="20" rx="4" stroke="currentColor" stroke-width="2"/><path d="M9 4v20M14 4v20M19 4v20" stroke="currentColor" stroke-width="2"/><rect x="7" y="4" width="4" height="11" rx="1" fill="currentColor"/><rect x="17" y="4" width="4" height="11" rx="1" fill="currentColor"/></svg>
+        Phím Ngà
+      </a>
+      <nav class="nav" aria-label="Các mục trên trang">
+        <ul>
+          <li><a href="#giao-vien">Giáo viên</a></li>
+          <li><a href="#lo-trinh">Lộ trình</a></li>
+          <li><a href="#lich-hoc">Lịch học</a></li>
+          <li><a href="#hoc-phi">Học phí</a></li>
+          <li><a href="#hoi-dap">Hỏi đáp</a></li>
+        </ul>
+      </nav>
+      <a class="btn btn-primary btn-sm" href="#dang-ky">Học thử miễn phí</a>
+    </div>
+  </header>
+
+  <main id="noi-dung" tabindex="-1">
+    <section class="hero wrap" aria-labelledby="hero-h">
+      <div class="hero-grid">
+        <div>
+          <h1 id="hero-h">Chơi được bài đầu tiên sau 8 tuần, dù chưa biết nốt nhạc</h1>
+          <p class="lead">Phím Ngà dạy piano trực tuyến cho người đi làm: buổi 45 phút buổi tối hoặc cuối tuần, giáo viên sửa tư thế tay qua camera, bài tập chỉ 15 phút mỗi ngày.</p>
+          <div class="cta">
+            <a class="btn btn-primary" href="#dang-ky">Đăng ký học thử miễn phí</a>
+            <a href="#lo-trinh">Xem lộ trình 3 cấp</a>
+          </div>
+          <ul class="proof">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Buổi thử 30 phút, không cần có đàn</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Lớp tối đa 4 người</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Học bù khi phải tăng ca</li>
+          </ul>
+        </div>
+
+        <figure class="lesson" aria-label="Màn hình buổi học: bài 4, hợp âm Đô trưởng, ba phím Đô, Mi, Son được tô sáng">
+          <div class="lesson-top">
+            <span>Cấp 1 · Buổi 4/16</span>
+            <span class="live">Đang học · 20:15</span>
+          </div>
+          <div class="lesson-body">
+            <div>
+              <p class="ttl">Hợp âm Đô trưởng bằng tay phải</p>
+              <p>Ngón 1 – 3 – 5 đặt lên Đô, Mi, Son. Thả lỏng cổ tay, nhấn cùng lúc.</p>
+            </div>
+            <div class="keys" aria-hidden="true">
+              <span class="w on">Đô</span><span class="w">Rê</span><span class="w on">Mi</span><span class="w">Fa</span><span class="w on">Son</span><span class="w">La</span><span class="w">Si</span><span class="w">Đô</span>
+              <i class="b" style="left:12.5%"></i><i class="b" style="left:25%"></i><i class="b" style="left:50%"></i><i class="b" style="left:62.5%"></i><i class="b" style="left:75%"></i>
+            </div>
+            <div class="chord">
+              <span>Tiến độ bài tập tuần này</span>
+              <div class="bar"><span></span></div>
+              <span class="num">9/14 phút</span>
+            </div>
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <section class="band why" aria-labelledby="why-h">
+      <div class="wrap">
+        <div class="band-head"><h2 id="why-h">Thiết kế cho người chỉ có buổi tối</h2></div>
+        <dl>
+          <div><dt>Không học nhạc lý suông</dt><dd>Mỗi khái niệm đi kèm một đoạn nhạc bạn biết, từ "Happy Birthday" tới nhạc phim. Đọc nốt học dần qua bài.</dd></div>
+          <div><dt>Giáo viên thấy tay bạn</dt><dd>Đặt điện thoại bên cạnh đàn, giáo viên nhìn góc tay và sửa ngay trong buổi, không đợi đến khi thành thói quen sai.</dd></div>
+          <div><dt>Lỡ buổi vẫn theo kịp</dt><dd>Báo trước 4 tiếng là được xếp học bù trong tuần, kèm bản ghi để xem lại buổi đã lỡ.</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="band" id="giao-vien" aria-labelledby="gv-h">
+      <div class="wrap">
+        <div class="band-head">
+          <h2 id="gv-h">Hai giáo viên, cùng một cách dạy</h2>
+          <p>Cả hai đều dạy người lớn từ con số 0, không dạy theo giáo trình thi cấp của trẻ em.</p>
+        </div>
+        <div class="teachers">
+          <article class="teacher surface">
+            <div class="mono" aria-hidden="true">NA</div>
+            <div>
+              <h3>Cô Nguyễn Ngọc Anh</h3>
+              <p class="role">Phụ trách Cấp 1 và Cấp 2</p>
+              <p>Tốt nghiệp Học viện Âm nhạc Quốc gia Việt Nam, 9 năm dạy piano, trong đó 6 năm chỉ dạy người đi làm. Cô chia mọi bài thành đoạn 4 ô nhịp để luyện được trong giờ nghỉ trưa.</p>
+            </div>
+            <ul class="facts">
+              <li><b>420+</b> học viên người lớn</li>
+              <li>Dạy tối thứ 2, 4, 6</li>
+            </ul>
+          </article>
+          <article class="teacher surface">
+            <div class="mono" aria-hidden="true">QM</div>
+            <div>
+              <h3>Thầy Trần Quang Minh</h3>
+              <p class="role">Phụ trách Cấp 3 và lớp đệm hát</p>
+              <p>Thạc sĩ biểu diễn piano tại Nhạc viện TP.HCM, từng đệm đàn cho phòng thu và phòng trà 7 năm. Thầy dạy cách đệm theo hợp âm để bạn chơi được bài mình thích mà không cần bản nhạc đầy đủ.</p>
+            </div>
+            <ul class="facts">
+              <li><b>11 năm</b> biểu diễn và dạy</li>
+              <li>Dạy tối thứ 3, 5 và cuối tuần</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="lo-trinh" aria-labelledby="lt-h">
+      <div class="wrap path-grid">
+        <div class="band-head">
+          <h2 id="lt-h">Lộ trình 3 cấp, mỗi cấp 16 buổi</h2>
+          <p>Hai buổi mỗi tuần, khoảng 2 tháng một cấp. Cuối mỗi cấp bạn quay một video chơi trọn bài để thấy mình đã đi được bao xa.</p>
+        </div>
+        <ol class="path">
+          <li class="step">
+            <div>
+              <h3>Cấp 1 · Làm quen phím đàn</h3>
+              <p class="meta">16 buổi · dành cho người chưa từng chạm đàn</p>
+              <ul>
+                <li>Tư thế ngồi, thế tay, vị trí 5 ngón</li>
+                <li>Đọc nốt khoá Son, nhịp 2/4 và 4/4</li>
+                <li>Ba hợp âm Đô, Fa, Son trưởng</li>
+              </ul>
+              <p class="goal">Kết thúc cấp: chơi hai tay bài "Ode to Joy" và "Happy Birthday".</p>
+            </div>
+          </li>
+          <li class="step">
+            <div>
+              <h3>Cấp 2 · Hai tay độc lập</h3>
+              <p class="meta">16 buổi · đã xong Cấp 1 hoặc tự học được vài bài</p>
+              <ul>
+                <li>Đọc khoá Fa, nốt móc đơn, dấu thăng giáng</li>
+                <li>Tay trái giữ hợp âm rải, tay phải chơi giai điệu</li>
+                <li>Dùng pedal đúng lúc, không bị nhoè tiếng</li>
+              </ul>
+              <p class="goal">Kết thúc cấp: chơi "River Flows in You" bản rút gọn.</p>
+            </div>
+          </li>
+          <li class="step">
+            <div>
+              <h3>Cấp 3 · Đệm hát và tự chơi bài mình thích</h3>
+              <p class="meta">16 buổi · chơi hai tay ổn định</p>
+              <ul>
+                <li>Đọc bảng hợp âm, các kiểu đệm ballad, slow rock, bossa</li>
+                <li>Chuyển giọng để đệm cho người hát</li>
+                <li>Tự soạn bản đệm cho một bài nhạc Việt</li>
+              </ul>
+              <p class="goal">Kết thúc cấp: đệm trọn một bài hát bạn chọn, có thể hát cùng.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="band" aria-labelledby="cn-h">
+      <div class="wrap">
+        <div class="band-head"><h2 id="cn-h">Học viên nói gì sau vài tháng</h2></div>
+        <div class="quotes">
+          <figure class="quote big surface">
+            <blockquote><p>"Tôi 38 tuổi, làm kế toán, chưa từng đọc được một nốt nhạc. Sau Cấp 1 tôi chơi được bài chúc mừng sinh nhật cho con gái, hai tay, không nhìn phím. Buổi tối 45 phút vừa đủ để không bỏ cuộc."</p></blockquote>
+            <figcaption><b>Chị Lê Thu Hà</b>Kế toán, Hà Nội · đang học Cấp 2</figcaption>
+          </figure>
+          <figure class="quote surface">
+            <blockquote><p>"Hay phải tăng ca nên tôi lo nhất là lỡ buổi. Báo trước là được xếp học bù, chưa bao giờ bị mất buổi nào."</p></blockquote>
+            <figcaption><b>Anh Phạm Đức Long</b>Kỹ sư phần mềm, TP.HCM · xong Cấp 1</figcaption>
+          </figure>
+          <figure class="quote surface">
+            <blockquote><p>"Thầy Minh chỉ cách đệm theo hợp âm, giờ tôi tự đệm được cho cả nhóm hát mỗi lần họp lớp."</p></blockquote>
+            <figcaption><b>Chị Võ Minh Thư</b>Nhân viên marketing, Đà Nẵng · đang học Cấp 3</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="lich-hoc" aria-labelledby="lh-h">
+      <div class="wrap">
+        <div class="band-head">
+          <h2 id="lh-h">Lịch học trong tuần</h2>
+          <p>Giờ Việt Nam. Mỗi buổi 45 phút qua Google Meet. Lịch áp dụng từ tháng 11/2026.</p>
+        </div>
+        <ul class="week">
+          <li class="day surface"><h3>Thứ 2</h3><ul>
+            <li class="slot"><b>19:00</b><span>Cấp 1 · cô Anh</span></li>
+            <li class="slot"><b>20:15</b><span>Cấp 2 · cô Anh</span></li>
+          </ul></li>
+          <li class="day surface"><h3>Thứ 3</h3><ul>
+            <li class="slot"><b>19:30</b><span>Cấp 3 · thầy Minh</span></li>
+            <li class="slot full"><b>20:45</b><span>Đệm hát · hết chỗ</span></li>
+          </ul></li>
+          <li class="day surface"><h3>Thứ 4</h3><ul>
+            <li class="slot"><b>19:00</b><span>Cấp 1 · cô Anh</span></li>
+            <li class="slot"><b>20:15</b><span>Cấp 2 · cô Anh</span></li>
+          </ul></li>
+          <li class="day surface"><h3>Thứ 5</h3><ul>
+            <li class="slot"><b>19:30</b><span>Cấp 3 · thầy Minh</span></li>
+            <li class="slot"><b>20:45</b><span>Đệm hát · thầy Minh</span></li>
+          </ul></li>
+          <li class="day surface"><h3>Thứ 6</h3><ul>
+            <li class="slot full"><b>19:00</b><span>Cấp 1 · hết chỗ</span></li>
+            <li class="slot"><b>20:15</b><span>Học bù · cô Anh</span></li>
+          </ul></li>
+          <li class="day surface"><h3>Thứ 7</h3><ul>
+            <li class="slot"><b>09:00</b><span>Cấp 1 · thầy Minh</span></li>
+            <li class="slot"><b>10:15</b><span>Cấp 2 · thầy Minh</span></li>
+          </ul></li>
+          <li class="day surface"><h3>Chủ nhật</h3><ul>
+            <li class="slot"><b>09:00</b><span>Học thử miễn phí</span></li>
+            <li class="slot"><b>15:00</b><span>Học bù · thầy Minh</span></li>
+          </ul></li>
+        </ul>
+        <p class="legend">Ô viền đứt là lớp đã đủ 4 người. Học thử có thêm suất vào tối thứ 3 và thứ 5 theo khung giờ bạn chọn ở form.</p>
+      </div>
+    </section>
+
+    <section class="band" id="hoc-phi" aria-labelledby="hp-h">
+      <div class="wrap">
+        <div class="band-head">
+          <h2 id="hp-h">Học phí theo cách bạn học</h2>
+          <p>Đóng theo tháng hoặc theo cấp. Không phí ghi danh, không bắt mua đàn trước.</p>
+        </div>
+        <div class="plans">
+          <article class="plan surface">
+            <h3>Theo tháng</h3>
+            <p class="for">Muốn thử vài tháng trước khi cam kết</p>
+            <p class="price">1.400.000đ <small>/ tháng</small></p>
+            <ul>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>8 buổi nhóm, tối đa 4 người</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Học bù 1 buổi mỗi tháng</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Dừng bất cứ tháng nào</li>
+            </ul>
+            <a class="btn btn-secondary" href="#dang-ky">Học thử trước</a>
+          </article>
+          <article class="plan surface pick">
+            <span class="badge">Nhiều học viên chọn nhất</span>
+            <h3>Trọn một cấp</h3>
+            <p class="for">Đi hết 16 buổi để chơi được bài cuối cấp</p>
+            <p class="price">3.900.000đ <small>/ 16 buổi</small></p>
+            <ul>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Tiết kiệm 900.000đ so với đóng theo tháng</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Học bù không giới hạn trong cấp</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Bản ghi mọi buổi học, xem lại 6 tháng</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Giáo viên nhận xét video cuối cấp</li>
+            </ul>
+            <a class="btn btn-primary" href="#dang-ky">Đăng ký học thử miễn phí</a>
+          </article>
+          <article class="plan surface">
+            <h3>Kèm riêng 1–1</h3>
+            <p class="for">Lịch thất thường hoặc muốn đi nhanh</p>
+            <p class="price">450.000đ <small>/ buổi 45 phút</small></p>
+            <ul>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Tự chọn giờ, đặt trước 24 tiếng</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Chọn bài theo sở thích</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Mua gói 10 buổi giảm còn 4.000.000đ</li>
+            </ul>
+            <a class="btn btn-secondary" href="#dang-ky">Học thử trước</a>
+          </article>
+        </div>
+        <p class="note">Học phí đã gồm tài liệu PDF và bản nhạc. Chuyển khoản hoặc trả góp 0% qua thẻ tín dụng cho gói Trọn một cấp.</p>
+      </div>
+    </section>
+
+    <section class="band" id="hoi-dap" aria-labelledby="hd-h">
+      <div class="wrap">
+        <div class="band-head"><h2 id="hd-h">Câu hỏi thường gặp</h2></div>
+        <div class="faq">
+          <details open>
+            <summary>Tôi chưa có đàn, có học được không?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+            <div><p>Buổi học thử không cần đàn: giáo viên dùng bàn phím trên màn hình. Từ buổi thứ hai bạn cần một đàn điện 61 phím trở lên. Chúng tôi gửi danh sách đàn từ 3 triệu đồng phù hợp cho người mới, và có chỗ thuê đàn 350.000đ/tháng tại Hà Nội, TP.HCM.</p></div>
+          </details>
+          <details>
+            <summary>35–40 tuổi mới học có muộn không?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+            <div><p>Không. Gần một nửa học viên của Phím Ngà trên 35 tuổi. Người lớn tiến chậm hơn trẻ em ở độ linh hoạt ngón tay, nhưng nhanh hơn ở đọc hiểu và tự luyện có mục tiêu.</p></div>
+          </details>
+          <details>
+            <summary>Mỗi ngày cần luyện bao lâu?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+            <div><p>15 phút là đủ ở Cấp 1. Bài tập được chia thành đoạn ngắn để bạn luyện được trước giờ ngủ, không cần một buổi dài.</p></div>
+          </details>
+          <details>
+            <summary>Nếu phải nghỉ một buổi thì sao?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+            <div><p>Báo qua Zalo trước 4 tiếng, bạn được xếp vào buổi học bù tối thứ 6 hoặc chiều chủ nhật, và nhận bản ghi buổi đã lỡ.</p></div>
+          </details>
+          <details>
+            <summary>Học không hợp thì có được hoàn tiền?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+            <div><p>Có. Gói Trọn một cấp được hoàn phần học phí của các buổi chưa học nếu bạn dừng trong 4 buổi đầu. Gói theo tháng dừng được bất cứ lúc nào, không bị trừ thêm.</p></div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="band signup" id="dang-ky" aria-labelledby="dk-h">
+      <div class="wrap signup-grid">
+        <div class="band-head">
+          <h2 id="dk-h">Đăng ký học thử miễn phí</h2>
+          <p>30 phút qua Google Meet với cô Anh hoặc thầy Minh. Bạn không cần đàn và không phải trả gì.</p>
+          <ol class="trial">
+            <li><b>5 phút</b><span>Nói chuyện về bài bạn muốn chơi được</span></li>
+            <li><b>15 phút</b><span>Thử bài đầu tiên trên bàn phím màn hình</span></li>
+            <li><b>10 phút</b><span>Gợi ý cấp độ, lớp và lịch phù hợp</span></li>
+          </ol>
+        </div>
+
+        <div class="card-form surface">
+          <div id="form-wrap">
+            <form id="form-thu" novalidate>
+              <div>
+                <h3>Giữ chỗ buổi học thử</h3>
+                <p class="privacy">Chúng tôi gọi lại trong 24 giờ để chốt giờ. Số điện thoại chỉ dùng cho việc này.</p>
+              </div>
+
+              <div class="alert alert-bad" id="loi-chung" role="alert" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+                <span>Chưa gửi được do mất kết nối. Thông tin của bạn vẫn còn trong form, bấm gửi lại, hoặc nhắn Zalo 0912 486 230.</span>
+              </div>
+
+              <div class="field">
+                <label class="label" for="ten">Họ và tên</label>
+                <input class="input" id="ten" name="name" type="text" autocomplete="name" required aria-describedby="ten-loi">
+                <p class="error-text" id="ten-loi" hidden>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+                  <span>Nhập tên để giáo viên biết cách gọi bạn.</span>
+                </p>
+              </div>
+
+              <div class="field">
+                <label class="label" for="sdt">Số điện thoại</label>
+                <input class="input" id="sdt" name="tel" type="tel" autocomplete="tel" inputmode="tel" placeholder="0912 345 678" required aria-describedby="sdt-goiy sdt-loi">
+                <p class="hint" id="sdt-goiy">Dùng số có Zalo để nhận link buổi học.</p>
+                <p class="error-text" id="sdt-loi" hidden>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+                  <span>Số điện thoại gồm 10 chữ số, bắt đầu bằng 0.</span>
+                </p>
+              </div>
+
+              <fieldset id="khung-gio" aria-describedby="gio-loi">
+                <legend class="label">Khung giờ mong muốn</legend>
+                <div class="opts">
+                  <label class="opt"><input type="radio" name="gio" value="toi-thu-3"><span><b>Tối thứ 3</b>19:30 – 20:00</span></label>
+                  <label class="opt"><input type="radio" name="gio" value="toi-thu-5"><span><b>Tối thứ 5</b>19:30 – 20:00</span></label>
+                  <label class="opt"><input type="radio" name="gio" value="sang-cn"><span><b>Sáng chủ nhật</b>09:00 – 09:30</span></label>
+                  <label class="opt"><input type="radio" name="gio" value="khac"><span><b>Giờ khác</b>Gọi để hẹn riêng</span></label>
+                </div>
+                <p class="error-text" id="gio-loi" hidden>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+                  <span>Chọn một khung giờ, hoặc chọn "Giờ khác".</span>
+                </p>
+              </fieldset>
+
+              <button class="btn btn-primary submit" type="submit">Đăng ký học thử miễn phí</button>
+            </form>
+
+            <div class="done" id="xong" role="status" tabindex="-1" hidden>
+              <div class="alert">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+                <span>Đã giữ chỗ buổi học thử.</span>
+              </div>
+              <h3>Cảm ơn <span id="xong-ten">bạn</span>, hẹn gặp ở buổi đầu tiên</h3>
+              <p>Phím Ngà sẽ gọi vào số <span class="num" id="xong-sdt">0912 345 678</span> trong 24 giờ để chốt giờ học thử và gửi link Google Meet qua Zalo.</p>
+              <p class="privacy">Cần đổi giờ? Nhắn Zalo 0912 486 230.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-in">
+      <div>
+        <p><b>Phím Ngà</b> · Lớp piano trực tuyến cho người lớn</p>
+        <p>Hotline và Zalo: 0912 486 230 · Email: <a href="mailto:hoc@phimnga.vn">hoc@phimnga.vn</a></p>
+      </div>
+      <p>© 2026 Phím Ngà. Học phí áp dụng từ 01/11/2026.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Form học thử: kiểm khi rời ô và khi gửi; lỗi gắn bằng aria-invalid; focus ô lỗi đầu tiên.
+    // Trạng thái có URL để cổng đo: ?dang-ky=loi | gui | xong
+    const form = document.getElementById("form-thu");
+    const fs = document.getElementById("khung-gio");
+    const btn = form.querySelector(".submit");
+    const chuanSdt = (v) => v.replace(/[\s.\-]/g, "").replace(/^\+84/, "0");
+    const fields = [
+      { el: form.name, err: document.getElementById("ten-loi"), ok: (v) => v.trim().length >= 2 },
+      { el: form.tel, err: document.getElementById("sdt-loi"), ok: (v) => /^0\d{9}$/.test(chuanSdt(v)) },
+    ];
+    const check = (f) => { const ok = f.ok(f.el.value); f.el.setAttribute("aria-invalid", String(!ok)); f.err.hidden = ok; return ok; };
+    const checkGio = () => { const ok = !!form.querySelector('input[name="gio"]:checked'); fs.setAttribute("aria-invalid", String(!ok)); document.getElementById("gio-loi").hidden = ok; return ok; };
+    fields.forEach((f) => f.el.addEventListener("blur", () => f.el.value && check(f)));
+    fs.addEventListener("change", checkGio);
+
+    const dangGui = () => { btn.disabled = true; btn.innerHTML = '<span class="spinner" aria-hidden="true"></span> Đang gửi…'; };
+    const hetGui = () => { btn.disabled = false; btn.textContent = "Đăng ký học thử miễn phí"; };
+    const xong = (ten, sdt) => {
+      form.hidden = true;
+      const box = document.getElementById("xong");
+      if (ten) document.getElementById("xong-ten").textContent = ten.trim().split(/\s+/).pop();
+      if (sdt) document.getElementById("xong-sdt").textContent = sdt;
+      box.hidden = false; box.focus();
+    };
+    let lan = 0;
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const bad = fields.filter((f) => !check(f));
+      const gioOk = checkGio();
+      if (bad.length) { bad[0].el.focus(); return; }
+      if (!gioOk) { form.querySelector('input[name="gio"]').focus(); return; }
+      document.getElementById("loi-chung").hidden = true;
+      dangGui();
+      // Giả lập máy chủ: lần gửi đầu thất bại để thấy trạng thái lỗi, lần sau thành công.
+      setTimeout(() => {
+        hetGui();
+        if (lan++ === 0 && new URLSearchParams(location.search).has("thu-loi")) { document.getElementById("loi-chung").hidden = false; return; }
+        xong(form.name.value, form.tel.value);
+      }, 900);
+    });
+
+    const st = new URLSearchParams(location.search).get("dang-ky");
+    if (st) {
+      form.name.value = "Lê Thu Hà"; form.tel.value = "0912 345 678";
+      form.querySelector('input[value="toi-thu-5"]').checked = true;
+      if (st === "loi") document.getElementById("loi-chung").hidden = false;
+      if (st === "sai") { form.name.value = ""; form.tel.value = "09123"; form.querySelector('input[value="toi-thu-5"]').checked = false; fields.forEach(check); checkGio(); }
+      if (st === "gui") dangGui();
+      if (st === "xong") xong(form.name.value, form.tel.value);
+      if (st !== "xong") document.getElementById("dang-ky").scrollIntoView();
+    }
+  </script>
+</body>
+</html>

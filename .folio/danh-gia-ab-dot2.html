@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="vi" data-dk="giay">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chấm mù A/B, đợt 2</title>
+<link rel="stylesheet" href="dk/fonts.css">
+<link rel="stylesheet" href="dk/core.css">
+<link rel="stylesheet" href="dk/giay.css">
+<link rel="stylesheet" href="dk/_base.css">
+<style>
+  .wrap { max-width: 78rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4) var(--sp-9); }
+  header p { color: var(--text-2); }
+  .how { margin: var(--sp-5) 0 var(--sp-7); padding: var(--sp-4) var(--sp-5); background: var(--surface-2); border-radius: var(--r-md); max-width: 46rem; }
+  .how p { margin: 0 0 var(--sp-2); }
+  .how p:last-child { margin: 0; }
+  section.brief { margin-top: var(--sp-8); }
+  section.brief > h2 { margin-bottom: var(--sp-2); }
+  section.brief > p { color: var(--text-2); }
+  .pair { display: grid; gap: var(--sp-5); grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr)); margin-top: var(--sp-5); }
+  .side { min-width: 0; }
+  .side h3 { display: flex; align-items: baseline; gap: var(--sp-2); font-size: var(--fs-lg); margin-bottom: var(--sp-3); }
+  .side h3 span { font: 400 var(--fs-sm)/1.4 var(--font-ui); color: var(--text-2); letter-spacing: 0; }
+  .shot { margin: 0 0 var(--sp-4); }
+  .shot img { display: block; width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); }
+  .shot figcaption { margin-top: var(--sp-2); font: 400 var(--fs-sm)/1.5 var(--font-ui); color: var(--text-2); }
+  .phones { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+  .reveal { margin: var(--sp-6) 0 var(--sp-4); padding-top: var(--sp-5); border-top: 2px solid var(--accent); }
+  .reveal h2 { margin-bottom: var(--sp-3); }
+  .reveal .caveat { margin: 0; padding: var(--sp-3) var(--sp-4); background: var(--warn-soft); border-radius: var(--r-md); }
+  .tbl { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--r-md); margin: 0 0 var(--sp-4); }
+  .tbl table { width: 100%; border-collapse: collapse; font: 400 var(--fs-sm)/1.5 var(--font-ui); }
+  .tbl th, .tbl td { padding: var(--sp-2) var(--sp-3); text-align: left; border-bottom: 1px solid var(--border); }
+  .tbl tr:last-child td { border-bottom: 0; }
+  .tbl th { background: var(--surface-2); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>Chấm mù A/B, đợt 2</h1>
+    <p>Ba đề mới, mỗi đề hai bản do hai agent cùng model Opus làm độc lập. Một bản làm theo skill design-kit, bản kia làm như Opus mặc định. Nhãn X và Y được đặt lại theo khoá mới, khác với đợt trước.</p>
+  </header>
+  <div class="how">
+    <p><strong>Cách chấm:</strong> với mỗi đề, chọn bản thấy đẹp hơn và dễ dùng hơn.</p>
+    <p>Điểm máy đo và đáp án sẽ công bố sau khi chủ chấm xong.</p>
+  </div>
+  <section class="reveal" aria-labelledby="kq">
+    <h2 id="kq">Kết quả đợt 2 (chủ chấm 09/11/2026)</h2>
+    <p><strong>X là bản design-kit ở cả 3 đề, đặt ở cột trái để cân với đợt 1 (đợt 1 đặt ở cột phải).</strong></p>
+    <div class="tbl" tabindex="0" role="region" aria-label="Bảng kết quả, cuộn ngang được">
+      <table>
+        <thead><tr><th scope="col">Đề</th><th scope="col">Chủ chọn</th><th scope="col">X: design-kit</th><th scope="col">Y: Opus mặc định</th></tr></thead>
+        <tbody>
+          <tr><td>Landing piano</td><td>X: design-kit</td><td>0 cứng, 0 mềm</td><td>18 cứng, 24 mềm</td></tr>
+          <tr><td>Dashboard tiệm bánh</td><td>Y: mặc định</td><td>0 cứng, 1 mềm</td><td>8 cứng, 1 mềm</td></tr>
+          <tr><td>Cài đặt tài khoản</td><td>Ngang nhau</td><td>0 cứng, 0 mềm</td><td>7 cứng, 2 mềm</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Gộp hai đợt (6 đề):</strong> design-kit thắng 4, mặc định thắng 1, hoà 1. Trong đợt 2, chủ chọn bên trái 1 lần, bên phải 1 lần, hoà 1 lần, nên kết quả đợt 1 không phải do thiên lệch vị trí. Về máy đo: các bản mặc định có tổng 45 lỗi cứng, các bản design-kit có 0.</p>
+    <p class="caveat"><strong>Vì sao bản mặc định thắng ở đề tiệm bánh</strong> (suy luận từ ảnh, chưa hỏi chủ):</p>
+    <ul>
+      <li>Bản mặc định dùng tông nâu ấm hợp tiệm bánh. design-kit chọn hướng Đêm chỉ vì đây là "dashboard", nên ra màu xanh ngọc lạnh.</li>
+      <li>Bản mặc định để nguyên liệu và lịch giao ở cột bên, nhìn một lần thấy hết. Bản design-kit đẩy hai khối đó xuống dưới bảng khi sửa lỗi "thẻ lồng thẻ".</li>
+      <li>Luật <code>cream-palette</code> chặn cứng nền kem, nhưng đây là chuyện khẩu vị, không phải công năng.</li>
+    </ul>
+  </section>
+  <section class="brief" aria-labelledby="b1"><h2 id="b1">Đề 1: Landing lớp piano Phím Ngà</h2><p>Lớp piano trực tuyến cho người lớn mới học. Có đăng ký học thử, giáo viên, lộ trình, cảm nhận, lịch, học phí, hỏi đáp, form.</p><div class="pair"><div class="side"><h3>X <span>Landing lớp piano Phím Ngà</span></h3><figure class="shot"><img src="anh/ab-2026-11-09-dot2/landing-X-light-1280.png" alt="Bản X đề Landing lớp piano Phím Ngà, máy tính, sáng (phần đầu trang)" loading="lazy"><figcaption>Máy tính, sáng (phần đầu trang)</figcaption></figure><div class="phones"><figure class="shot"><img src="anh/ab-2026-11-09-dot2/landing-X-light-390.png" alt="Bản X đề Landing lớp piano Phím Ngà, điện thoại, sáng" loading="lazy"><figcaption>Điện thoại, sáng</figcaption></figure><figure class="shot"><img src="anh/ab-2026-11-09-dot2/landing-X-dark-390.png" alt="Bản X đề Landing lớp piano Phím Ngà, điện thoại, tối" loading="lazy"><figcaption>Điện thoại, tối</figcaption></figure></div></div><div class="side"><h3>Y <span>Landing lớp piano Phím Ngà</span></h3><figure class="shot"><img src="anh/ab-2026-11-09-dot2/landing-Y-light-1280.png" alt="Bản Y đề Landing lớp piano Phím Ngà, máy tính, sáng (phần đầu trang)" loading="lazy"><figcaption>Máy tính, sáng (phần đầu trang)</figcaption></figure><div class="phones"><figure class="shot"><img src="anh/ab-2026-11-09-dot2/landing-Y-light-390.png" alt="Bản Y đề Landing lớp piano Phím Ngà, điện thoại, sáng" loading="lazy"><figcaption>Điện thoại, sáng</figcaption></figure><figure class="shot"><img src="anh/ab-2026-11-09-dot2/landing-Y-dark-390.png" alt="Bản Y đề Landing lớp piano Phím Ngà, điện thoại, tối" loading="lazy"><figcaption>Điện thoại, tối</figcaption></figure></div></div></div></section><section class="brief" aria-labelledby="b2"><h2 id="b2">Đề 2: Dashboard tiệm bánh Bánh Mẹ Làm</h2><p>Đơn hôm nay kèm trạng thái, doanh thu so với hôm qua, nguyên liệu sắp hết, lịch giao, tìm kiếm và tạo đơn.</p><div class="pair"><div class="side"><h3>X <span>Dashboard tiệm bánh Bánh Mẹ Làm</span></h3><figure class="shot"><img src="anh/ab-2026-11-09-dot2/dashboard-X-light-1280.png" alt="Bản X đề Dashboard tiệm bánh Bánh Mẹ Làm, máy tính, sáng (phần đầu trang)" loading="lazy"><figcaption>Máy tính, sáng (phần đầu trang)</figcaption></figure><div class="phones"><figure class="shot"><img src="anh/ab-2026-11-09-dot2/dashboard-X-light-390.png" alt="Bản X đề Dashboard tiệm bánh Bánh Mẹ Làm, điện thoại, sáng" loading="lazy"><figcaption>Điện thoại, sáng</figcaption></figure><figure class="shot"><img src="anh/ab-2026-11-09-dot2/dashboard-X-dark-390.png" alt="Bản X đề Dashboard tiệm bánh Bánh Mẹ Làm, điện thoại, tối" loading="lazy"><figcaption>Điện thoại, tối</figcaption></figure></div></div><div class="side"><h3>Y <span>Dashboard tiệm bánh Bánh Mẹ Làm</span></h3><figure class="shot"><img src="anh/ab-2026-11-09-dot2/dashboard-Y-light-1280.png" alt="Bản Y đề Dashboard tiệm bánh Bánh Mẹ Làm, máy tính, sáng (phần đầu trang)" loading="lazy"><figcaption>Máy tính, sáng (phần đầu trang)</figcaption></figure><div class="phones"><figure class="shot"><img src="anh/ab-2026-11-09-dot2/dashboard-Y-light-390.png" alt="Bản Y đề Dashboard tiệm bánh Bánh Mẹ Làm, điện thoại, sáng" loading="lazy"><figcaption>Điện thoại, sáng</figcaption></figure><figure class="shot"><img src="anh/ab-2026-11-09-dot2/dashboard-Y-dark-390.png" alt="Bản Y đề Dashboard tiệm bánh Bánh Mẹ Làm, điện thoại, tối" loading="lazy"><figcaption>Điện thoại, tối</figcaption></figure></div></div></div></section><section class="brief" aria-labelledby="b3"><h2 id="b3">Đề 3: Trang cài đặt app Nói Mỗi Ngày</h2><p>Hồ sơ, thông báo, bảo mật và thiết bị, gói dịch vụ, xoá tài khoản; có lưu thay đổi.</p><div class="pair"><div class="side"><h3>X <span>Trang cài đặt app Nói Mỗi Ngày</span></h3><figure class="shot"><img src="anh/ab-2026-11-09-dot2/caidat-X-light-1280.png" alt="Bản X đề Trang cài đặt app Nói Mỗi Ngày, máy tính, sáng (phần đầu trang)" loading="lazy"><figcaption>Máy tính, sáng (phần đầu trang)</figcaption></figure><div class="phones"><figure class="shot"><img src="anh/ab-2026-11-09-dot2/caidat-X-light-390.png" alt="Bản X đề Trang cài đặt app Nói Mỗi Ngày, điện thoại, sáng" loading="lazy"><figcaption>Điện thoại, sáng</figcaption></figure><figure class="shot"><img src="anh/ab-2026-11-09-dot2/caidat-X-dark-390.png" alt="Bản X đề Trang cài đặt app Nói Mỗi Ngày, điện thoại, tối" loading="lazy"><figcaption>Điện thoại, tối</figcaption></figure></div></div><div class="side"><h3>Y <span>Trang cài đặt app Nói Mỗi Ngày</span></h3><figure class="shot"><img src="anh/ab-2026-11-09-dot2/caidat-Y-light-1280.png" alt="Bản Y đề Trang cài đặt app Nói Mỗi Ngày, máy tính, sáng (phần đầu trang)" loading="lazy"><figcaption>Máy tính, sáng (phần đầu trang)</figcaption></figure><div class="phones"><figure class="shot"><img src="anh/ab-2026-11-09-dot2/caidat-Y-light-390.png" alt="Bản Y đề Trang cài đặt app Nói Mỗi Ngày, điện thoại, sáng" loading="lazy"><figcaption>Điện thoại, sáng</figcaption></figure><figure class="shot"><img src="anh/ab-2026-11-09-dot2/caidat-Y-dark-390.png" alt="Bản Y đề Trang cài đặt app Nói Mỗi Ngày, điện thoại, tối" loading="lazy"><figcaption>Điện thoại, tối</figcaption></figure></div></div></div></section>
+</main>
+</body>
+</html>

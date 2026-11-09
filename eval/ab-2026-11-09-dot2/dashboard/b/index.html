@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hôm nay · Bánh Mẹ Làm</title>
+<meta name="description" content="Màn hình quản lý trong ngày của tiệm Bánh Mẹ Làm: đơn hàng, doanh thu, nguyên liệu sắp hết và lịch giao.">
+<script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,t=q.get("theme");if(t==="light"||t==="dark")d.dataset.theme=t;})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="dem.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  /* ---- Khung trang ---- */
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--border); }
+  .bar-in { max-width: 84rem; margin: 0 auto; padding: var(--sp-3) var(--sp-4); display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3) var(--sp-5); }
+  .brand { display: flex; align-items: center; gap: var(--sp-3); margin-right: auto; min-width: 0; }
+  .brand-mark { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: var(--r-md); background: var(--accent-soft); color: var(--accent-text); }
+  .brand-mark svg { width: 22px; height: 22px; }
+  .brand b { display: block; font: 650 var(--fs-base)/1.3 var(--font-display); }
+  .brand span { display: block; font-size: var(--fs-sm); line-height: 1.4; color: var(--text-2); }
+  .wrap { max-width: 84rem; margin: 0 auto; padding: var(--sp-5) var(--sp-4) var(--sp-8); display: grid; gap: var(--sp-5); }
+  .page-head h1 { font-size: var(--fs-xl); }
+  .page-head p { margin: var(--sp-1) 0 0; color: var(--text-2); }
+
+  /* ---- Dải chỉ số (khối chi-so) ---- */
+  .kpis { container: kpis / inline-size; }
+  .kpis dl { margin: 0; display: grid; grid-template-columns: 1.4fr repeat(3, minmax(0, 1fr)); }
+  .kpi { padding: var(--sp-4) var(--sp-5); display: grid; gap: var(--sp-1); align-content: start; border-left: 1px solid var(--border); min-width: 0; }
+  .kpi:first-child { border-left: 0; }
+  .kpi dt { font: 500 var(--fs-sm)/1.4 var(--font-body); color: var(--text-2); }
+  .kpi dd { margin: 0; }
+  .kpi .val { font: 500 var(--fs-xl)/1.15 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; color: var(--text); }
+  .kpi .unit { font: 400 var(--fs-sm)/1 var(--font-body); color: var(--text-2); margin-left: 4px; }
+  .delta { display: inline-flex; align-items: center; gap: 4px; font: 500 var(--fs-sm)/1.5 var(--font-body); color: var(--text-2); }
+  .delta svg { width: 16px; height: 16px; flex: none; }
+  .delta.good { color: var(--ok); }
+  .delta.bad { color: var(--bad); }
+  .cmp { display: grid; gap: var(--sp-1); margin-top: var(--sp-2); font: 400 var(--fs-xs)/1.5 var(--font-body); color: var(--text-2); }
+  .cmp-row { display: grid; grid-template-columns: 4.5rem 1fr auto; gap: var(--sp-2); align-items: center; }
+  .cmp-track { height: 8px; border-radius: var(--r-full); background: var(--surface-2); overflow: hidden; }
+  .cmp-fill { height: 100%; border-radius: var(--r-full); background: var(--border-strong); }
+  .cmp-row.today .cmp-fill { background: var(--accent); }
+  .cmp .num { color: var(--text); }
+  @container kpis (max-width: 52rem) {
+    .kpis dl { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .kpi:first-child { grid-column: 1 / -1; border-bottom: 1px solid var(--border); }
+    .kpi:nth-child(2) { border-left: 0; }
+  }
+  @container kpis (max-width: 30rem) {
+    .kpis dl { grid-template-columns: 1fr 1fr; }
+    .kpi:nth-child(2) { border-left: 0; }
+    .kpi:nth-child(3) { border-left: 1px solid var(--border); }
+    .kpi:nth-child(4) { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--border); }
+    .kpi { padding: var(--sp-3) var(--sp-4); }
+  }
+
+  /* ---- Bố cục chính ---- */
+  .main-grid { display: grid; gap: var(--sp-5); grid-template-columns: minmax(0, 1fr); }
+  .side { display: grid; gap: var(--sp-5); min-width: 0; align-items: start; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); }
+  .panel { padding: var(--sp-4) var(--sp-5); min-width: 0; }
+  .panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--sp-1) var(--sp-3); margin-bottom: var(--sp-3); }
+  .panel-head h2 { font-size: var(--fs-md); letter-spacing: 0; line-height: var(--lh-snug); }
+  .panel-head p { margin: 0; font-size: var(--fs-sm); line-height: 1.5; color: var(--text-2); }
+
+  /* ---- Đơn hàng (khối bang-du-lieu + bo-loc) ---- */
+  .orders { container: dt / inline-size; display: grid; gap: var(--sp-4); }
+  .tools { display: grid; gap: var(--sp-3); }
+  .search { position: relative; max-width: 28rem; }
+  .search svg { position: absolute; left: var(--sp-3); top: 50%; width: 18px; height: 18px; transform: translateY(-50%); color: var(--text-2); pointer-events: none; }
+  .search .input { padding-left: 40px; }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0; padding: 0; border: 0; min-width: 0; }
+  .chip {
+    display: inline-flex; align-items: center; gap: var(--sp-2); min-height: 36px; padding: 0 var(--sp-3);
+    border: 1px solid var(--border-strong); border-radius: var(--r-full); background: var(--surface); color: var(--text);
+    font: 500 var(--fs-sm)/1 var(--font-body); cursor: pointer;
+  }
+  .chip:hover { background: var(--surface-2); }
+  .chip .n { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-2); }
+  .chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); }
+  .chip[aria-pressed="true"] .n { color: var(--accent-text); }
+  .result { margin: 0; font-size: var(--fs-sm); line-height: 1.5; color: var(--text-2); }
+  .result b { color: var(--text); font-weight: 600; }
+  .dt-wrap { border-top: 1px solid var(--border); margin: 0 calc(-1 * var(--sp-5)); }
+  table { width: 100%; border-collapse: collapse; font: 400 var(--fs-sm)/1.5 var(--font-body); }
+  caption { text-align: left; padding: var(--sp-4) var(--sp-4) var(--sp-2); font: 600 var(--fs-base)/1.4 var(--font-display); }
+  th, td { padding: var(--sp-3) var(--sp-4); text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: var(--surface-2); }
+  thead th { color: var(--text-2); font-weight: 600; white-space: nowrap; }
+  th.r, td.r { text-align: right; }
+  .code { font: 500 var(--fs-sm)/1.5 var(--font-mono); white-space: nowrap; }
+  .name { font-weight: 600; color: var(--text); }
+  .sub { display: block; color: var(--text-2); font-size: var(--fs-xs); line-height: 1.5; }
+  .time, .money { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.is-huy .name, tr.is-huy .item, tr.is-huy .money { text-decoration: line-through; color: var(--text-2); }
+  .st { min-height: var(--hit); min-width: 9.5rem; padding: 0 var(--sp-2); border: 1px solid var(--border-strong); border-radius: var(--r-sm); font: 600 var(--fs-sm)/1.2 var(--font-body); cursor: pointer; }
+  .st[data-st="moi"]  { background: var(--info-soft); color: var(--info); }
+  .st[data-st="lam"]  { background: var(--warn-soft); color: var(--warn); }
+  .st[data-st="san"]  { background: var(--accent-soft); color: var(--accent-text); }
+  .st[data-st="giao"] { background: var(--ok-soft); color: var(--ok); }
+  .st[data-st="huy"]  { background: var(--bad-soft); color: var(--bad); }
+  .st option { background: var(--surface); color: var(--text); }
+  /* Khung hẹp: mỗi đơn thành một khối gọn 4 dòng (mã + giờ, khách, món, tiền + trạng thái), không cuộn ngang */
+  @container dt (max-width: 44rem) {
+    thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    table, tbody { display: block; }
+    tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-1) var(--sp-3); align-items: center; padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border); }
+    tbody tr:last-child { border-bottom: 0; }
+    td { display: block; border: 0; padding: 0; min-width: 0; }
+    td.r { text-align: left; }
+    td[data-label="Giờ giao"] { text-align: right; color: var(--text-2); }
+    td[data-label="Giờ giao"]::before { content: "Giao "; }
+    td[data-label="Khách"], td[data-label="Món"] { grid-column: 1 / -1; }
+    td[data-label="Khách"] .name { display: inline; }
+    td[data-label="Khách"] .sub { display: inline; margin-left: var(--sp-2); }
+    td[data-label="Tiền"] { padding-top: var(--sp-1); }
+    td[data-label="Tiền"] .money { font-weight: 500; }
+    td[data-label="Trạng thái"] { padding-top: var(--sp-1); }
+    .st { min-width: 8.5rem; }
+  }
+
+  /* ---- Bốn trạng thái vùng dữ liệu (khối trang-thai) ---- */
+  .state { min-height: 14rem; padding: var(--sp-6) var(--sp-5); display: grid; align-content: center; justify-items: start; gap: var(--sp-3); }
+  .state > svg { width: 28px; height: 28px; color: var(--text-2); }
+  .state h3 { font-size: var(--fs-md); }
+  .state p { margin: 0; color: var(--text-2); }
+  .state .actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+  .state.is-error > svg { color: var(--bad); }
+  .state code { font: 400 var(--fs-xs)/1.5 var(--font-mono); color: var(--text-2); background: var(--surface-2); padding: 2px var(--sp-2); border-radius: var(--r-sm); }
+  .state.is-loading { align-content: start; justify-items: stretch; gap: var(--sp-4); }
+  .sk-row { display: grid; grid-template-columns: 4rem 1fr 5rem; gap: var(--sp-3); align-items: center; }
+  .sk { height: 12px; border-radius: var(--r-sm); background: var(--surface-2); }
+  @media (prefers-reduced-motion: no-preference) {
+    .sk { background: linear-gradient(90deg, var(--surface-2) 0%, var(--border) 50%, var(--surface-2) 100%) 0 0 / 200% 100%; animation: anh 1.4s var(--ease-in-out) infinite; }
+    @keyframes anh { to { background-position: -200% 0; } }
+  }
+
+  /* ---- Lịch giao theo khung giờ ---- */
+  .slots { list-style: none; margin: 0; padding: 0; }
+  .slot { display: grid; grid-template-columns: 4.75rem minmax(0, 1fr); gap: var(--sp-3); padding: var(--sp-3) 0; border-top: 1px solid var(--border); }
+  .slot:first-child { border-top: 0; padding-top: 0; }
+  .slot-time { font: 500 var(--fs-sm)/1.5 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-2); }
+  .slot-time .now { display: block; margin-top: 2px; font: 600 var(--fs-xs)/1.5 var(--font-body); color: var(--accent-text); }
+  .slot.is-now .slot-time { color: var(--text); }
+  .slot.is-past .slot-time { color: var(--text-2); }
+  .slot ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); }
+  .drop { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px var(--sp-2); align-items: baseline; font-size: var(--fs-sm); line-height: 1.5; }
+  .drop .t { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-2); }
+  .drop .who { font-weight: 600; overflow-wrap: anywhere; }
+  .drop .how { grid-column: 2 / -1; color: var(--text-2); font-size: var(--fs-xs); }
+  .drop.is-done .who, .drop.is-huy .who { color: var(--text-2); }
+  .drop.is-huy .who { text-decoration: line-through; }
+  .empty-slot { margin: 0; font-size: var(--fs-sm); line-height: 1.5; color: var(--text-2); }
+
+  /* ---- Nguyên liệu sắp hết ---- */
+  .stock { list-style: none; margin: 0; padding: 0; }
+  .stock li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--sp-1) var(--sp-3); padding: var(--sp-3) 0; border-top: 1px solid var(--border); }
+  .stock li:first-child { border-top: 0; padding-top: 0; }
+  .stock .ing { font-weight: 600; line-height: 1.5; }
+  .stock .left { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 var(--sp-3); font-size: var(--fs-sm); line-height: 1.5; color: var(--text-2); }
+  .stock .left .num { color: var(--text); }
+  .meter { grid-column: 1 / -1; height: 8px; border-radius: var(--r-full); background: var(--surface-2); overflow: hidden; }
+  .meter i { display: block; height: 100%; border-radius: var(--r-full); background: var(--warn); }
+  .meter.crit i { background: var(--bad); }
+  .stock .why { grid-column: 1 / -1; margin: 0; font-size: var(--fs-xs); line-height: 1.5; color: var(--text-2); }
+  .side-foot { margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; justify-content: space-between; }
+
+  /* ---- Hộp thoại (khối hop-thoai) ---- */
+  .dlg { width: min(100% - 2 * var(--sp-4), 32rem); max-height: calc(100dvh - 2 * var(--sp-4)); padding: 0; border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); color: var(--text); box-shadow: var(--shadow-2); }
+  .dlg::backdrop { background: oklch(0.15 0.01 250 / 0.55); }
+  .dlg form { padding: var(--sp-5); display: grid; gap: var(--sp-4); }
+  .dlg h2 { font-size: var(--fs-lg); }
+  .dlg p { margin: 0; color: var(--text-2); }
+  .dlg .row2 { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); }
+  .dlg textarea.input { min-height: 5rem; padding: var(--sp-2) var(--sp-3); resize: vertical; line-height: 1.5; }
+  .dlg .actions { display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-2); }
+  .req { color: var(--bad); }
+  @media (max-width: 30rem) { .dlg .actions .btn { flex: 1 1 100%; } .dlg form { padding: var(--sp-4); } }
+  @media (prefers-reduced-motion: no-preference) {
+    .dlg[open] { animation: hien var(--dur-2) var(--ease-out); }
+    @keyframes hien { from { opacity: 0; transform: translateY(8px); } }
+  }
+
+  /* ---- Thông báo nổi (khối thong-bao) ---- */
+  .toasts { position: fixed; z-index: 20; right: var(--sp-4); bottom: var(--sp-4); left: var(--sp-4); display: grid; gap: var(--sp-2); justify-items: end; pointer-events: none; margin: 0; padding: 0; list-style: none; }
+  .toast { pointer-events: auto; width: min(100%, 24rem); display: grid; grid-template-columns: auto 1fr auto; gap: var(--sp-3); align-items: center; padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow-2); font-size: var(--fs-sm); line-height: 1.5; }
+  .toast > svg { width: 20px; height: 20px; color: var(--ok); }
+  .toast .btn-sm { min-height: 32px; padding: 0 var(--sp-3); }
+  @media (prefers-reduced-motion: no-preference) {
+    .toast { animation: vao var(--dur-2) var(--ease-out); }
+    @keyframes vao { from { opacity: 0; transform: translateY(8px); } }
+  }
+</style>
+</head>
+<body>
+  <a class="btn btn-secondary skip-link" href="#don-hang">Bỏ qua, tới danh sách đơn</a>
+
+  <header class="bar">
+    <div class="bar-in">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16"/><path d="M5 18v-5a7 7 0 0 1 14 0v5"/><path d="M9 11c.5-1 1.5-1.6 3-1.6s2.5.6 3 1.6"/></svg></span>
+        <div><b>Bánh Mẹ Làm</b><span>Tiệm số 14 Trần Quang Diệu, Q.3</span></div>
+      </div>
+      <button class="btn btn-primary" type="button" id="mo-tao">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Tạo đơn mới
+      </button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="page-head">
+      <h1>Hôm nay, thứ Hai 9/11</h1>
+      <p>Cập nhật lúc <span class="num">10:20</span> · <span id="tom-tat">14 đơn, 7 đơn còn phải làm</span></p>
+    </div>
+
+    <section class="kpis surface" aria-label="Chỉ số hôm nay">
+      <dl>
+        <div class="kpi">
+          <dt>Doanh thu hôm nay</dt>
+          <dd><span class="val" id="dt-nay">3.045.000</span><span class="unit">đ</span></dd>
+          <dd class="delta good" id="dt-delta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg><span>Tăng 15% so với hôm qua</span></dd>
+          <dd class="cmp" aria-hidden="true">
+            <div class="cmp-row today"><span>Hôm nay</span><div class="cmp-track"><div class="cmp-fill" id="bar-nay" style="width:100%"></div></div><span class="num" id="cmp-nay">3,05 tr</span></div>
+            <div class="cmp-row"><span>Hôm qua</span><div class="cmp-track"><div class="cmp-fill" id="bar-qua" style="width:87%"></div></div><span class="num">2,64 tr</span></div>
+          </dd>
+        </div>
+        <div class="kpi">
+          <dt>Đã thu (đơn đã giao)</dt>
+          <dd><span class="val" id="da-thu">560.000</span><span class="unit">đ</span></dd>
+          <dd class="delta" id="da-thu-sub">2 trên 13 đơn</dd>
+        </div>
+        <div class="kpi">
+          <dt>Còn phải làm</dt>
+          <dd><span class="val" id="con-lam">7</span><span class="unit">đơn</span></dd>
+          <dd class="delta" id="con-lam-sub">Gần nhất giao lúc 10:30</dd>
+        </div>
+        <div class="kpi">
+          <dt>Đơn huỷ</dt>
+          <dd><span class="val" id="so-huy">1</span><span class="unit">đơn</span></dd>
+          <dd class="delta" id="huy-sub">Hôm qua 2 đơn</dd>
+        </div>
+      </dl>
+    </section>
+
+    <div class="main-grid">
+      <section class="orders surface panel" id="don-hang" aria-labelledby="dh-h" tabindex="-1">
+        <div class="panel-head">
+          <h2 id="dh-h">Đơn hàng hôm nay</h2>
+          <p class="result" aria-live="polite" id="ket-qua">Đang hiện <b>14</b> trên 14 đơn</p>
+        </div>
+        <div class="tools">
+          <div class="search">
+            <label class="sr-only" for="tim">Tìm đơn theo mã, tên khách hoặc món</label>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input class="input" id="tim" type="search" placeholder="Tìm mã đơn, khách, món…" autocomplete="off">
+          </div>
+          <fieldset class="chips" id="loc">
+            <legend class="sr-only">Lọc theo trạng thái</legend>
+          </fieldset>
+        </div>
+        <div id="vung-don"></div>
+      </section>
+
+      <div class="side">
+        <section class="surface panel" aria-labelledby="lg-h">
+          <div class="panel-head">
+            <h2 id="lg-h">Lịch giao trong ngày</h2>
+            <p>Theo khung 2 giờ</p>
+          </div>
+          <ol class="slots" id="lich"></ol>
+        </section>
+
+        <section class="surface panel" aria-labelledby="nl-h">
+          <div class="panel-head">
+            <h2 id="nl-h">Nguyên liệu sắp hết</h2>
+            <p>Kiểm kho lúc 6:30</p>
+          </div>
+          <ul class="stock">
+            <li>
+              <span class="ing">Phô mai mascarpone</span><span class="badge badge-bad">Hết</span>
+              <div class="meter crit" aria-hidden="true"><i style="width:0%"></i></div>
+              <span class="left"><span>Còn <span class="num">0</span> / tối thiểu <span class="num">2</span> hộp</span></span>
+              <p class="why">Cần cho đơn BM-0919 (tiramisu) giao 14:00</p>
+            </li>
+            <li>
+              <span class="ing">Bơ lạt Anchor</span><span class="badge badge-bad">Rất ít</span>
+              <div class="meter crit" aria-hidden="true"><i style="width:27%"></i></div>
+              <span class="left"><span>Còn <span class="num">0,8</span> / tối thiểu <span class="num">3</span> kg</span></span>
+            </li>
+            <li>
+              <span class="ing">Bột mì số 8</span><span class="badge badge-warn">Sắp hết</span>
+              <div class="meter" aria-hidden="true"><i style="width:35%"></i></div>
+              <span class="left"><span>Còn <span class="num">3,5</span> / tối thiểu <span class="num">10</span> kg</span></span>
+            </li>
+            <li>
+              <span class="ing">Trứng gà ta</span><span class="badge badge-warn">Sắp hết</span>
+              <div class="meter" aria-hidden="true"><i style="width:40%"></i></div>
+              <span class="left"><span>Còn <span class="num">24</span> / tối thiểu <span class="num">60</span> quả</span></span>
+            </li>
+            <li>
+              <span class="ing">Kem whipping</span><span class="badge badge-warn">Sắp hết</span>
+              <div class="meter" aria-hidden="true"><i style="width:50%"></i></div>
+              <span class="left"><span>Còn <span class="num">2</span> / tối thiểu <span class="num">4</span> hộp 1 lít</span></span>
+            </li>
+            <li>
+              <span class="ing">Đường cát trắng</span><span class="badge badge-warn">Sắp hết</span>
+              <div class="meter" aria-hidden="true"><i style="width:80%"></i></div>
+              <span class="left"><span>Còn <span class="num">4</span> / tối thiểu <span class="num">5</span> kg</span></span>
+            </li>
+          </ul>
+          <div class="side-foot">
+            <span class="small muted">6 món dưới mức tối thiểu</span>
+            <button class="btn btn-secondary btn-sm" type="button" id="chep-mua">Chép danh sách đi chợ</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="dlg" id="dlg-tao" aria-labelledby="tao-h">
+    <form id="form-tao" novalidate>
+      <h2 id="tao-h">Tạo đơn mới</h2>
+      <p>Đơn mới có trạng thái <b>Mới</b> và hiện ngay trong lịch giao. Mục có dấu <span class="req" aria-hidden="true">*</span> là bắt buộc.</p>
+      <div class="field">
+        <label class="label" for="f-khach">Tên khách <span class="req" aria-hidden="true">*</span></label>
+        <input class="input" id="f-khach" name="khach" autocomplete="name" required aria-describedby="e-khach">
+        <p class="error-text" id="e-khach" hidden></p>
+      </div>
+      <div class="field">
+        <label class="label" for="f-mon">Món <span class="req" aria-hidden="true">*</span></label>
+        <input class="input" id="f-mon" name="mon" list="ds-mon" required aria-describedby="h-mon e-mon">
+        <datalist id="ds-mon">
+          <option value="Bánh bông lan trứng muối"></option>
+          <option value="Bánh kem bắp 16cm"></option>
+          <option value="Bánh mì hoa cúc"></option>
+          <option value="Bánh su kem (hộp 10)"></option>
+          <option value="Bánh flan (hộp 6)"></option>
+          <option value="Bánh tart trứng (hộp 6)"></option>
+        </datalist>
+        <p class="hint" id="h-mon">Ghi cả số lượng, ví dụ “Bánh mì hoa cúc x2”</p>
+        <p class="error-text" id="e-mon" hidden></p>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label class="label" for="f-gio">Giờ giao <span class="req" aria-hidden="true">*</span></label>
+          <input class="input" id="f-gio" name="gio" type="time" min="07:00" max="20:00" required aria-describedby="e-gio">
+          <p class="error-text" id="e-gio" hidden></p>
+        </div>
+        <div class="field">
+          <label class="label" for="f-tien">Thành tiền (đ) <span class="req" aria-hidden="true">*</span></label>
+          <input class="input" id="f-tien" name="tien" inputmode="numeric" autocomplete="off" required aria-describedby="e-tien">
+          <p class="error-text" id="e-tien" hidden></p>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="f-nhan">Cách nhận</label>
+        <select class="input" id="f-nhan" name="nhan">
+          <option>Giao tận nơi</option>
+          <option>Khách lấy tại tiệm</option>
+        </select>
+      </div>
+      <div class="actions">
+        <button class="btn btn-secondary" type="button" id="huy-tao">Đóng, không lưu</button>
+        <button class="btn btn-primary" type="submit">Lưu đơn</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dlg" id="dlg-huy" aria-labelledby="huy-h" aria-describedby="huy-mo-ta">
+    <form method="dialog">
+      <h2 id="huy-h">Huỷ đơn?</h2>
+      <p id="huy-mo-ta">Đơn sẽ bị gạch khỏi lịch giao và không tính vào doanh thu hôm nay. Bạn vẫn đổi lại được nếu khách đặt lại.</p>
+      <div class="actions">
+        <button class="btn btn-secondary" value="giu" autofocus>Giữ đơn</button>
+        <button class="btn btn-danger" value="huy">Huỷ đơn</button>
+      </div>
+    </form>
+  </dialog>
+
+  <ul class="toasts" aria-live="polite" id="toasts"></ul>
+
+  <script>
+    const ST = { moi: "Mới", lam: "Đang làm", san: "Sẵn sàng", giao: "Đã giao", huy: "Huỷ" };
+    const orders = [
+      { id: "BM-0912", khach: "Chị Lan Anh", mon: "Bông lan trứng muối x2", gio: "08:00", tien: 240000, nhan: "Giao tận nơi · Q.3", st: "giao" },
+      { id: "BM-0913", khach: "Anh Minh Quân", mon: "Bánh kem bắp 16cm, chữ “Bé Su 3 tuổi”", gio: "09:30", tien: 320000, nhan: "Giao tận nơi · Q.10", st: "giao" },
+      { id: "BM-0914", khach: "Cô Hạnh", mon: "Bánh mì hoa cúc x3", gio: "10:00", tien: 255000, nhan: "Lấy tại tiệm", st: "san" },
+      { id: "BM-0915", khach: "Chị Thu Trang", mon: "Bông lan cuộn lá dứa x2", gio: "10:30", tien: 180000, nhan: "Giao tận nơi · Q.1", st: "lam" },
+      { id: "BM-0916", khach: "Anh Đức", mon: "Su kem hộp tiệc 20 cái", gio: "11:00", tien: 200000, nhan: "Giao tận nơi · Phú Nhuận", st: "lam" },
+      { id: "BM-0917", khach: "Chị Ngọc Hân", mon: "Bánh flan x12", gio: "11:30", tien: 120000, nhan: "Lấy tại tiệm", st: "san" },
+      { id: "BM-0918", khach: "Bác Tư", mon: "Bánh chuối nướng x1", gio: "12:00", tien: 90000, nhan: "Giao tận nơi · Q.3", st: "huy" },
+      { id: "BM-0919", khach: "Chị Phương", mon: "Bánh kem tiramisu 18cm", gio: "14:00", tien: 420000, nhan: "Giao tận nơi · Bình Thạnh", st: "moi" },
+      { id: "BM-0920", khach: "Anh Hoàng", mon: "Cookies bơ hộp 500g x2", gio: "14:30", tien: 260000, nhan: "Lấy tại tiệm", st: "moi" },
+      { id: "BM-0921", khach: "Chị Mai", mon: "Tart trứng x10", gio: "15:00", tien: 150000, nhan: "Giao tận nơi · Q.3", st: "lam" },
+      { id: "BM-0922", khach: "Cô Bích", mon: "Bánh bò nướng lá dứa x2", gio: "16:00", tien: 140000, nhan: "Lấy tại tiệm", st: "moi" },
+      { id: "BM-0923", khach: "Chị Yến", mon: "Bánh kem dâu 20cm, chữ “Mừng thọ bà”", gio: "17:00", tien: 480000, nhan: "Giao tận nơi · Q.7", st: "moi" },
+      { id: "BM-0924", khach: "Anh Khoa", mon: "Bánh mì nho x4", gio: "17:30", tien: 100000, nhan: "Lấy tại tiệm", st: "moi" },
+      { id: "BM-0925", khach: "Chị Diệp", mon: "Bông lan trứng muối x1, flan x6", gio: "18:30", tien: 180000, nhan: "Giao tận nơi · Q.3", st: "moi" },
+    ];
+    const HOM_QUA = 2640000, HUY_QUA = 2, NOW = "10:20";
+    const SLOTS = [["07:00","09:00"],["09:00","11:00"],["11:00","13:00"],["13:00","15:00"],["15:00","17:00"],["17:00","19:00"],["19:00","21:00"]];
+    const fmt = (n) => n.toLocaleString("vi-VN");
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const q = new URLSearchParams(location.search);
+    const state = q.get("trang-thai"); // tai | loi | quyen | rong
+    let filt = "tat-ca", query = "";
+
+    const ICON = {
+      empty: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16l-1.5 12h-13z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>',
+      error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>',
+      lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+      check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+    };
+
+    function renderChips() {
+      const counts = { "tat-ca": orders.length };
+      for (const k in ST) counts[k] = orders.filter((o) => o.st === k).length;
+      const items = [["tat-ca", "Tất cả"], ...Object.entries(ST)];
+      const box = document.getElementById("loc");
+      box.querySelectorAll(".chip").forEach((c) => c.remove());
+      for (const [k, label] of items) {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "chip"; b.dataset.f = k;
+        b.setAttribute("aria-pressed", String(filt === k));
+        b.innerHTML = `${label} <span class="n">${counts[k]}</span>`;
+        b.addEventListener("click", () => { filt = k; renderChips(); renderOrders(); });
+        box.append(b);
+      }
+    }
+
+    function stateBox(kind) {
+      if (kind === "tai") return `<div class="dt-wrap"><div class="state is-loading" role="status" aria-busy="true" aria-label="Đang tải đơn hàng">${'<div class="sk-row"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>'.repeat(5)}</div></div>`;
+      if (kind === "loi") return `<div class="dt-wrap"><div class="state is-error" role="alert">${ICON.error}<h3>Chưa tải được đơn hàng</h3><p>Máy không kết nối được tới sổ đơn. Kiểm tra Wi‑Fi của tiệm rồi thử lại; đơn đã nhận vẫn được giữ.</p><code>Mã lỗi: SO-DON-503</code><div class="actions"><button class="btn btn-primary" type="button" onclick="location.search=''">Thử lại</button></div></div></div>`;
+      if (kind === "quyen") return `<div class="dt-wrap"><div class="state">${ICON.lock}<h3>Bạn chưa có quyền xem đơn</h3><p>Tài khoản thợ làm bánh chỉ xem được lịch làm. Nhờ chủ tiệm mở quyền “Quản lý đơn”.</p></div></div>`;
+      if (kind === "rong") return `<div class="dt-wrap"><div class="state">${ICON.empty}<h3>Hôm nay chưa có đơn nào</h3><p>Đơn khách đặt qua điện thoại hay Zalo, bạn nhập bằng nút Tạo đơn mới.</p><div class="actions"><button class="btn btn-primary" type="button" data-open-create>Tạo đơn mới</button></div></div></div>`;
+      return "";
+    }
+
+    function renderOrders() {
+      const box = document.getElementById("vung-don");
+      const res = document.getElementById("ket-qua");
+      if (state && ["tai", "loi", "quyen", "rong"].includes(state)) {
+        box.innerHTML = stateBox(state);
+        res.textContent = state === "tai" ? "Đang tải…" : "";
+        box.querySelector("[data-open-create]")?.addEventListener("click", openCreate);
+        return;
+      }
+      const ql = query.toLowerCase();
+      const list = orders.filter((o) => (filt === "tat-ca" || o.st === filt) && (!ql || `${o.id} ${o.khach} ${o.mon}`.toLowerCase().includes(ql)))
+        .sort((a, b) => a.gio.localeCompare(b.gio));
+      res.innerHTML = `Đang hiện <b>${list.length}</b> trên ${orders.length} đơn`;
+      if (!list.length) {
+        box.innerHTML = `<div class="dt-wrap"><div class="state">${ICON.empty}<h3>Không có đơn khớp</h3><p>Không đơn nào khớp “${esc(query || ST[filt] || "")}”. Thử từ khoá khác hoặc bỏ bộ lọc.</p><div class="actions"><button class="btn btn-secondary" type="button" id="bo-loc">Bỏ lọc và tìm kiếm</button></div></div></div>`;
+        document.getElementById("bo-loc").addEventListener("click", () => { filt = "tat-ca"; query = ""; document.getElementById("tim").value = ""; renderChips(); renderOrders(); });
+        return;
+      }
+      box.innerHTML = `<div class="dt-wrap"><table><caption class="sr-only">Đơn hàng hôm nay, xếp theo giờ giao</caption>
+        <thead><tr><th scope="col">Mã đơn</th><th scope="col">Khách</th><th scope="col">Món</th><th scope="col">Giờ giao</th><th scope="col" class="r">Tiền</th><th scope="col">Trạng thái</th></tr></thead>
+        <tbody>${list.map((o) => `<tr class="is-${o.st}">
+          <td class="code">${o.id}</td>
+          <td data-label="Khách"><div><span class="name">${esc(o.khach)}</span><span class="sub">${esc(o.nhan)}</span></div></td>
+          <td data-label="Món"><span class="item">${esc(o.mon)}</span></td>
+          <td data-label="Giờ giao"><span class="time">${o.gio}</span></td>
+          <td data-label="Tiền" class="r"><span class="money">${fmt(o.tien)} đ</span></td>
+          <td data-label="Trạng thái"><select class="st" data-id="${o.id}" data-st="${o.st}" aria-label="Trạng thái đơn ${o.id}">${Object.entries(ST).map(([k, v]) => `<option value="${k}"${k === o.st ? " selected" : ""}>${v}</option>`).join("")}</select></td>
+        </tr>`).join("")}</tbody></table></div>`;
+      box.querySelectorAll("select.st").forEach((s) => s.addEventListener("change", () => onStatus(s)));
+    }
+
+    function renderSchedule() {
+      const ol = document.getElementById("lich");
+      ol.innerHTML = SLOTS.map(([a, b]) => {
+        const inSlot = orders.filter((o) => o.gio >= a && o.gio < b).sort((x, y) => x.gio.localeCompare(y.gio));
+        const isNow = NOW >= a && NOW < b, isPast = NOW >= b;
+        const body = inSlot.length
+          ? `<ul>${inSlot.map((o) => `<li class="drop is-${o.st === "giao" ? "done" : o.st}"><span class="t">${o.gio}</span><span class="who">${esc(o.khach)}</span><span class="badge ${badgeCls(o.st)}">${ST[o.st]}</span><span class="how">${o.id} · ${esc(o.nhan)}</span></li>`).join("")}</ul>`
+          : `<p class="empty-slot">Không có đơn giao</p>`;
+        return `<li class="slot${isNow ? " is-now" : ""}${isPast ? " is-past" : ""}"><div class="slot-time">${a}–${b}${isNow ? '<span class="now">Đang diễn ra</span>' : ""}</div><div>${body}</div></li>`;
+      }).join("");
+    }
+    const badgeCls = (st) => ({ moi: "badge-info", lam: "badge-warn", san: "badge-ok", giao: "badge-muted", huy: "badge-bad" }[st]);
+
+    function renderKpis() {
+      const live = orders.filter((o) => o.st !== "huy");
+      const sum = live.reduce((s, o) => s + o.tien, 0);
+      const thu = orders.filter((o) => o.st === "giao");
+      const todo = orders.filter((o) => o.st === "moi" || o.st === "lam" || o.st === "san").sort((a, b) => a.gio.localeCompare(b.gio));
+      const huy = orders.length - live.length;
+      document.getElementById("dt-nay").textContent = fmt(sum);
+      const pct = Math.round((sum / HOM_QUA - 1) * 100);
+      const d = document.getElementById("dt-delta");
+      d.className = "delta " + (pct > 0 ? "good" : pct < 0 ? "bad" : "");
+      d.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="${pct >= 0 ? "M12 19V5M6 11l6-6 6 6" : "M12 5v14M6 13l6 6 6-6"}"/></svg><span>${pct > 0 ? `Tăng ${pct}%` : pct < 0 ? `Giảm ${-pct}%` : "Bằng"} so với hôm qua (${fmt(HOM_QUA)} đ)</span>`;
+      const max = Math.max(sum, HOM_QUA);
+      document.getElementById("bar-nay").style.width = (sum / max * 100).toFixed(1) + "%";
+      document.getElementById("bar-qua").style.width = (HOM_QUA / max * 100).toFixed(1) + "%";
+      document.getElementById("cmp-nay").textContent = (sum / 1e6).toLocaleString("vi-VN", { maximumFractionDigits: 2 }) + " tr";
+      document.getElementById("da-thu").textContent = fmt(thu.reduce((s, o) => s + o.tien, 0));
+      document.getElementById("da-thu-sub").textContent = `${thu.length} trên ${live.length} đơn`;
+      document.getElementById("con-lam").textContent = todo.length;
+      document.getElementById("con-lam-sub").textContent = todo.length ? `Gần nhất giao lúc ${todo[0].gio}` : "Đã xong hết";
+      document.getElementById("so-huy").textContent = huy;
+      document.getElementById("huy-sub").textContent = `Hôm qua ${HUY_QUA} đơn`;
+      document.getElementById("tom-tat").textContent = `${orders.length} đơn, ${todo.length} đơn còn phải làm`;
+    }
+
+    function renderAll() { renderChips(); renderOrders(); renderSchedule(); renderKpis(); }
+
+    // ---- Đổi trạng thái (Huỷ phải xác nhận) ----
+    const dlgHuy = document.getElementById("dlg-huy");
+    function setStatus(id, st, prev) {
+      const o = orders.find((x) => x.id === id); o.st = st;
+      renderAll();
+      toast(`Đã chuyển ${id} sang “${ST[st]}”`, () => { o.st = prev; renderAll(); toast(`Đã trả ${id} về “${ST[prev]}”`); });
+      document.querySelector(`select.st[data-id="${id}"]`)?.focus();
+    }
+    function onStatus(sel) {
+      const id = sel.dataset.id, st = sel.value, prev = sel.dataset.st;
+      if (st === "huy") {
+        document.getElementById("huy-h").textContent = `Huỷ đơn ${id}?`;
+        dlgHuy.returnValue = "";
+        dlgHuy.showModal();
+        dlgHuy.addEventListener("close", () => {
+          if (dlgHuy.returnValue === "huy") setStatus(id, "huy", prev);
+          else { sel.value = prev; sel.focus(); }
+        }, { once: true });
+      } else setStatus(id, st, prev);
+    }
+
+    // ---- Thông báo nổi ----
+    function toast(msg, undo) {
+      const ul = document.getElementById("toasts");
+      ul.innerHTML = "";
+      const li = document.createElement("li");
+      li.className = "toast";
+      li.innerHTML = `${ICON.check}<span>${esc(msg)}</span>${undo ? '<button class="btn btn-secondary btn-sm" type="button">Hoàn tác</button>' : "<span></span>"}`;
+      if (undo) li.querySelector("button").addEventListener("click", () => { li.remove(); undo(); });
+      ul.append(li);
+      let t, paused = false;
+      const arm = () => { clearTimeout(t); t = setTimeout(() => { if (!paused) li.remove(); }, 6000); };
+      li.addEventListener("mouseenter", () => { paused = true; clearTimeout(t); });
+      li.addEventListener("mouseleave", () => { paused = false; arm(); });
+      li.addEventListener("focusin", () => { paused = true; clearTimeout(t); });
+      li.addEventListener("focusout", () => { paused = false; arm(); });
+      arm();
+    }
+
+    // ---- Tạo đơn mới ----
+    const dlgTao = document.getElementById("dlg-tao"), formTao = document.getElementById("form-tao");
+    function openCreate() { formTao.reset(); formTao.querySelectorAll("[aria-invalid]").forEach((x) => x.removeAttribute("aria-invalid")); formTao.querySelectorAll(".error-text").forEach((x) => (x.hidden = true)); dlgTao.showModal(); }
+    document.getElementById("mo-tao").addEventListener("click", openCreate);
+    document.getElementById("huy-tao").addEventListener("click", () => dlgTao.close());
+    function err(field, msg) {
+      const input = document.getElementById("f-" + field), p = document.getElementById("e-" + field);
+      if (msg) { input.setAttribute("aria-invalid", "true"); p.innerHTML = ICON.error.replace("<svg", '<svg width="16" height="16"') + `<span>${msg}</span>`; p.hidden = false; }
+      else { input.removeAttribute("aria-invalid"); p.hidden = true; }
+      return !msg;
+    }
+    formTao.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const f = new FormData(formTao);
+      const khach = f.get("khach").trim(), mon = f.get("mon").trim(), gio = f.get("gio"), tien = Number(String(f.get("tien")).replace(/[.\s,đ]/g, ""));
+      const ok = [
+        err("khach", khach ? "" : "Nhập tên khách để biết giao cho ai."),
+        err("mon", mon ? "" : "Nhập món và số lượng."),
+        err("gio", !gio ? "Chọn giờ giao." : gio < "07:00" || gio > "20:00" ? "Tiệm giao từ 7:00 đến 20:00." : ""),
+        err("tien", tien > 0 ? "" : "Nhập số tiền, ví dụ 250000."),
+      ];
+      if (ok.includes(false)) { formTao.querySelector('[aria-invalid="true"]').focus(); return; }
+      const last = Math.max(...orders.map((o) => Number(o.id.slice(3))));
+      const id = "BM-" + String(last + 1).padStart(4, "0");
+      orders.push({ id, khach, mon, gio, tien, nhan: f.get("nhan") === "Giao tận nơi" ? "Giao tận nơi" : "Lấy tại tiệm", st: "moi" });
+      dlgTao.close();
+      filt = "tat-ca"; query = ""; document.getElementById("tim").value = "";
+      renderAll();
+      toast(`Đã tạo đơn ${id} cho ${khach}, giao ${gio}`);
+    });
+
+    document.getElementById("tim").addEventListener("input", (e) => { query = e.target.value.trim(); renderOrders(); });
+    document.getElementById("chep-mua").addEventListener("click", async () => {
+      const text = [...document.querySelectorAll(".stock li")].map((li) => "- " + li.querySelector(".ing").textContent + ": " + li.querySelector(".left").textContent.trim()).join("\n");
+      try { await navigator.clipboard.writeText(text); toast("Đã chép danh sách đi chợ"); } catch { toast("Chưa chép được, hãy chép tay danh sách"); }
+    });
+
+    renderAll();
+    // Công tắc URL cho cổng kiểm: ?trang-thai=tai|loi|quyen|rong, ?mo=tao|huy|thongbao
+    // Mở sau khi font tải xong: lớp nổi ở giữa màn hình đổi cao khi font thay, gây CLS.
+    const mo = q.get("mo");
+    if (mo) document.fonts.ready.then(() => {
+      if (mo === "tao" || mo === "1") openCreate();
+      if (mo === "huy") { document.getElementById("huy-h").textContent = "Huỷ đơn BM-0919?"; dlgHuy.showModal(); }
+      if (mo === "thongbao") toast("Đã chuyển BM-0915 sang “Sẵn sàng”", () => {});
+    });
+  </script>
+</body>
+</html>
