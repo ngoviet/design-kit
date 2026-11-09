@@ -24,9 +24,19 @@ describe("plugin hook", () => {
     const out = runHook({ hook_event_name: "PostToolUse", session_id: s, tool_input: { file_path: "src/Trang.tsx" } });
     const ctx = JSON.parse(out).hookSpecificOutput.additionalContext as string;
     expect(ctx).toContain("Bản đồ tác vụ");
-    expect(ctx).toContain("design-kit check Trang.tsx --strict");
+    expect(ctx).not.toContain("design-kit check Trang.tsx");
+    expect(ctx).toContain("dist/*.html");
     expect(runHook({ hook_event_name: "PostToolUse", session_id: s, tool_input: { file_path: "src/Khac.tsx" } })).toBe("");
     expect(runHook({ hook_event_name: "PostToolUse", session_id: sid(), tool_input: { file_path: "node_modules/x/a.css" } })).toBe("");
+  });
+
+  it("suggests an .html path the gate can resolve from the session cwd", () => {
+    const ctx = (file: string) =>
+      JSON.parse(runHook({ hook_event_name: "PostToolUse", session_id: sid(), cwd: tmp, tool_input: { file_path: file } }))
+        .hookSpecificOutput.additionalContext as string;
+    expect(ctx(join(tmp, "src", "pages", "a.html"))).toContain("design-kit check src/pages/a.html --strict");
+    const outside = join(tmpdir(), "khac", "b.html");
+    expect(ctx(outside)).toContain(`design-kit check ${outside.replace(/\\/g, "/")} --strict`);
   });
 
   it("blocks Stop once when a UI edit has no design-kit check after it", () => {

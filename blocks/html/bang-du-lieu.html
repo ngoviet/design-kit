@@ -129,13 +129,17 @@
     const rows = [...tbody.rows];
     const key = (tr, k, num) => num ? Number(tr.cells[k].querySelector("[data-v]").dataset.v) : tr.cells[k].innerText.trim();
     const xep = document.getElementById("xep");
+    const khac = new Option("Theo cột đang chọn");
+    khac.disabled = true;
     const sortBy = (k, dir) => {
       const b = document.querySelector(`.sort[data-k="${k}"]`), th = b.closest("th");
       document.querySelectorAll("th[aria-sort]").forEach((x) => x.removeAttribute("aria-sort"));
       th.setAttribute("aria-sort", dir);
       const num = "num" in b.dataset, s = dir === "ascending" ? 1 : -1;
       rows.sort((a, c) => (num ? key(a, k, 1) - key(c, k, 1) : key(a, k).localeCompare(key(c, k), "vi")) * s).forEach((r) => tbody.append(r));
-      if ([...xep.options].some((o) => o.value === `${k}:${dir}`)) xep.value = `${k}:${dir}`;
+      const v = `${k}:${dir}`;
+      if ([...xep.options].some((o) => o !== khac && o.value === v)) { khac.remove(); xep.value = v; }
+      else { khac.value = v; xep.append(khac); khac.selected = true; }
     };
     document.querySelectorAll(".sort").forEach((b) => b.addEventListener("click", () => {
       sortBy(Number(b.dataset.k), b.closest("th").getAttribute("aria-sort") === "ascending" ? "descending" : "ascending");

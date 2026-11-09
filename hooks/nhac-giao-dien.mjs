@@ -7,7 +7,7 @@
 //   Mỗi lần sửa chỉ bị chặn một lần: AI có thể trả lời lý do không kiểm (thay đổi không chạm giao diện) rồi dừng.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, join } from "node:path";
+import { basename, isAbsolute, join, relative, resolve } from "node:path";
 
 const UI = /\.(html?|tsx|jsx|vue|svelte|astro|css|scss)$/i;
 const SKIP = /(^|[\\/])(node_modules|dist|build|\.design-kit|coverage)[\\/]|\.(test|spec|stories)\.[jt]sx?$/i;
@@ -33,10 +33,19 @@ if (input.hook_event_name === "PostToolUse") {
   const now = Date.now();
   if (s.lastRemind && now - s.lastRemind < EVERY_MS) process.exit(0);
   save({ ...s, lastRemind: now });
+  let target;
+  if (/\.html?$/i.test(file)) {
+    const cwd = typeof input.cwd === "string" ? input.cwd : "";
+    const rel = cwd ? relative(cwd, resolve(cwd, file)) : "";
+    target = (rel && !rel.startsWith("..") && !isAbsolute(rel) ? rel : file).replace(/\\/g, "/");
+  }
+  const gate = target
+    ? `2. Chạy \`design-kit check ${target} --strict\``
+    : "2. Chạy `design-kit check <trang .html, URL dev server hoặc dist/*.html hiển thị tệp này> --strict` (không kiểm thẳng tệp nguồn)";
   const msg = [
     `design-kit: vừa sửa tệp giao diện ${basename(file)}. Trước khi báo xong:`,
     "1. Bản đồ tác vụ: việc chính của người dùng, chỗ người dùng lần đầu dễ lúng túng, và mẫu dẫn đường cho từng chỗ (làm từng bước có tên bước kế, danh sách \"Bắt đầu\", mẹo đúng lúc cạnh điều khiển, màn trống chỉ việc làm tiếp, Hoàn tác). Không dùng tour mở đầu.",
-    `2. Chạy \`design-kit check ${basename(file)} --strict\`; trạng thái sau thao tác (lỗi form, bước 2, menu mở) ghi vào <trang>.steps.json.`,
+    `${gate}; trạng thái sau thao tác (lỗi form, bước 2, menu mở) ghi vào <trang>.steps.json.`,
     "3. Mở ảnh chụp trong .design-kit/shots và tự duyệt trước khi đưa chủ xem. Chi tiết: skill design-kit.",
   ].join("\n");
   process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext: msg } }));
