@@ -65,7 +65,7 @@
   h1 { font-size: var(--fs-2xl); letter-spacing: -0.015em; }
   h2 { font-size: var(--fs-xl); letter-spacing: -0.01em; margin-block: var(--s8) var(--s4); scroll-margin-top: var(--s5); }
   h3 { font-size: var(--fs-md); margin-block: var(--s6) var(--s3); }
-  p, li { max-width: 68ch; }
+  p, li { max-width: 32em; }
   p { margin: 0 0 var(--s4); text-wrap: pretty; }
   ul, ol { padding-left: 1.3em; margin: 0 0 var(--s4); }
   li + li { margin-top: var(--s2); }
@@ -102,7 +102,8 @@
   tr:last-child td { border-bottom: 0; }
   th { font-weight: 600; background: var(--surface-2); white-space: nowrap; }
   td:first-child { font-weight: 600; min-width: 9rem; }
-  td.num { white-space: nowrap; font-family: var(--mono); font-size: 0.8125rem; }
+  td.num { white-space: nowrap; font-family: var(--mono); font-size: 0.875rem; }
+  .tbl:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: var(--radius); }
   .tbl.wide table { min-width: 760px; }
 
   .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; line-height: 1; padding: 5px 8px; border-radius: 999px; white-space: nowrap; }
@@ -130,17 +131,19 @@
   .verdict { font-weight: 600; color: var(--accent); }
 
   figure { margin: var(--s5) 0; }
-  figure svg { width: 100%; height: auto; display: block; }
-  figcaption { font-size: var(--fs-sm); color: var(--text-2); margin-top: var(--s3); max-width: 68ch; }
+  figure svg { width: 100%; height: auto; display: block; min-width: 820px; }
+  .fig-scroll { overflow-x: auto; }
+  .fig-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: var(--radius); }
+  figcaption { font-size: var(--fs-sm); color: var(--text-2); margin-top: var(--s3); max-width: 32em; }
   .fig-node rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
   .fig-node.gate rect { fill: var(--hard-bg); stroke: var(--hard); }
   .fig-node.human rect { fill: var(--human-bg); stroke: var(--human); }
   .fig-node.input rect { fill: var(--accent-bg); stroke: var(--accent); }
-  .fig-t { fill: var(--text); font: 600 15px var(--font); }
-  .fig-s { fill: var(--text-2); font: 400 13px var(--font); }
+  .fig-t { fill: var(--text); font: 600 16px var(--font); }
+  .fig-s { fill: var(--text-2); font: 400 14px var(--font); }
   .fig-edge { stroke: var(--text-2); stroke-width: 1.5; fill: none; }
   .fig-edge.back { stroke: var(--hard); stroke-dasharray: 5 4; }
-  .fig-lbl { fill: var(--text-2); font: 500 13px var(--font); }
+  .fig-lbl { fill: var(--text-2); font: 500 14px var(--font); }
 
   .steps { counter-reset: st; list-style: none; padding: 0; display: grid; gap: var(--s4); }
   .steps > li { counter-increment: st; max-width: none; margin: 0; padding: var(--s4) var(--s5) var(--s4) 3.4rem; position: relative; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
@@ -209,7 +212,7 @@
     <section id="kiem-ke" aria-labelledby="kiem-ke-h">
       <h2 id="kiem-ke-h">Kiểm kê công cụ trên PC1</h2>
       <p>Đã có sẵn nhiều thứ. Phần còn thiếu nằm ở ba chỗ: kiểm a11y trên DOM đã render, đo hiệu năng, và một quy trình nối các công cụ lại với nhau.</p>
-      <div class="tbl wide">
+      <div class="tbl wide" tabindex="0" role="region" aria-label="Bảng, cuộn ngang được">
         <table>
           <thead><tr><th scope="col">Công cụ</th><th scope="col">Làm được</th><th scope="col">Còn thiếu</th></tr></thead>
           <tbody>
@@ -247,7 +250,7 @@
       <p>Nhãn <span class="tag std">chuẩn</span> là văn bản của W3C hoặc Google. <span class="tag std">nghiên cứu</span> là nghiên cứu có kiểm chứng (Baymard, Anthropic, bài báo). <span class="tag conv">quy ước</span> là ngưỡng của công cụ hoặc thông lệ ngành, chưa có nguồn sơ cấp trong kho tri thức.</p>
 
       <h3>Công năng</h3>
-      <div class="tbl wide">
+      <div class="tbl wide" tabindex="0" role="region" aria-label="Bảng, cuộn ngang được">
         <table>
           <thead><tr><th scope="col">Nhóm</th><th scope="col">Yêu cầu</th><th scope="col">Loại</th><th scope="col">Nguồn</th></tr></thead>
           <tbody>
@@ -269,7 +272,7 @@
       </div>
 
       <h3>Thẩm mỹ</h3>
-      <div class="tbl wide">
+      <div class="tbl wide" tabindex="0" role="region" aria-label="Bảng, cuộn ngang được">
         <table>
           <thead><tr><th scope="col">Nhóm</th><th scope="col">Yêu cầu</th><th scope="col">Loại</th><th scope="col">Nguồn</th></tr></thead>
           <tbody>
@@ -285,7 +288,7 @@
 
       <h3>Design system mã nguồn mở và giấy phép</h3>
       <p>Giấy phép đo bằng GitHub API ngày 09/11/2026. Không nên dựa vào một design system duy nhất: lấy nguyên tắc và token của nhiều bên, còn primitive có a11y thì lấy từ Radix.</p>
-      <div class="tbl">
+      <div class="tbl" tabindex="0" role="region" aria-label="Bảng, cuộn ngang được">
         <table>
           <thead><tr><th scope="col">Nguồn</th><th scope="col">Giấy phép</th><th scope="col">Dùng vào việc gì</th></tr></thead>
           <tbody>
@@ -317,7 +320,7 @@
     <section id="tieu-chi" aria-labelledby="tieu-chi-h">
       <h2 id="tieu-chi-h">Bộ tiêu chí kiểm được</h2>
       <p>Mỗi dòng ghi ngưỡng, cách đo và loại cổng. <span class="tag hard">cứng</span>: trượt thì chưa được báo xong. <span class="tag soft">mềm</span>: báo cáo, sửa nếu không có lý do. <span class="tag human">người</span>: chủ duyệt trên ảnh chụp.</p>
-      <div class="tbl wide">
+      <div class="tbl wide" tabindex="0" role="region" aria-label="Bảng, cuộn ngang được">
         <table>
           <thead><tr><th scope="col">Tiêu chí</th><th scope="col">Ngưỡng</th><th scope="col">Đo bằng</th><th scope="col">Cổng</th></tr></thead>
           <tbody>
@@ -347,6 +350,7 @@
       <h2 id="vong-h">Vòng tự kiểm đề xuất</h2>
       <p>Đo trên trang đã render, không đo mã nguồn: nhiều luật (tương phản, cỡ chữ, tràn ngang) chỉ có nghĩa khi trình duyệt đã tính style. Với Web Component, trải phẳng shadow DOM trước khi quét.</p>
       <figure>
+        <div class="fig-scroll" tabindex="0" role="region" aria-label="Sơ đồ, cuộn ngang được trên màn hẹp">
         <svg viewBox="0 0 900 300" role="img" aria-labelledby="loop-t loop-d">
           <title id="loop-t">Vòng dựng, đo, chụp, sửa</title>
           <desc id="loop-d">DESIGN.md và PRODUCT.md đưa vào bước dựng. Trang được render rồi đo bằng máy. Trượt cổng cứng thì quay lại sửa, tối đa 3 vòng. Đạt thì chụp ảnh để chủ duyệt.</desc>
@@ -364,6 +368,7 @@
           <path class="fig-edge back" d="M757 79H840V170H290V120" marker-end="url(#ar)"/>
           <text class="fig-lbl" x="305" y="160">trượt cổng cứng: sửa, tối đa 3 vòng</text>
         </svg>
+        </div>
         <figcaption>Giới hạn 3 vòng vì mô hình khó tự cải thiện đều qua nhiều vòng [s21]. Hết 3 vòng mà vẫn trượt thì báo chủ, kèm danh sách lỗi còn lại.</figcaption>
       </figure>
     </section>

@@ -6,7 +6,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const colorjsPath = process.env.DK_COLORJS ?? "D:/code/palette-axi/node_modules/colorjs.io/dist/color.js";
+const colorjsPath = process.env.DK_COLORJS ?? join(root, "node_modules/colorjs.io/dist/color.js");
 const { default: Color } = await import(pathToFileURL(colorjsPath).href);
 
 // [chữ/thành phần, nền, ngưỡng WCAG]

@@ -23,7 +23,9 @@
   --lh-tight: 1.2; --lh-snug: 1.35; --lh-body: 1.6;
 
   /* Độ dài dòng */
-  --measure: 66ch;
+  /* Đo bằng em, không bằng ch: chữ Việt trong Be Vietnam Pro hẹp hơn "0" ~37%, 66ch thành ~90 ký tự/dòng.
+     32em ≈ 65–75 ký tự tiếng Việt ở cả Be Vietnam Pro lẫn Literata. */
+  --measure: 32em;
 
   /* Chuyển động: ngắn, easing ra, không nảy */
   --dur-1: 120ms; --dur-2: 200ms; --dur-3: 320ms;

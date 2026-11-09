@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trang có lỗi cố ý</title>
+<style>
+  body { margin: 0; font: 15px/1.3 system-ui, sans-serif; background: #fff; color: #333; }
+  .wide { width: 480px; background: #eee; }
+  .faint { color: #aaa; }
+  .spin { width: 20px; height: 20px; background: #c33; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  button.tiny { width: 16px; height: 16px; padding: 0; outline: none; }
+  h1 { line-height: 1; }
+</style>
+</head>
+<body>
+  <h1>Bảng điều khiển mạng</h1>
+  <p class="faint">Đoạn văn này có độ tương phản thấp và giãn dòng chặt, kéo dài nhiều dòng để kiểm tra giãn dòng của thân bài tiếng Việt.</p>
+  <div class="wide">Khối này rộng 480px nên tràn ngang ở màn 320px và 390px.</div>
+  <div class="spin" aria-hidden="true"></div>
+  <button class="tiny" aria-label="Đóng">x</button>
+  <input placeholder="Email">
+  <topo-card></topo-card>
+  <script>
+    customElements.define("topo-card", class extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: "open" }).innerHTML =
+          '<style>.lbl{font-size:9.9px;color:#7b8a8e;background:#5b6b70;padding:2px}</style><span class="lbl">Cổng 1 ↓ 12 Mb/s</span>';
+      }
+    });
+  </script>
+</body>
+</html>
