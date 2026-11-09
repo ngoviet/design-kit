@@ -31,7 +31,9 @@ Bằng chứng nằm trong kho tri thức, chủ đề `tieu-chuan-va-cach-huong
 | Cỡ chữ | Không chữ nào < 12px, kể cả chữ SVG tính theo cỡ đã co | `text-min`, Impeccable `tiny-text` | cứng | quy ước (Impeccable) |
 | Thân chữ | ≥ 16px; giãn dòng ≥ 1,5 | `body-size`, `body-lh` | mềm | quy ước, WCAG 1.4.12 |
 | Độ dài dòng | ≤ 75–80 ký tự. Đặt `--measure: 32em`, **không dùng `ch`** | `measure`, Impeccable `line-length` | mềm | nghiên cứu: Baymard 50–75 (s17) |
-| Dấu hiệu UI do AI làm | 0 luật "slop" của Impeccable | `impeccable` | cứng | nghiên cứu (s4) |
+| Dấu hiệu UI do AI làm | 0 luật "slop" của Impeccable, trừ `cream-palette` (mềm: thuộc khẩu vị, chủ chấm A/B chọn bản nền kem) | `impeccable` | cứng | nghiên cứu (s4); A/B 09/11/2026 |
+| Màu hợp thương hiệu | Sắc nhấn theo lĩnh vực hoặc thương hiệu, không mặc định theo loại màn hình | `scripts/doi-mau.mjs` + ảnh chụp | người | A/B đợt 2: thua ở đề tiệm bánh vì màu xanh ngọc lạnh |
+| Màn nhìn nhanh | Dashboard: số liệu hôm nay và việc cần làm ngay nằm ở màn đầu 1280px, không nằm dưới bảng dài | ảnh chụp 1280px | người | A/B đợt 2 |
 | Phân cấp, cá tính | Mỗi màn có một điểm nhấn chính, khớp DESIGN.md | ảnh chụp 3 khổ × sáng/tối | người | nghiên cứu: LLM tự chấm chưa bằng người (s20, s21) |
 
 ## Đã đo được trong lúc xây (09/11/2026)

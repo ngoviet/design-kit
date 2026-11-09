@@ -85,8 +85,14 @@ const IMP_HARD_QUALITY = new Set([
   "broken-image", "script-error", "content-hidden-at-rest", "text-occlusion", "first-viewport-column-overflow",
   "gray-on-color", "low-contrast", "body-text-viewport-edge", "tiny-text", "undersized-ui-text", "text-overflow",
 ]);
+/**
+ * Luật "slop" thuộc về khẩu vị (bảng màu), không phải công năng: hạ xuống mềm. A/B đợt 2 (09/11/2026):
+ * chủ chấm mù chọn bản dashboard tiệm bánh nền kem mà luật cream-palette chặn cứng.
+ */
+const IMP_SOFT_SLOP = new Set(["cream-palette"]);
 export function impGate(f: { antipattern: string; category?: string; severity?: string; advisory?: boolean }): Gate {
   if (f.advisory === true || f.severity === "advisory") return "soft";
+  if (IMP_SOFT_SLOP.has(f.antipattern)) return "soft";
   if (f.category === "slop") return "hard";
   return IMP_HARD_QUALITY.has(f.antipattern) ? "hard" : "soft";
 }

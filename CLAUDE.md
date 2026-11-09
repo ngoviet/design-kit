@@ -30,6 +30,8 @@ Chuẩn và cổng cho giao diện do agent làm.
   - `design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict`
   - Hộp thoại ở trạng thái mở: `design-kit check blocks/html/hop-thoai.html --query "dk=dem&mo=1,dk=giay&mo=1,dk=dam&mo=1"`
 
+- Đổi màu nhấn theo thương hiệu: `node scripts/doi-mau.mjs --huong dem --nhan 45 --trung-tinh 60 --ra <tệp>`. Lệnh giữ cấu trúc, chỉ đổi sắc rồi dò lại độ sáng để 42 cặp vẫn đạt. Muốn kiểm riêng một tệp: `node scripts/kiem-cap-mau.mjs <tệp> <hướng>`.
+
 ## Bẫy đã gặp
 
 - **`ch` đo sai với chữ Việt.** Với Be Vietnam Pro, 68ch chứa khoảng 93 ký tự. Độ dài dòng dùng `em`. Probe đo độ dài dòng theo bề rộng trung bình của chính chữ trong đoạn.

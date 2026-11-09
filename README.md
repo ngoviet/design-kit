@@ -52,6 +52,10 @@ Kết quả in dạng TOON: mỗi trang có một dòng phán quyết, kèm bả
       - kit chọn hướng theo loại màn hình mà bỏ qua thương hiệu (tiệm bánh lại ra màu xanh ngọc lạnh);
       - khi sửa lỗi cứng, bố cục mất khả năng nhìn một lần thấy hết;
       - luật `cream-palette` chặn cứng một lựa chọn thuộc về khẩu vị.
+  - **Đã sửa sau A/B đợt 2:**
+    - `scripts/doi-mau.mjs` đổi màu nhấn và trung tính theo thương hiệu mà vẫn giữ tương phản;
+    - skill buộc chọn màu theo thương hiệu, giữ màn nhìn nhanh cho dashboard, và sửa lỗi tại chỗ chứ không dời bố cục;
+    - `cream-palette` hạ xuống mềm.
   - Còn lại:
     - tuỳ chọn `--steps` để cổng tự bấm qua các trạng thái;
     - báo lỗi shadow DOM cho Impeccable.

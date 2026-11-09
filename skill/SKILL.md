@@ -24,6 +24,22 @@ the gated blocks and the gate. Never call a UI task done on "it renders".
 - Use tokens only: `var(--accent)`, `var(--sp-4)`, `var(--fs-lg)`… no raw hex, no font outside DESIGN.md.
   Text in the accent color uses `--accent-text`; fills use `--accent` with `--on-accent` text.
 
+### 1b. Color comes from the brand, not from the surface type
+
+The direction gives structure (rhythm, type, density, light/dark). The **hue** must fit the brand and domain:
+a bakery dashboard in the default teal reads like generic SaaS. In the A/B test (09/11/2026) that was
+the one brief the kit lost to plain Opus, whose warm brown fit a bakery.
+
+- Ask: what does this brand or domain feel like? Food and craft → warm (accent 25–70, neutrals 50–70).
+  Health → green/teal (145–185). Finance, tools → blue (240–260). Kids, play → warm or vivid (25–45, 300–330).
+  Use a hue the brand already has when there is one.
+- Generate the swapped tokens, which re-solve lightness so every pair stays ≥ 4.5:1:
+  ```bash
+  node D:/code/design-kit/scripts/doi-mau.mjs --huong dem --nhan 45 --trung-tinh 60 --ra ./dem.css
+  ```
+  Link that file instead of `tokens/dem.css`. Status colors (ok/warn/bad/info) keep their meaning hues.
+- Keep the default hue only when nothing about the brand points elsewhere.
+
 ## 2. Start from a gated block
 
 `blocks/html/` (plain HTML/CSS: works in static pages, Folio, Artifacts, Lit/Home Assistant) and
@@ -45,6 +61,10 @@ the gated blocks and the gate. Never call a UI task done on "it renders".
 
 Every data region you build needs all four states from `trang-thai`.
 
+**Dashboards: keep the glance.** Before writing, list what the user must see without scrolling (today's
+numbers, what needs action now: low stock, next deliveries, alerts) and put it in the first screen at
+1280 px, beside or above the long table, never below it. A long table goes last or gets its own column.
+
 ## 3. Gate: measure, fix, show
 
 ```bash
@@ -56,6 +76,10 @@ design-kit check <file.html|folder|http://localhost:port> --strict
 - **hard** = not done. **soft** = fix, or write the reason in your report. **human** = screenshots in
   `.design-kit/shots/<page>/`: open them yourself (Read the PNGs) and judge hierarchy before showing the owner.
 - At most 3 fix rounds; still failing → report the remaining findings instead of looping.
+- **Fix the finding, not the layout.** A hard failure is fixed in place (drop an inner border, change a
+  color, add a label). Never move sections to silence a finding: in the A/B test an agent cleared
+  `nested-cards` by pushing the stock and delivery panels below a long table, and lost the dashboard.
+  Compare the 1280 px screenshot before and after each round; the information order must not change.
 - A Vite/React app: build it and check `dist/*.html`, or check the dev-server URL.
 - Show the result per the owner's rules (Folio page on PC1, Artifact when remote) with the verdict line.
 

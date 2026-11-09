@@ -21,6 +21,8 @@ describe("impGate", () => {
     expect(impGate({ antipattern: "low-contrast", category: "quality" })).toBe("hard");
     expect(impGate({ antipattern: "line-length", category: "quality" })).toBe("soft");
     expect(impGate({ antipattern: "straggler", category: "quality", severity: "advisory" })).toBe("soft");
+    // Khẩu vị bảng màu, không phải công năng (A/B đợt 2)
+    expect(impGate({ antipattern: "cream-palette", category: "slop" })).toBe("soft");
   });
 });
 
