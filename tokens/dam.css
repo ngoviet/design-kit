@@ -1,6 +1,5 @@
 /* design-kit · hướng ĐẬM: landing, marketing, trang giới thiệu. Sáng trước, có bản tối.
    Trung tính ấm rất nhẹ (h 40, C ≤ 0.015), màu nhấn đỏ son (h 32). Tiêu đề Bricolage Grotesque cỡ lớn. */
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
 
 [data-dk="dam"] {
   --font-body: "Be Vietnam Pro", system-ui, sans-serif;

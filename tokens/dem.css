@@ -1,6 +1,5 @@
 /* design-kit · hướng ĐÊM: ứng dụng, dashboard, công cụ. Tối trước, có bản sáng.
    Trung tính nhuốm lam (h 250, C ≤ 0.02), một màu nhấn xanh ngọc (h 178). */
-@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 
 [data-dk="dem"] {
   --font-body: "Be Vietnam Pro", system-ui, sans-serif;

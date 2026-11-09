@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khối: bảng dữ liệu</title>
+<script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,k=q.get("dk"),t=q.get("theme");if(k&&/^(dem|giay|dam)$/.test(k))d.dataset.dk=k;if(t==="light"||t==="dark")d.dataset.theme=t;})();</script>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<link rel="stylesheet" href="../../tokens/giay.css">
+<link rel="stylesheet" href="../../tokens/dam.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  /* ---- Khối: bảng dữ liệu ---- */
+  .dt { container: dt / inline-size; display: grid; gap: var(--sp-4); }
+  .dt-bar { display: flex; flex-wrap: wrap; align-items: end; gap: var(--sp-3); }
+  .dt-bar .field { flex: 1 1 14rem; }
+  .dt-bar select.input { width: auto; min-width: 11rem; padding-right: var(--sp-6); }
+  .dt-count { margin: 0 0 0 auto; color: var(--text-2); font: 400 var(--fs-sm)/var(--hit-lg) var(--font-ui, var(--font-body)); }
+  .dt-wrap { border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font: 400 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); }
+  caption { text-align: left; padding: var(--sp-4) var(--sp-4) 0; font: 600 var(--fs-base)/1.4 var(--font-display); }
+  th, td { padding: var(--sp-3) var(--sp-4); text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: var(--surface-2); }
+  thead th { color: var(--text-2); font-weight: 600; white-space: nowrap; }
+  th.r, td.r { text-align: right; }
+  .sort { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: var(--hit-min); padding: 2px var(--sp-1); margin: -2px calc(-1 * var(--sp-1)); border: 0; border-radius: var(--r-sm); background: none; color: inherit; font: inherit; cursor: pointer; }
+  .sort:hover { color: var(--text); background: var(--surface-2); }
+  .sort svg { width: 14px; height: 14px; opacity: 0.45; }
+  th[aria-sort] .sort { color: var(--text); }
+  th[aria-sort] .sort svg { opacity: 1; }
+  th[aria-sort="descending"] .sort svg { transform: rotate(180deg); }
+  .name { font-weight: 600; color: var(--text); }
+  .sub { display: block; color: var(--text-2); font-size: var(--fs-xs); }
+  .rate { white-space: nowrap; }
+  .rate .num { font-size: var(--fs-sm); }
+  /* Khung hẹp: mỗi hàng thành một khối dọc có nhãn, không cần cuộn ngang */
+  @container dt (max-width: 40rem) {
+    thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    table, tbody, tr, td { display: block; }
+    tr { padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border); }
+    tbody tr:last-child { border-bottom: 0; }
+    td { border: 0; padding: var(--sp-1) 0; display: flex; justify-content: space-between; gap: var(--sp-4); }
+    td.r { text-align: right; }
+    td::before { content: attr(data-label); color: var(--text-2); font-weight: 500; text-align: left; }
+    td:first-child::before { content: none; }
+  }
+</style>
+</head>
+<body>
+  <main class="demo">
+    <h1>Thiết bị trong mạng</h1>
+    <p class="lede">Bảng sắp xếp được theo cột, cột số căn phải và dùng chữ số cùng bề rộng. Khi khung chứa hẹp hơn 40rem, mỗi hàng chuyển thành một khối dọc có nhãn.</p>
+
+    <!-- KHỐI BẮT ĐẦU: bang-du-lieu -->
+    <section class="dt" aria-labelledby="dt-tieu-de">
+      <div class="dt-bar">
+        <div class="field">
+          <label class="label" for="tim">Tìm thiết bị</label>
+          <input class="input" id="tim" type="search" placeholder="Tên hoặc địa chỉ IP" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="label" for="loc">Trạng thái</label>
+          <select class="input" id="loc">
+            <option value="">Tất cả</option>
+            <option>Đang chạy</option>
+            <option>Chập chờn</option>
+            <option>Mất kết nối</option>
+          </select>
+        </div>
+        <p class="dt-count" aria-live="polite"><span id="dem">6</span> thiết bị</p>
+      </div>
+      <div class="dt-wrap">
+        <table>
+          <caption id="dt-tieu-de">Thiết bị đang theo dõi</caption>
+          <thead>
+            <tr>
+              <th scope="col" aria-sort="ascending"><button class="sort" type="button" data-k="0">Thiết bị <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button></th>
+              <th scope="col">Địa chỉ IP</th>
+              <th scope="col">Trạng thái</th>
+              <th scope="col" class="r"><button class="sort" type="button" data-k="3" data-num>Tải xuống <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button></th>
+              <th scope="col" class="r"><button class="sort" type="button" data-k="4" data-num>Tải lên <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td data-label="Thiết bị"><span class="name">Bộ định tuyến chính</span><span class="sub">Phòng khách · cổng 1</span></td><td data-label="Địa chỉ IP" class="num">192.168.1.1</td><td data-label="Trạng thái"><span class="badge badge-ok">Đang chạy</span></td><td data-label="Tải xuống" class="r rate"><span class="num" data-v="182.4">182,4</span> Mb/s</td><td data-label="Tải lên" class="r rate"><span class="num" data-v="24.1">24,1</span> Mb/s</td></tr>
+            <tr><td data-label="Thiết bị"><span class="name">Switch tầng 2</span><span class="sub">Phòng làm việc · cổng 3</span></td><td data-label="Địa chỉ IP" class="num">192.168.1.12</td><td data-label="Trạng thái"><span class="badge badge-ok">Đang chạy</span></td><td data-label="Tải xuống" class="r rate"><span class="num" data-v="96.0">96,0</span> Mb/s</td><td data-label="Tải lên" class="r rate"><span class="num" data-v="11.8">11,8</span> Mb/s</td></tr>
+            <tr><td data-label="Thiết bị"><span class="name">Camera cổng</span><span class="sub">Sân trước · PoE</span></td><td data-label="Địa chỉ IP" class="num">192.168.1.40</td><td data-label="Trạng thái"><span class="badge badge-warn">Chập chờn</span></td><td data-label="Tải xuống" class="r rate"><span class="num" data-v="0.4">0,4</span> Mb/s</td><td data-label="Tải lên" class="r rate"><span class="num" data-v="6.2">6,2</span> Mb/s</td></tr>
+            <tr><td data-label="Thiết bị"><span class="name">NAS lưu trữ</span><span class="sub">Phòng kho · cổng 5</span></td><td data-label="Địa chỉ IP" class="num">192.168.1.20</td><td data-label="Trạng thái"><span class="badge badge-ok">Đang chạy</span></td><td data-label="Tải xuống" class="r rate"><span class="num" data-v="41.7">41,7</span> Mb/s</td><td data-label="Tải lên" class="r rate"><span class="num" data-v="88.3">88,3</span> Mb/s</td></tr>
+            <tr><td data-label="Thiết bị"><span class="name">Điểm phát Wi‑Fi tầng 3</span><span class="sub">Phòng ngủ · Mesh</span></td><td data-label="Địa chỉ IP" class="num">192.168.1.31</td><td data-label="Trạng thái"><span class="badge badge-bad">Mất kết nối</span></td><td data-label="Tải xuống" class="r rate"><span class="num" data-v="0">0</span> Mb/s</td><td data-label="Tải lên" class="r rate"><span class="num" data-v="0">0</span> Mb/s</td></tr>
+            <tr><td data-label="Thiết bị"><span class="name">TV phòng khách</span><span class="sub">Wi‑Fi 5 GHz</span></td><td data-label="Địa chỉ IP" class="num">192.168.1.57</td><td data-label="Trạng thái"><span class="badge badge-ok">Đang chạy</span></td><td data-label="Tải xuống" class="r rate"><span class="num" data-v="35.2">35,2</span> Mb/s</td><td data-label="Tải lên" class="r rate"><span class="num" data-v="0.9">0,9</span> Mb/s</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <!-- KHỐI KẾT THÚC: bang-du-lieu -->
+  </main>
+
+  <script>
+    // Sắp xếp: một cột có aria-sort tại một thời điểm; bấm lại để đảo chiều. Lọc theo chữ và trạng thái.
+    const tbody = document.querySelector("tbody");
+    const rows = [...tbody.rows];
+    const key = (tr, k, num) => num ? Number(tr.cells[k].querySelector("[data-v]").dataset.v) : tr.cells[k].innerText.trim();
+    document.querySelectorAll(".sort").forEach((b) => b.addEventListener("click", () => {
+      const th = b.closest("th");
+      const dir = th.getAttribute("aria-sort") === "ascending" ? "descending" : "ascending";
+      document.querySelectorAll("th[aria-sort]").forEach((x) => x.removeAttribute("aria-sort"));
+      th.setAttribute("aria-sort", dir);
+      const k = Number(b.dataset.k), num = "num" in b.dataset, s = dir === "ascending" ? 1 : -1;
+      rows.sort((a, c) => (num ? key(a, k, 1) - key(c, k, 1) : key(a, k).localeCompare(key(c, k), "vi")) * s).forEach((r) => tbody.append(r));
+    }));
+    const tim = document.getElementById("tim"), loc = document.getElementById("loc");
+    const filter = () => {
+      const q = tim.value.trim().toLowerCase(), st = loc.value;
+      let n = 0;
+      rows.forEach((r) => { const show = (!q || r.innerText.toLowerCase().includes(q)) && (!st || r.cells[2].innerText.trim() === st); r.hidden = !show; n += show; });
+      document.getElementById("dem").textContent = n;
+    };
+    tim.addEventListener("input", filter); loc.addEventListener("change", filter);
+  </script>
+</body>
+</html>

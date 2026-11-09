@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khối: form đăng nhập</title>
+<script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,k=q.get("dk"),t=q.get("theme");if(k&&/^(dem|giay|dam)$/.test(k))d.dataset.dk=k;if(t==="light"||t==="dark")d.dataset.theme=t;})();</script>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<link rel="stylesheet" href="../../tokens/giay.css">
+<link rel="stylesheet" href="../../tokens/dam.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { min-height: 100dvh; display: grid; place-items: center; padding: var(--sp-5) var(--sp-4); }
+  /* ---- Khối: form đăng nhập ---- */
+  .signin { width: 100%; max-width: 26rem; padding: var(--sp-6); display: grid; gap: var(--sp-5); }
+  @media (max-width: 30rem) { .signin { padding: var(--sp-5) var(--sp-4); border: 0; background: transparent; } }
+  .signin header { display: grid; gap: var(--sp-2); }
+  .signin header p { margin: 0; color: var(--text-2); }
+  .signin form { display: grid; gap: var(--sp-4); }
+  .row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); }
+  .pw { position: relative; }
+  .pw .input { padding-right: calc(var(--hit) + var(--sp-2)); }
+  .pw .toggle { position: absolute; right: 2px; top: 2px; min-height: calc(var(--hit-lg) - 4px); min-width: var(--hit); border-radius: var(--r-sm); }
+  .check { display: flex; align-items: center; gap: var(--sp-2); min-height: var(--hit); font: 400 var(--fs-sm)/1.4 var(--font-ui, var(--font-body)); cursor: pointer; width: fit-content; }
+  .check input { width: 20px; height: 20px; accent-color: var(--accent); margin: 0; }
+  .alert { display: flex; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: var(--bad-soft); color: var(--bad); font: 500 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); }
+  .alert svg { width: 18px; height: 18px; flex: none; margin-top: 2px; }
+  .alert[hidden] { display: none; }
+  .submit { width: 100%; }
+  .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: quay 0.8s linear infinite; }
+  @keyframes quay { to { transform: rotate(1turn); } }
+  .alt { text-align: center; margin: 0 auto; color: var(--text-2); font: 400 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); }
+  .ui-link { font: 500 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); }
+</style>
+</head>
+<body>
+  <!-- KHỐI BẮT ĐẦU: form-dang-nhap -->
+  <main class="signin surface">
+    <header>
+      <h1>Đăng nhập</h1>
+      <p>Dùng email bạn đã đăng ký với Mạng nhà.</p>
+    </header>
+
+    <div class="alert" id="loi-chung" role="alert" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+      <span>Email hoặc mật khẩu chưa đúng. Kiểm tra lại, hoặc đặt lại mật khẩu.</span>
+    </div>
+
+    <form novalidate>
+      <div class="field">
+        <label class="label" for="email">Email</label>
+        <input class="input" id="email" name="email" type="email" autocomplete="username" inputmode="email" spellcheck="false" required aria-describedby="email-loi">
+        <p class="error-text" id="email-loi" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+          <span>Nhập email dạng ten@vidu.vn.</span>
+        </p>
+      </div>
+
+      <div class="field">
+        <div class="row">
+          <label class="label" for="current-password">Mật khẩu</label>
+          <a class="ui-link" href="#">Quên mật khẩu?</a>
+        </div>
+        <div class="pw">
+          <input class="input" id="current-password" name="password" type="password" autocomplete="current-password" required minlength="8" aria-describedby="mk-loi">
+          <button class="btn btn-ghost toggle" type="button" aria-pressed="false" aria-controls="current-password">
+            <span class="sr-only">Hiện mật khẩu</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <p class="error-text" id="mk-loi" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>
+          <span>Mật khẩu có ít nhất 8 ký tự.</span>
+        </p>
+      </div>
+
+      <label class="check"><input type="checkbox" name="nho"> Ghi nhớ trên máy này</label>
+
+      <button class="btn btn-primary submit" type="submit">Đăng nhập</button>
+    </form>
+
+    <p class="alt">Chưa có tài khoản? <a class="ui-link" href="#">Tạo tài khoản</a></p>
+  </main>
+  <!-- KHỐI KẾT THÚC: form-dang-nhap -->
+
+  <script>
+    // Kiểm hợp lệ khi rời ô và khi gửi; lỗi gắn vào ô bằng aria-invalid + aria-describedby; focus về ô lỗi đầu tiên.
+    const form = document.querySelector("form");
+    const fields = [
+      { el: form.email, err: document.getElementById("email-loi"), ok: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) },
+      { el: form.password, err: document.getElementById("mk-loi"), ok: (v) => v.length >= 8 },
+    ];
+    const validate = (f) => { const ok = f.ok(f.el.value.trim()); f.el.setAttribute("aria-invalid", String(!ok)); f.err.hidden = ok; return ok; };
+    fields.forEach((f) => f.el.addEventListener("blur", () => f.el.value && validate(f)));
+    const toggle = form.querySelector(".toggle");
+    toggle.addEventListener("click", () => {
+      const show = toggle.getAttribute("aria-pressed") !== "true";
+      toggle.setAttribute("aria-pressed", String(show));
+      form.password.type = show ? "text" : "password";
+      toggle.querySelector(".sr-only").textContent = show ? "Ẩn mật khẩu" : "Hiện mật khẩu";
+    });
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const bad = fields.filter((f) => !validate(f));
+      if (bad.length) { bad[0].el.focus(); return; }
+      const btn = form.querySelector(".submit");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner" aria-hidden="true"></span> Đang đăng nhập…';
+      // Giả lập máy chủ trả lỗi để thấy trạng thái lỗi chung.
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = "Đăng nhập";
+        document.getElementById("loi-chung").hidden = false;
+      }, 900);
+    });
+  </script>
+</body>
+</html>

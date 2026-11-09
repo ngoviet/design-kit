@@ -4,3 +4,5 @@ build/
 .design-kit/
 .folio/*.json
 .folio/.state/
+blocks/react/node_modules/
+blocks/react/dist/

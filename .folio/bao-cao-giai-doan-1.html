@@ -156,6 +156,11 @@
   .src .id { font-family: var(--mono); display: inline-block; width: 3rem; text-indent: 0; color: var(--text-2); }
   .note { border: 1px dashed var(--line); border-radius: var(--radius); padding: var(--s4) var(--s5); margin: var(--s4) 0; background: var(--surface); }
   .note p:last-child { margin: 0; }
+  .shots { display: grid; gap: var(--s4); grid-template-columns: minmax(0, 2.2fr) minmax(0, 0.8fr); align-items: start; margin: var(--s4) 0 var(--s5); }
+  .shots figure { margin: 0; }
+  .shots figure:last-child { grid-column: 1 / -1; }
+  .shots img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+  @media (max-width: 700px) { .shots { grid-template-columns: minmax(0, 1fr); } }
   footer { margin-top: var(--s8); padding-top: var(--s5); border-top: 1px solid var(--line); }
   @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 </style>
@@ -166,14 +171,14 @@
     <nav>
       <p class="label">Trong báo cáo</p>
       <ol>
-        <li><a href="#chot">Cần chủ chốt</a></li>
+        <li><a href="#chot">Quyết định</a></li>
         <li><a href="#vi-sao">Vì sao UI "chạy được"</a></li>
         <li><a href="#kiem-ke">Kiểm kê công cụ</a></li>
         <li><a href="#tieu-chuan">Tiêu chuẩn kèm nguồn</a></li>
         <li><a href="#tieu-chi">Bộ tiêu chí có ngưỡng</a></li>
         <li><a href="#vong">Vòng tự kiểm</a></li>
         <li><a href="#phuong-an">Ba phương án</a></li>
-        <li><a href="#giai-doan-2">Kế hoạch giai đoạn 2</a></li>
+        <li><a href="#giai-doan-2">Giai đoạn 2</a></li>
         <li><a href="#nguon">Nguồn</a></li>
       </ol>
     </nav>
@@ -191,11 +196,11 @@
     </header>
 
     <section class="decision" id="chot" aria-labelledby="chot-h">
-      <h2 id="chot-h">Cần chủ chốt trước khi xây</h2>
-      <p>Khuyến nghị <strong>phương án B</strong>: một skill <code>design-kit</code> cùng lệnh kiểm <code>design-kit check</code> làm cổng cứng. Trong <code>~/.claude/CLAUDE.md</code> chỉ thêm hai dòng trỏ tới skill. Khối mẫu (phương án C) làm dần, mỗi đợt 5–6 khối, sau khi cổng chạy ổn.</p>
+      <h2 id="chot-h">Chủ đã chốt phương án C</h2>
+      <p>Phương án C gồm skill <code>design-kit</code>, lệnh kiểm <code>design-kit check</code> nằm trong design-kit, ba hướng thẩm mỹ, và khối mẫu có cả bản HTML/CSS thuần lẫn React + shadcn/ui. Đợt 1 đã xây xong, kết quả ở mục <a href="#giai-doan-2">Giai đoạn 2</a>.</p>
       <ul>
-        <li>Lý do chính: chỉ dẫn thẩm mỹ cụ thể giúp Claude tốt lên ngay [s4]. Nhưng LLM tự chấm UI chưa bằng người [s20] và khó tự cải thiện đều qua nhiều vòng [s21]. Vì vậy phần đo được giao cho máy, phần đẹp giao cho chủ.</li>
-        <li>Bốn câu hỏi cần trả lời nằm ở cuối mục <a href="#phuong-an">Ba phương án</a>.</li>
+        <li>Lý do của cách làm: chỉ dẫn thẩm mỹ cụ thể giúp Claude tốt lên ngay [s4]. Nhưng LLM tự chấm UI chưa bằng người [s20] và khó tự cải thiện đều qua nhiều vòng [s21]. Vì vậy phần đo được giao cho máy, phần đẹp giao cho chủ.</li>
+        <li>Còn một việc chờ chủ đồng ý: thêm hai dòng vào <code>~/.claude/CLAUDE.md</code> để mọi phiên làm UI đều gọi skill.</li>
       </ul>
     </section>
 
@@ -410,23 +415,62 @@
       <h3>Vì sao chọn B</h3>
       <p>Phương án A chỉ sửa được nửa đầu vấn đề, tức chỉ dẫn [s4], mà không có bằng chứng (lệnh và ảnh chụp) như Claude Code khuyên [s13]. Phương án C có lợi thật, nhưng chỉ đáng làm khi đã có cổng đo để mọi khối mẫu được kiểm. Làm C trước khi có B thì sẽ tạo ra khối mẫu "trông đẹp" mà chưa ai đo. Lập luận mạnh nhất cho A: rẻ và luôn có hiệu lực. Vì vậy B vẫn giữ 2 dòng trong CLAUDE.md để skill luôn được gọi khi làm UI.</p>
 
-      <h3>Câu hỏi cho chủ</h3>
-      <ol>
-        <li><strong>Chọn phương án nào:</strong> B (khuyến nghị), A, hay đi thẳng C?</li>
-        <li><strong>Lệnh kiểm đặt ở đâu:</strong> trong design-kit (<code>design-kit check</code>, gọi imp-axi) hay mở rộng imp-axi thành <code>imp-axi check</code>? Khuyến nghị đặt trong design-kit, để imp-axi chỉ làm một việc là quét.</li>
-        <li><strong>Hướng thẩm mỹ gốc</strong> cho DESIGN.md mẫu: theo kiểu lan-topo-card (tối, nhuốm lam, một màu nhấn), hay làm 2–3 hướng để chọn theo dự án?</li>
-        <li><strong>Khung kỹ thuật cho khối mẫu</strong> (nếu làm C): HTML/CSS thuần (chạy được ở mọi nơi, kể cả Lit/HA), hay React + shadcn/ui?</li>
-      </ol>
+      <h3>Chủ đã trả lời (09/11/2026)</h3>
+      <div class="tbl" tabindex="0" role="region" aria-label="Bảng, cuộn ngang được">
+        <table>
+          <thead><tr><th scope="col">Câu hỏi</th><th scope="col">Chủ chọn</th></tr></thead>
+          <tbody>
+            <tr><td>Phương án</td><td>C: đi thẳng tới thư viện khối mẫu, gồm cả phần của B</td></tr>
+            <tr><td>Lệnh kiểm đặt ở đâu</td><td>Trong design-kit. imp-axi chỉ làm một việc là quét</td></tr>
+            <tr><td>Hướng thẩm mỹ</td><td>2–3 hướng: đã làm Đêm, Giấy, Đậm</td></tr>
+            <tr><td>Khung kỹ thuật</td><td>Cả hai: HTML/CSS thuần làm gốc, có thêm bản React + shadcn/ui</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <section id="giai-doan-2" aria-labelledby="gd2-h">
-      <h2 id="gd2-h">Kế hoạch giai đoạn 2 (nếu chọn B)</h2>
+      <h2 id="gd2-h">Giai đoạn 2: đợt 1 đã xây</h2>
+      <p>Toàn bộ nằm trong repo <code>D:\code\design-kit</code>. Mỗi phần đều đã chạy và đo thật, không chỉ viết ra.</p>
+      <div class="tbl wide" tabindex="0" role="region" aria-label="Bảng, cuộn ngang được">
+        <table>
+          <thead><tr><th scope="col">Phần</th><th scope="col">Đã làm</th><th scope="col">Bằng chứng</th></tr></thead>
+          <tbody>
+            <tr><td>Token và ba hướng</td><td><code>tokens/</code> gồm <code>fonts.css</code>, <code>core.css</code>, <code>dem.css</code>, <code>giay.css</code>, <code>dam.css</code>. Mỗi hướng có bản sáng và tối. Ba tệp <code>design/&lt;huong&gt;/DESIGN.md</code> sinh tự động từ token.</td><td>126/126 cặp màu đạt tương phản và nằm trong gamut sRGB. Lint DESIGN.md: 0 lỗi, 0 cảnh báo.</td></tr>
+            <tr><td>Cổng <code>design-kit check</code></td><td>CLI chuẩn AXI. Render 320/390/1280 × sáng/tối, rồi chạy axe-core WCAG 2.2 AA, probe đi xuyên shadow DOM, kiểm giảm chuyển động, focus, LCP/CLS và Impeccable. Có chụp ảnh. Đã cài toàn cục qua <code>npm link</code>.</td><td>5/5 test đạt. Trang có lỗi cố ý: cổng bắt đủ 11 lỗi cứng, kể cả lỗi trong shadow root.</td></tr>
+            <tr><td>Khối HTML/CSS</td><td><code>dau-trang</code>, <code>form-dang-nhap</code>, <code>bang-du-lieu</code>, <code>trang-thai</code>, <code>chi-so</code>, <code>hop-thoai</code></td><td>18/18 trang đạt (6 khối × 3 hướng), cổng cứng 0 lỗi.</td></tr>
+            <tr><td>Khối React + shadcn/ui</td><td><code>FormDangNhap</code>, <code>TrangThai</code>, dùng chung token qua <code>@theme</code></td><td>6/6 trang đạt (bản build, 3 hướng).</td></tr>
+            <tr><td>Skill</td><td><code>skill/SKILL.md</code>, cài bằng junction tại <code>~/.claude/skills/design-kit</code></td><td>Harness đã nhận skill và liệt kê trong danh sách.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Ba hướng trên cùng một bộ khối</h3>
+      <div class="shots">
+        <figure><img src="anh/dem-bang-du-lieu-dark-1280.png" alt="Khối bảng dữ liệu, hướng Đêm, theme tối, khổ 1280px: bảng 6 thiết bị với huy hiệu trạng thái và cột số căn phải" loading="lazy" width="1280" height="833"><figcaption><strong>Đêm</strong>, tối, 1280px: bảng dữ liệu</figcaption></figure>
+        <figure><img src="anh/giay-chi-so-light-390.png" alt="Khối dải chỉ số, hướng Giấy, theme sáng, khổ 390px: bốn chỉ số xếp lưới 2 nhân 2 với thân chữ có chân" loading="lazy" width="390" height="844"><figcaption><strong>Giấy</strong>, sáng, 390px: dải chỉ số</figcaption></figure>
+        <figure><img src="anh/dam-trang-thai-light-1280.png" alt="Khối bốn trạng thái, hướng Đậm, theme sáng, khổ 1280px: rỗng, đang tải, lỗi, không có quyền" loading="lazy" width="1280" height="1004"><figcaption><strong>Đậm</strong>, sáng, 1280px: bốn trạng thái</figcaption></figure>
+      </div>
+
+      <h3>Máy đo bắt được gì khi xây</h3>
+      <ul>
+        <li><strong>Impeccable không nhìn vào shadow DOM.</strong> Đã tái hiện: engine bỏ sót chữ 9,9px và tương phản 1,55:1 trong một open shadow root, trong khi probe và axe bắt được cả hai. Vậy lỗi ở phiên lan-topo-card nằm ở engine chứ không ở imp-axi.</li>
+        <li><strong><code>ch</code> đo sai với chữ Việt.</strong> Chính trang này đặt <code>max-width: 68ch</code> nhưng thực tế chứa khoảng 93 ký tự mỗi dòng. Token độ dài dòng vì thế chuyển sang <code>32em</code>.</li>
+        <li><strong>Chữ SVG co theo viewBox.</strong> Sơ đồ ở trên khai báo 13px, nhưng ở khổ 390px chỉ còn khoảng 5px. Đã sửa, và probe giờ đo cỡ chữ đã hiển thị.</li>
+        <li><strong>Font nạp bằng <code>@import</code> trong tệp token bị bundler bỏ mất.</strong> Đã tách ra <code>fonts.css</code> và nạp tệp này đầu tiên.</li>
+        <li><strong>Tên nút không chứa chữ đang hiện</strong> (WCAG 2.5.3) và <strong>bảng cuộn ngang không focus được</strong>: axe bắt cả hai, đã sửa.</li>
+        <li><strong>shadcn CLI</strong> đã ghi <code>import { cn } from "cn"</code> và cài một gói npm lạ tên <code>cn</code>. Đã gỡ gói và ghi vào danh sách bẫy.</li>
+      </ul>
+
+      <h3>Duyệt bằng mắt bắt thêm</h3>
+      <p>Bốn thẻ trong khối <code>trang-thai</code> lệch đỉnh nhau 20–50px. Tiêu đề ở trang đầu trang dính sát đoạn văn. Máy báo đạt cả hai trường hợp, chỉ ảnh chụp mới cho thấy. Cả hai đã sửa.</p>
+
+      <h3>Còn lại</h3>
       <ol class="steps">
-        <li><strong>Tái hiện lỗi shadow DOM của imp-axi</strong><p>Quét card Lit của lan-topo-card bằng URL và bằng DOM đã trải phẳng, rồi so kết quả. Bước này quyết định "trải phẳng" nằm trong design-kit hay cần sửa engine.</p></li>
-        <li><strong>DESIGN.md gốc và token</strong><p>Token OKLCH (qua palette-axi), thang chữ, nhịp 4px, font tiếng Việt (Be Vietnam Pro, OFL). Kiểm bằng <code>npx @google/design.md lint</code>, xuất <code>@theme</code> cho Tailwind.</p></li>
-        <li><strong>CLI <code>design-kit check</code> theo chuẩn AXI</strong><p>Playwright mở trang ở 320/390/1280 px, sáng và tối, rồi chạy axe-core, imp-axi (trên HTML đã trải phẳng), đo CLS/LCP và chụp ảnh. Output dạng TOON: tổng, lỗi cứng, lỗi mềm, đường dẫn ảnh, gợi ý bước tiếp. Mã thoát 0/1/2.</p></li>
-        <li><strong>Skill <code>design-kit</code> và 2 dòng CLAUDE.md</strong><p>Quy trình: đọc DESIGN.md, dựng, chạy <code>check</code>, sửa tối đa 3 vòng, gửi ảnh để chủ duyệt. Có kiểm tra để chắc skill tự kích hoạt khi làm UI.</p></li>
-        <li><strong>Đánh giá A/B</strong><p>Ba trang thử (landing, dashboard, form đăng nhập tiếng Việt), mỗi trang làm hai bản: có skill và không có skill. Chấm bằng bộ tiêu chí, chủ xem mù hai bản. Ghi kết quả vào kho tri thức.</p></li>
+        <li><strong>Hai dòng trong <code>~/.claude/CLAUDE.md</code></strong><p>Để mọi phiên làm UI đều gọi skill design-kit. Chờ chủ đồng ý mới ghi.</p></li>
+        <li><strong>Đợt 2 khối mẫu</strong><p>Hero landing (hướng Đậm), trang bài viết dài (hướng Giấy), thanh bên, toast, bộ lọc, phân trang. Bản React cho bảng và hộp thoại.</p></li>
+        <li><strong>Đánh giá A/B</strong><p>Ba trang thử (landing, dashboard, form tiếng Việt), mỗi trang làm hai bản: có skill và không có skill. Chấm bằng cổng, chủ xem mù hai bản. Ghi kết quả vào kho tri thức.</p></li>
+        <li><strong>Báo lỗi shadow DOM cho Impeccable</strong><p>Gửi kèm trang tái hiện <code>test/fixtures/loi.html</code>. Trong lúc chờ, design-kit đã bù phần này bằng probe và axe.</p></li>
       </ol>
     </section>
 

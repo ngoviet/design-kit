@@ -1,0 +1,10 @@
+/* design-kit · nạp font. Tách khỏi tệp token vì @import phải đứng đầu stylesheet:
+   khi bundler (Vite, lightningcss) gộp CSS, @import nằm trong tệp token rơi xuống giữa và bị bỏ, mất font.
+   Nạp tệp này TRƯỚC mọi CSS khác (thẻ <link> đầu tiên, hoặc dòng @import đầu tiên).
+
+   Tệp này nạp font của cả ba hướng (dùng cho khối mẫu). Dự án thật chỉ cần một dòng:
+     Đêm:  https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap
+     Giấy: https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;500&display=swap
+     Đậm:  https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap
+   Mọi họ font trên đều có bộ ký tự vietnamese (đã kiểm qua Google Fonts CSS API 09/11/2026). */
+@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;500&display=swap");

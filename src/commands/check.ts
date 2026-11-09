@@ -250,7 +250,10 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
         const r: PageReport = { target: label, findings: new Map(), checks: new Map(), notes: [], shots: 0 };
         let shotsDir: string | undefined;
         if (shotsBase) {
-          shotsDir = join(shotsBase, `${basename(t, extname(t)).replace(/[^\w.-]+/g, "_")}${q ? `-${q.replace(/[^\w.-]+/g, "_")}` : ""}`);
+          // Tên theo đường dẫn tương đối (không chỉ tên tệp): blocks/html/x.html và blocks/react/dist/x.html không ghi đè nhau.
+          const stem = /^https?:/i.test(t) ? t.replace(/^https?:\/\//i, "") : relative(rt.cwd, t).replace(/\.html?$/i, "");
+          const slug = `${stem}${q ? `-${q}` : ""}`.replace(/[\\/]+/g, "~").replace(/[^\w.~-]+/g, "_").replace(/^[._~]+/, "");
+          shotsDir = join(shotsBase, slug || basename(t, extname(t)));
           mkdirSync(shotsDir, { recursive: true });
         }
         await checkPage(browser, url, label, { viewports, schemes, focusStops, axeSource, ...(shotsDir ? { shotsDir } : {}) }, r);

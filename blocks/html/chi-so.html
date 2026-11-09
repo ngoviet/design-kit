@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khối: dải chỉ số</title>
+<script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,k=q.get("dk"),t=q.get("theme");if(k&&/^(dem|giay|dam)$/.test(k))d.dataset.dk=k;if(t==="light"||t==="dark")d.dataset.theme=t;})();</script>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<link rel="stylesheet" href="../../tokens/giay.css">
+<link rel="stylesheet" href="../../tokens/dam.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  /* ---- Khối: dải chỉ số (một bề mặt, chia ô bằng đường kẻ; không phải bốn thẻ rời) ---- */
+  .kpis { container: kpis / inline-size; }
+  .kpis dl { margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .kpi { padding: var(--sp-4) var(--sp-5); display: grid; gap: var(--sp-1); align-content: start; border-left: 1px solid var(--border); min-width: 0; }
+  .kpi:first-child { border-left: 0; }
+  .kpi dt { font: 500 var(--fs-sm)/1.4 var(--font-ui, var(--font-body)); color: var(--text-2); }
+  .kpi dd { margin: 0; }
+  .kpi .val { font: 500 var(--fs-xl)/1.15 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; color: var(--text); }
+  .kpi .unit { font: 400 var(--fs-sm)/1 var(--font-ui, var(--font-body)); color: var(--text-2); margin-left: 2px; }
+  .delta { display: inline-flex; align-items: center; gap: 2px; font: 500 var(--fs-xs)/1.5 var(--font-ui, var(--font-body)); color: var(--text-2); }
+  .delta svg { width: 14px; height: 14px; }
+  .delta.up-good { color: var(--ok); }
+  .delta.up-bad { color: var(--bad); }
+  .spark { width: 100%; height: 28px; margin-top: var(--sp-1); color: var(--accent); }
+  @container kpis (max-width: 44rem) {
+    .kpis dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpi:nth-child(3) { border-left: 0; }
+    .kpi:nth-child(n+3) { border-top: 1px solid var(--border); }
+  }
+  @container kpis (max-width: 22rem) {
+    .kpis dl { grid-template-columns: 1fr; }
+    .kpi { border-left: 0; }
+    .kpi + .kpi { border-top: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+  <main class="demo">
+    <h1>Mạng hôm nay</h1>
+    <p class="lede">Bốn chỉ số nằm trong một bề mặt, chia ô bằng đường kẻ. Thay đổi so với hôm qua luôn có mũi tên và chữ, nên không phụ thuộc vào màu.</p>
+
+    <!-- KHỐI BẮT ĐẦU: chi-so -->
+    <section class="kpis surface" aria-label="Chỉ số mạng hôm nay">
+      <dl>
+        <div class="kpi">
+          <dt>Thiết bị trực tuyến</dt>
+          <dd><span class="val">23</span><span class="unit">/ 26</span></dd>
+          <dd class="delta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14"/></svg>Như hôm qua</dd>
+        </div>
+        <div class="kpi">
+          <dt>Tải xuống trung bình</dt>
+          <dd><span class="val">182</span><span class="unit">Mb/s</span></dd>
+          <dd class="delta up-good"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>Tăng 12% so với hôm qua</dd>
+          <dd><svg class="spark" viewBox="0 0 120 28" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" points="0,20 15,18 30,22 45,14 60,16 75,10 90,12 105,6 120,8"/></svg></dd>
+        </div>
+        <div class="kpi">
+          <dt>Độ trễ đến Internet</dt>
+          <dd><span class="val">18</span><span class="unit">ms</span></dd>
+          <dd class="delta up-bad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>Tăng 4 ms, cao hơn thường lệ</dd>
+          <dd><svg class="spark" viewBox="0 0 120 28" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" points="0,18 15,19 30,17 45,18 60,15 75,16 90,12 105,10 120,9"/></svg></dd>
+        </div>
+        <div class="kpi">
+          <dt>Cảnh báo chưa xử lý</dt>
+          <dd><span class="val">3</span></dd>
+          <dd class="delta"><a href="#">Xem cảnh báo</a></dd>
+        </div>
+      </dl>
+    </section>
+    <!-- KHỐI KẾT THÚC: chi-so -->
+  </main>
+</body>
+</html>

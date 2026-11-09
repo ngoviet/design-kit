@@ -1,7 +1,6 @@
 /* design-kit · hướng GIẤY: tài liệu, báo cáo, bài viết dài. Sáng trước, có bản tối.
    Trung tính gần trung hoà (h 240, C ≤ 0.01; không dùng nền kem), màu nhấn xanh mực (h 258).
    Thân chữ có chân Literata 18px để đọc lâu; tiêu đề không chân. */
-@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;500&display=swap");
 
 [data-dk="giay"] {
   --font-body: "Literata", Georgia, serif;

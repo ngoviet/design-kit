@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khối: đầu trang và điều hướng</title>
+<script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,k=q.get("dk"),t=q.get("theme");if(k&&/^(dem|giay|dam)$/.test(k))d.dataset.dk=k;if(t==="light"||t==="dark")d.dataset.theme=t;})();</script>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<link rel="stylesheet" href="../../tokens/giay.css">
+<link rel="stylesheet" href="../../tokens/dam.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  /* ---- Khối: đầu trang ---- */
+  .appbar { container: appbar / inline-size; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+  .appbar-in { max-width: 72rem; margin: 0 auto; padding: var(--sp-2) var(--sp-4); display: flex; align-items: center; gap: var(--sp-4); min-height: 60px; flex-wrap: wrap; }
+  .brand { display: inline-flex; align-items: center; gap: var(--sp-2); font: 700 var(--fs-base)/1 var(--font-display); color: var(--text); text-decoration: none; min-height: var(--hit); }
+  .brand svg { width: 26px; height: 26px; color: var(--accent); }
+  .nav { flex: 1; min-width: 0; }
+  .nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: var(--sp-1); }
+  .nav a {
+    display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--hit); padding: 0 var(--sp-3);
+    border-radius: var(--r-sm); color: var(--text-2); text-decoration: none;
+    font: 500 var(--fs-sm)/1 var(--font-ui, var(--font-body));
+    transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+  }
+  .nav a:hover { background: var(--surface-2); color: var(--text); }
+  .nav a[aria-current="page"] { color: var(--text); background: var(--surface-2); box-shadow: inset 0 -2px 0 var(--accent); }
+  .count { min-width: 20px; padding: 1px 6px; border-radius: var(--r-full); background: var(--bad-soft); color: var(--bad); font: 600 var(--fs-xs)/1.4 var(--font-mono); text-align: center; }
+  .tools { display: flex; align-items: center; gap: var(--sp-1); margin-left: auto; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); font: 600 var(--fs-xs)/1 var(--font-ui, var(--font-body)); }
+  .menu-btn { display: none; }
+  @container appbar (max-width: 46rem) {
+    .menu-btn { display: inline-flex; }
+    .nav { order: 3; flex-basis: 100%; display: none; }
+    .nav.open { display: block; padding-bottom: var(--sp-2); }
+    .nav ul { flex-direction: column; }
+    .nav a { width: 100%; min-height: var(--hit-lg); }
+    .nav a[aria-current="page"] { box-shadow: inset 2px 0 0 var(--accent); }
+  }
+  .page { max-width: 72rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4); }
+  .page h1 { margin-bottom: var(--sp-3); }
+  .page p { color: var(--text-2); }
+</style>
+</head>
+<body>
+  <a class="skip-link btn btn-primary" href="#noi-dung">Bỏ qua điều hướng</a>
+
+  <!-- KHỐI BẮT ĐẦU: dau-trang -->
+  <header class="appbar">
+    <div class="appbar-in">
+      <a class="brand" href="#" aria-label="Mạng nhà, về trang tổng quan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M12 7.5v4M12 11.5 6.5 16M12 11.5l5.5 4.5"/></svg>
+        Mạng nhà
+      </a>
+      <nav class="nav" id="nav-chinh" aria-label="Điều hướng chính">
+        <ul>
+          <li><a href="#" aria-current="page">Tổng quan</a></li>
+          <li><a href="#">Thiết bị</a></li>
+          <li><a href="#">Lưu lượng</a></li>
+          <li><a href="#">Cảnh báo <span class="count" aria-label="3 cảnh báo mới">3</span></a></li>
+          <li><a href="#">Cài đặt</a></li>
+        </ul>
+      </nav>
+      <div class="tools">
+        <button class="btn btn-ghost btn-icon" type="button" aria-label="Tìm kiếm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+        </button>
+        <button class="btn btn-ghost btn-icon" type="button" aria-label="NV, tài khoản của Ngô Việt"><span class="avatar" aria-hidden="true">NV</span></button>
+        <button class="btn btn-secondary btn-sm menu-btn" type="button" aria-expanded="false" aria-controls="nav-chinh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          Menu
+        </button>
+      </div>
+    </div>
+  </header>
+  <!-- KHỐI KẾT THÚC: dau-trang -->
+
+  <main class="page" id="noi-dung" tabindex="-1">
+    <h1>Tổng quan</h1>
+    <p>Thanh đầu trang dính ở trên cùng. Khi khung chứa hẹp hơn 46rem, các mục điều hướng thu vào nút Menu. Ngưỡng này đo theo khung chứa (container query), không theo màn hình, nên khối vẫn đúng khi đặt trong cột hẹp.</p>
+  </main>
+
+  <script>
+    // Nút Menu: mở/đóng danh sách, đồng bộ aria-expanded; Esc đóng và trả focus về nút.
+    const btn = document.querySelector(".menu-btn");
+    const nav = document.getElementById("nav-chinh");
+    const set = (open) => { nav.classList.toggle("open", open); btn.setAttribute("aria-expanded", String(open)); };
+    btn.addEventListener("click", () => set(btn.getAttribute("aria-expanded") !== "true"));
+    nav.addEventListener("keydown", (e) => { if (e.key === "Escape") { set(false); btn.focus(); } });
+  </script>
+</body>
+</html>

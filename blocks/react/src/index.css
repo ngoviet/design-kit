@@ -1,0 +1,57 @@
+/* Token design-kit là nguồn duy nhất; shadcn/ui đọc chúng qua tên biến của shadcn. */
+@import "../../../tokens/fonts.css";
+@import "../../../tokens/core.css";
+@import "../../../tokens/dem.css";
+@import "../../../tokens/giay.css";
+@import "../../../tokens/dam.css";
+@import "tailwindcss";
+
+@custom-variant dark (&:is([data-theme="dark"] *));
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--text);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--text);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--on-accent);
+  --color-primary-text: var(--accent-text);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--text);
+  --color-muted: var(--surface-2);
+  --color-muted-foreground: var(--text-2);
+  --color-accent: var(--surface-2);
+  --color-accent-foreground: var(--text);
+  --color-destructive: var(--bad);
+  --color-destructive-soft: var(--bad-soft);
+  --color-border: var(--border);
+  --color-input: var(--border-strong);
+  --color-ring: var(--focus);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-lg);
+  --font-sans: var(--font-ui, var(--font-body));
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 400 var(--fs-body) / var(--lh-body) var(--font-body);
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: var(--weight-display);
+    letter-spacing: var(--tracking-display);
+    line-height: var(--lh-tight);
+    text-wrap: balance;
+  }
+  p { text-wrap: pretty; }
+  :focus-visible { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
+}

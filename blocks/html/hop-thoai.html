@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khối: hộp thoại xác nhận</title>
+<script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,k=q.get("dk"),t=q.get("theme");if(k&&/^(dem|giay|dam)$/.test(k))d.dataset.dk=k;if(t==="light"||t==="dark")d.dataset.theme=t;})();</script>
+<link rel="stylesheet" href="../../tokens/fonts.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<link rel="stylesheet" href="../../tokens/giay.css">
+<link rel="stylesheet" href="../../tokens/dam.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  .item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-4) var(--sp-5); }
+  .item strong { display: block; }
+
+  /* ---- Khối: hộp thoại xác nhận (dùng <dialog> gốc: tự bẫy focus, Esc đóng, trả focus) ---- */
+  .dlg {
+    width: min(100% - 2 * var(--sp-4), 28rem); padding: 0; border: 1px solid var(--border); border-radius: var(--r-lg);
+    background: var(--surface); color: var(--text); box-shadow: var(--shadow-2);
+  }
+  .dlg::backdrop { background: oklch(0.15 0.01 250 / 0.55); }
+  .dlg form { padding: var(--sp-5); display: grid; gap: var(--sp-4); }
+  .dlg h2 { font-size: var(--fs-lg); }
+  .dlg p { margin: 0; color: var(--text-2); }
+  .dlg ul { margin: 0; padding-left: 1.2em; color: var(--text-2); display: grid; gap: var(--sp-1); }
+  .dlg .actions { display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-2); }
+  @media (max-width: 30rem) { .dlg .actions .btn { flex: 1 1 100%; } }
+  @media (prefers-reduced-motion: no-preference) {
+    .dlg[open] { animation: hien var(--dur-2) var(--ease-out); }
+    @keyframes hien { from { opacity: 0; transform: translateY(8px); } }
+  }
+</style>
+</head>
+<body>
+  <main class="demo">
+    <h1>Hộp thoại xác nhận</h1>
+    <p class="lede">Dùng cho hành động khó hoàn tác. Hộp thoại nói rõ mất gì. Nút an toàn được focus trước, nút nguy hiểm ghi đúng tên hành động.</p>
+
+    <div class="item surface">
+      <div><strong>Điểm phát Wi‑Fi tầng 3</strong><span class="muted small">192.168.1.31 · mất kết nối từ 08:12</span></div>
+      <button class="btn btn-danger" type="button" id="mo-xoa">Xoá thiết bị</button>
+    </div>
+
+    <!-- KHỐI BẮT ĐẦU: hop-thoai -->
+    <dialog class="dlg" id="xac-nhan-xoa" aria-labelledby="xoa-h" aria-describedby="xoa-mo-ta">
+      <form method="dialog">
+        <h2 id="xoa-h">Xoá “Điểm phát Wi‑Fi tầng 3”?</h2>
+        <p id="xoa-mo-ta">Thiết bị sẽ biến mất khỏi danh sách theo dõi. Những thứ sau cũng bị xoá và không khôi phục được:</p>
+        <ul>
+          <li>Lịch sử lưu lượng 90 ngày</li>
+          <li>4 quy tắc cảnh báo gắn với thiết bị</li>
+        </ul>
+        <div class="actions">
+          <button class="btn btn-secondary" value="huy" autofocus>Giữ lại</button>
+          <button class="btn btn-danger" value="xoa">Xoá thiết bị</button>
+        </div>
+      </form>
+    </dialog>
+    <!-- KHỐI KẾT THÚC: hop-thoai -->
+  </main>
+
+  <script>
+    const dlg = document.getElementById("xac-nhan-xoa");
+    document.getElementById("mo-xoa").addEventListener("click", () => dlg.showModal());
+    // ?mo=1 mở sẵn để cổng kiểm (design-kit check … --query mo=1) đo cả trạng thái mở.
+    if (new URLSearchParams(location.search).get("mo") === "1") dlg.showModal();
+  </script>
+</body>
+</html>
