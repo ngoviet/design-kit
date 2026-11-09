@@ -98,3 +98,5 @@ Chủ hỏi có nên đóng gói và gộp các phụ thuộc vào dự án đ�
 | Plugin | `.claude-plugin/` gồm plugin và marketplace. Có `skills/design-kit/` và hook `hooks/nhac-giao-dien.mjs`: nhắc khi sửa tệp giao diện, chặn "báo xong" một lần nếu chưa chạy cổng. `claude plugin validate` đạt. |
 | Gói npm | Thêm trường `files`, vì `.gitignore` sẽ làm rơi `dist/`. Đã thử cài từ gói ra một thư mục tạm: `design-kit`, `doi-mau` và `check` đều chạy. |
 | CI | `.woodpecker/ci.yaml` dùng image Playwright 1.65.0, gồm check, token, lint, setup và cổng ba hướng. **Chưa chạy lần nào**: chủ phải Enable repo trong Woodpecker. |
+
+Đã thử thêm cách cài toàn cục từ git (`npm install -g git+file://…`): **hỏng**. Lệnh `npm install` mà npm chạy bên trong bản clone thừa hưởng chế độ global, nên `prepare` không có `tsup`. Đổi hướng dẫn cài sang: clone, `npm ci`, `npm install -g .`. Đã thử trên một bản clone sạch: `--version`, `setup`, `kiem-mau` đều chạy.

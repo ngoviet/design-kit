@@ -28,9 +28,13 @@ Khi không có hướng dẫn, mô hình ngôn ngữ chọn lựa chọn phổ b
 Cần Node ≥ 20 và Edge hoặc Chrome. Không có hai trình duyệt này thì cổng dùng Chromium của Playwright: `npx playwright install chromium`.
 
 ```bash
-npm install -g github:ngoviet/design-kit     # CLI; repo riêng tư nên cần quyền đọc repo
-design-kit setup                             # tìm trình duyệt; tải engine Impeccable ghim nếu thiếu (sha256)
+git clone https://github.com/ngoviet/design-kit && cd design-kit
+npm ci              # cài phụ thuộc và build dist/ (script prepare)
+npm install -g .    # lệnh design-kit toàn cục, trỏ vào thư mục này
+design-kit setup    # tìm trình duyệt; tải engine Impeccable ghim nếu thiếu (sha256)
 ```
+
+Cập nhật: `git pull && npm ci`. Không dùng `npm install -g github:ngoviet/design-kit`: npm cài toàn cục từ git thì lệnh `npm install` bên trong thừa hưởng chế độ global, nên không cài devDependencies để build (đã thử 09/11/2026).
 
 Trong Claude Code, cài plugin (skill + hook) bằng: `/plugin install design-kit --marketplace ngoviet/design-kit`
 

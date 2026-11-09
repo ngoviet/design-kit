@@ -6,7 +6,7 @@ Chuẩn và cổng cho giao diện do agent làm.
 - Phần cổng: CLI `design-kit check`, TypeScript, chuẩn AXI, khuôn theo `D:\code\imp-axi`.
 - Đóng gói:
   - Plugin Claude Code: `.claude-plugin/` (plugin và marketplace), `skills/design-kit/SKILL.md`, `hooks/`.
-  - Gói npm cài từ git (`npm i -g github:ngoviet/design-kit`): trường `files` quyết định gói gồm những gì.
+  - CLI: clone, `npm ci` (prepare build `dist/`), `npm install -g .`. Trường `files` quyết định gói npm gồm những gì (cài từ tarball).
   - Trên PC1 skill vẫn nối bằng junction `~/.claude/skills/design-kit → skills/design-kit`. Cài plugin rồi thì gỡ junction.
 - Lý do và quyết định: `docs/quyet-dinh.md`. Ngưỡng: `docs/tieu-chi.md`. Nguồn: `docs/nguon.md`, sinh bằng `npm run nguon` từ kho research-hub, không sửa tay.
 - CI: `.woodpecker/ci.yaml`, chạy trên container Linux sạch. Đây cũng là phép thử chạy độc lập.
@@ -78,3 +78,4 @@ Chuẩn và cổng cho giao diện do agent làm.
 - **npm mới chặn install script mặc định** (cảnh báo `allow-scripts`). Cài từ tarball thì không sao. Cài từ git cần `prepare` để build: nếu bị chặn, thêm `--allow-scripts=design-kit`.
 - **Công cụ PowerShell chặn `cmd /c rmdir`**, vì hiểu `/c` là đường dẫn hệ thống. Gỡ junction bằng `(Get-Item $j -Force).Delete()`: lệnh này chỉ gỡ liên kết, không xoá thư mục đích.
 - **Không gộp engine Impeccable vào git.** Mỗi bản ~20 MB, và mỗi lần nâng cấp lại đẩy thêm 20 MB vào lịch sử. Ghim phiên bản và sha256 trong `src/impeccable.ts`, tải khi cần. Khi nâng: chép dòng mới từ `engine-checksums.txt` của Impeccable.
+- **`npm install -g github:…` (hay `git+file://`) không build được gói có `prepare`**: lệnh `npm install` mà npm chạy bên trong bản clone thừa hưởng chế độ global, nên cài chính bản clone ra thư mục toàn cục thay vì cài devDependencies, và báo `tsup is not recognized`. Cách cài: clone, `npm ci`, `npm install -g .`.

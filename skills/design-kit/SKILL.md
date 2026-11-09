@@ -7,7 +7,8 @@ description: Build web or app UI that is beautiful, modern and usable on the fir
 
 Run `design-kit` (no arguments) first: it prints the kit's folder (`kit:`), the directions, the blocks and
 the `workflow` checklist. Paths below (`design/`, `tokens/`, `blocks/`) are inside that folder.
-Not installed → `npm i -g github:ngoviet/design-kit`, then `design-kit setup` (browser + Impeccable engine).
+Not installed → `git clone https://github.com/ngoviet/design-kit && cd design-kit && npm ci && npm install -g .`,
+then `design-kit setup` (browser + Impeccable engine).
 Pair it with the `impeccable` skill: impeccable gives direction and critique; design-kit gives the numbers,
 the tokens, the gated blocks and the gate. Never call a UI task done on "it renders".
 
