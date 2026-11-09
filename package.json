@@ -6,6 +6,12 @@
   "type": "module",
   "license": "MIT",
   "author": "ngoviet",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ngoviet/design-kit.git"
+  },
+  "homepage": "https://github.com/ngoviet/design-kit#readme",
+  "bugs": "https://github.com/ngoviet/design-kit/issues",
   "bin": {
     "design-kit": "dist/bin/design-kit.js"
   },

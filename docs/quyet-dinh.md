@@ -112,3 +112,14 @@ Chủ bấm "Cài plugin".
   - phiên nhận lời nhắc chạy `design-kit check … --strict` và lập bản đồ tác vụ;
   - khi phiên định dừng, hook Stop chặn lại để chạy cổng.
 - Khi repo đã lên GitHub, có thể đổi marketplace sang `ngoviet/design-kit` cho máy khác. PC1 giữ marketplace thư mục để sửa là có hiệu lực ngay.
+
+## 10/11/2026: chuyển public, README theo readme-axi, phát hành 0.2.0
+
+Chủ yêu cầu: "chuyển thành repo public đi, viết readme-axi, tạo release".
+
+- **Rà trước khi public.** gitleaks quét cả 20 commit: không có bí mật. Có IP `192.168.1.x` trong khối mẫu: là dữ liệu mẫu, giữ. Trang A/B trong `eval/` có khoảng 30 số điện thoại và vài email do mô hình tự bịa làm dữ liệu mẫu (có thể trùng người thật, như mọi dữ liệu mẫu): giữ nguyên, vì đó là bản ghi đã được chấm, sửa vào là làm sai lệch bằng chứng. Viết lại lịch sử cũng không xoá được, vì PR #1 giữ tham chiếu `refs/pull/1/head` mà GitHub không cho xoá.
+- **CI.** Repo public không chạy Woodpecker (PR từ fork lạ sẽ chạy trên máy chủ riêng): đã tắt repo trong Woodpecker (gỡ webhook, giữ lịch sử pipeline) và gỡ `.woodpecker/`. CI chuyển sang GitHub Actions (miễn phí cho repo public), cùng các bước và cùng image Playwright 1.65.0.
+- **README.** Theo chuẩn readme-axi của `ngoviet/.github`, loại `tool`: `README.md` tiếng Anh, `README.vi.md` tiếng Việt, khối ủng hộ dùng chung, mục Giấy phép. Phần "Trạng thái" cũ chuyển sang `docs/nhat-ky.md`.
+- **Skill.** Bỏ các câu riêng cho máy chủ dự án (Folio trên PC1, "the owner"), vì người khác cũng cài plugin này.
+- **Giấy phép.** MIT, như các repo AXI public khác. Font theo SIL OFL, khối React dùng shadcn/ui (MIT).
+- **Phát hành.** Không đưa lên npm registry (giống imp-axi): release GitHub kèm `design-kit-0.2.0.tgz` và `.sha256`, cài bằng `npm install -g <url>`.
