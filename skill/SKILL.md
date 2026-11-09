@@ -1,6 +1,6 @@
 ---
 name: design-kit
-description: Build web or app UI that is beautiful, modern and usable on the first pass, and prove it with a measured gate before calling it done. Use whenever you create or restyle a page, screen, component, dashboard, landing page, form, report page, Home Assistant card or any HTML/CSS/React UI — pick a design direction (DESIGN.md + tokens), reuse gated blocks, then run `design-kit check` (axe WCAG 2.2 AA, overflow at 320px, text size and line height through shadow DOM, reduced motion, focus, Core Web Vitals, Impeccable) and show screenshots. Vietnamese: làm giao diện, thiết kế trang web, giao diện đẹp, dashboard, landing page, form, kiểm giao diện, chuẩn giao diện.
+description: Build web or app UI that is beautiful, modern and usable on the first pass, and prove it with a measured gate before calling it done. Use whenever you create or restyle a page, screen, component, dashboard, landing page, form, report page, Home Assistant card or any HTML/CSS/React UI — pick a design direction (DESIGN.md + tokens), reuse gated blocks, then run `design-kit check` (axe WCAG 2.2 AA, overflow at 320px, text size and line height through shadow DOM, reduced motion, focus, Core Web Vitals, Impeccable, states reached by clicking) and show screenshots. Also use when designing any user workflow, sign-up, booking, setup wizard, onboarding or first-run experience: plan a task map and guide the user step by step, just in time, like a good game tutorial. Vietnamese: làm giao diện, thiết kế trang web, giao diện đẹp, dashboard, landing page, form, kiểm giao diện, chuẩn giao diện, quy trình dễ dùng, hướng dẫn từng bước, làm đến đâu hướng dẫn đến đó, hướng dẫn người dùng mới.
 ---
 
 # design-kit: chuẩn + cổng cho giao diện do agent làm
@@ -49,7 +49,7 @@ the one brief the kit lost to plain Opus, whose warm brown fit a bakery.
 | --- | --- |
 | `dau-trang` | sticky app bar, nav with `aria-current`, container-query collapse to a Menu button, skip link |
 | `form-dang-nhap` (+React) | labels, `autocomplete="username"`/`current-password`, inline errors with `aria-invalid`, show-password, busy button |
-| `bang-du-lieu` (+React) | sortable table (`aria-sort`), tabular numbers right-aligned, search + filter, rows become labelled stacks under 40rem |
+| `bang-du-lieu` (+React) | sortable table (`aria-sort`), tabular numbers right-aligned, search + filter, rows become labelled stacks under 40rem with a "Sắp xếp" select (column headers are gone there), no-match state that says why + "Xoá tìm kiếm và bộ lọc" |
 | `trang-thai` (+React) | the four states of any data region: empty, loading skeleton, error with cause + retry + code, no permission |
 | `chi-so` | KPI strip in one surface (not identical cards), deltas with arrow + words, sparkline |
 | `hop-thoai` (+React) | native `<dialog>` confirm: safe button focused first, says what is lost |
@@ -81,7 +81,7 @@ an empty screen). Every hesitation point gets one of the patterns below.
 | A task with > 3 steps, or one done only occasionally (sign-up, booking, setup, import) | **Step-by-step flow**: named steps visible, "Bước 2/4", the next button says where it goes ("Tiếp: Chọn giờ khám"), Back keeps what was typed, a draft survives reload, last step = review with "Sửa" links | `trinh-tu` |
 | First use of an app | **"Bắt đầu" checklist**, like a quest log: 3–5 real tasks, ticks itself when the task is done, progress bar, can be hidden and reopened from Help | `bat-dau` |
 | A control that is new or easy to misread | **Just-in-time tip**: a small bubble next to that control the first time the user reaches it, one tip at a time, "Đã hiểu" + "Tắt mẹo", never blocks the page | `bat-dau` |
-| An empty screen | **Empty state that teaches** the first action (not "No data") | `trang-thai` |
+| An empty screen, or a search/filter with no match | **Empty state that teaches** the first action, or says why nothing matched and offers "Clear filters" (never a bare "No data") | `trang-thai`, `bang-du-lieu` |
 | Many options, few used | **Progressive disclosure**: common options first, "Tuỳ chọn nâng cao" collapsed | — |
 | A reversible action | **Undo** in a toast instead of an "Are you sure?" dialog; keep confirm dialogs for the irreversible | `thong-bao`, `hop-thoai` |
 
@@ -93,8 +93,26 @@ Rules backed by research (KB `tieu-chuan-va-cach-huong-dan-ai-…`, claims c29�
 - Also: smart defaults (pre-fill what you can infer), errors that say how to fix, and a "?" beside any
   field whose meaning is not obvious, with the answer inline rather than on another page.
 
-Make each guidance state reachable by URL for the gate (`?lan-dau=1` first run, `?buoc=3` a step) and
-pass them with `--query`. Your report names the task map and which pattern covers each hesitation point.
+The CLI reminds you too: `design-kit` (no arguments) prints this checklist as `workflow`, and every
+`design-kit check` ends with a "Guide like a game" help line. The `guide` soft check flags what can be
+measured: a button whose whole name is "Tiếp"/"Next", an empty-state sentence with no button or link
+near it, and a tour library or "Chào mừng" modal open on load.
+
+**Measure the guided states, not just the first screen.** Two ways, use both when they fit:
+- URL switches, passed with `--query`: `?lan-dau=1` first run, `?buoc=3` a step, `?mo=1` an open dialog.
+- A steps file beside the page, `<page>.steps.json`. `check` picks it up, also when checking a folder:
+  ```json
+  [
+    { "name": "loi", "do": [{ "click": "button[type=submit]" }] },
+    { "name": "buoc-3", "do": [{ "fill": ["#ten", "Hà"] }, { "click": "#tiep" }, { "click": "#tiep" }] },
+    { "name": "menu", "viewports": [320, 390], "do": [{ "click": ".menu-btn" }] }
+  ]
+  ```
+  Actions: `click`, `fill [sel,text]`, `check`, `select [sel,value]`, `press key|[sel,key]`, `hover`, `wait ms`.
+  Each state starts from a fresh load, gets every check and its own verdict line (`page.html #loi`).
+  A step that cannot be done is **hard**: fix the page, or limit the state with `viewports`.
+
+Your report names the task map and which pattern covers each hesitation point.
 
 ## 3. Gate: measure, fix, show
 
@@ -103,7 +121,8 @@ design-kit check <file.html|folder|http://localhost:port> --strict
 ```
 
 - Renders 320/390/1280 px × light/dark through a local http server (so `../tokens` resolve), runs axe-core
-  (WCAG 2.2 AA), the shadow-DOM-aware probe, reduced-motion, Tab focus, LCP/CLS, and Impeccable.
+  (WCAG 2.2 AA), the shadow-DOM-aware probe, reduced-motion, Tab focus at 1280 and 390, LCP/CLS, the
+  `guide` check, and Impeccable; then the same for every state in `<page>.steps.json` (section 2b).
 - **hard** = not done. **soft** = fix, or write the reason in your report. **human** = screenshots in
   `.design-kit/shots/<page>/`: open them yourself (Read the PNGs) and judge hierarchy before showing the owner.
 - At most 3 fix rounds; still failing → report the remaining findings instead of looping.
@@ -139,11 +158,18 @@ LCP ≤ 2.5 s, INP ≤ 200 ms, CLS ≤ 0.1 · 0 Impeccable slop findings.
 - **A tip must not cover the next control.** A floating bubble over the settings below hid a switch and
   failed contrast; put tips in the flow right under the control they explain. Watch CSS inheritance too:
   `.setting p { color: var(--text-2) }` also greys the text inside a tip.
-- **The gate measures the first render only.** Give every state a URL switch (`?trang-thai=tai|loi|quyen`,
-  `?mo=1` for open dialogs/toasts) and pass them with `--query`, or script the clicks (Playwright) for
-  error → sending → success. Both A/B agents who did this found bugs the default run missed.
+- **Without a steps file the gate measures the first render only.** Give every state a URL switch
+  (`?trang-thai=tai|loi|quyen`, `?mo=1` for open dialogs/toasts) and pass them with `--query`, and put
+  the clicks (error → sending → success, open menu, sort) in `<page>.steps.json`. Both A/B agents who
+  scripted states found bugs the default run missed; the kit's own table did too (next item).
 - **A table can pass the gate yet hide columns** inside its own horizontal scroll (`inner-scroll` soft
   finding): under ~40rem turn rows into labelled stacks, as `bang-du-lieu` does.
+- **Stacked rows lose the column headers, and with them sorting.** The kit's `bang-du-lieu` hid `thead`
+  sr-only under 40rem: on a phone nobody could sort, and Tab landed on invisible sort buttons. The steps
+  file caught it ("click … failed" at 320/390). Under 40rem: `thead{display:none}` plus a "Sắp xếp" select.
+  Any control you hide at some width must leave the Tab order too (`display:none`, not clipping).
+- **A sort state is a promise.** `aria-sort="ascending"` (or a "A → Z" label) on load means the rows must
+  really be in that order: sort on load. The gate passes a lying table; only the screenshot shows it.
 - **tailwind-merge replaces, not adds**: `className="max-w-md"` on a shadcn dialog drops its
   `max-w-[calc(100%-2rem)]` mobile margin. Use `sm:max-w-md`.
 - `npx @google/design.md lint` silently does nothing: use `npx -p @google/design.md designmd lint DESIGN.md`.

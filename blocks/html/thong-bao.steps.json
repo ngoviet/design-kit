@@ -1,0 +1,4 @@
+[
+  { "name": "hoan-tac", "do": [{ "click": "[data-kind=undo]" }] },
+  { "name": "loi", "do": [{ "click": "[data-kind=bad]" }] }
+]

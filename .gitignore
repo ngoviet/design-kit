@@ -9,3 +9,4 @@ blocks/react/dist/
 eval/**/.design-kit/
 eval/**/.shots/
 eval/**/.khoa.json
+*.tsbuildinfo

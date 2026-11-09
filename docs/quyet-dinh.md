@@ -42,3 +42,36 @@ Chủ muốn AI luôn tìm cách làm quy trình đơn giản cho người dùng
 - Thêm phép đo mềm `long-form`.
 - Bộ tiêu chí thêm dòng "Quy trình có dẫn đường" (cổng người duyệt).
 - Bằng chứng: NN/g về wizard, onboarding và progressive disclosure; nguyên tắc "đúng lúc, khi cần" của James Paul Gee. Ghi trong kho tri thức, claims c29–c36.
+
+## 09/11/2026: công cụ tự nhắc AI dẫn đường, và cổng đo trạng thái sau thao tác
+
+Chủ nhắc lại yêu cầu: khi chạy design-kit, chính công cụ phải nhắc AI tìm cách làm quy trình tiện cho người dùng, có hướng dẫn từng bước, làm đến đâu hướng dẫn đến đấy, như phần hướng dẫn trong game. Trước đó chỉ skill nhắc việc này; còn CLI thì không.
+
+Đã làm:
+
+- **CLI tự nhắc.**
+  - `design-kit` (không đối số) in mục `workflow`: lập bản đồ tác vụ, rồi gắn từng chỗ dễ lúng túng với một mẫu dẫn đường.
+  - Mỗi lần chạy `design-kit check` đều kết thúc bằng dòng nhắc "Guide like a game".
+- **Phép đo mềm `guide`.** Báo ba trường hợp:
+  - nút đi tiếp chỉ ghi "Tiếp"/"Next";
+  - câu báo rỗng mà không có nút gỡ;
+  - tour hoặc hộp "Chào mừng" tự bật khi mở trang.
+- **Đo trạng thái sau thao tác** (`--steps`, `<trang>.steps.json`), việc còn lại từ giai đoạn 2:
+  - Mỗi trạng thái nạp trang mới, chạy thao tác rồi được đo đủ mọi tiêu chí.
+  - Bước nào không làm được thì báo lỗi cứng.
+  - Đã viết tệp steps cho 9 khối HTML và 3 khối React.
+- **Focus kiểm ở cả khổ 390**, kèm phát hiện focus rơi vào phần tử vô hình.
+- **Lỗi thật mà cách đo mới tìm ra, đã sửa:**
+  - Bảng dữ liệu ở khổ điện thoại không sắp xếp được, và Tab rơi vào nút vô hình.
+  - Tìm không ra kết quả thì bảng trống trơn, không có nút gỡ lọc.
+  - Bộ lọc tắt hết mức độ thì chỉ hiện số 0, không nói lý do.
+- **Duyệt ảnh chụp bắt thêm, đã sửa:**
+  - Bảng ghi "A → Z" mà hàng không được xếp.
+  - Ở khổ hẹp: tiêu đề bảng bị bóp thành cột hẹp, số tách xa đơn vị, nhãn dùng sai font.
+  - Mẹo của `bat-dau` leo lên cạnh công tắc khi bị thu hẹp. Đã chuyển sang grid.
+- **Hai báo nhầm của phép đo focus mới, đã sửa trong cổng:**
+  - Công tắc tuỳ biến: nay nhìn vào `span` hoặc nhãn thay thế.
+  - Hiệu ứng đang chạy: nay đợi hiệu ứng xong, tối đa 600ms.
+- **Báo lỗi shadow DOM cho Impeccable**, việc còn lại thứ hai:
+  - Đã tái hiện với bản 4.8.1 và soạn issue ở `docs/bao-loi-impeccable-shadow-dom.md`.
+  - **Chưa gửi**, vì gửi lên GitHub là việc công khai, cần chủ duyệt.

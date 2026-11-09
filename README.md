@@ -17,7 +17,8 @@ Khi không có hướng dẫn, mô hình ngôn ngữ chọn lựa chọn phổ b
 | Ba hướng thẩm mỹ | `design/<huong>/DESIGN.md` | **Đêm**: ứng dụng, dashboard. **Giấy**: tài liệu, báo cáo. **Đậm**: landing, marketing. Theo đặc tả DESIGN.md của Google. Sinh tự động từ token, lint sạch. |
 | Khối mẫu HTML/CSS | `blocks/html/` | 13 khối: `dau-trang`, `form-dang-nhap`, `bang-du-lieu`, `trang-thai`, `chi-so`, `hop-thoai`, `hero`, `bai-viet`, `thanh-ben`, `thong-bao`, `bo-loc`, `trinh-tu` (từng bước), `bat-dau` (danh sách bắt đầu + mẹo đúng lúc). Đổi hướng bằng `?dk=dem\|giay\|dam`. |
 | Khối mẫu React | `blocks/react/` | Bốn khối `FormDangNhap`, `TrangThai`, `BangDuLieu`, `HopThoai`, viết bằng React + shadcn/ui, dùng chung token. |
-| Cổng kiểm | `design-kit check` | Render ở 320/390/1280 px, cả sáng lẫn tối. Chạy axe-core (WCAG 2.2 AA) và probe đo chữ, dòng, tiếng Việt (đi xuyên shadow DOM). Kiểm giảm chuyển động, focus, LCP/CLS, chạy Impeccable, rồi chụp ảnh. |
+| Cổng kiểm | `design-kit check` | Render ở 320/390/1280 px, cả sáng lẫn tối. Chạy axe-core (WCAG 2.2 AA) và probe đo chữ, dòng, tiếng Việt (đi xuyên shadow DOM). Kiểm giảm chuyển động, focus (khổ 1280 và 390), dẫn đường (`guide`), LCP/CLS, chạy Impeccable, rồi chụp ảnh. Đo cả các trạng thái sau thao tác ghi trong `<trang>.steps.json`. |
+| Nhắc dẫn đường | `design-kit`, `design-kit check` | Màn không đối số in mục `workflow`. Mỗi lần kiểm kết thúc bằng lời nhắc: lập bản đồ tác vụ, gắn mỗi chỗ dễ lúng túng với một mẫu dẫn đường (như phần hướng dẫn trong game). |
 | Skill | `skill/SKILL.md` | Cài ở `~/.claude/skills/design-kit` (junction). Gồm quy trình chọn hướng, chọn khối, chạy cổng, và các bẫy đã gặp. |
 | Tiêu chí | `docs/tieu-chi.md` | Ngưỡng, cách đo, loại cổng và nguồn của từng tiêu chí. |
 
@@ -28,9 +29,12 @@ design-kit                                   # trạng thái: hướng, khối, 
 design-kit check index.html --strict         # cổng cho một trang; thoát 1 nếu có lỗi cứng
 design-kit check http://localhost:5173       # trang đang chạy trên dev server
 design-kit check blocks/html --query dk=dem,dk=giay,dk=dam
+design-kit check signup.html --steps '[{"name":"loi","do":[{"click":"button[type=submit]"}]}]'
 ```
 
-Kết quả in dạng TOON: mỗi trang có một dòng phán quyết, kèm bảng kiểm tra và danh sách phát hiện (cứng hoặc mềm). Ảnh chụp lưu trong `.design-kit/shots/`.
+Kết quả in dạng TOON: mỗi trang, và mỗi trạng thái sau thao tác, có một dòng phán quyết. Kèm theo là bảng kiểm tra và danh sách phát hiện (cứng hoặc mềm). Ảnh chụp lưu trong `.design-kit/shots/`.
+
+Các trạng thái sau thao tác ghi trong tệp `<trang>.steps.json` đặt cạnh trang. Cổng tự nhận tệp này, kể cả khi kiểm cả thư mục. Mỗi trạng thái nạp trang mới, chạy thao tác (`click`, `fill`, `check`, `select`, `press`, `hover`, `wait`), rồi được đo đủ mọi tiêu chí. Bước nào không làm được thì báo lỗi cứng. Nút chỉ có ở khổ hẹp thì giới hạn trạng thái bằng `"viewports":[320,390]`.
 
 ## Trạng thái (09/11/2026)
 
@@ -38,8 +42,8 @@ Kết quả in dạng TOON: mỗi trang có một dòng phán quyết, kèm bả
 - **Giai đoạn 2, phương án C** do chủ chốt (xem `docs/quyet-dinh.md`):
   - Đã có:
     - token và ba hướng thẩm mỹ;
-    - CLI cổng kiểm (chạy song song);
-    - 11 khối HTML và 4 khối React;
+    - CLI cổng kiểm (chạy song song, đo cả trạng thái sau thao tác);
+    - 13 khối HTML và 4 khối React;
     - skill, kèm quy tắc trong `~/.claude/CLAUDE.md`.
   - **Đánh giá A/B** (`eval/ab-2026-11-09/`, trang `.folio/danh-gia-ab.html`):
     - Bản Opus mặc định: 12 lỗi cứng, 48 lỗi mềm. Bản design-kit: 0 lỗi cứng, 7 lỗi mềm.
@@ -66,9 +70,13 @@ Kết quả in dạng TOON: mỗi trang có một dòng phán quyết, kèm bả
       - Hoàn tác thay vì hỏi xác nhận.
     - Không dùng tour hướng dẫn mở đầu, vì NN/g đo được tour không giúp người dùng làm việc tốt hơn.
     - Có thêm hai khối `trinh-tu` và `bat-dau`, và phép đo mềm `long-form` (cảnh báo khi một màn có hơn 12 ô nhập).
-  - Còn lại:
-    - tuỳ chọn `--steps` để cổng tự bấm qua các trạng thái;
-    - báo lỗi shadow DOM cho Impeccable.
+  - **Công cụ tự nhắc dẫn đường, và cổng đo trạng thái** (chủ nhắc lại yêu cầu 09/11/2026):
+    - `design-kit` in mục `workflow`, `design-kit check` luôn kết thúc bằng lời nhắc "Guide like a game".
+    - Phép đo mềm `guide` báo nút chỉ ghi "Tiếp", câu báo rỗng không kèm nút gỡ, tour tự bật khi mở trang.
+    - `--steps` và tệp `<trang>.steps.json`. Đã viết cho 9 khối HTML và 3 khối React.
+    - Focus được kiểm ở cả khổ 390, và báo khi focus rơi vào phần tử vô hình.
+    - Cách đo mới tìm ra ba lỗi thật, đã sửa: bảng không sắp xếp được trên điện thoại, kết quả tìm rỗng không có nút gỡ, bộ lọc về 0 mà không nói lý do.
+  - Còn lại: gửi báo lỗi shadow DOM cho Impeccable. Bản nháp ở `docs/bao-loi-impeccable-shadow-dom.md`, chờ chủ duyệt.
 
 ## Nguyên tắc
 

@@ -161,6 +161,9 @@
   .shots figure:last-child { grid-column: 1 / -1; }
   .shots img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: var(--radius); }
   @media (max-width: 700px) { .shots { grid-template-columns: minmax(0, 1fr); } }
+  .shots-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .shots-2 figure:last-child { grid-column: auto; }
+  @media (max-width: 500px) { .shots-2 { grid-template-columns: minmax(0, 1fr); } }
   footer { margin-top: var(--s8); padding-top: var(--s5); border-top: 1px solid var(--line); }
   @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 </style>
@@ -487,11 +490,47 @@
           </ul>
         </li>
       </ul>
+      <h3>Hoàn tất: công cụ tự nhắc dẫn đường, cổng đo cả trạng thái (09/11/2026)</h3>
+      <p>Chủ muốn chính công cụ nhắc AI làm quy trình dễ như phần hướng dẫn trong game: hướng dẫn từng bước, làm đến đâu hướng dẫn đến đấy. Trước đây chỉ skill nhắc việc này. Nay CLI cũng nhắc, và cổng đo được một phần.</p>
+      <div class="tbl wide" tabindex="0" role="region" aria-label="Bảng thay đổi, cuộn ngang được">
+        <table>
+          <thead><tr><th scope="col">Phần</th><th scope="col">Đã làm</th><th scope="col">Bằng chứng</th></tr></thead>
+          <tbody>
+            <tr><td>CLI tự nhắc</td><td><code>design-kit</code> in mục <code>workflow</code>: lập bản đồ tác vụ, rồi gắn mỗi chỗ dễ lúng túng với một mẫu (từng bước, danh sách Bắt đầu, mẹo đúng lúc, rỗng biết chỉ đường, Hoàn tác). Mỗi lần <code>design-kit check</code> đều kết thúc bằng lời nhắc "Guide like a game".</td><td>Đã chạy thử cả hai lệnh, lời nhắc hiện đúng.</td></tr>
+            <tr><td>Phép đo <code>guide</code> (mềm)</td><td>Báo nút đi tiếp chỉ ghi "Tiếp"/"Next", câu báo rỗng không kèm nút gỡ, tour hoặc hộp "Chào mừng" tự bật khi mở trang.</td><td>Test cài cả ba lỗi vào trang mẫu, cả ba đều bị bắt.</td></tr>
+            <tr><td>Đo trạng thái sau thao tác</td><td><code>--steps</code> và tệp <code>&lt;trang&gt;.steps.json</code>. Mỗi trạng thái nạp trang mới, bấm hoặc gõ, rồi được đo đủ mọi tiêu chí và có dòng phán quyết riêng. Bước nào không làm được thì báo lỗi cứng.</td><td>Viết cho 9 khối HTML và 3 khối React. Test 10/10.</td></tr>
+            <tr><td>Focus ở khổ hẹp</td><td>Kiểm Tab ở cả 1280 và 390. Báo khi focus rơi vào phần tử vô hình.</td><td>Bắt được lỗi thật ở bảng dữ liệu (dưới đây).</td></tr>
+            <tr><td>Báo lỗi cho Impeccable</td><td>Tái hiện với bản 4.8.1: trang chỉ có lỗi trong shadow root thì Impeccable báo 0 lỗi. Issue đã soạn ở <code>docs/bao-loi-impeccable-shadow-dom.md</code>.</td><td><strong>Chưa gửi</strong>, chờ chủ duyệt.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Cách đo mới tìm ra lỗi thật trong chính các khối</h3>
+      <ul>
+        <li><strong>Bảng dữ liệu không sắp xếp được trên điện thoại.</strong> Dưới 40rem, tiêu đề cột bị giấu kiểu sr-only, kéo theo các nút sắp xếp. Bước bấm sắp xếp hỏng ở 320/390. Phím Tab thì rơi vào nút vô hình. Đã sửa: ẩn hẳn tiêu đề và thêm ô chọn "Sắp xếp". Bản React cũng không có cách sắp xếp ở khổ hẹp, đã sửa tương tự.</li>
+        <li><strong>Tìm không ra thì bảng trống trơn.</strong> Bảng giờ nói lý do và có nút "Xoá tìm kiếm và bộ lọc" (cả HTML lẫn React).</li>
+        <li><strong>Bộ lọc tắt hết mức độ thì chỉ hiện số 0.</strong> Giờ khối ghi: "Chưa chọn mức độ nào: bật ít nhất một mức để xem cảnh báo."</li>
+      </ul>
+      <p><strong>Duyệt ảnh chụp bắt thêm</strong> những lỗi máy đo báo đạt:</p>
+      <ul>
+        <li>Bảng ghi "Tên thiết bị (A → Z)", nhưng hàng không hề được xếp. Đã cho xếp thật ngay khi tải.</li>
+        <li>Ở khổ hẹp, tiêu đề bảng bị bóp thành cột hẹp, mỗi dòng một chữ; số và đơn vị bị tách xa nhau ("182,4 …… Mb/s"); nhãn "Địa chỉ IP" hiện bằng font chữ số. Đã sửa cả ba.</li>
+        <li>Thu hẹp hộp mẹo để dòng chữ không quá dài thì mẹo leo lên cạnh công tắc, mũi tên trỏ vào khoảng trống. Đã chuyển dòng đó sang grid: mẹo nằm ngay dưới công tắc.</li>
+        <li>Có hai báo nhầm của phép đo focus mới, đã sửa trong cổng chứ không sửa khối:
+          <ul>
+            <li>Công tắc tuỳ biến: <code>input</code> trong suốt, vòng focus vẽ trên <code>span</code>.</li>
+            <li>Mẹo đang chạy hiệu ứng mở, độ mờ còn bằng 0 đúng lúc đo.</li>
+          </ul>
+        </li>
+      </ul>
+      <div class="shots shots-2">
+        <figure><img src="anh/gd2-hoan-tat/sap-xep-hep-light-390.png" alt="Bảng dữ liệu ở khổ 390px, hướng Đêm, theme sáng: có ô chọn Sắp xếp đang đặt Tải xuống cao đến thấp, các hàng xếp thành khối dọc có nhãn" loading="lazy" width="390" height="1615"><figcaption>Khổ 390: ô "Sắp xếp" thay cho tiêu đề cột đã ẩn.</figcaption></figure>
+        <figure><img src="anh/gd2-hoan-tat/khong-thay-light-390.png" alt="Bảng dữ liệu ở khổ 390px sau khi tìm zzz: câu Không thấy thiết bị nào khớp, gợi ý cách tìm khác và nút Xoá tìm kiếm và bộ lọc" loading="lazy" width="390" height="844"><figcaption>Tìm "zzz": nói lý do, chỉ cách gỡ.</figcaption></figure>
+      </div>
+
       <h3>Còn lại</h3>
       <ol class="steps">
-        <li><strong>Lặp lại A/B với vị trí đảo</strong><p>Thêm 3 đề mới, đặt bản design-kit ở cột trái, để loại thiên lệch vị trí.</p></li>
-        <li><strong>Kịch bản trạng thái cho cổng</strong><p>Thêm tuỳ chọn <code>--steps</code>: tự bấm qua lỗi, đang gửi, xác nhận, thay cho việc agent tự viết script.</p></li>
-        <li><strong>Báo lỗi shadow DOM cho Impeccable</strong><p>Gửi kèm trang tái hiện <code>test/fixtures/loi.html</code>.</p></li>
+        <li><strong>Gửi báo lỗi shadow DOM cho Impeccable</strong><p>Bản nháp đã sẵn, kèm trang tái hiện. Gửi lên GitHub là việc công khai, nên chỉ gửi khi chủ đồng ý.</p></li>
       </ol>
     </section>
 

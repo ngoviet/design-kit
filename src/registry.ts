@@ -3,7 +3,7 @@ import { HOME_HELP } from "./commands/home.js";
 import type { Runtime } from "./runtime.js";
 
 export const DESCRIPTION =
-  "Design gate for agent-built UI: render at 320/390/1280 px light+dark, measure WCAG 2.2 AA, text, motion, focus, vitals and Impeccable, save screenshots, print one verdict per page";
+  "Design gate for agent-built UI: render at 320/390/1280 px light+dark, measure WCAG 2.2 AA, text, motion, focus, guidance, vitals and Impeccable, also after scripted clicks, save screenshots, print one verdict per page and state";
 
 export interface CommandSpec {
   usage: string;
@@ -16,7 +16,7 @@ export interface CommandSpec {
 export const COMMANDS: Record<string, CommandSpec> = {
   home: { usage: "home", summary: "kit location, design directions, blocks, tools the gate uses (same as no arguments)", help: HOME_HELP },
   check: {
-    usage: "check <file|dir|url>... [--query q,q] [--strict]",
+    usage: "check <file|dir|url>... [--query q,q] [--steps f.json] [--strict]",
     summary: "render and measure pages; hard failures block done, soft need a reason, screenshots for the human pass",
     help: CHECK_HELP,
     run: checkCommand,

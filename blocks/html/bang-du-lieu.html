@@ -17,6 +17,7 @@
   .dt-bar { display: flex; flex-wrap: wrap; align-items: end; gap: var(--sp-3); }
   .dt-bar .field { flex: 1 1 14rem; }
   .dt-bar select.input { width: auto; min-width: 11rem; padding-right: var(--sp-6); }
+  .dt-sort { display: none; }
   .dt-count { margin: 0 0 0 auto; color: var(--text-2); font: 400 var(--fs-sm)/var(--hit-lg) var(--font-ui, var(--font-body)); }
   .dt-wrap { border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); overflow: hidden; }
   table { width: 100%; border-collapse: collapse; font: 400 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); }
@@ -36,15 +37,27 @@
   .sub { display: block; color: var(--text-2); font-size: var(--fs-xs); }
   .rate { white-space: nowrap; }
   .rate .num { font-size: var(--fs-sm); }
+  /* Không có hàng nào khớp: nói vì sao và chỉ cách gỡ, không để bảng trống trơn */
+  .dt-empty { display: grid; justify-items: start; gap: var(--sp-3); padding: var(--sp-6) var(--sp-4); }
+  .dt-empty p { margin: 0; max-width: var(--measure); }
   /* Khung hẹp: mỗi hàng thành một khối dọc có nhãn, không cần cuộn ngang */
   @container dt (max-width: 40rem) {
-    thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    /* Tiêu đề cột bị giấu nên nút sắp xếp cũng mất: đưa sắp xếp ra ô chọn riêng */
+    .dt-sort { display: block; }
+    /* Ẩn hẳn (không chỉ giấu khỏi mắt): nút sắp xếp vô hình mà vẫn nhận Tab là focus lạc. Nhãn cột đã có ở td::before */
+    thead { display: none; }
     table, tbody, tr, td { display: block; }
     tr { padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border); }
     tbody tr:last-child { border-bottom: 0; }
+    /* caption trong bảng display:block bị co thành cột hẹp (mỗi dòng một chữ): trả về khối thường */
+    caption { display: block; padding-bottom: var(--sp-1); }
     td { border: 0; padding: var(--sp-1) 0; display: flex; justify-content: space-between; gap: var(--sp-4); }
     td.r { text-align: right; }
-    td::before { content: attr(data-label); color: var(--text-2); font-weight: 500; text-align: left; }
+    /* Số và đơn vị đi liền nhau ở bên phải ("182,4 Mb/s"), nhãn đẩy sang trái */
+    td.rate { justify-content: flex-start; gap: var(--sp-1); }
+    td.rate::before { margin-right: auto; }
+    /* Nhãn dùng font giao diện, không kế thừa font chữ số đơn cách của ô .num */
+    td::before { content: attr(data-label); color: var(--text-2); font: 500 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); text-align: left; }
     td:first-child::before { content: none; }
   }
 </style>
@@ -70,6 +83,14 @@
             <option>Mất kết nối</option>
           </select>
         </div>
+        <div class="field dt-sort">
+          <label class="label" for="xep">Sắp xếp</label>
+          <select class="input" id="xep">
+            <option value="0:ascending">Tên thiết bị (A → Z)</option>
+            <option value="3:descending">Tải xuống (cao → thấp)</option>
+            <option value="4:descending">Tải lên (cao → thấp)</option>
+          </select>
+        </div>
         <p class="dt-count" aria-live="polite"><span id="dem">6</span> thiết bị</p>
       </div>
       <div class="dt-wrap">
@@ -93,6 +114,10 @@
             <tr><td data-label="Thiết bị"><span class="name">TV phòng khách</span><span class="sub">Wi‑Fi 5 GHz</span></td><td data-label="Địa chỉ IP" class="num">192.168.1.57</td><td data-label="Trạng thái"><span class="badge badge-ok">Đang chạy</span></td><td data-label="Tải xuống" class="r rate"><span class="num" data-v="35.2">35,2</span> Mb/s</td><td data-label="Tải lên" class="r rate"><span class="num" data-v="0.9">0,9</span> Mb/s</td></tr>
           </tbody>
         </table>
+        <div class="dt-empty" id="dt-rong" hidden>
+          <p><strong>Không thấy thiết bị nào khớp.</strong> Thử gõ ngắn hơn, một phần địa chỉ IP (ví dụ “1.40”), hoặc chọn trạng thái “Tất cả”.</p>
+          <button class="btn btn-secondary btn-sm" type="button" id="xoa-tim">Xoá tìm kiếm và bộ lọc</button>
+        </div>
       </div>
     </section>
     <!-- KHỐI KẾT THÚC: bang-du-lieu -->
@@ -103,22 +128,34 @@
     const tbody = document.querySelector("tbody");
     const rows = [...tbody.rows];
     const key = (tr, k, num) => num ? Number(tr.cells[k].querySelector("[data-v]").dataset.v) : tr.cells[k].innerText.trim();
-    document.querySelectorAll(".sort").forEach((b) => b.addEventListener("click", () => {
-      const th = b.closest("th");
-      const dir = th.getAttribute("aria-sort") === "ascending" ? "descending" : "ascending";
+    const xep = document.getElementById("xep");
+    const sortBy = (k, dir) => {
+      const b = document.querySelector(`.sort[data-k="${k}"]`), th = b.closest("th");
       document.querySelectorAll("th[aria-sort]").forEach((x) => x.removeAttribute("aria-sort"));
       th.setAttribute("aria-sort", dir);
-      const k = Number(b.dataset.k), num = "num" in b.dataset, s = dir === "ascending" ? 1 : -1;
+      const num = "num" in b.dataset, s = dir === "ascending" ? 1 : -1;
       rows.sort((a, c) => (num ? key(a, k, 1) - key(c, k, 1) : key(a, k).localeCompare(key(c, k), "vi")) * s).forEach((r) => tbody.append(r));
+      if ([...xep.options].some((o) => o.value === `${k}:${dir}`)) xep.value = `${k}:${dir}`;
+    };
+    document.querySelectorAll(".sort").forEach((b) => b.addEventListener("click", () => {
+      sortBy(Number(b.dataset.k), b.closest("th").getAttribute("aria-sort") === "ascending" ? "descending" : "ascending");
     }));
+    // Khung hẹp: tiêu đề cột bị giấu, sắp xếp đi qua ô chọn này (cùng một hàm, nên hai cách luôn khớp nhau).
+    xep.addEventListener("change", () => { const [k, dir] = xep.value.split(":"); sortBy(Number(k), dir); });
+    // aria-sort="ascending" ở cột Thiết bị là lời hứa: xếp thật ngay khi tải, không để thứ tự HTML nói dối.
+    sortBy(0, "ascending");
     const tim = document.getElementById("tim"), loc = document.getElementById("loc");
     const filter = () => {
       const q = tim.value.trim().toLowerCase(), st = loc.value;
       let n = 0;
       rows.forEach((r) => { const show = (!q || r.innerText.toLowerCase().includes(q)) && (!st || r.cells[2].innerText.trim() === st); r.hidden = !show; n += show; });
       document.getElementById("dem").textContent = n;
+      // Rỗng sau khi lọc: ẩn bảng, hiện lời gợi ý kèm nút gỡ lọc (dẫn đường, không để người dùng tự đoán).
+      document.querySelector(".dt-wrap table").hidden = n === 0;
+      document.getElementById("dt-rong").hidden = n > 0;
     };
     tim.addEventListener("input", filter); loc.addEventListener("change", filter);
+    document.getElementById("xoa-tim").addEventListener("click", () => { tim.value = ""; loc.value = ""; filter(); tim.focus(); });
   </script>
 </body>
 </html>

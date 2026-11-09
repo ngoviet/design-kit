@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "../src/cli.js";
 import { impGate } from "../src/commands/check.js";
+import { parseSteps } from "../src/steps.js";
 
 const root = join(__dirname, "..");
 
@@ -37,6 +38,27 @@ describe("check arguments", () => {
     expect(out).toContain("not found");
     expect(code).toBe(2);
   });
+  it("rejects a malformed steps list before opening a browser", async () => {
+    const { out, code } = await run(["check", "test/fixtures/tot.html", "--steps", '[{"name":"có dấu","do":[{"click":"#a"}]}]']);
+    expect(out).toContain("no accents");
+    expect(code).toBe(2);
+  });
+});
+
+describe("parseSteps", () => {
+  it("accepts every action kind", () => {
+    const s = parseSteps(
+      JSON.stringify([{ name: "buoc-3", do: [{ click: "#a" }, { fill: ["#b", "x"] }, { check: "#c" }, { select: ["#d", "1"] }, { press: "Tab" }, { press: ["#e", "Enter"] }, { hover: "#f" }, { wait: 200 }] }]),
+      "t",
+    );
+    expect(s[0]!.do).toHaveLength(8);
+  });
+  it("rejects unknown actions, empty lists and duplicate names", () => {
+    expect(() => parseSteps('[{"name":"a","do":[{"tap":"#a"}]}]', "t")).toThrow(/action 1/);
+    expect(() => parseSteps('[{"name":"a","do":[]}]', "t")).toThrow(/non-empty/);
+    expect(() => parseSteps('[{"name":"a","do":[{"click":"#a"}]},{"name":"a","do":[{"click":"#b"}]}]', "t")).toThrow(/twice/);
+    expect(() => parseSteps('[{"name":"a","do":[{"fill":"#a"}]}]', "t")).toThrow(/action 1/);
+  });
 });
 
 // Chạy trình duyệt thật (Edge/Chrome). Chậm nên chỉ một khổ, một chế độ.
@@ -51,7 +73,31 @@ describe("check on real pages", () => {
     expect(out).toMatch(/overflow,390px/);
     expect(out).toContain("color-contrast");
     expect(out).toContain("still run with prefers-reduced-motion");
+    // Dẫn đường kém: mềm, nhưng phải được gọi tên
+    expect(out).toContain('name the next step: \\"Tiếp\\"');
+    expect(out).toContain("empty state with no next action");
+    expect(out).toContain("up-front tour");
+    expect(out).toContain("focus lands on an element nobody can see");
     expect(code).toBe(1);
+  }, 120_000);
+
+  it("measures a state reached by clicking, read from <page>.steps.json", async () => {
+    const { out, code } = await run(["check", "test/fixtures/buoc.html", ...FAST, "--strict", "--full"]);
+    expect(out).toContain("fail: 1 of 2 pages have hard failures (1 of them states after steps)");
+    expect(out).toMatch(/test\/fixtures\/buoc\.html,pass/);
+    expect(out).toMatch(/test\/fixtures\/buoc\.html #loi,fail/);
+    expect(out).toMatch(/text-min,.*p#loi.*10\.0px/);
+    // Công tắc tuỳ biến (input trong suốt, span vẽ thay) không bị báo nhầm là focus lạc
+    expect(out).not.toContain("nobody can see");
+    expect(code).toBe(1);
+  }, 120_000);
+
+  it("a step that cannot be done is a hard failure, and --no-steps skips the file", async () => {
+    const bad = await run(["check", "test/fixtures/tot.html", ...FAST, "--steps", '[{"name":"x","do":[{"click":"#khong-co"}]}]']);
+    expect(bad.out).toContain('steps,x,"click #khong-co failed');
+    const skip = await run(["check", "test/fixtures/buoc.html", ...FAST, "--no-steps"]);
+    expect(skip.out).toContain("pass: 1 pages, 0 hard failures");
+    expect(skip.out).toContain("none: no steps file");
   }, 120_000);
 
   it("passes a page built on the tokens", async () => {

@@ -1,0 +1,4 @@
+[
+  { "name": "loi", "do": [{ "click": "button.submit" }] },
+  { "name": "loi-may-chu", "do": [{ "fill": ["#email", "ha.nguyen@vidu.vn"] }, { "fill": ["#current-password", "matkhau-dai-9"] }, { "click": "button.submit" }, { "wait": 1200 }] }
+]

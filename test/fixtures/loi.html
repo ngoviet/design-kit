@@ -22,6 +22,12 @@
   <button class="tiny" aria-label="Đóng">x</button>
   <input placeholder="Email">
   <topo-card></topo-card>
+  <!-- Dẫn đường kém (mềm): nút không nói đi đâu, rỗng cụt, tour mở đầu -->
+  <button type="button">Tiếp</button>
+  <p>Không có dữ liệu</p>
+  <div class="introjs-overlay" style="width:8px;height:8px"></div>
+  <!-- Focus lạc: nút bị thu về 1px kiểu sr-only mà vẫn nhận Tab -->
+  <div style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"><button type="button" id="an">Sắp xếp</button></div>
   <script>
     customElements.define("topo-card", class extends HTMLElement {
       constructor() {

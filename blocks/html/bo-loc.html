@@ -95,11 +95,13 @@
   <script>
     // Bộ lọc mức độ: bật/tắt độc lập. Thời gian: chọn một. Số kết quả giả lập theo tổ hợp.
     const W = { "nghiem-trong": 41, "canh-bao": 271, "thong-tin": 905 };
-    const so = document.getElementById("so");
+    const kq = document.querySelector(".filter-foot .result");
     const recount = () => {
       const on = [...document.querySelectorAll("[data-f][aria-pressed=true]")].map((b) => W[b.dataset.f]);
+      // Tắt hết mức độ ⇒ 0 kết quả: nói lý do và cách gỡ thay vì chỉ hiện số 0.
+      if (!on.length) { kq.textContent = "Chưa chọn mức độ nào: bật ít nhất một mức để xem cảnh báo."; return; }
       const days = [1, 7, 30][[...document.querySelectorAll("[data-t]")].findIndex((b) => b.getAttribute("aria-pressed") === "true")] ?? 7;
-      so.textContent = Math.round(on.reduce((a, b) => a + b, 0) * days / 7).toLocaleString("vi-VN");
+      kq.innerHTML = `<b id="so">${Math.round(on.reduce((a, b) => a + b, 0) * days / 7).toLocaleString("vi-VN")}</b> cảnh báo khớp bộ lọc`;
     };
     const tick = (b, v) => { b.setAttribute("aria-pressed", String(v)); };
     document.querySelectorAll("[data-f]").forEach((b) => b.addEventListener("click", () => { tick(b, b.getAttribute("aria-pressed") !== "true"); recount(); }));

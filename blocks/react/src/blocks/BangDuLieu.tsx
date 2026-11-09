@@ -1,6 +1,7 @@
 import { useId, useMemo, useState } from "react";
 import { ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -47,6 +48,18 @@ export function BangDuLieu({ rows }: { rows: ThietBi[] }) {
   }, [rows, q, st, sort]);
   const toggle = (k: Key) => setSort((p) => ({ k, dir: p.k === k && p.dir === "ascending" ? "descending" : "ascending" }));
   const ariaSort = (k: Key) => (sort.k === k ? sort.dir : undefined);
+  const clear = () => {
+    setQ("");
+    setSt("");
+    document.getElementById(`${id}-q`)?.focus();
+  };
+  // Rỗng sau khi lọc: nói vì sao và đưa nút gỡ lọc, không để người dùng tự đoán (skill mục 2b).
+  const empty = (
+    <div className="grid justify-items-center gap-3 px-4 py-8 text-center">
+      <p className="m-0 text-muted-foreground">Không có thiết bị nào khớp. Thử gõ ngắn hơn hoặc chọn trạng thái “Tất cả”.</p>
+      <Button type="button" variant="outline" className="h-11" onClick={clear}>Xoá tìm kiếm và bộ lọc</Button>
+    </div>
+  );
 
   return (
     <section className="grid gap-4" aria-labelledby={`${id}-cap`}>
@@ -68,6 +81,26 @@ export function BangDuLieu({ rows }: { rows: ThietBi[] }) {
       </div>
       {/* Khung hẹp (< 40rem): mỗi thiết bị là một khối dọc có nhãn, không phải cuộn ngang trong bảng. */}
       <div className="@container">
+      {/* Khung hẹp không có tiêu đề cột để bấm: sắp xếp đi qua ô chọn. */}
+      <div className="mb-3 grid gap-2 @[40rem]:hidden">
+        <Label htmlFor={`${id}-sx`}>Sắp xếp</Label>
+        <select
+          id={`${id}-sx`}
+          value={`${sort.k}:${sort.dir}`}
+          onChange={(e) => {
+            const [k, dir] = e.target.value.split(":") as [Key, "ascending" | "descending"];
+            setSort({ k, dir });
+          }}
+          className="h-11 rounded-sm border border-input bg-card px-3 text-base"
+        >
+          <option value="ten:ascending">Tên thiết bị (A → Z)</option>
+          <option value="xuong:descending">Tải xuống (cao → thấp)</option>
+          <option value="len:descending">Tải lên (cao → thấp)</option>
+          {!["ten:ascending", "xuong:descending", "len:descending"].includes(`${sort.k}:${sort.dir}`) && (
+            <option value={`${sort.k}:${sort.dir}`} disabled>Theo cột đang chọn</option>
+          )}
+        </select>
+      </div>
       <ul className="m-0 grid list-none divide-y rounded-lg border bg-card p-0 @[40rem]:hidden" aria-label="Thiết bị đang theo dõi">
         {view.map((r) => (
           <li key={r.ip} className="grid gap-1 px-4 py-3 text-sm">
@@ -81,7 +114,7 @@ export function BangDuLieu({ rows }: { rows: ThietBi[] }) {
             </dl>
           </li>
         ))}
-        {view.length === 0 && <li className="px-4 py-8 text-center text-muted-foreground">Không có thiết bị nào khớp bộ lọc.</li>}
+        {view.length === 0 && <li>{empty}</li>}
       </ul>
       <div className="hidden overflow-hidden rounded-lg border bg-card @[40rem]:block">
         <Table className="text-sm">
@@ -106,7 +139,7 @@ export function BangDuLieu({ rows }: { rows: ThietBi[] }) {
               </TableRow>
             ))}
             {view.length === 0 && (
-              <TableRow><TableCell colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Không có thiết bị nào khớp bộ lọc.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="p-0">{empty}</TableCell></TableRow>
             )}
           </TableBody>
         </Table>

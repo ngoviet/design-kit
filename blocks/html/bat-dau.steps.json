@@ -1,0 +1,3 @@
+[
+  { "name": "da-lam-1", "do": [{ "click": "[data-lam=phong]" }] }
+]
