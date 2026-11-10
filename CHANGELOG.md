@@ -5,6 +5,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `text-clip` check (soft): text cut off inside its box, which passed every other check because the letters are
+  big enough, contrasted and inside the page. Catches an ellipsis or `-webkit-line-clamp` that hides words, and
+  `overflow: hidden` or `clip` that cuts letters or whole lines, including Vietnamese accents and descenders cut by
+  a tight line height ("Ổn định" shows as "Ön đinh": the glyph ink is measured, not only the line box). Reports
+  the element (through shadow roots and slots), the text still shown and the width, e.g. `at 1280px by ellipsis:
+  shows "6/10 cổng có link · 5 phía s…"`. Text moved fully outside its box on purpose (a closed drawer, negative
+  `text-indent`, sr-only) and absolutely positioned text that escapes the clipping box are not reported. Found
+  while checking a Home Assistant card whose sub line was cut at 1280 px and only the screenshot showed it.
+
 ## [0.2.1] - 2026-11-10
 
 ### Fixed

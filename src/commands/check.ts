@@ -11,7 +11,7 @@ import type { Runtime } from "../runtime.js";
 import { loadSteps, parseSteps, runActions, STEPS_FORMAT, type StepAction, type StepState } from "../steps.js";
 
 export const CHECK_HELP = `usage: design-kit check <file|dir|url>... [flags]
-description: Design gate. Renders each page at 320/390/1280 px in light and dark, then measures what a person would hit: axe-core (WCAG 2.2 AA), horizontal overflow, text size and line height (through open shadow roots), Vietnamese lang and fonts, line length, reduced motion, keyboard focus, LCP/CLS, guidance (vague "Next" buttons, dead-end empty states, up-front tours) and the Impeccable detector. States reached by clicking (form errors, step 3, an open dialog) are measured too, from a steps file. Prints one verdict per page and state: hard failures block "done", soft ones need a reason
+description: Design gate. Renders each page at 320/390/1280 px in light and dark, then measures what a person would hit: axe-core (WCAG 2.2 AA), horizontal overflow, text size and line height (through open shadow roots), text cut off by ellipsis or overflow, Vietnamese lang and fonts, line length, reduced motion, keyboard focus, LCP/CLS, guidance (vague "Next" buttons, dead-end empty states, up-front tours) and the Impeccable detector. States reached by clicking (form errors, step 3, an open dialog) are measured too, from a steps file. Prints one verdict per page and state: hard failures block "done", soft ones need a reason
 flags[14]:
   --query <q,q>: run each page once per query string (e.g. dk=dem,dk=giay,dk=dam for design-kit blocks)
   --steps <file.json|json>: states to reach by clicking/typing, each measured like a page (overrides <page>.steps.json)
@@ -29,7 +29,7 @@ flags[14]:
   --help: this help
 gates[3]:
   hard: a page that shows nothing (no text, image or graphic, also 5 s after the network went idle), an uncaught script error or a script/stylesheet that fails to load, overflow at 320px, axe serious/critical (contrast, target size, labels…), text < 12px, heading line-height < 1.2 in Vietnamese, missing lang="vi", animation that ignores reduced motion, a step that cannot be done (selector not found), Impeccable slop rules and quality rules a user trips on (low-contrast, tiny-text, overflow, occlusion, script errors)
-  soft: a custom element that is never defined, axe moderate/minor, body text < 16px or line-height < 1.5, lines > 80ch, a scroll box hiding content (cut-off table), more than 12 fields on one screen, guide (button that only says "Tiếp"/"Next", empty state with no next action, tour or welcome modal on load), web font not loaded, focus ring missing or hidden, LCP > 2.5s, CLS > 0.1, other Impeccable quality rules and advisories
+  soft: a custom element that is never defined, axe moderate/minor, body text < 16px or line-height < 1.5, lines > 80ch, a scroll box hiding content (cut-off table), text cut off (an ellipsis or line-clamp hiding words, overflow hidden/clip cutting letters or Vietnamese accents; reports the text still shown and the width), more than 12 fields on one screen, guide (button that only says "Tiếp"/"Next", empty state with no next action, tour or welcome modal on load), web font not loaded, focus ring missing or hidden, LCP > 2.5s, CLS > 0.1, other Impeccable quality rules and advisories
   human: hierarchy and taste, and the task map (every hesitation point has a guide pattern): open the screenshots
 steps:
   ${STEPS_FORMAT}
@@ -83,7 +83,7 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 const CHECKS: Array<[string, Gate]> = [
   ["render", "hard"], ["errors", "hard"], ["overflow", "hard"], ["axe", "hard"], ["text-min", "hard"], ["heading-lh", "hard"], ["lang", "hard"], ["motion", "hard"],
   ["steps", "hard"], ["impeccable", "hard"], ["body-size", "soft"], ["body-lh", "soft"], ["measure", "soft"], ["font", "soft"],
-  ["focus", "soft"], ["inner-scroll", "soft"], ["long-form", "soft"], ["guide", "soft"], ["lcp", "soft"], ["cls", "soft"],
+  ["focus", "soft"], ["inner-scroll", "soft"], ["text-clip", "soft"], ["long-form", "soft"], ["guide", "soft"], ["lcp", "soft"], ["cls", "soft"],
 ];
 
 /**
@@ -272,6 +272,7 @@ async function checkPage(
         hits(r, "soft", "measure", p.measure, "line length", render, 3);
         hits(r, "soft", "font", p.fontFallback, "web font not loaded:", render, 3);
         hits(r, "soft", "inner-scroll", p.innerScroll, "horizontal scroll hides content:", render, 3);
+        hits(r, "soft", "text-clip", p.textClip, "text cut off", render);
         if (p.visibleFields > 12) add(r, "soft", "long-form", "page", `${p.visibleFields} fields on one screen: split into named steps or tuck advanced options away`, render);
         hits(r, "soft", "guide", p.vagueNext, "button does not say where it goes, name the next step:", render, 3);
         hits(r, "soft", "guide", p.emptyDeadEnd, "empty state with no next action:", render, 3);

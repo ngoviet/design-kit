@@ -36,12 +36,13 @@ ring, motion that ignores reduced-motion, a "Next" button that does not say wher
 - **A gate, not a vibe check.** Without guidance a model picks the most common choice (Inter, a purple gradient,
   identical cards), and models grading UI agree poorly with people. So design-kit splits the work: everything
   measurable is a check in the CLI, and taste is left to a person looking at the screenshots it saves.
-- **20 checks, 6 renders per page.** *Hard* failures block "done": a blank page (the gate waits up to 5 s for content
+- **21 checks, 6 renders per page.** *Hard* failures block "done": a blank page (the gate waits up to 5 s for content
   that arrives late), an uncaught script error or a script/stylesheet that fails to load, overflow at 320 px, axe-core serious/critical,
   text under 12 px, Vietnamese headings with line height under 1.2, Vietnamese text without `lang="vi"`, animation that
   ignores `prefers-reduced-motion`, a scripted step that cannot be done, Impeccable slop and quality rules. *Soft*
   findings need a fix or a written reason: body size and line height, line length, web font loaded, focus ring missing
-  or hidden, a scroll box hiding content, more than 12 fields on one screen, guidance, LCP, CLS.
+  or hidden, a scroll box hiding content, text cut off (an ellipsis or line clamp hiding words, overflow cutting
+  letters or Vietnamese accents), more than 12 fields on one screen, guidance, LCP, CLS.
 - **Sees inside shadow DOM.** Lit and Home Assistant cards are measured inside open shadow roots, where the
   Impeccable engine currently reports nothing.
 - **Measures the states behind a click.** A `<page>.steps.json` beside the page lists states such as form errors,
@@ -123,7 +124,7 @@ status: "fail: 1 of 1 pages have hard failures"
 renders: "light+dark × 320/390/1280 px via msedge, impeccable on"
 pages[1]{page,verdict,hard,soft}:
   test/fixtures/loi.html,fail,11,9
-checks[20]{check,gate,result}:
+checks[21]{check,gate,result}:
   overflow,hard,2 hard
   axe,hard,2 hard
   text-min,hard,1 hard

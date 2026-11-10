@@ -70,6 +70,11 @@ Chuẩn và cổng cho giao diện do agent làm.
 - **Máy đo đạt chưa phải là đẹp.** Vòng 09/11 máy báo 0 lỗi, nhưng ảnh chụp vẫn lộ bảng "A → Z" mà không xếp, tiêu đề bị bóp, mẹo lệch chỗ. Luôn mở ảnh chụp các trạng thái vừa sửa.
 - **Hook `bash-backslash-guard`** chặn lệnh Bash có `\\`. Sửa tệp bằng Edit/Write.
 - **Trang trắng từng qua cổng** (10/11/2026, kiểm lan-topo-card ngoài HA): card đợi 3 s rồi mới tải Lit từ CDN, cổng đo lúc mạng rảnh nên gặp màn trống, mọi phép đo "đạt", 0 phát hiện. Đã thêm `render` (cứng, đợi nội dung tối đa 5 s) và `errors` (cứng). Fixture: `test/fixtures/trong.html`, `cham.html`.
+- **Chữ bị cắt cũng từng qua cổng** (10/11/2026, lan-topo-card "… 5 phía s…" ở 1280). Đã thêm `text-clip` (mềm). Ba bẫy khi đo:
+  - `scrollHeight` chỉ tính hộp dòng, không tính mực chữ. `line-height: 1` cộng `overflow: hidden` cắt mất dấu ("Ổn định" thành "Ön đinh") mà cuộn không tràn. Probe đo mực bằng canvas `actualBoundingBox` so với `fontBoundingBox`, nên chữ không dấu, không chân như "CRS310 ON" trong cùng kiểu hộp không bị báo.
+  - Dấu chồng của Be Vietnam Pro ("Ổ", "Ẩ") cao hơn ascent của font 0,25em (đo ở 16px: mực 20px, ascent 16px), nên `line-height: 1,5` vẫn gọt móc dấu hỏi. Cách sửa đã kiểm trên ảnh: `padding-block: 0.25em`, hoặc chỉ cắt trục ngang (`overflow-x: clip; overflow-y: visible`, dấu "…" vẫn hiện).
+  - Phần tử absolute/fixed thoát các hộp cắt nằm giữa nó và khối chứa của nó (tooltip, menu thả xuống). Đi ngược lên mà không bỏ qua các tầng đó thì báo nhầm.
+  - Chữ nằm hẳn ngoài hộp là giấu có chủ ý (ngăn kéo đóng, `text-indent` âm). Chỉ báo chữ còn hiện một phần. Fixture: `test/fixtures/cat-chu.html`.
 - **Kiểm thành phần sống trong app chủ** (card HA, widget) cần trang chứa giả đủ thứ app chủ cấp: `ha-card` là khối (`display:block`, thiếu thì mất nền), `ha-icon` chiếm `--mdc-icon-size` (rỗng thì nút co lại, axe báo target-size nhầm), `lang`, bề rộng co theo khổ. Lỗi do trang chứa thì ghi riêng, không tính cho thành phần.
 
 ## Quy tắc
