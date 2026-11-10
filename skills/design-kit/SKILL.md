@@ -7,7 +7,8 @@ description: Build web or app UI that is beautiful, modern and usable on the fir
 
 Run `design-kit` (no arguments) first: it prints the kit's folder (`kit:`), the directions, the blocks and
 the `workflow` checklist. Paths below (`design/`, `tokens/`, `blocks/`) are inside that folder.
-Not installed → `git clone https://github.com/ngoviet/design-kit && cd design-kit && npm ci && npm install -g .`,
+Not installed → the release tarball (README, Installation) or
+`git clone https://github.com/ngoviet/design-kit && cd design-kit && npm ci && npm install -g .`,
 then `design-kit setup` (browser + Impeccable engine).
 Pair it with the `impeccable` skill: impeccable gives direction and critique; design-kit gives the numbers,
 the tokens, the gated blocks and the gate. Never call a UI task done on "it renders".
@@ -22,7 +23,7 @@ the tokens, the gated blocks and the gate. Never call a UI task done on "it rend
 
 - The project already has a `DESIGN.md` → follow it; the kit's thresholds still apply.
 - No `DESIGN.md` → copy `design/<x>/DESIGN.md` to the project root and `tokens/fonts.css`, `tokens/core.css`,
-  `tokens/<x>.css` next to the styles; set `<html lang="vi" data-dk="<x>">`. Ask the owner only when the
+  `tokens/<x>.css` next to the styles; set `<html lang="vi" data-dk="<x>">`. Ask the user only when the
   surface fits two directions.
 - Fonts: `tokens/fonts.css` loads Google Fonts. For a page on the home network, a Home Assistant card, an
   offline page or anything that must not call third parties, copy `tokens/fonts-local.css` **and** the
@@ -76,7 +77,7 @@ numbers, what needs action now: low stock, next deliveries, alerts) and put it i
 
 ## 2b. Make every workflow easy: guide like a good game
 
-The owner's rule: however complex the process, the user must never feel lost. Good games teach by
+The rule: however complex the process, the user must never feel lost. Good games teach by
 playing, one thing at a time, exactly when it is needed. Plan this before markup, not after.
 
 **First write a task map** in your plan or report, 3–6 lines: the user's main tasks, the steps of each,
@@ -131,14 +132,15 @@ design-kit check <file.html|folder|http://localhost:port> --strict
   (WCAG 2.2 AA), the shadow-DOM-aware probe, reduced-motion, Tab focus at 1280 and 390, LCP/CLS, the
   `guide` check, and Impeccable; then the same for every state in `<page>.steps.json` (section 2b).
 - **hard** = not done. **soft** = fix, or write the reason in your report. **human** = screenshots in
-  `.design-kit/shots/<page>/`: open them yourself (Read the PNGs) and judge hierarchy before showing the owner.
+  `.design-kit/shots/<page>/`: open them yourself (Read the PNGs) and judge hierarchy before showing the user.
 - At most 3 fix rounds; still failing → report the remaining findings instead of looping.
 - **Fix the finding, not the layout.** A hard failure is fixed in place (drop an inner border, change a
   color, add a label). Never move sections to silence a finding: in the A/B test an agent cleared
   `nested-cards` by pushing the stock and delivery panels below a long table, and lost the dashboard.
   Compare the 1280 px screenshot before and after each round; the information order must not change.
 - A Vite/React app: build it and check `dist/*.html`, or check the dev-server URL.
-- Show the result per the owner's rules (Folio page on PC1, Artifact when remote) with the verdict line.
+- Show the result the way the user prefers (a review page, an artifact or chat), with the verdict line and
+  the screenshots that matter.
 
 ## Thresholds (sources in `docs/tieu-chi.md`)
 

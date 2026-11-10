@@ -1,118 +1,291 @@
 # design-kit
 
-Bộ chuẩn và cổng kiểm để Claude (Opus) làm giao diện web và ứng dụng **đẹp, hiện đại, dễ dùng** ngay từ lần đầu, thay vì dừng ở mức "chạy được".
+<!-- readme-axi type=tool -->
 
-## Vì sao có dự án này
+[![CI](https://github.com/ngoviet/design-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/ngoviet/design-kit/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/ngoviet/design-kit)](https://github.com/ngoviet/design-kit/releases)
+[![Node](https://img.shields.io/badge/node-%E2%89%A520-339933)](package.json)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-Khi không có hướng dẫn, mô hình ngôn ngữ chọn lựa chọn phổ biến nhất: font Inter, gradient tím trên nền trắng, bộ thẻ giống nhau, chuyển động tối thiểu. Anthropic gọi hiện tượng này là *hội tụ phân phối*, và ghi nhận rằng chỉ dẫn thẩm mỹ cụ thể, quy được ra mã, làm kết quả tốt lên ngay. Nghiên cứu cũng cho thấy LLM tự chấm giao diện chưa bằng người. Vì vậy design-kit chia việc như sau:
+**English** · [Tiếng Việt](README.vi.md)
 
-- **Máy đo làm cổng cứng** cho mọi thứ đo được.
-- **Người duyệt thẩm mỹ** trên ảnh chụp.
+Standards and a measured gate that make coding agents (Claude Code first) build web and app UI that is
+beautiful, modern and easy to use on the first pass, not just "it renders". design-kit gives the agent three design
+directions as tokens and [DESIGN.md](https://github.com/google-labs-code/design.md) files, blocks that already
+passed the gate, and an [AXI](https://axi.md) CLI, `design-kit check`, that renders every page at 320/390/1280 px in
+light and dark and fails it on what a person would actually hit: WCAG 2.2 AA, overflow, tiny text, an invisible focus
+ring, motion that ignores reduced-motion, a "Next" button that does not say where it goes. Made for Vietnamese UI
+(fonts, line height, `lang="vi"`), and works on any page.
 
-## Gồm những gì
+> 🇻🇳 Built and maintained by one person in Việt Nam — if it saves you time, please
+> [support the project](#support-the-project).
 
-| Phần | Ở đâu | Làm gì |
-| --- | --- | --- |
-| Token | `tokens/` | Gồm `fonts.css` (Google Fonts) hoặc `fonts-local.css` cùng thư mục `fonts/` (font tự host, chỉ bộ chữ Latin và tiếng Việt, 414 KB, giấy phép OFL). Tệp font nạp đầu tiên. Tiếp theo là `core.css` (khoảng cách bậc 4px, thang chữ 1.25, chuyển động, độ dài dòng 32em), và ba hướng màu cùng font: `dem.css`, `giay.css`, `dam.css`. Mỗi hướng có bản sáng và tối. |
-| Ba hướng thẩm mỹ | `design/<huong>/DESIGN.md` | **Đêm**: ứng dụng, dashboard. **Giấy**: tài liệu, báo cáo. **Đậm**: landing, marketing. Theo đặc tả DESIGN.md của Google. Sinh tự động từ token, lint sạch. |
-| Khối mẫu HTML/CSS | `blocks/html/` | 13 khối: `dau-trang`, `form-dang-nhap`, `bang-du-lieu`, `trang-thai`, `chi-so`, `hop-thoai`, `hero`, `bai-viet`, `thanh-ben`, `thong-bao`, `bo-loc`, `trinh-tu` (từng bước), `bat-dau` (danh sách bắt đầu + mẹo đúng lúc). Đổi hướng bằng `?dk=dem\|giay\|dam`. |
-| Khối mẫu React | `blocks/react/` | Bốn khối `FormDangNhap`, `TrangThai`, `BangDuLieu`, `HopThoai`, viết bằng React + shadcn/ui, dùng chung token. |
-| Cổng kiểm | `design-kit check` | Render ở 320/390/1280 px, cả sáng lẫn tối. Chạy axe-core (WCAG 2.2 AA) và probe đo chữ, dòng, tiếng Việt (đi xuyên shadow DOM). Kiểm giảm chuyển động, focus (khổ 1280 và 390), dẫn đường (`guide`), LCP/CLS, chạy Impeccable, rồi chụp ảnh. Đo cả các trạng thái sau thao tác ghi trong `<trang>.steps.json`. |
-| Nhắc dẫn đường | `design-kit`, `design-kit check` | Màn không đối số in mục `workflow`. Mỗi lần kiểm kết thúc bằng lời nhắc: lập bản đồ tác vụ, gắn mỗi chỗ dễ lúng túng với một mẫu dẫn đường (như phần hướng dẫn trong game). |
-| Đổi màu | `design-kit doi-mau`, `design-kit kiem-mau` | Đổi sắc màu nhấn theo thương hiệu mà vẫn giữ mọi cặp đạt WCAG; kiểm cặp màu của tệp token bất kỳ. |
-| Plugin Claude Code | `.claude-plugin/`, `skills/design-kit/`, `hooks/` | Skill (chọn hướng, chọn khối, dẫn đường như game, chạy cổng, các bẫy đã gặp) và hook: nhắc ngay khi AI sửa tệp giao diện, chặn "báo xong" khi chưa chạy `design-kit check`. Repo này cũng là marketplace. |
-| Tiêu chí | `docs/tieu-chi.md`, `docs/nguon.md` | Ngưỡng, cách đo, loại cổng của từng tiêu chí; nguồn và câu trích (xuất từ kho tri thức). |
+## Contents
 
-## Cài
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Commands](#commands)
+- [How it works](#how-it-works)
+- [Agent integration](#agent-integration)
+- [Project layout](#project-layout)
+- [Development](#development)
 
-Cần Node ≥ 20 và Edge hoặc Chrome. Không có hai trình duyệt này thì cổng dùng Chromium của Playwright: `npx playwright install chromium`.
+## Features
+
+- **A gate, not a vibe check.** Without guidance a model picks the most common choice (Inter, a purple gradient,
+  identical cards), and models grading UI agree poorly with people. So design-kit splits the work: everything
+  measurable is a check in the CLI, and taste is left to a person looking at the screenshots it saves.
+- **18 checks, 6 renders per page.** *Hard* failures block "done": overflow at 320 px, axe-core serious/critical,
+  text under 12 px, Vietnamese headings with line height under 1.2, Vietnamese text without `lang="vi"`, animation that
+  ignores `prefers-reduced-motion`, a scripted step that cannot be done, Impeccable slop and quality rules. *Soft*
+  findings need a fix or a written reason: body size and line height, line length, web font loaded, focus ring missing
+  or hidden, a scroll box hiding content, more than 12 fields on one screen, guidance, LCP, CLS.
+- **Sees inside shadow DOM.** Lit and Home Assistant cards are measured inside open shadow roots, where the
+  Impeccable engine currently reports nothing.
+- **Measures the states behind a click.** A `<page>.steps.json` beside the page lists states such as form errors,
+  step 3 of a wizard or an open menu. Each one is a fresh load plus scripted actions, measured with every check.
+- **Guides like a game tutorial.** The CLI reminds the agent to write a task map first and to cover every point where
+  a first-time user would hesitate: a step-by-step flow that names the next step, a "Get started" checklist,
+  just-in-time tips, empty states that teach, Undo instead of "Are you sure?". The `guide` check flags a button that
+  only says "Next", an empty state with no way forward, and a tour that opens on load.
+- **Three directions, ready to copy.** *Đêm* (night: apps, dashboards), *Giấy* (paper: documents, reports) and
+  *Đậm* (bold: landing pages, marketing), each a token file with light and dark themes and a generated DESIGN.md.
+  All 126 color pairs pass WCAG; `design-kit doi-mau` re-hues a direction to fit a brand and re-solves lightness so
+  they still pass.
+- **Blocks that already passed.** 13 HTML/CSS blocks and 4 React + shadcn/ui blocks, each gated in 3 directions ×
+  light/dark, with the screenshots reviewed.
+- **Claude Code plugin.** A skill, plus hooks that remind the agent when it edits a UI file and stop it once if it
+  tries to finish without running the gate.
+- **Agent-friendly output.** [TOON](https://toonformat.dev/), totals first, one verdict per page and state, `help[]`
+  with the next command, stable exit codes.
+
+## Installation
+
+Requirements:
+
+- **Node.js ≥ 20**
+- **Microsoft Edge or Google Chrome.** Without either, the gate falls back to Playwright's Chromium:
+  `npx playwright install chromium`.
+- **The Impeccable detector engine** (on by default, skip with `--no-impeccable`). `design-kit setup` uses the engine
+  bundled with the Impeccable skill if you have it, otherwise downloads the pinned version (0.1.19) and verifies
+  its sha256.
+
+From the latest release (no clone needed):
 
 ```bash
-git clone https://github.com/ngoviet/design-kit && cd design-kit
-npm ci              # cài phụ thuộc và build dist/ (script prepare)
-npm install -g .    # lệnh design-kit toàn cục, trỏ vào thư mục này
-design-kit setup    # tìm trình duyệt; tải engine Impeccable ghim nếu thiếu (sha256)
+npm install -g https://github.com/ngoviet/design-kit/releases/download/v0.2.0/design-kit-0.2.0.tgz
+design-kit setup
 ```
 
-Cập nhật: `git pull && npm ci`. Không dùng `npm install -g github:ngoviet/design-kit`: npm cài toàn cục từ git thì lệnh `npm install` bên trong thừa hưởng chế độ global, nên không cài devDependencies để build (đã thử 09/11/2026).
-
-Trong Claude Code, cài plugin (skill + hook) bằng: `/plugin install design-kit --marketplace ngoviet/design-kit`
-
-Hoặc làm hai bước: `/plugin marketplace add ngoviet/design-kit`, rồi `/plugin install design-kit@design-kit`.
-
-## Dùng
+From source:
 
 ```bash
-design-kit                                   # trạng thái: hướng, khối, công cụ
-design-kit check index.html --strict         # cổng cho một trang; thoát 1 nếu có lỗi cứng
-design-kit check http://localhost:5173       # trang đang chạy trên dev server
-design-kit check blocks/html --query dk=dem,dk=giay,dk=dam
-design-kit check signup.html --steps '[{"name":"loi","do":[{"click":"button[type=submit]"}]}]'
+git clone https://github.com/ngoviet/design-kit.git
+cd design-kit
+npm ci             # installs dependencies and builds dist/ (prepare script)
+npm install -g .   # a global `design-kit` command pointing at this folder
+design-kit setup
 ```
 
-Kết quả in dạng TOON: mỗi trang, và mỗi trạng thái sau thao tác, có một dòng phán quyết. Kèm theo là bảng kiểm tra và danh sách phát hiện (cứng hoặc mềm). Ảnh chụp lưu trong `.design-kit/shots/`.
+`npm install -g github:ngoviet/design-kit` does not work: npm runs the nested install in global mode, so the build
+tools are never installed. design-kit is not published to the npm registry.
 
-Các trạng thái sau thao tác ghi trong tệp `<trang>.steps.json` đặt cạnh trang. Cổng tự nhận tệp này, kể cả khi kiểm cả thư mục. Mỗi trạng thái nạp trang mới, chạy thao tác (`click`, `fill`, `check`, `select`, `press`, `hover`, `wait`), rồi được đo đủ mọi tiêu chí. Bước nào không làm được thì báo lỗi cứng. Nút chỉ có ở khổ hẹp thì giới hạn trạng thái bằng `"viewports":[320,390]`.
+The Claude Code plugin (skill and hooks) installs from this repository, which is also its marketplace. It calls the
+CLI, so install that first:
 
-## Trạng thái (09/11/2026)
+```text
+/plugin marketplace add ngoviet/design-kit
+/plugin install design-kit@design-kit
+```
 
-- **Giai đoạn 1** (nghiên cứu và đề xuất) đã xong. Báo cáo ở [`.folio/bao-cao-giai-doan-1.html`](.folio/bao-cao-giai-doan-1.html). Bằng chứng nằm trong kho tri thức, chủ đề `tieu-chuan-va-cach-huong-dan-ai-lam-giao-dien-web-dep-de-dun`.
-- **Giai đoạn 2, phương án C** do chủ chốt (xem `docs/quyet-dinh.md`):
-  - Đã có:
-    - token và ba hướng thẩm mỹ;
-    - CLI cổng kiểm (chạy song song, đo cả trạng thái sau thao tác);
-    - 13 khối HTML và 4 khối React;
-    - skill, kèm quy tắc trong `~/.claude/CLAUDE.md`.
-  - **Đánh giá A/B** (`eval/ab-2026-11-09/`, trang `.folio/danh-gia-ab.html`):
-    - Bản Opus mặc định: 12 lỗi cứng, 48 lỗi mềm. Bản design-kit: 0 lỗi cứng, 7 lỗi mềm.
-    - Chủ chấm mù, chọn bản design-kit ở cả 3/3 đề. Giới hạn: bản design-kit luôn nằm ở cột phải.
-  - **Đánh giá A/B đợt 2** (`eval/ab-2026-11-09-dot2/`, trang `.folio/danh-gia-ab-dot2.html`). Lần này bản design-kit đặt ở cột trái, thêm 3 đề mới:
-    - Máy đo: bản mặc định 33 lỗi cứng, bản design-kit 0.
-    - Chủ chấm: landing chọn design-kit, dashboard tiệm bánh chọn bản mặc định, trang cài đặt hoà.
-    - **Gộp 6 đề:** design-kit thắng 4, mặc định thắng 1, hoà 1.
-    - Ở đề thua, nguyên nhân có thể là:
-      - kit chọn hướng theo loại màn hình mà bỏ qua thương hiệu (tiệm bánh lại ra màu xanh ngọc lạnh);
-      - khi sửa lỗi cứng, bố cục mất khả năng nhìn một lần thấy hết;
-      - luật `cream-palette` chặn cứng một lựa chọn thuộc về khẩu vị.
-  - **Đã sửa sau A/B đợt 2:**
-    - `scripts/doi-mau.mjs` đổi màu nhấn và trung tính theo thương hiệu mà vẫn giữ tương phản;
-    - skill buộc chọn màu theo thương hiệu, giữ màn nhìn nhanh cho dashboard, và sửa lỗi tại chỗ chứ không dời bố cục;
-    - `cream-palette` hạ xuống mềm.
-  - **Quy trình dễ dùng, dẫn đường như game** (chủ yêu cầu 09/11/2026):
-    - Skill có mục 2b. Trước khi dựng, AI phải viết bản đồ tác vụ, rồi gắn mỗi chỗ người dùng dễ lúng túng với một mẫu:
-      - trình tự từng bước;
-      - danh sách "Bắt đầu";
-      - mẹo đúng lúc;
-      - trạng thái rỗng biết hướng dẫn;
-      - ẩn bớt phần nâng cao;
-      - Hoàn tác thay vì hỏi xác nhận.
-    - Không dùng tour hướng dẫn mở đầu, vì NN/g đo được tour không giúp người dùng làm việc tốt hơn.
-    - Có thêm hai khối `trinh-tu` và `bat-dau`, và phép đo mềm `long-form` (cảnh báo khi một màn có hơn 12 ô nhập).
-  - **Công cụ tự nhắc dẫn đường, và cổng đo trạng thái** (chủ nhắc lại yêu cầu 09/11/2026):
-    - `design-kit` in mục `workflow`, `design-kit check` luôn kết thúc bằng lời nhắc "Guide like a game".
-    - Phép đo mềm `guide` báo nút chỉ ghi "Tiếp", câu báo rỗng không kèm nút gỡ, tour tự bật khi mở trang.
-    - `--steps` và tệp `<trang>.steps.json`. Đã viết cho 9 khối HTML và 3 khối React.
-    - Focus được kiểm ở cả khổ 390, và báo khi focus rơi vào phần tử vô hình.
-    - Cách đo mới tìm ra ba lỗi thật, đã sửa: bảng không sắp xếp được trên điện thoại, kết quả tìm rỗng không có nút gỡ, bộ lọc về 0 mà không nói lý do.
-  - `~/.claude/CLAUDE.md` có thêm quy tắc dẫn đường như game (chủ đồng ý 09/11/2026).
-  - **Chạy độc lập và đóng gói (0.2.0):**
-    - lệnh `doi-mau`, `kiem-mau`, `setup`;
-    - font tự host;
-    - bằng chứng xuất ra `docs/nguon.md`;
-    - đường lùi Chromium;
-    - engine Impeccable ghim phiên bản, có kiểm sha256;
-    - plugin Claude Code gồm skill và hook;
-    - Woodpecker CI;
-    - trường `files` để cài từ git.
+## Usage
 
-    Đã thử cài từ gói ra một thư mục tạm, tách khỏi repo: cả ba lệnh chạy được.
-  - Còn lại:
-    - Gửi báo lỗi shadow DOM cho Impeccable. Chủ đã đồng ý, nhưng chế độ tự động chặn lệnh tạo issue; lệnh để chủ tự chạy nằm trong `docs/bao-loi-impeccable-shadow-dom.md`.
-    - Bật repo trong Woodpecker (https://ci.bepmamnon.com). Chủ phải làm vì cần đăng nhập GitHub.
-  - **Plugin đã cài trên PC1 (10/11/2026)** từ marketplace thư mục `D:\code\design-kit` (Claude Code đọc thẳng repo). Junction cũ đã gỡ. Đã thử bằng một phiên Claude chạy nền: ghi một tệp HTML thì nhận lời nhắc, định dừng thì hook Stop chặn để chạy cổng.
+```bash
+design-kit                                   # kit, directions, blocks, browser, engine, workflow reminders
+design-kit check index.html --strict         # gate one page; exit 1 on any hard failure
+design-kit check http://localhost:5173       # a page on a running dev server
+design-kit check dist --jobs 6               # every .html in a folder, 6 at a time
+design-kit check signup.html --steps '[{"name":"error","do":[{"click":"button[type=submit]"}]}]'
+```
 
-## Nguyên tắc
+Starting a project: copy the DESIGN.md of the closest direction into the project (the `kit:` line of `design-kit`
+shows where the kit lives), load `tokens/fonts-local.css`, `tokens/core.css` and the direction's token file, and
+build from the closest block. Each block switches direction with `?dk=dem|giay|dam` and theme with
+`&theme=light|dark`.
 
-- Ngưỡng nào cũng ghi nguồn và loại: **chuẩn** (W3C, Google), **nghiên cứu**, hoặc **quy ước**.
-- Chỉ thêm khối mới khi khối đó đã qua cổng ở cả 3 hướng × sáng/tối, và đã được xem ảnh chụp.
-- Không ghi công Claude trong commit hay tài liệu.
+A page with problems (shortened: rows whose check passed are left out):
+
+```text
+$ design-kit check test/fixtures/loi.html --limit 4
+status: "fail: 1 of 1 pages have hard failures"
+renders: "light+dark × 320/390/1280 px via msedge, impeccable on"
+pages[1]{page,verdict,hard,soft}:
+  test/fixtures/loi.html,fail,11,9
+checks[18]{check,gate,result}:
+  overflow,hard,2 hard
+  axe,hard,2 hard
+  text-min,hard,1 hard
+  …
+  guide,soft,3 soft
+count: 4 of 20 total
+findings[4]{gate,check,where,detail,renders}:
+  hard,overflow,320px,"page is 480px wide, viewport 320px",light/320 dark/320
+  hard,overflow,390px,"page is 480px wide, viewport 390px",light/390 dark/390
+  hard,text-min,"topo-card::shadow span.lbl \"Cổng 1 ↓ 12 Mb/s\"",font-size 9.9px,light/390 light/1280 dark/390 dark/1280
+  hard,heading-lh,"h1 \"Bảng điều khiển mạng\"",line-height 1.00,light/390 light/1280 dark/390 dark/1280
+help[4]: "16 more findings: add --full","Fix hard failures, then rerun the same command; soft ones need a fix or a written reason",…
+```
+
+A block with a steps file (two verdicts: the page as loaded, and the state after turning every filter off):
+
+```text
+$ design-kit check blocks/html/bo-loc.html --query dk=dem
+status: "pass: 2 pages (1 of them states after steps), 0 hard failures"
+pages[2]{page,verdict,hard,soft}:
+  blocks/html/bo-loc.html?dk=dem,pass,0,0
+  blocks/html/bo-loc.html?dk=dem #tat-het,pass,0,0
+```
+
+Screenshots go to `.design-kit/shots/`. Open them: a gate that passes is not yet a page that looks good.
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `design-kit` (or `home`) | Kit location, directions, blocks, browser and engine, and the `workflow` reminders |
+| `design-kit check <file\|dir\|url>...` | The gate. Exit 0 when the pages were checked (read `status`); `--strict` exits 1 on a hard failure |
+| `design-kit setup [--download] [--no-browser]` | Find a browser and the Impeccable engine; download the pinned engine when it is missing |
+| `design-kit doi-mau --huong <dem\|giay\|dam> --nhan <0-360> [--trung-tinh <0-360>] --ra <file.css>` | Re-hue a direction's accent (and neutrals) for a brand; every color pair still passes WCAG |
+| `design-kit kiem-mau [<file.css> --huong <h>]` | Check every color-role pair for WCAG contrast and sRGB gamut, light and dark |
+
+Flags of `check`:
+
+| Flag | Meaning |
+| --- | --- |
+| `--query <q,q>` | Run each page once per query string, e.g. `dk=dem,dk=giay,dk=dam` |
+| `--steps <file.json\|json>` / `--no-steps` | States to reach by clicking and typing (overrides `<page>.steps.json`) / ignore steps files |
+| `--viewports <w,w>` | Widths in px (default `320,390,1280`; 320 is used for overflow only) |
+| `--schemes <light,dark>` | Color schemes to render (default both) |
+| `--shots <dir>` / `--no-shots` | Screenshot folder (default `.design-kit/shots`) / no screenshots |
+| `--no-impeccable` | Skip the Impeccable detector (faster) |
+| `--focus <n>` | Tab stops to inspect (default 15) |
+| `--strict` | Exit 1 when any page has a hard failure |
+| `--jobs <n>` | Pages checked at once (default 3, max 8) |
+| `--limit <n>` / `--full` | Findings to show (default 25) / every finding |
+
+A steps file is a list of states. Each state starts from a fresh load and runs its own actions: `click`, `fill`,
+`check`, `select`, `press`, `hover`, `wait`. Limit a state to some widths when its control exists only there:
+
+```json
+[
+  { "name": "sort", "viewports": [1280], "do": [{ "click": "button.sort[data-k='3']" }] },
+  { "name": "sort-narrow", "viewports": [320, 390], "do": [{ "select": ["#xep", "3:descending"] }] },
+  { "name": "no-match", "do": [{ "fill": ["#tim", "zzz"] }] }
+]
+```
+
+Exit codes: 0 the pages were checked, 1 a hard failure under `--strict` or a tool error (no browser, page not
+found), 2 bad usage.
+
+## How it works
+
+1. Local files are served over `http://127.0.0.1` from the nearest folder with `.git` or `package.json`, so relative
+   links resolve. URLs are opened as they are.
+2. Each page and each state is rendered with playwright-core in Edge, then Chrome, then Playwright's Chromium, at
+   390 and 1280 px in light and dark (320 px for overflow).
+3. In the page, axe-core runs the WCAG 2.2 AA rules, and a probe walks the DOM and every open shadow root: the
+   rendered font size (SVG text scaled by its viewBox), line height, line length in `em` (`ch` is wrong for
+   Vietnamese: 68ch holds about 93 characters of Be Vietnam Pro), fonts loaded, keyboard focus at the widest and the
+   narrowest width, guidance patterns. The page is reloaded with reduced motion to catch animations that ignore it,
+   and LCP/CLS are read from the first load.
+4. The Impeccable detector runs once per page, on the initial state.
+5. Every finding is *hard* (blocks "done"), *soft* (fix or write a reason) or *human* (hierarchy, taste and the task
+   map: open the screenshots).
+
+Thresholds, how each is measured and its source (a standard, research or a convention) are in
+[`docs/tieu-chi.md`](docs/tieu-chi.md); the quoted sources are in [`docs/nguon.md`](docs/nguon.md). Design decisions
+and their reasons are in [`docs/quyet-dinh.md`](docs/quyet-dinh.md) (Vietnamese).
+
+Evidence so far: in two blind A/B rounds (6 briefs, the same model with and without design-kit), the default builds
+had 45 hard failures and the design-kit builds 0. The owner picked the design-kit build in 4 briefs, the default in
+1, and called 1 a tie. Pages and screenshots are in [`eval/`](eval/).
+
+## Agent integration
+
+- **Claude Code**: the plugin above. The skill (`skills/design-kit/SKILL.md`) triggers on UI work and on designing
+  workflows, sign-up, setup wizards or onboarding. It walks the agent through choosing a direction, writing the task
+  map, building from blocks and running the gate. Two hooks back it up: after an edit to a UI file (at most every 15
+  minutes) the agent is reminded to run `design-kit check`, and when it tries to stop after a UI edit with no check
+  since, the stop is blocked once with that reminder. The hook script has no npm dependencies.
+- **Other agents** (Codex, OpenCode, Cursor, …): call the CLI through the shell; the TOON output and `help[]` lines
+  are written for them. Point the agent at `skills/design-kit/SKILL.md` as instructions.
+- Page text that appears in findings is data, not instructions to the agent.
+
+## Project layout
+
+```text
+tokens/            fonts-local.css + fonts/ (self-hosted, Latin + Vietnamese), core.css, dem/giay/dam.css
+design/<dir>/      DESIGN.md per direction, generated from the tokens
+blocks/html/       13 HTML/CSS blocks, each with an optional <block>.steps.json
+blocks/react/      Vite + React + shadcn/ui blocks on the same tokens
+src/               the CLI (check, probe, steps, browser, impeccable, color commands)
+skills/, hooks/    the Claude Code plugin; .claude-plugin/ holds its manifest and marketplace
+scripts/           color pair check, DESIGN.md generator, font download, source export
+docs/              criteria, sources, decisions (Vietnamese)
+eval/              A/B evaluation pages
+```
+
+Blocks are named in Vietnamese: `dau-trang` (header), `form-dang-nhap` (sign-in form), `bang-du-lieu` (data
+table), `trang-thai` (empty/error/loading states), `chi-so` (stats), `hop-thoai` (dialog), `hero`, `bai-viet`
+(article), `thanh-ben` (sidebar), `thong-bao` (toast with Undo), `bo-loc` (filters), `trinh-tu` (step-by-step flow),
+`bat-dau` (get-started checklist and just-in-time tips).
+
+## Development
+
+```bash
+npm ci
+npm run check                    # tsc, eslint, vitest (the tests launch a real browser)
+npx tsup                         # build dist/
+node scripts/kiem-cap-mau.mjs    # all 126 color pairs must pass
+node scripts/tao-design-md.mjs   # regenerate design/*/DESIGN.md after a token change
+npm run lint:design              # lint the DESIGN.md files
+cd blocks/react && npm ci && npm run build && cd ../..
+design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6   # full gate, ~10 min
+```
+
+CI (GitHub Actions) runs the same in the Playwright container, a clean Linux machine with no Edge and no Impeccable
+skill, which also proves the kit runs on its own. A new block is merged only after it passes in all 3 directions ×
+light/dark and its screenshots have been reviewed. Project notes for agents are in [`CLAUDE.md`](CLAUDE.md)
+(Vietnamese).
+
+<!-- support:start -->
+## Support the project
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ngoviet/.github/main/assets/support/banner.svg" width="720" alt="Built and maintained by one person in Việt Nam">
+</p>
+
+<p align="center">
+  <a href="https://buymeacoffee.com/ngoviet"><img src="https://raw.githubusercontent.com/ngoviet/.github/main/assets/support/btn-coffee.svg" height="56" alt="Buy me a coffee"></a>
+  &nbsp;
+  <a href="https://github.com/sponsors/ngoviet"><img src="https://raw.githubusercontent.com/ngoviet/.github/main/assets/support/btn-sponsors.svg" height="56" alt="GitHub Sponsors"></a>
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ngoviet/.github/main/assets/support/vietqr-card.svg" width="300" alt="VietQR — MB Bank — NGO DUC VIET — 911051212">
+  &nbsp;
+  <img src="https://raw.githubusercontent.com/ngoviet/.github/main/assets/support/crypto-card.svg" width="300" alt="Crypto — BNB Smart Chain (BEP20) — 0xcbf0402b232cb24b4d998f09a4884f87b5f74750">
+</p>
+
+<p align="center"><b>Crypto wallet, BNB Smart Chain (BEP20) only:</b><br><code>0xcbf0402b232cb24b4d998f09a4884f87b5f74750</code></p>
+
+<p align="center"><sub>🇻🇳 VietQR: scan with any Vietnamese banking app, transfer note <code>Ung ho design-kit</code>. Thank you for keeping this project alive!</sub></p>
+<!-- support:end -->
+
+## License
+
+[MIT](LICENSE) © Ngô Đức Việt. The fonts in `tokens/fonts/` (Be Vietnam Pro, Bricolage Grotesque, Literata,
+JetBrains Mono) are under the [SIL Open Font License](tokens/fonts/OFL.txt). The React blocks use
+[shadcn/ui](https://ui.shadcn.com/) components (MIT). Not affiliated with or endorsed by Impeccable, Deque (axe-core),
+Google or Anthropic; design-kit only calls their tools and formats.

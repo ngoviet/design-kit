@@ -1,12 +1,12 @@
 {
   "name": "design-kit",
-  "description": "Marketplace riêng của design-kit (ngoviet)",
+  "description": "design-kit by ngoviet: standards and a measured gate for agent-built UI",
   "owner": { "name": "Ngô Đức Việt", "url": "https://github.com/ngoviet" },
   "plugins": [
     {
       "name": "design-kit",
       "source": "./",
-      "description": "Chuẩn và cổng cho giao diện do AI làm: skill design-kit và hook nhắc chạy cổng, dẫn đường như game",
+      "description": "Skill and hooks for beautiful, usable UI on the first pass: directions, gated blocks, guide-like-a-game workflows, and a reminder to run design-kit check",
       "version": "0.2.0"
     }
   ]
