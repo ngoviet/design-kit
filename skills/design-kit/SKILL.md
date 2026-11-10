@@ -183,6 +183,12 @@ LCP ≤ 2.5 s, INP ≤ 200 ms, CLS ≤ 0.1 · 0 Impeccable slop findings.
   scripted states found bugs the default run missed; the kit's own table did too (next item).
 - **A table can pass the gate yet hide columns** inside its own horizontal scroll (`inner-scroll` soft
   finding): under ~40rem turn rows into labelled stacks, as `bang-du-lieu` does.
+- **Truncation hides content too** (`text-clip` soft finding): a fixed-width card whose sub line ends in
+  "… 5 phía s…" at 1280 px passes every size and contrast check. Let the line wrap, widen the box, or keep the
+  full text reachable. `truncate` or `overflow:hidden` also cuts Vietnamese accents: stacked marks in Be Vietnam
+  Pro rise 0.25em above the font's ascent, so even `line-height:1.5` trims the hook of "Ổ" and `leading-none`
+  turns "Ổn định" into "Ön đinh". Give the clipped box `padding-block: 0.25em`, or clip only the inline axis
+  (`overflow-x: clip; overflow-y: visible`, ellipsis still works).
 - **Stacked rows lose the column headers, and with them sorting.** The kit's `bang-du-lieu` hid `thead`
   sr-only under 40rem: on a phone nobody could sort, and Tab landed on invisible sort buttons. The steps
   file caught it ("click … failed" at 320/390). Under 40rem: `thead{display:none}` plus a "Sắp xếp" select.

@@ -108,6 +108,31 @@ describe("check on real pages", () => {
     expect(code).toBe(1);
   }, 120_000);
 
+  it("reports text cut off by ellipsis, line-clamp or overflow, through shadow roots, at the width where it is cut", async () => {
+    const { out } = await run(["check", "test/fixtures/cat-chu.html", "--no-impeccable", "--no-shots", "--viewports", "390,1280", "--schemes", "light", "--full"]);
+    const rows = out.split("\n").filter((l) => /^\s+soft,text-clip,/.test(l));
+    // Dòng phụ của thẻ CRS310 trong shadow root: chỉ bị cắt ở 1280 (cây xếp ngang), như ảnh chụp lan-topo-card v0.8.3
+    const sub = rows.filter((l) => l.includes("so-do-cay::shadow div#dong-phu"));
+    expect(sub).toHaveLength(1);
+    expect(sub[0]).toMatch(/at 1280px by ellipsis: shows \\"6\/10 cổng có link · 5 ph[^"\\]*…\\"/);
+    expect(sub[0]).toMatch(/,light\/1280$/);
+    expect(rows.some((l) => /p#kep [^\n]*by line-clamp: shows/.test(l))).toBe(true);
+    expect(rows.some((l) => /div#hop-co-dinh [^\n]*by overflow hidden: shows/.test(l))).toBe(true);
+    expect(rows.some((l) => /div#cat-clip [^\n]*by overflow clip: shows/.test(l))).toBe(true);
+    // line-height 1 + overflow hidden: không mất ký tự nào, nhưng mất dấu ("Ổn định" hiện thành "Ön đinh")
+    expect(rows.some((l) => /span#nhan-chat [^\n]*by overflow hidden: tops or bottoms of letters cut/.test(l))).toBe(true);
+    // Ô ellipsis vừa khít: không có "…", nhưng line-height 1,5 vẫn gọt dấu chồng của "Ổ". Báo đúng cách cắt.
+    expect(rows.filter((l) => l.includes("div#vua-khit "))).toEqual([
+      expect.stringMatching(/by overflow hidden: tops or bottoms of letters cut in \\"Ổn định cổng tầng hai\\"/),
+      expect.stringMatching(/by overflow hidden: tops or bottoms of letters cut/),
+    ]);
+    // Không bị cắt thật thì không báo: ô ellipsis đủ chỗ, line-clamp đủ chỗ, sr-only, text-indent âm, ngăn kéo nằm
+    // hẳn ngoài khung, cùng kiểu line-height 1 mà chữ không dấu, không chân (mực chữ nằm trong hộp), phần tử absolute
+    // thoát khung cắt, chữ dưới mép khung cuộn nằm trong gốc overflow hidden cùng cỡ (ScrollArea)
+    expect(rows.filter((l) => /#(ten-ngan|kep-ngan|an-chu|logo|ngan-keo|panel-an|nhan-la|thoat|cuon-goc|cuon-chu)\b/.test(l))).toEqual([]);
+    expect(rows.filter((l) => !/#(dong-phu|kep|hop-co-dinh|cat-clip|nhan-chat|vua-khit) /.test(l))).toEqual([]);
+  }, 120_000);
+
   it("a custom checkbox whose visible box draws no focus ring is still reported", async () => {
     const { out } = await run(["check", "test/fixtures/khong-vong.html", ...FAST, "--full"]);
     expect(out).toMatch(/focus,input#nho.*no visible focus ring/);
