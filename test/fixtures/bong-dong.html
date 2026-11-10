@@ -1,0 +1,24 @@
+<!doctype html>
+<!-- Thành phần vẽ chữ trong shadow root đóng: probe không vào được, nhưng trang có hình thật.
+     Cổng không được báo trang trắng. -->
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Shadow root đóng</title>
+</head>
+<body>
+  <main>
+    <the-dong></the-dong>
+  </main>
+  <script>
+    customElements.define("the-dong", class extends HTMLElement {
+      constructor() {
+        super();
+        const root = this.attachShadow({ mode: "closed" });
+        root.innerHTML = '<style>:host{display:block;font:1rem/1.5 system-ui}</style><h1>Bảng điều khiển</h1><p>Vẽ trong shadow root đóng.</p>';
+      }
+    });
+  </script>
+</body>
+</html>

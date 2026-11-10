@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- Vỏ app light DOM đã định nghĩa nhưng không vẽ gì (tải dữ liệu hỏng, lỗi đã bị bắt). Chỉ là một hộp CSS,
+     màn hình trống, nên cổng phải báo render. -->
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vỏ rỗng</title>
+<style>app-shell { display: block; min-height: 100vh; background: #1d1f24; }</style>
+</head>
+<body>
+  <app-shell></app-shell>
+  <script>
+    customElements.define("app-shell", class extends HTMLElement {
+      connectedCallback() {
+        fetch("./khong-co-du-lieu.json").then((r) => r.json()).then(() => {}).catch(() => {});
+      }
+    });
+  </script>
+</body>
+</html>

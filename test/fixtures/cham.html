@@ -1,0 +1,19 @@
+<!doctype html>
+<!-- Nội dung đến muộn, sau khi mạng đã rảnh (như card đợi thư viện rồi mới vẽ). Cổng phải đợi nội dung
+     rồi mới đo, nên đoạn chữ 10px đến sau 1,5 giây phải bị bắt. -->
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Đến muộn</title>
+</head>
+<body>
+  <main id="m"></main>
+  <script>
+    setTimeout(() => {
+      document.getElementById("m").innerHTML =
+        '<h1>Bảng điều khiển</h1><p id="nho" style="font-size:10px">Chữ quá nhỏ, đến sau một giây rưỡi</p>';
+    }, 1500);
+  </script>
+</body>
+</html>

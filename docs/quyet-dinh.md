@@ -123,3 +123,12 @@ Chủ yêu cầu: "chuyển thành repo public đi, viết readme-axi, tạo rel
 - **Skill.** Bỏ các câu riêng cho máy chủ dự án (Folio trên PC1, "the owner"), vì người khác cũng cài plugin này.
 - **Giấy phép.** MIT, như các repo AXI public khác. Font theo SIL OFL, khối React dùng shadcn/ui (MIT).
 - **Phát hành.** Không đưa lên npm registry (giống imp-axi): release GitHub kèm `design-kit-0.2.0.tgz` và `.sha256`, cài bằng `npm install -g <url>`.
+
+## 10/11/2026: trang trắng không còn qua cổng (`render`, `errors`)
+
+Gặp khi kiểm lan-topo-card bằng design-kit: lần chạy đầu cổng báo "pass: 3 pages, 0 findings", ảnh chụp là một màn tối. Card đợi `ha-card` 3 s rồi mới tải Lit từ CDN; cổng đo ngay lúc mạng rảnh nên trang chưa có gì, và trang không có gì thì không phép đo nào trượt. Chủ bấm "Sửa ở đây".
+
+- **`render` (cứng):** không có chữ, ảnh hay đồ hoạ nào nhìn thấy (đi xuyên shadow root). Trước khi kết luận, cổng đợi thêm tối đa 5 s cho nội dung đến muộn và ghi `content appeared N ms after the network went idle`. 5 s đủ cho trường hợp gốc (nội dung hiện sau 2,96 s); trang trắng thật mất thêm 5 s mỗi lần render, chấp nhận được.
+- **Custom element chưa định nghĩa (mềm, cùng `render`):** chỉ thẳng chỗ hỏng; ở trang preview gốc của lan-topo-card nó báo `ha-card`, đúng thứ trang chứa thiếu khiến card mất nền tối. Chỉ báo thẻ rỗng; thẻ chưa đăng ký mà có con (`app-root` của Angular, thẻ chỉ để gắn style) chỉ được ghi chú, vì trang vẫn hiện đủ.
+- **`errors` (cứng):** `pageerror` (lỗi script chưa bắt), script/stylesheet trả ≥ 400 hoặc yêu cầu hỏng. Bỏ `ERR_ABORTED` (yêu cầu bị huỷ khi trang tự điều hướng) và console.error (favicon 404 gây nhiễu, đã thấy trong lúc dò).
+- Cách sửa theo "tái hiện trước": fixture `test/fixtures/trong.html` (script 404 + lỗi ném ra, trang trắng) và `cham.html` (chữ 10px đến sau 1,5 s); hai test đỏ trên mã cũ, xanh sau khi sửa.
