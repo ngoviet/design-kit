@@ -1,0 +1,19 @@
+<!doctype html>
+<!-- Thẻ có gạch ngang chưa đăng ký nhưng có con trong light DOM (như `app-root` của Angular, thẻ chỉ để gắn
+     style). Trang hiện đủ, nên không phải lỗi: cổng chỉ ghi chú. -->
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gốc app</title>
+<style>app-root { display: block; font: 1rem/1.5 system-ui; padding: 1rem; }</style>
+</head>
+<body>
+  <app-root>
+    <main>
+      <h1>Bảng điều khiển</h1>
+      <p>Nội dung nằm trong thẻ gốc chưa đăng ký.</p>
+    </main>
+  </app-root>
+</body>
+</html>

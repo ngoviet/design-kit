@@ -254,15 +254,19 @@ export function settleAnimations(): Promise<void> {
 
 /**
  * Trang có hiện gì không: số ký tự chữ nhìn thấy và số ảnh/đồ hoạ nhìn thấy (đi xuyên shadow root), cùng các
- * custom element chưa bao giờ được định nghĩa (script hỏng hoặc chưa tải). Trang trắng thì mọi phép đo khác
+ * custom element chưa bao giờ được định nghĩa: rỗng (script hỏng hoặc chưa tải) và có con trong light DOM (gốc app
+ * kiểu `app-root`, thẻ chỉ để gắn style, hoặc phần của app chủ mà trang chứa không cấp). Trang trắng thì mọi phép đo khác
  * đều "đạt" vì không có gì để trượt: gặp khi kiểm lan-topo-card (10/11/2026), cổng báo pass trên một màn tối.
  */
-export function probeVisible(): { text: number; media: number; undefinedTags: string[] } {
+export function probeVisible(): { text: number; media: number; undefinedTags: string[]; unregisteredTags: string[] } {
   const MEDIA = new Set(["IMG", "SVG", "CANVAS", "VIDEO", "PICTURE", "IFRAME", "OBJECT", "EMBED"]);
   const SKIP = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "HEAD", "TITLE", "META", "LINK"]);
   let text = 0;
   let media = 0;
   const undef = new Set<string>();
+  const unreg = new Set<string>();
+  const closed = (window as unknown as { __dkClosed?: WeakSet<Element> }).__dkClosed;
+  const empty = (el: Element): boolean => !el.children.length && !(el.textContent || "").trim();
   // opacity không kế thừa qua computed style: khung cha opacity 0 thì con vẫn báo 1, nên phải đi ngược lên
   // (xuyên qua shadow host). Nhớ kết quả từng phần tử để khỏi đi lại.
   const seen = new Map<Element, boolean>();
@@ -277,12 +281,13 @@ export function probeVisible(): { text: number; media: number; undefinedTags: st
   };
   const walk = (root: Document | ShadowRoot): void => {
     for (const el of Array.from(root.querySelectorAll("*"))) {
-      if (el.matches(":not(:defined)")) undef.add(el.tagName.toLowerCase());
+      if (el.matches(":not(:defined)")) (empty(el) ? undef : unreg).add(el.tagName.toLowerCase());
       if (el.shadowRoot) walk(el.shadowRoot);
       const tag = el.tagName.toUpperCase();
       if (SKIP.has(tag)) continue;
-      // Custom element đã định nghĩa mà không có shadow root mở có thể vẽ qua shadow root đóng, probe không vào được.
-      const isMedia = MEDIA.has(tag) || (tag.includes("-") && !el.shadowRoot && el.matches(":defined"));
+      // Host của shadow root đóng (ghi lại lúc attachShadow) vẽ ở chỗ probe không vào được: tính như một khối đồ hoạ.
+      // Vỏ light DOM chưa vẽ gì chỉ là hộp CSS, không tính.
+      const isMedia = MEDIA.has(tag) || closed?.has(el) === true;
       let own = 0;
       if (!isMedia) for (const n of Array.from(el.childNodes)) if (n.nodeType === 3) own += (n.textContent || "").trim().length;
       if (!own && !isMedia) continue;
@@ -295,7 +300,7 @@ export function probeVisible(): { text: number; media: number; undefinedTags: st
     }
   };
   walk(document);
-  return { text, media, undefinedTags: [...undef].slice(0, 5) };
+  return { text, media, undefinedTags: [...undef].slice(0, 5), unregisteredTags: [...unreg].slice(0, 5) };
 }
 
 /** Animation còn chạy (dùng sau khi giả lập prefers-reduced-motion: reduce). */
@@ -314,10 +319,17 @@ export function probeMotion(): { running: number; samples: string[] } {
   return { running: anims.length, samples };
 }
 
-/** Ghi LCP và CLS ngay từ đầu (addInitScript). */
+/** Ghi LCP và CLS ngay từ đầu (addInitScript), cùng các host của shadow root đóng (probe không vào được). */
 export function installVitals(): void {
-  const w = window as unknown as { __dk: { lcp: number; cls: number } };
+  const w = window as unknown as { __dk: { lcp: number; cls: number }; __dkClosed: WeakSet<Element> };
   w.__dk = { lcp: 0, cls: 0 };
+  w.__dkClosed = new WeakSet();
+  const attach = Element.prototype.attachShadow;
+  Element.prototype.attachShadow = function (this: Element, init: ShadowRootInit): ShadowRoot {
+    const root = attach.call(this, init);
+    if (init.mode === "closed") w.__dkClosed.add(this);
+    return root;
+  };
   try {
     new PerformanceObserver((l) => {
       for (const e of l.getEntries()) w.__dk.lcp = Math.max(w.__dk.lcp, e.startTime);

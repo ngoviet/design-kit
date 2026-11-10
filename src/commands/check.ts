@@ -249,10 +249,15 @@ async function checkPage(
       // Trang trắng: không có gì để trượt nên mọi phép đo khác "đạt". Phải là lỗi cứng.
       const vis = await page.evaluate(probeVisible);
       const undef = vis.undefinedTags.join(", ");
+      const unreg = vis.unregisteredTags.join(", ");
       if (!vis.text && !vis.media) {
-        add(r, "hard", "render", "page", `nothing visible: no text, image or graphic, also ${LATE_MS / 1000} s after the network went idle${undef ? `; custom elements never defined: ${undef}` : ""}`, render);
-      } else if (undef && vw !== 320) {
-        add(r, "soft", "render", "page", `custom element never defined (its script failed or has not loaded): ${undef}`, render);
+        const all = [...vis.undefinedTags, ...vis.unregisteredTags].join(", ");
+        add(r, "hard", "render", "page", `nothing visible: no text, image or graphic, also ${LATE_MS / 1000} s after the network went idle${all ? `; custom elements never defined: ${all}` : ""}`, render);
+      } else if (vw !== 320) {
+        if (undef) add(r, "soft", "render", "page", `custom element never defined (its script failed or has not loaded): ${undef}`, render);
+        if (unreg && !r.notes.some((n) => n.startsWith("not registered"))) {
+          r.notes.push(`not registered as custom elements (fine for app roots and styling tags; a missing host-app component otherwise): ${unreg}`);
+        }
       }
       for (const e of new Set(errs)) add(r, "hard", "errors", "page", e.slice(0, 200), render);
 

@@ -131,6 +131,19 @@ describe("check on real pages", () => {
     expect(out).not.toMatch(/(hard|soft),render,/);
   }, 120_000);
 
+  it("a defined light-DOM shell that rendered nothing is still a blank page", async () => {
+    const { out, code } = await run(["check", "test/fixtures/vo-rong.html", ...FAST, "--strict", "--full"]);
+    expect(out).toContain("fail: 1 of 1");
+    expect(out).toMatch(/hard,render,page,"?nothing visible/);
+    expect(code).toBe(1);
+  }, 120_000);
+
+  it("an unregistered tag with light-DOM children is a note, not a render finding", async () => {
+    const { out } = await run(["check", "test/fixtures/goc-app.html", ...FAST, "--full"]);
+    expect(out).not.toMatch(/(hard|soft),render,/);
+    expect(out).toMatch(/not registered as custom elements .*: app-root/);
+  }, 120_000);
+
   it("waits for content that arrives after the network is idle, then measures it", async () => {
     const { out } = await run(["check", "test/fixtures/cham.html", ...FAST, "--full"]);
     expect(out).toMatch(/text-min,.*p#nho.*10\.0px/);

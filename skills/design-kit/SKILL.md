@@ -137,7 +137,8 @@ design-kit check <file.html|folder|http://localhost:port> --strict
   (`errors`). A component that lives inside a host app (a Home Assistant card, a widget) needs a test page that
   provides what the host provides: its custom elements (`ha-card` as a block element, `ha-icon` at
   `--mdc-icon-size`), the data (`hass`), `lang="vi"` and a width that follows the viewport. A `render` soft
-  row "custom element never defined" names what the test page is missing. Findings caused by the test page
+  row "custom element never defined" (an empty one) or the note "not registered as custom elements" (one with
+  children) names what the test page is missing. Findings caused by the test page
   are not the component's: say which ones you set aside and why.
 - At most 3 fix rounds; still failing → report the remaining findings instead of looping.
 - **Fix the finding, not the layout.** A hard failure is fixed in place (drop an inner border, change a

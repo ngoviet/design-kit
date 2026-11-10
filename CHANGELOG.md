@@ -15,7 +15,8 @@ All notable changes to this project are documented here. The format follows
 
 - `render` check (hard): nothing visible (no text, image or graphic, through shadow roots) after load. The gate now
   waits up to 5 s for content that arrives after the network is idle, measures it once it appears, and notes the
-  delay. A custom element that is never defined is a soft `render` finding.
+  delay. An empty custom element that is never defined is a soft `render` finding; an unregistered one with children
+  (an app root, a styling tag) is only a note.
 - `errors` check (hard): an uncaught script error, or a script or stylesheet that fails to load (HTTP ≥ 400 or a
   failed request; aborted requests and console messages are ignored).
 
