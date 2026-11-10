@@ -31,7 +31,7 @@ Mã nguồn `s…` và luận điểm `c…` tra trong [`docs/nguon.md`](nguon.m
 | Focus | Thấy được, ≥ 2px, không bị che, không rơi vào phần tử vô hình (bị cắt về 1px, mờ hẳn, ngoài màn) | `focus` (Tab 15 lần ở khổ 1280 **và** 390) | mềm | chuẩn: 2.4.7, 2.4.11 AA, 2.4.13 AAA (s9, s10) |
 | CWV | LCP ≤ 2,5 s, CLS ≤ 0,1 (lab); INP ≤ 200 ms (thực địa) | `lcp`, `cls` | mềm | chuẩn: p75 thực địa (s2) |
 | Tiếng Việt | `lang="vi"`; giãn dòng tiêu đề ≥ 1,2; font có bộ ký tự vietnamese | `lang`, `heading-lh`, `font` | cứng / mềm | quy ước (s18) |
-| Cỡ chữ | Không chữ nào < 12px, kể cả chữ SVG tính theo cỡ đã co | `text-min`, Impeccable `tiny-text` | cứng | quy ước (Impeccable) |
+| Cỡ chữ | Không chữ nào < 12px, tính theo cỡ đã co: chữ SVG (viewBox) và chữ trong khối `transform: scale()`, `scale`, `zoom` | `text-min`, Impeccable `tiny-text` | cứng | quy ước (Impeccable) |
 | Thân chữ | ≥ 16px; giãn dòng ≥ 1,5 | `body-size`, `body-lh` | mềm | quy ước, WCAG 1.4.12 |
 | Độ dài dòng | ≤ 75–80 ký tự. Đặt `--measure: 32em`, **không dùng `ch`** | `measure`, Impeccable `line-length` | mềm | nghiên cứu: Baymard 50–75 (s17) |
 | Dấu hiệu UI do AI làm | 0 luật "slop" của Impeccable, trừ `cream-palette` (mềm: thuộc khẩu vị, chủ chấm A/B chọn bản nền kem) | `impeccable` | cứng | nghiên cứu (s4); A/B 09/11/2026 |
@@ -48,5 +48,6 @@ Mã nguồn `s…` và luận điểm `c…` tra trong [`docs/nguon.md`](nguon.m
 - **`ch` đo sai với chữ Việt.** Trong Be Vietnam Pro, `max-width: 68ch` chứa khoảng 93 ký tự mỗi dòng: chữ Việt trung bình hẹp hơn chữ số "0" khoảng 37%. Vì vậy token dùng `32em`.
 - **Impeccable không nhìn vào shadow DOM.** Engine 0.1.19, quét qua URL, bỏ sót chữ 9,9px và tương phản 1,55:1 nằm trong một open shadow root. Probe của design-kit và axe-core đều bắt được. Chi tiết ở `test/fixtures/loi.html`.
 - **Chữ SVG co theo viewBox.** Khai báo 13px trong viewBox rộng 900, khi hiển thị ở khổ 390px chỉ còn khoảng 5px.
+- **Chữ HTML co theo `transform: scale()`** (10/11/2026). Sơ đồ của lan-topo-card co để vừa thẻ, mức co thấp nhất mặc định là 0,55. Nhãn 12px vì thế hiện ra chỉ còn 6,6px, vậy mà `text-min` vẫn báo đạt, vì font-size tính toán không đổi. `scale` và `zoom` cũng vậy. Probe giờ nhân hệ số co của mọi tổ tiên vào cỡ chữ (`test/fixtures/co-gian.html`).
 - **Tái hiện lại lỗi shadow DOM của Impeccable** (skill 4.8.1, engine 0.1.19). Trang chỉ có lỗi trong shadow root: Impeccable báo 0 lỗi và thoát 0. Đặt cùng dòng chữ lỗi vào light DOM thì nó báo đủ (`low-contrast`, `undersized-ui-text`). Bản nháp báo lỗi ở `docs/bao-loi-impeccable-shadow-dom.md`, chưa gửi.
 - **Cổng theo trạng thái bắt được lỗi mà lần render đầu bỏ qua.** Ở khổ 320/390, khối `bang-du-lieu` giấu `thead` theo kiểu sr-only. Hệ quả: người dùng điện thoại không sắp xếp được bảng, còn phím Tab rơi vào nút vô hình. Tệp `bang-du-lieu.steps.json` báo "click … failed" ở 320/390, và phép đo focus ở 390 báo focus lạc. Bản React cũng không có cách sắp xếp ở khổ hẹp, và câu báo rỗng không kèm nút gỡ. Đã sửa cả hai bản: ẩn hẳn `thead`, thêm ô "Sắp xếp", thêm trạng thái "không thấy" có nút gỡ lọc.

@@ -10,6 +10,10 @@ All notable changes to this project are documented here. The format follows
 - A blank page no longer passes. Before, a page that rendered nothing (a component whose script failed, or content
   that arrived after the network went idle) passed every check with "0 findings", because there was nothing to
   fail. Found while checking a Home Assistant card outside Home Assistant.
+- `text-min` and `body-size` measure text at its rendered size when the element or any ancestor (through slots
+  and shadow hosts) is shrunk by `transform`, `scale` or `zoom`: 12 px labels in a diagram scaled to 0.55 render at
+  6.6 px and used to pass. Translate, rotate and transforms on inline boxes are not counted, and the page probe
+  waits for finite animations first so an opening `scale(.95) → 1` is not read as small text.
 
 ### Added
 

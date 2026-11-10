@@ -196,7 +196,7 @@ found), 2 bad usage.
 2. Each page and each state is rendered with playwright-core in Edge, then Chrome, then Playwright's Chromium, at
    390 and 1280 px in light and dark (320 px for overflow).
 3. In the page, axe-core runs the WCAG 2.2 AA rules, and a probe walks the DOM and every open shadow root: the
-   rendered font size (SVG text scaled by its viewBox), line height, line length in `em` (`ch` is wrong for
+   rendered font size (SVG text scaled by its viewBox, text shrunk by `transform`, `scale` or `zoom`), line height, line length in `em` (`ch` is wrong for
    Vietnamese: 68ch holds about 93 characters of Be Vietnam Pro), fonts loaded, keyboard focus at the widest and the
    narrowest width, guidance patterns. The page is reloaded with reduced motion to catch animations that ignore it,
    and LCP/CLS are read from the first load.

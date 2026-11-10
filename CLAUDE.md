@@ -54,6 +54,7 @@ Chuẩn và cổng cho giao diện do agent làm.
 - **`@import url(...)` nằm trong tệp token** bị bundler đẩy xuống giữa tệp và bỏ đi, nên mất font. Vì vậy mới tách ra `fonts.css`.
 - **Engine Impeccable 0.1.19 bỏ sót lỗi trong shadow DOM.** Đã tái hiện bằng `test/fixtures/loi.html`, và tái hiện lại với skill 4.8.1. Probe và axe thì bắt được. Bản nháp báo lỗi ở `docs/bao-loi-impeccable-shadow-dom.md`, chỉ gửi khi chủ duyệt.
 - **Chữ SVG co theo viewBox.** Probe tính cỡ chữ đã hiển thị.
+- **Chữ HTML co bằng `transform: scale()`, `scale` hay `zoom`** vẫn có font-size tính toán như cũ (sơ đồ lan-topo-card co 0,55 làm nhãn 12px hiện còn 6,6px mà vẫn đạt, 10/11/2026). Probe nhân dồn ma trận của mọi tổ tiên theo cây phẳng (`assignedSlot`, shadow host) và bỏ qua hộp inline. Không đo bằng `rect / offsetHeight`, vì offsetHeight bị làm tròn và phép xoay làm phình hộp bao, nên sẽ báo nhầm. Trước khi đo phải `settleAnimations`, nếu không thì hiệu ứng mở `scale(.5) → 1` bị báo thành chữ nhỏ. Fixture: `test/fixtures/co-gian.html`.
 - **`palette-axi analyze`** gộp sáng với tối trong cùng tệp và coi nền nhạt của màu trạng thái là trung tính, nên báo nhầm tint/band. Tiêu chí quyết định là `kiem-cap-mau.mjs`.
 - **`shadcn add`** đã ghi `import { cn } from "cn"` và cài gói npm lạ `cn`. Sau mỗi lần add: grep, sửa về `@/lib/utils`, rồi `npm uninstall cn`.
 - **`npx @google/design.md lint`** không làm gì mà vẫn thoát 0. Phải dùng `npx -p @google/design.md designmd lint`.

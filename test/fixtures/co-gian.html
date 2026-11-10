@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chữ bị co bằng transform</title>
+<link rel="stylesheet" href="../../tokens/fonts-local.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<style>
+  body { margin: 0; background: var(--bg); color: var(--text); font: 400 var(--fs-body)/var(--lh-body) var(--font-body); }
+  main { max-width: 40rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4); }
+  h1 { font: var(--weight-display) var(--fs-2xl)/var(--lh-tight) var(--font-display); margin: 0 0 var(--sp-4); }
+  p { max-width: var(--measure); margin: 0 0 var(--sp-4); }
+  .hop { width: fit-content; transform-origin: 0 0; margin: 0 0 var(--sp-2); }
+  .nhan { font-size: 12px; }
+  /* Hiệu ứng mở có hồi kết: đo giữa chừng sẽ tưởng chữ bị co. 1100ms: vẫn chạy sau networkidle (500ms) + 300ms,
+     phần còn lại ngắn hơn giới hạn chờ 600ms của settleAnimations. */
+  @media (prefers-reduced-motion: no-preference) {
+    .mo { animation: mo 1100ms linear; }
+    @keyframes mo { from { transform: scale(0.5); } }
+  }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Sơ đồ co theo bề rộng thẻ</h1>
+    <!-- Bị co thật: chữ khai báo 12px hiện ra 7,2px (lan-topo-card co sơ đồ bằng transform: scale) -->
+    <div class="hop" style="transform: scale(0.6)"><span class="nhan" id="co-transform">Cổng 1 ↓ 12 Mb/s</span></div>
+    <div class="hop" style="scale: 0.6"><span class="nhan" id="co-scale">Cổng 2 ↑ 3 Mb/s</span></div>
+    <div class="hop" style="zoom: 0.6"><span class="nhan" id="co-zoom">Cổng 3 đang nghỉ</span></div>
+    <so-do></so-do>
+    <khung-co><span class="nhan" id="co-slot">Cổng 5 ↓ 1 Mb/s</span></khung-co>
+    <div class="hop" style="transform: scale(0.8)"><p id="than-co">Đoạn thân bài cỡ mười sáu điểm ảnh nằm trong khối co còn tám phần mười, nên chữ hiện ra chỉ khoảng mười hai điểm ảnh.</p></div>
+    <!-- Không co: không được báo -->
+    <span class="nhan" id="khong-co">Cổng 6 ↓ 4 Mb/s</span>
+    <div class="hop" style="transform: translate(8px, 4px)"><span class="nhan" id="dich">Cổng 7 chỉ dịch chỗ</span></div>
+    <div class="hop" style="transform: rotate(180deg); transform-origin: center"><span class="nhan" id="xoay">Cổng 8 xoay ngược</span></div>
+    <div class="hop" style="transform: scale(1.2)"><span class="nhan" id="phong">Cổng 9 phóng to</span></div>
+    <div><span class="nhan" id="inline" style="transform: scale(0.5)">Cổng 10: transform không áp cho hộp inline</span></div>
+    <div class="hop mo"><span class="nhan" id="dang-mo">Cổng 11 vừa hiện ra</span></div>
+    <p id="than-thuong">Đoạn thân bài cỡ mười sáu điểm ảnh không bị co, giãn dòng một phẩy sáu, phải đạt mà không bị báo nhầm.</p>
+  </main>
+  <script>
+    // Host bị co: chữ trong shadow root co theo.
+    customElements.define("so-do", class extends HTMLElement {
+      constructor() {
+        super();
+        this.style.cssText = "display:block;width:fit-content;transform:scale(0.6);transform-origin:0 0";
+        this.attachShadow({ mode: "open" }).innerHTML = '<style>.lbl{font-size:12px}</style><span class="lbl">Cổng 4 ↓ 8 Mb/s</span>';
+      }
+    });
+    // Khung co nằm trong shadow root, chữ ở light DOM được gán vào slot: phải đi qua assignedSlot mới thấy hệ số co.
+    customElements.define("khung-co", class extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: "open" }).innerHTML =
+          '<div style="width:fit-content;transform:scale(0.6);transform-origin:0 0"><slot></slot></div>';
+      }
+    });
+  </script>
+</body>
+</html>

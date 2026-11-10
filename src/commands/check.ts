@@ -244,6 +244,8 @@ async function checkPage(
           continue;
         }
       }
+      // Cỡ chữ tính cả hệ số co của transform: đo giữa hiệu ứng mở scale(.95) → 1 sẽ báo nhầm chữ nhỏ.
+      await page.evaluate(settleAnimations);
       const p = await page.evaluate(probePage);
 
       // Trang trắng: không có gì để trượt nên mọi phép đo khác "đạt". Phải là lỗi cứng.
