@@ -123,6 +123,49 @@ describe("check on real pages", () => {
     expect(skip.out).toContain("none: no steps file");
   }, 120_000);
 
+  it("a blank page fails instead of passing with nothing to measure", async () => {
+    const { out, code } = await run(["check", "test/fixtures/trong.html", ...FAST, "--strict", "--full"]);
+    expect(out).toContain("fail: 1 of 1");
+    expect(out).toMatch(/hard,render,page,"?nothing visible/);
+    expect(out).toContain("the-mang");
+    expect(out).toMatch(/hard,errors,page,"?uncaught Error: cấu hình hỏng/);
+    expect(out).toMatch(/hard,errors,page,"?script failed to load: .*khong-co-tep-nay\.js \(HTTP 404\)/);
+    expect(code).toBe(1);
+  }, 120_000);
+
+  it("text inside a parent with opacity 0 does not count as visible", async () => {
+    const { out, code } = await run(["check", "test/fixtures/an-cha.html", ...FAST, "--strict", "--full"]);
+    expect(out).toContain("fail: 1 of 1");
+    expect(out).toMatch(/hard,render,page,"?nothing visible/);
+    expect(code).toBe(1);
+  }, 120_000);
+
+  it("a defined component drawing through a closed shadow root is not a blank page", async () => {
+    const { out } = await run(["check", "test/fixtures/bong-dong.html", ...FAST, "--full"]);
+    expect(out).not.toContain("nothing visible");
+    expect(out).not.toMatch(/(hard|soft),render,/);
+  }, 120_000);
+
+  it("a defined light-DOM shell that rendered nothing is still a blank page", async () => {
+    const { out, code } = await run(["check", "test/fixtures/vo-rong.html", ...FAST, "--strict", "--full"]);
+    expect(out).toContain("fail: 1 of 1");
+    expect(out).toMatch(/hard,render,page,"?nothing visible/);
+    expect(code).toBe(1);
+  }, 120_000);
+
+  it("an unregistered tag with light-DOM children is a note, not a render finding", async () => {
+    const { out } = await run(["check", "test/fixtures/goc-app.html", ...FAST, "--full"]);
+    expect(out).not.toMatch(/(hard|soft),render,/);
+    expect(out).toMatch(/not registered as custom elements .*: app-root/);
+  }, 120_000);
+
+  it("waits for content that arrives after the network is idle, then measures it", async () => {
+    const { out } = await run(["check", "test/fixtures/cham.html", ...FAST, "--full"]);
+    expect(out).toMatch(/text-min,.*p#nho.*10\.0px/);
+    expect(out).not.toContain("nothing visible");
+    expect(out).toMatch(/content appeared \d+ ms after the network went idle/);
+  }, 120_000);
+
   it("passes a page built on the tokens", async () => {
     const { out, code } = await run(["check", "test/fixtures/tot.html", ...FAST, "--strict"]);
     expect(out).toContain("pass: 1 pages, 0 hard failures");

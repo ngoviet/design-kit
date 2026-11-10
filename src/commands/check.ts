@@ -6,7 +6,7 @@ import { type FlagSpec, listFlag, parseCommandArgs } from "../args.js";
 import { launchBrowser, serveRoot, startServer, urlFor } from "../browser.js";
 import { fail } from "../errors.js";
 import { findImpeccable, runImpeccable } from "../impeccable.js";
-import { installVitals, probeFocus, probeMotion, probePage, settleAnimations, type ProbeHit } from "../probe.js";
+import { installVitals, probeFocus, probeMotion, probePage, probeVisible, settleAnimations, type ProbeHit } from "../probe.js";
 import type { Runtime } from "../runtime.js";
 import { loadSteps, parseSteps, runActions, STEPS_FORMAT, type StepAction, type StepState } from "../steps.js";
 
@@ -28,8 +28,8 @@ flags[14]:
   --full: every finding
   --help: this help
 gates[3]:
-  hard: overflow at 320px, axe serious/critical (contrast, target size, labels…), text < 12px, heading line-height < 1.2 in Vietnamese, missing lang="vi", animation that ignores reduced motion, a step that cannot be done (selector not found), Impeccable slop rules and quality rules a user trips on (low-contrast, tiny-text, overflow, occlusion, script errors)
-  soft: axe moderate/minor, body text < 16px or line-height < 1.5, lines > 80ch, a scroll box hiding content (cut-off table), more than 12 fields on one screen, guide (button that only says "Tiếp"/"Next", empty state with no next action, tour or welcome modal on load), web font not loaded, focus ring missing or hidden, LCP > 2.5s, CLS > 0.1, other Impeccable quality rules and advisories
+  hard: a page that shows nothing (no text, image or graphic, also 5 s after the network went idle), an uncaught script error or a script/stylesheet that fails to load, overflow at 320px, axe serious/critical (contrast, target size, labels…), text < 12px, heading line-height < 1.2 in Vietnamese, missing lang="vi", animation that ignores reduced motion, a step that cannot be done (selector not found), Impeccable slop rules and quality rules a user trips on (low-contrast, tiny-text, overflow, occlusion, script errors)
+  soft: a custom element that is never defined, axe moderate/minor, body text < 16px or line-height < 1.5, lines > 80ch, a scroll box hiding content (cut-off table), more than 12 fields on one screen, guide (button that only says "Tiếp"/"Next", empty state with no next action, tour or welcome modal on load), web font not loaded, focus ring missing or hidden, LCP > 2.5s, CLS > 0.1, other Impeccable quality rules and advisories
   human: hierarchy and taste, and the task map (every hesitation point has a guide pattern): open the screenshots
 steps:
   ${STEPS_FORMAT}
@@ -81,7 +81,7 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 /** Mọi kiểm tra có tên ở đây (để bảng `checks` liệt kê cả kiểm tra đã đạt). */
 const CHECKS: Array<[string, Gate]> = [
-  ["overflow", "hard"], ["axe", "hard"], ["text-min", "hard"], ["heading-lh", "hard"], ["lang", "hard"], ["motion", "hard"],
+  ["render", "hard"], ["errors", "hard"], ["overflow", "hard"], ["axe", "hard"], ["text-min", "hard"], ["heading-lh", "hard"], ["lang", "hard"], ["motion", "hard"],
   ["steps", "hard"], ["impeccable", "hard"], ["body-size", "soft"], ["body-lh", "soft"], ["measure", "soft"], ["font", "soft"],
   ["focus", "soft"], ["inner-scroll", "soft"], ["long-form", "soft"], ["guide", "soft"], ["lcp", "soft"], ["cls", "soft"],
 ];
@@ -151,6 +151,32 @@ async function axeRun(page: Page, axeSource: string): Promise<Array<{ id: string
   }, AXE_TAGS);
 }
 
+/**
+ * Nội dung có thể đến sau khi mạng đã rảnh: card đợi thư viện rồi mới vẽ, trang dựng bằng setTimeout. Đo ngay
+ * thì gặp trang trắng và mọi phép đo đều "đạt". Đợi tới khi có chữ hoặc đồ hoạ, tối đa LATE_MS.
+ * Trả về số ms tính từ lúc mạng rảnh tới khi nội dung hiện, 0 nếu có sẵn, -1 nếu hết giờ vẫn trắng.
+ */
+const LATE_MS = 5_000;
+async function waitForContent(page: Page, idleAt: number): Promise<number> {
+  const start = Date.now();
+  const seen = async () => {
+    const v = await page.evaluate(probeVisible);
+    return v.text > 0 || v.media > 0;
+  };
+  if (await seen()) return 0;
+  while (Date.now() - start < LATE_MS) {
+    await page.waitForTimeout(250);
+    if (await seen()) {
+      const at = Date.now() - idleAt;
+      // Nội dung vừa tới thường kéo theo font và ảnh: chờ font xong và một nhịp ngắn cho bố cục ổn định.
+      await page.evaluate(() => document.fonts.ready.then(() => undefined));
+      await page.waitForTimeout(500);
+      return at;
+    }
+  }
+  return -1;
+}
+
 async function checkPage(
   browser: Browser,
   url: string,
@@ -177,6 +203,20 @@ async function checkPage(
       });
       const page = await ctx.newPage();
       await page.addInitScript(installVitals);
+      // Lỗi người dùng gặp ngay khi mở: script ném lỗi, script/stylesheet không tải được (thường là nguyên nhân
+      // của trang trắng). Bỏ ERR_ABORTED (yêu cầu bị huỷ khi trang tự điều hướng), bỏ console.error (favicon 404…).
+      const errs: string[] = [];
+      const short = (u: string) => u.replace(/^https?:\/\/127\.0\.0\.1:\d+/, "");
+      page.on("pageerror", (e) => errs.push(`uncaught ${e.name}: ${e.message.split("\n")[0]}`));
+      page.on("response", (s) => {
+        const t = s.request().resourceType();
+        if ((t === "script" || t === "stylesheet") && s.status() >= 400) errs.push(`${t} failed to load: ${short(s.url())} (HTTP ${s.status()})`);
+      });
+      page.on("requestfailed", (q) => {
+        const t = q.resourceType();
+        const why = q.failure()?.errorText ?? "";
+        if ((t === "script" || t === "stylesheet") && !/ERR_ABORTED/.test(why)) errs.push(`${t} failed to load: ${short(q.url())} (${why})`);
+      });
       let resp;
       try {
         resp = await page.goto(url, { waitUntil: "networkidle", timeout: 45_000 });
@@ -188,8 +228,13 @@ async function checkPage(
         await ctx.close();
         fail(`${label}: HTTP ${resp.status()}`, "LOAD_FAILED");
       }
+      const idleAt = Date.now();
       await page.evaluate(() => document.fonts.ready.then(() => undefined));
       await page.waitForTimeout(300);
+      const late = await waitForContent(page, idleAt);
+      if (late > 0 && !r.notes.some((n) => n.startsWith("content appeared"))) {
+        r.notes.push(`content appeared ${late} ms after the network went idle: measured after it appeared`);
+      }
       if (actions) {
         // Không tới được trạng thái ⇒ chưa đo được ⇒ cứng: sửa trang (nút bị giấu ở khổ hẹp?) hoặc sửa tệp steps.
         const err = await runActions(page, actions);
@@ -202,6 +247,21 @@ async function checkPage(
       // Cỡ chữ tính cả hệ số co của transform: đo giữa hiệu ứng mở scale(.95) → 1 sẽ báo nhầm chữ nhỏ.
       await page.evaluate(settleAnimations);
       const p = await page.evaluate(probePage);
+
+      // Trang trắng: không có gì để trượt nên mọi phép đo khác "đạt". Phải là lỗi cứng.
+      const vis = await page.evaluate(probeVisible);
+      const undef = vis.undefinedTags.join(", ");
+      const unreg = vis.unregisteredTags.join(", ");
+      if (!vis.text && !vis.media) {
+        const all = [...vis.undefinedTags, ...vis.unregisteredTags].join(", ");
+        add(r, "hard", "render", "page", `nothing visible: no text, image or graphic, also ${LATE_MS / 1000} s after the network went idle${all ? `; custom elements never defined: ${all}` : ""}`, render);
+      } else if (vw !== 320) {
+        if (undef) add(r, "soft", "render", "page", `custom element never defined (its script failed or has not loaded): ${undef}`, render);
+        if (unreg && !r.notes.some((n) => n.startsWith("not registered"))) {
+          r.notes.push(`not registered as custom elements (fine for app roots and styling tags; a missing host-app component otherwise): ${unreg}`);
+        }
+      }
+      for (const e of new Set(errs)) add(r, "hard", "errors", "page", e.slice(0, 200), render);
 
       if (p.scrollW > p.clientW + 1) add(r, "hard", "overflow", `${vw}px`, `page is ${p.scrollW}px wide, viewport ${p.clientW}px`, render);
       if (vw !== 320) {
@@ -260,6 +320,7 @@ async function checkPage(
         await page.emulateMedia({ reducedMotion: "reduce" });
         await page.reload({ waitUntil: "networkidle" });
         await page.waitForTimeout(400);
+        await waitForContent(page, Date.now());
         if (actions) await runActions(page, actions);
         const m = await page.evaluate(probeMotion);
         if (m.running) add(r, "hard", "motion", m.samples.join(", "), `${m.running} animation(s) still run with prefers-reduced-motion: reduce`, render);
@@ -404,6 +465,9 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const help: string[] = [];
   if (all.length > shown.length) help.push(`${all.length - shown.length} more findings: add --full`);
   if (all.some((f) => f.gate === "hard")) help.push("Fix hard failures, then rerun the same command; soft ones need a fix or a written reason");
+  if (all.some((f) => f.check === "render" && f.gate === "hard")) {
+    help.push("Blank page: read the `errors` rows, or open the page in a browser console. A component that needs a host app (Home Assistant card, widget) needs a test page that provides it: the host's custom elements, data and lang");
+  }
   if (shotsBase) help.push(`Open the screenshots under ${relative(rt.cwd, shotsBase).replace(/\\/g, "/") || "."} and judge hierarchy before calling the page done`);
   // Nhắc dẫn đường mỗi lần chạy (chủ yêu cầu 09/11/2026): quy trình phức tạp đến mấy cũng phải dễ như phần hướng dẫn trong game.
   help.push("Guide like a game: your report names the task map (main tasks, where a first-time user hesitates) and the pattern covering each point: steps (trinh-tu), first-run checklist and just-in-time tips (bat-dau), empty state that teaches (trang-thai), Undo (thong-bao). Skill design-kit, section 2b");
