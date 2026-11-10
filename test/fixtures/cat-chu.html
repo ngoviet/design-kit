@@ -52,6 +52,7 @@
     <div class="the" id="cat-clip">Phòng họp tầng ba bên trái</div>
     <p><span id="nhan-chat" class="the chat">Ổn định</span></p>
     <div id="vua-khit">Ổn định cổng tầng hai</div>
+    <x-chip>Bộ chuyển mạch tầng hai phòng kỹ thuật</x-chip>
 
     <h2>Không bị cắt</h2>
     <div class="the" id="ten-ngan">CRS310</div>
@@ -82,6 +83,14 @@
             <div class="node"><div class="ten">Wi-Fi tầng 2</div><div class="sub">14 thiết bị</div></div>
             <div class="node"><div class="ten">NAS</div><div class="sub">1 cổng</div></div>
           </div>`;
+      }
+    });
+    // Chữ gán thẳng vào slot: hộp ellipsis nằm trong shadow root, chữ nằm ở light DOM
+    customElements.define("x-chip", class extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: "open" }).innerHTML =
+          `<span id="chip-hop" style="display:block;width:6rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><slot></slot></span>`;
       }
     });
   </script>

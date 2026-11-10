@@ -126,11 +126,13 @@ describe("check on real pages", () => {
       expect.stringMatching(/by overflow hidden: tops or bottoms of letters cut in \\"Ổn định cổng tầng hai\\"/),
       expect.stringMatching(/by overflow hidden: tops or bottoms of letters cut/),
     ]);
+    // Chữ gán thẳng vào slot, hộp ellipsis nằm trong shadow root của x-chip
+    expect(rows.some((l) => /x-chip::shadow span#chip-hop\b[^\n]*by ellipsis: shows \\"Bộ/.test(l))).toBe(true);
     // Không bị cắt thật thì không báo: ô ellipsis đủ chỗ, line-clamp đủ chỗ, sr-only, text-indent âm, ngăn kéo nằm
     // hẳn ngoài khung, cùng kiểu line-height 1 mà chữ không dấu, không chân (mực chữ nằm trong hộp), phần tử absolute
     // thoát khung cắt, chữ dưới mép khung cuộn nằm trong gốc overflow hidden cùng cỡ (ScrollArea)
     expect(rows.filter((l) => /#(ten-ngan|kep-ngan|an-chu|logo|ngan-keo|panel-an|nhan-la|thoat|cuon-goc|cuon-chu)\b/.test(l))).toEqual([]);
-    expect(rows.filter((l) => !/#(dong-phu|kep|hop-co-dinh|cat-clip|nhan-chat|vua-khit) /.test(l))).toEqual([]);
+    expect(rows.filter((l) => !/#(dong-phu|kep|hop-co-dinh|cat-clip|nhan-chat|vua-khit) |#chip-hop"|,\+1 more,text cut off,light\/1280$/.test(l))).toEqual([]);
   }, 120_000);
 
   it("a custom checkbox whose visible box draws no focus ring is still reported", async () => {

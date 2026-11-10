@@ -288,9 +288,12 @@ export function probePage(): ProbeResult {
     if (el.closest("svg") || ["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "TEXTAREA", "OPTION"].includes(el.tagName)) continue;
     const nodes = Array.from(el.childNodes).filter((n): n is Text => n.nodeType === 3 && !!(n.textContent || "").trim());
     if (!nodes.length) continue;
-    const cs = getComputedStyle(el);
-    if (!visible(el, cs)) continue;
+    const elCs = getComputedStyle(el);
+    const elShown = visible(el, elCs);
     for (const t of nodes) {
+      const slot = t.assignedSlot;
+      const cs = slot ? getComputedStyle(slot) : elCs;
+      if (slot ? cs.visibility === "hidden" || Number(cs.opacity) === 0 : !elShown) continue;
       const rects = rectsOf(t);
       if (!rects.length) continue;
       const u = rng.getBoundingClientRect();
@@ -300,7 +303,7 @@ export function probePage(): ProbeResult {
       // ScrollArea kiểu Radix) không làm mất chữ. Khung cuộn giấu nội dung là việc của inner-scroll.
       let scrolledX = false;
       let scrolledY = false;
-      for (let a: Element | null = el; a; a = parentOf(a)) {
+      for (let a: Element | null = slot ?? el; a; a = parentOf(a)) {
         const up = info(a);
         if (up.faded || up.hider) break;
         if (escaping) {
