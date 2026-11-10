@@ -263,18 +263,31 @@ export function probeVisible(): { text: number; media: number; undefinedTags: st
   let text = 0;
   let media = 0;
   const undef = new Set<string>();
+  // opacity không kế thừa qua computed style: khung cha opacity 0 thì con vẫn báo 1, nên phải đi ngược lên
+  // (xuyên qua shadow host). Nhớ kết quả từng phần tử để khỏi đi lại.
+  const seen = new Map<Element, boolean>();
+  const transparent = (el: Element | null): boolean => {
+    if (!el) return false;
+    const known = seen.get(el);
+    if (known !== undefined) return known;
+    const parent = el.parentElement ?? (el.parentNode instanceof ShadowRoot ? el.parentNode.host : null);
+    const res = Number(getComputedStyle(el).opacity) === 0 || transparent(parent);
+    seen.set(el, res);
+    return res;
+  };
   const walk = (root: Document | ShadowRoot): void => {
     for (const el of Array.from(root.querySelectorAll("*"))) {
       if (el.matches(":not(:defined)")) undef.add(el.tagName.toLowerCase());
       if (el.shadowRoot) walk(el.shadowRoot);
       const tag = el.tagName.toUpperCase();
       if (SKIP.has(tag)) continue;
-      const isMedia = MEDIA.has(tag);
+      // Custom element đã định nghĩa mà không có shadow root mở có thể vẽ qua shadow root đóng, probe không vào được.
+      const isMedia = MEDIA.has(tag) || (tag.includes("-") && !el.shadowRoot && el.matches(":defined"));
       let own = 0;
       if (!isMedia) for (const n of Array.from(el.childNodes)) if (n.nodeType === 3) own += (n.textContent || "").trim().length;
       if (!own && !isMedia) continue;
       const cs = getComputedStyle(el);
-      if (cs.visibility === "hidden" || cs.display === "none" || Number(cs.opacity) === 0) continue;
+      if (cs.visibility === "hidden" || cs.display === "none" || transparent(el)) continue;
       const r = el.getBoundingClientRect();
       if (isMedia ? r.width < 8 || r.height < 8 : r.width <= 1 || r.height <= 1) continue;
       if (isMedia) media++;
