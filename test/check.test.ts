@@ -108,6 +108,23 @@ describe("check on real pages", () => {
     expect(skip.out).toContain("none: no steps file");
   }, 120_000);
 
+  it("a blank page fails instead of passing with nothing to measure", async () => {
+    const { out, code } = await run(["check", "test/fixtures/trong.html", ...FAST, "--strict", "--full"]);
+    expect(out).toContain("fail: 1 of 1");
+    expect(out).toMatch(/hard,render,page,"?nothing visible/);
+    expect(out).toContain("the-mang");
+    expect(out).toMatch(/hard,errors,page,"?uncaught Error: cấu hình hỏng/);
+    expect(out).toMatch(/hard,errors,page,"?script failed to load: .*khong-co-tep-nay\.js \(HTTP 404\)/);
+    expect(code).toBe(1);
+  }, 120_000);
+
+  it("waits for content that arrives after the network is idle, then measures it", async () => {
+    const { out } = await run(["check", "test/fixtures/cham.html", ...FAST, "--full"]);
+    expect(out).toMatch(/text-min,.*p#nho.*10\.0px/);
+    expect(out).not.toContain("nothing visible");
+    expect(out).toMatch(/content appeared \d+ ms after the network went idle/);
+  }, 120_000);
+
   it("passes a page built on the tokens", async () => {
     const { out, code } = await run(["check", "test/fixtures/tot.html", ...FAST, "--strict"]);
     expect(out).toContain("pass: 1 pages, 0 hard failures");

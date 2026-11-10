@@ -36,7 +36,8 @@ chế độ giảm chuyển động, nút "Tiếp" không nói đi đâu. Làm c
 - **Cổng đo, không phải cảm tính.** Không có hướng dẫn thì mô hình chọn lựa chọn phổ biến nhất (font Inter, gradient
   tím, các thẻ giống hệt nhau), và mô hình tự chấm giao diện thì lệch nhiều so với người. Vì vậy design-kit chia việc:
   gì đo được thì thành phép đo trong CLI, còn thẩm mỹ để người xem trên ảnh chụp mà công cụ lưu lại.
-- **18 phép đo, 6 lần render mỗi trang.** Lỗi *cứng* chặn "báo xong": tràn ngang ở 320 px, axe-core mức
+- **20 phép đo, 6 lần render mỗi trang.** Lỗi *cứng* chặn "báo xong": trang trắng (cổng đợi tối đa 5 giây cho nội
+  dung đến muộn), lỗi script chưa bắt hoặc script/stylesheet không tải được, tràn ngang ở 320 px, axe-core mức
   serious/critical, chữ dưới 12 px, tiêu đề tiếng Việt có chiều cao dòng dưới 1,2, chữ tiếng Việt mà thiếu
   `lang="vi"`, hiệu ứng bỏ qua `prefers-reduced-motion`, bước thao tác không làm được, các luật slop và chất lượng của
   Impeccable. Lỗi *mềm* phải sửa hoặc ghi lý do: cỡ và chiều cao dòng chữ thân bài, độ dài dòng, font web đã nạp,
@@ -120,7 +121,7 @@ status: "fail: 1 of 1 pages have hard failures"
 renders: "light+dark × 320/390/1280 px via msedge, impeccable on"
 pages[1]{page,verdict,hard,soft}:
   test/fixtures/loi.html,fail,11,9
-checks[18]{check,gate,result}:
+checks[20]{check,gate,result}:
   overflow,hard,2 hard
   axe,hard,2 hard
   text-min,hard,1 hard

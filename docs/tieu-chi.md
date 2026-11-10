@@ -16,6 +16,9 @@ Mã nguồn `s…` và luận điểm `c…` tra trong [`docs/nguon.md`](nguon.m
 
 | Tiêu chí | Ngưỡng | Đo bằng (`design-kit check`) | Cổng | Loại, nguồn |
 | --- | --- | --- | --- | --- |
+| Trang hiện được | Có chữ, ảnh hoặc đồ hoạ nhìn thấy, chậm nhất 5 s sau khi mạng rảnh (cổng đợi nội dung đến muộn rồi mới đo) | `render` (probe đi xuyên shadow root) | cứng | quy ước: trang trắng làm mọi phép đo khác "đạt" vô nghĩa (gặp 10/11/2026 với lan-topo-card) |
+| Không lỗi khi mở | Không có lỗi script chưa bắt; script và stylesheet tải được | `errors` (sự kiện `pageerror`, phản hồi ≥ 400, yêu cầu hỏng trừ `ERR_ABORTED`) | cứng | quy ước: người dùng gặp tính năng hỏng; console.error không tính (favicon 404 gây nhiễu) |
+| Custom element | Mọi custom element đều được định nghĩa | `render` (`:not(:defined)`) | mềm | quy ước: script của thành phần hỏng hoặc chưa tải; trang chứa thiếu phần của app chủ (vd `ha-card`) |
 | Tương phản chữ | ≥ 4,5:1, chữ lớn ≥ 3:1, cả theme sáng lẫn tối | axe `color-contrast`, Impeccable `low-contrast` | cứng | chuẩn: WCAG 1.4.3 (s5) |
 | Tương phản phi chữ | ≥ 3:1 (viền ô nhập, icon, vòng focus) | `scripts/kiem-cap-mau.mjs` trên token | cứng | chuẩn: WCAG 1.4.11 (s6) |
 | APCA | Thân chữ \|Lc\| ≥ 60 | `palette-axi` | mềm | quy ước, chưa thành chuẩn (WCAG 3) |

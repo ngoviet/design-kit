@@ -68,6 +68,8 @@ Chuẩn và cổng cho giao diện do agent làm.
 - **Phép đo focus từng báo nhầm** ở công tắc tuỳ biến (input trong suốt) và ở mẹo đang chạy hiệu ứng mở (opacity 0 đúng lúc đo). Đã sửa: probe nhìn vào phần tử thay thế (span bên cạnh hoặc nhãn), và đợi hiệu ứng xong. Có test chặn báo nhầm trong `test/fixtures/buoc.html`.
 - **Máy đo đạt chưa phải là đẹp.** Vòng 09/11 máy báo 0 lỗi, nhưng ảnh chụp vẫn lộ bảng "A → Z" mà không xếp, tiêu đề bị bóp, mẹo lệch chỗ. Luôn mở ảnh chụp các trạng thái vừa sửa.
 - **Hook `bash-backslash-guard`** chặn lệnh Bash có `\\`. Sửa tệp bằng Edit/Write.
+- **Trang trắng từng qua cổng** (10/11/2026, kiểm lan-topo-card ngoài HA): card đợi 3 s rồi mới tải Lit từ CDN, cổng đo lúc mạng rảnh nên gặp màn trống, mọi phép đo "đạt", 0 phát hiện. Đã thêm `render` (cứng, đợi nội dung tối đa 5 s) và `errors` (cứng). Fixture: `test/fixtures/trong.html`, `cham.html`.
+- **Kiểm thành phần sống trong app chủ** (card HA, widget) cần trang chứa giả đủ thứ app chủ cấp: `ha-card` là khối (`display:block`, thiếu thì mất nền), `ha-icon` chiếm `--mdc-icon-size` (rỗng thì nút co lại, axe báo target-size nhầm), `lang`, bề rộng co theo khổ. Lỗi do trang chứa thì ghi riêng, không tính cho thành phần.
 
 ## Quy tắc
 

@@ -252,6 +252,39 @@ export function settleAnimations(): Promise<void> {
   ]);
 }
 
+/**
+ * Trang có hiện gì không: số ký tự chữ nhìn thấy và số ảnh/đồ hoạ nhìn thấy (đi xuyên shadow root), cùng các
+ * custom element chưa bao giờ được định nghĩa (script hỏng hoặc chưa tải). Trang trắng thì mọi phép đo khác
+ * đều "đạt" vì không có gì để trượt: gặp khi kiểm lan-topo-card (10/11/2026), cổng báo pass trên một màn tối.
+ */
+export function probeVisible(): { text: number; media: number; undefinedTags: string[] } {
+  const MEDIA = new Set(["IMG", "SVG", "CANVAS", "VIDEO", "PICTURE", "IFRAME", "OBJECT", "EMBED"]);
+  const SKIP = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "HEAD", "TITLE", "META", "LINK"]);
+  let text = 0;
+  let media = 0;
+  const undef = new Set<string>();
+  const walk = (root: Document | ShadowRoot): void => {
+    for (const el of Array.from(root.querySelectorAll("*"))) {
+      if (el.matches(":not(:defined)")) undef.add(el.tagName.toLowerCase());
+      if (el.shadowRoot) walk(el.shadowRoot);
+      const tag = el.tagName.toUpperCase();
+      if (SKIP.has(tag)) continue;
+      const isMedia = MEDIA.has(tag);
+      let own = 0;
+      if (!isMedia) for (const n of Array.from(el.childNodes)) if (n.nodeType === 3) own += (n.textContent || "").trim().length;
+      if (!own && !isMedia) continue;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === "hidden" || cs.display === "none" || Number(cs.opacity) === 0) continue;
+      const r = el.getBoundingClientRect();
+      if (isMedia ? r.width < 8 || r.height < 8 : r.width <= 1 || r.height <= 1) continue;
+      if (isMedia) media++;
+      else text += own;
+    }
+  };
+  walk(document);
+  return { text, media, undefinedTags: [...undef].slice(0, 5) };
+}
+
 /** Animation còn chạy (dùng sau khi giả lập prefers-reduced-motion: reduce). */
 export function probeMotion(): { running: number; samples: string[] } {
   const anims = document.getAnimations().filter((a) => {
