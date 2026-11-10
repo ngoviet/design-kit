@@ -75,7 +75,7 @@ Requirements:
 From the latest release (no clone needed):
 
 ```bash
-npm install -g https://github.com/ngoviet/design-kit/releases/download/v0.2.0/design-kit-0.2.0.tgz
+npm install -g https://github.com/ngoviet/design-kit/releases/download/v0.2.1/design-kit-0.2.1.tgz
 design-kit setup
 ```
 

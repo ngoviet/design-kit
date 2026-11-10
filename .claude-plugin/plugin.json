@@ -1,6 +1,6 @@
 {
   "name": "design-kit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Standards and a measured gate for agent-built UI: three design directions, blocks that passed the gate, a skill that plans workflows like a game tutorial, and hooks that remind the agent to run design-kit check after UI edits. Needs the design-kit CLI (README, Installation).",
   "homepage": "https://github.com/ngoviet/design-kit#readme",
   "author": { "name": "Ngô Đức Việt", "url": "https://github.com/ngoviet" },

@@ -1,6 +1,6 @@
 {
   "name": "design-kit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Design gate for agent-built UI: renders a page at 320/390/1280 px in light and dark, runs axe-core (WCAG 2.2 AA), text/motion/focus probes through shadow DOM, Impeccable and Core Web Vitals, takes screenshots, prints a TOON verdict",
   "type": "module",
