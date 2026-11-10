@@ -199,6 +199,8 @@ async function checkPage(
           continue;
         }
       }
+      // Cỡ chữ tính cả hệ số co của transform: đo giữa hiệu ứng mở scale(.95) → 1 sẽ báo nhầm chữ nhỏ.
+      await page.evaluate(settleAnimations);
       const p = await page.evaluate(probePage);
 
       if (p.scrollW > p.clientW + 1) add(r, "hard", "overflow", `${vw}px`, `page is ${p.scrollW}px wide, viewport ${p.clientW}px`, render);

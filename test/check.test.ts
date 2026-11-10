@@ -93,6 +93,21 @@ describe("check on real pages", () => {
     expect(code).toBe(1);
   }, 120_000);
 
+  it("measures text shrunk by transform, scale or zoom, through shadow roots and slots", async () => {
+    const { out, code } = await run(["check", "test/fixtures/co-gian.html", ...FAST, "--strict", "--full"]);
+    expect(out).toContain("text-min,hard,5 hard");
+    expect(out).toMatch(/text-min,.*span#co-transform.*7\.2px rendered \(12px × 0\.60\)/);
+    expect(out).toMatch(/text-min,.*span#co-scale.*7\.2px rendered/);
+    expect(out).toMatch(/text-min,.*span#co-zoom.*7\.2px rendered/);
+    expect(out).toMatch(/text-min,.*so-do::shadow span\.lbl.*7\.2px rendered/);
+    expect(out).toMatch(/text-min,.*span#co-slot.*7\.2px rendered/);
+    expect(out).toMatch(/body-size,.*p#than-co.*12\.8px rendered \(16px × 0\.80\)/);
+    // Không co thật thì không báo: để nguyên, chỉ dịch chỗ, xoay, phóng to, transform trên hộp inline,
+    // và hiệu ứng mở scale(.5) → 1 đang chạy lúc đo (phải chờ nó xong)
+    expect(out).not.toMatch(/#(khong-co|dich|xoay|phong|inline|than-thuong|dang-mo)\b/);
+    expect(code).toBe(1);
+  }, 120_000);
+
   it("a custom checkbox whose visible box draws no focus ring is still reported", async () => {
     const { out } = await run(["check", "test/fixtures/khong-vong.html", ...FAST, "--full"]);
     expect(out).toMatch(/focus,input#nho.*no visible focus ring/);

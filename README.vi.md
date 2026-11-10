@@ -194,7 +194,7 @@ không thấy trang), 2 gọi sai cú pháp.
 2. Mỗi trang và mỗi trạng thái được render bằng playwright-core trong Edge, rồi Chrome, rồi Chromium của Playwright,
    ở khổ 390 và 1280 px, cả sáng lẫn tối (khổ 320 px để đo tràn ngang).
 3. Trong trang, axe-core chạy bộ luật WCAG 2.2 AA, và một probe đi qua DOM cùng mọi shadow root mở để đo: cỡ chữ đã
-   hiển thị (chữ SVG co theo viewBox), chiều cao dòng, độ dài dòng tính bằng `em` (`ch` đo sai với tiếng Việt: 68ch
+   hiển thị (chữ SVG co theo viewBox, chữ bị co bằng `transform`, `scale` hay `zoom`), chiều cao dòng, độ dài dòng tính bằng `em` (`ch` đo sai với tiếng Việt: 68ch
    chứa khoảng 93 ký tự Be Vietnam Pro), font đã nạp, focus bàn phím ở khổ rộng nhất và hẹp nhất, các mẫu dẫn đường.
    Trang được nạp lại ở chế độ giảm chuyển động để bắt hiệu ứng bỏ qua nó, còn LCP/CLS lấy từ lần nạp đầu.
 4. Engine Impeccable chạy một lần mỗi trang, ở trạng thái ban đầu.

@@ -91,6 +91,49 @@ export function probePage(): ProbeResult {
   let viChars = 0;
   const bodyColor = getComputedStyle(document.body).color;
 
+  // Hệ số co của chữ do CSS: font-size tính toán giữ nguyên 12px dưới `transform: scale(.55)`, `scale: .55`
+  // hay `zoom: .55`, nhưng chữ hiện ra chỉ 6,6px (sơ đồ lan-topo-card co theo bề rộng thẻ).
+  // Nhân dồn phần tuyến tính [a b c d] của chính phần tử và mọi tổ tiên theo cây phẳng
+  // (slot được gán, rồi cha, rồi shadow host). Không đo hình học (rect / offsetHeight):
+  // offsetHeight làm tròn số nguyên và phép xoay làm phình hộp bao, đều báo nhầm.
+  type Lin = [number, number, number, number];
+  const linOf = new Map<Element, Lin>();
+  const lin = (el: Element): Lin => {
+    const cached = linOf.get(el);
+    if (cached) return cached;
+    const up = el.assignedSlot ?? el.parentElement ?? ((el.getRootNode() as ShadowRoot).host || null);
+    const [pa, pb, pc, pd] = up ? lin(up) : [1, 0, 0, 1];
+    const cs = getComputedStyle(el);
+    let m: Lin = [1, 0, 0, 1];
+    // Hộp inline thường và display: contents không biến đổi được (computed style vẫn trả matrix(...)).
+    if (cs.display !== "inline" && cs.display !== "contents") {
+      if (cs.transform && cs.transform !== "none") {
+        const d = new DOMMatrix(cs.transform);
+        m = [d.a, d.b, d.c, d.d];
+      }
+      // Thuộc tính riêng `scale` áp trước `transform`: S·M.
+      if (cs.scale && cs.scale !== "none") {
+        const [sx = 1, sy = sx] = cs.scale.split(/\s+/).map(Number);
+        m = [sx * m[0], sy * m[1], sx * m[2], sy * m[3]];
+      }
+    }
+    // zoom co đều mọi thứ bên trong, kể cả hộp inline.
+    const z = parseFloat(cs.zoom);
+    if (Number.isFinite(z) && z > 0 && z !== 1) m = [z * m[0], z * m[1], z * m[2], z * m[3]];
+    const r: Lin = [pa * m[0] + pc * m[1], pb * m[0] + pd * m[1], pa * m[2] + pc * m[3], pb * m[2] + pd * m[3]];
+    linOf.set(el, r);
+    return r;
+  };
+  // Cỡ chữ hiện ra theo chiều cao nét chữ: độ dài trục dọc sau biến đổi. Xoay hay lật không đổi cỡ.
+  // Sai số dưới 0,5% coi như không co, để 12px không thành "11.99px".
+  const shrink = (el: Element): number => {
+    const [, , c, d] = lin(el);
+    const k = Math.hypot(c, d);
+    return Math.abs(k - 1) < 0.005 ? 1 : k;
+  };
+  const px = (fs: number, k: number): string =>
+    k === 1 ? `${fs.toFixed(1)}px` : `${(fs * k).toFixed(1)}px rendered (${+fs.toFixed(1)}px × ${k.toFixed(2)})`;
+
   for (const el of all) {
     const text = ownText(el);
     if (!text || el.closest("svg") || ["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE"].includes(el.tagName)) continue;
@@ -98,15 +141,17 @@ export function probePage(): ProbeResult {
     if (!visible(el, cs)) continue;
     if (VI.test(text)) viChars++;
     const fs = parseFloat(cs.fontSize);
+    const k = shrink(el);
     const lhRaw = cs.lineHeight === "normal" ? fs * 1.2 : parseFloat(cs.lineHeight);
     const ratio = lhRaw / fs;
     const tag = el.tagName;
-    if (fs < 12) out.textMin.push({ where: label(el), value: `${fs.toFixed(1)}px` });
+    if (fs * k < 12) out.textMin.push({ where: label(el), value: px(fs, k) });
     const isBody = tag === "P" || tag === "LI" || tag === "DD" || tag === "BLOCKQUOTE";
-    const lines = Math.round(el.getBoundingClientRect().height / lhRaw);
+    // Hộp bao đã co theo k, dòng chữ khai báo thì chưa: quy về cùng một hệ.
+    const lines = Math.round(el.getBoundingClientRect().height / (lhRaw * k));
     // Chữ phụ (gợi ý dưới ô, chú thích) có màu khác chữ thân: 14px là đúng thang, không tính là thân chữ nhỏ.
     const secondary = cs.color !== bodyColor;
-    if (isBody && !secondary && text.length > 40 && fs < 16) out.bodySmall.push({ where: label(el), value: `${fs.toFixed(1)}px` });
+    if (isBody && !secondary && text.length > 40 && fs * k < 16) out.bodySmall.push({ where: label(el), value: px(fs, k) });
     if (isBody && lines >= 2 && ratio < 1.5) out.bodyTight.push({ where: label(el), value: ratio.toFixed(2) });
     if (/^H[1-4]$/.test(tag) && ratio < 1.2) out.headingTight.push({ where: label(el), value: ratio.toFixed(2) });
     if (isBody && lines >= 2 && canvas) {
@@ -115,7 +160,8 @@ export function probePage(): ProbeResult {
       canvas.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
       const sample = (el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 400);
       const avg = sample ? canvas.measureText(sample).width / sample.length : 0;
-      const width = el.getBoundingClientRect().width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      const [a, b] = lin(el);
+      const width = el.getBoundingClientRect().width / (Math.hypot(a, b) || 1) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
       if (avg > 0 && width / avg > 80) out.measure.push({ where: label(el), value: `~${Math.round(width / avg)} chars/line` });
     }
     const first = (cs.fontFamily.split(",")[0] || "").replace(/["']/g, "").trim();

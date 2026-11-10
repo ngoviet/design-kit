@@ -145,7 +145,7 @@ design-kit check <file.html|folder|http://localhost:port> --strict
 ## Thresholds (sources in `docs/tieu-chi.md`)
 
 Text contrast ≥ 4.5:1 (large 3:1), non-text ≥ 3:1, both themes · targets ≥ 24×24 px, primary buttons 44 ·
-no horizontal scroll at 320 px · body ≥ 16 px, nothing under 12 px (SVG text counts at its rendered size) ·
+no horizontal scroll at 320 px · body ≥ 16 px, nothing under 12 px (SVG text and text under `transform`/`scale`/`zoom` count at rendered size) ·
 body line-height ≥ 1.5, Vietnamese headings ≥ 1.2 · lines ≤ 75 chars (`max-width: var(--measure)` = 32em) ·
 `lang="vi"` · every animation has a reduced-motion branch · visible focus ≥ 2 px not covered by sticky bars ·
 LCP ≤ 2.5 s, INP ≤ 200 ms, CLS ≤ 0.1 · 0 Impeccable slop findings.
@@ -158,6 +158,9 @@ LCP ≤ 2.5 s, INP ≤ 200 ms, CLS ≤ 0.1 · 0 Impeccable slop findings.
   shadow root). `design-kit check` and axe do; for Web Components trust them, not `imp-axi` alone.
 - **Scaled SVG text**: 13 px in a 900-wide viewBox renders ~5 px at 390 px. Give the figure a `min-width`
   inside a focusable scroll region, or redraw it vertically.
+- **Fit-to-width by `transform: scale()`** (also `scale`, `zoom`) shrinks every label inside: a card diagram at
+  `scale(0.55)` turns 12 px into 6.6 px. The gate counts the rendered size now; keep the scale floor high enough
+  that the smallest label stays ≥ 12 px, or switch to a vertical layout / scroll region below that width.
 - **Scrollable regions** (`overflow:auto` tables) need `tabindex="0" role="region" aria-label`.
 - **Label in name** (WCAG 2.5.3): a button showing "NV" needs "NV" inside its `aria-label`.
 - **shadcn CLI** once wrote `import { cn } from "cn"` and installed an unrelated npm package `cn`: after

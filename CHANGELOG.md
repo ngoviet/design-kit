@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- `text-min` and `body-size` measure text at its rendered size when the element or any ancestor (through slots
+  and shadow hosts) is shrunk by `transform`, `scale` or `zoom`: 12 px labels in a diagram scaled to 0.55 render at
+  6.6 px and used to pass. Translate, rotate and transforms on inline boxes are not counted, and the page probe
+  waits for finite animations first so an opening `scale(.95) → 1` is not read as small text.
+
 ## [0.2.0] - 2026-11-10
 
 First public release.
