@@ -1,7 +1,10 @@
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "../src/cli.js";
 import { impGate } from "../src/commands/check.js";
+import { isFontSheet, tagAttrs } from "../src/commands/inline.js";
+import { pageWeight, paneUrl, weightDetail } from "../src/standalone.js";
 import { parseSteps } from "../src/steps.js";
 
 const root = join(__dirname, "..");
@@ -58,6 +61,62 @@ describe("parseSteps", () => {
     expect(() => parseSteps('[{"name":"a","do":[]}]', "t")).toThrow(/non-empty/);
     expect(() => parseSteps('[{"name":"a","do":[{"click":"#a"}]},{"name":"a","do":[{"click":"#b"}]}]', "t")).toThrow(/twice/);
     expect(() => parseSteps('[{"name":"a","do":[{"fill":"#a"}]}]', "t")).toThrow(/action 1/);
+  });
+});
+
+describe("inline", () => {
+  const tmp = join(root, ".design-kit", "test");
+  mkdirSync(tmp, { recursive: true });
+
+  it("tells a font stylesheet from one with rules", () => {
+    expect(isFontSheet(readFileSync(join(root, "tokens", "fonts-local.css"), "utf8"))).toBe(true);
+    // Google Fonts: URL có dấu ; bên trong
+    expect(isFontSheet(readFileSync(join(root, "tokens", "fonts.css"), "utf8"))).toBe(true);
+    expect(isFontSheet(readFileSync(join(root, "tokens", "core.css"), "utf8"))).toBe(false);
+    expect(isFontSheet('@import url("base.css"); @font-face { font-family: X; src: url(x.woff2) }')).toBe(false);
+    expect(isFontSheet("/* rỗng */")).toBe(false);
+  });
+
+  it("reads tag attributes with or without quotes", () => {
+    const a = tagAttrs(`<link rel=stylesheet href="../a b.css" media='print' disabled>`);
+    expect(a.get("rel")).toBe("stylesheet");
+    expect(a.get("href")).toBe("../a b.css");
+    expect(a.get("media")).toBe("print");
+    expect(a.has("disabled")).toBe(true);
+  });
+
+  it("puts relative stylesheets into the page in place, keeps font links, and a second run changes nothing", async () => {
+    const first = await run(["inline", "test/fixtures/tot.html", "--ra", ".design-kit/test/tot-gop.html"]);
+    expect(first.out).toContain('status: "inlined 2 stylesheets, kept 1 font link"');
+    const html = readFileSync(join(tmp, "tot-gop.html"), "utf8");
+    expect(html).toContain('<style data-dk-inline="../../tokens/core.css">');
+    expect(html).toContain('<style data-dk-inline="../../tokens/dem.css">');
+    expect(html).not.toContain('href="../../tokens/core.css"');
+    expect(html).toContain('<link rel="stylesheet" href="../../tokens/fonts-local.css">');
+    // Thứ tự cascade giữ nguyên: token đứng trước <style> của trang
+    expect(html.indexOf('data-dk-inline="../../tokens/dem.css"')).toBeLessThan(html.indexOf("body { margin: 0"));
+    const again = await run(["inline", ".design-kit/test/tot-gop.html"]);
+    expect(again.out).toContain("nothing to inline");
+    expect(again.out).toContain("nothing written: no change");
+  });
+
+  it("refuses a file that is not a page", async () => {
+    const { out, code } = await run(["inline", "tokens/core.css", "--dry-run"]);
+    expect(out).toContain("not an .html file");
+    expect(code).toBe(2);
+  });
+
+  it("encodes the page the way the app's browser pane does and counts base64 fonts", () => {
+    expect(paneUrl("<p>Việt</p>")).toBe("data:text/html;charset=utf-8,%3Cp%3EVi%E1%BB%87t%3C%2Fp%3E");
+    const w = pageWeight(`<style>@font-face{src:url(data:font/woff2;base64,${"A".repeat(2048)})}</style>`);
+    expect(w.fontBytes).toBeGreaterThan(2048);
+  });
+
+  it("weighs a page against the pane's 512 KiB limit (measured: 524,288 bytes open, 524,289 do not)", () => {
+    expect(weightDetail(400 * 1024, 0)).toBeUndefined();
+    expect(weightDetail(450 * 1024, 0)).toMatch(/^450 KB: close to the 512 KiB limit/);
+    expect(weightDetail(512 * 1024, 0)).toMatch(/close to/);
+    expect(weightDetail(512 * 1024 + 1, 300 * 1024)).toMatch(/^512 KB, 300 KB of it base64 fonts: over 512 KiB .* does not open the file at all/);
   });
 });
 
@@ -164,6 +223,39 @@ describe("check on real pages", () => {
     expect(out).toMatch(/text-min,.*p#nho.*10\.0px/);
     expect(out).not.toContain("nothing visible");
     expect(out).toMatch(/content appeared \d+ ms after the network went idle/);
+  }, 120_000);
+
+  it("standalone: a page that links its CSS by path loses it when opened as a file", async () => {
+    const { out, code } = await run(["check", "test/fixtures/tot.html", ...FAST, "--strict", "--full"]);
+    expect(out).toContain("standalone,soft,1 soft");
+    expect(out).toContain('soft,standalone,"data: URL"');
+    expect(out).toContain("loses 2 stylesheets (../../tokens/core.css, ../../tokens/dem.css); tokens --accent");
+    expect(out).toContain("design-kit inline <page>");
+    // Mềm: không chặn "xong"
+    expect(code).toBeUndefined();
+  }, 120_000);
+
+  it("standalone: the same page after inline keeps its tokens", async () => {
+    await run(["inline", "test/fixtures/tot.html", "--ra", ".design-kit/test/tot-gop.html"]);
+    const { out } = await run(["check", ".design-kit/test/tot-gop.html", ...FAST, "--full"]);
+    expect(out).not.toContain('standalone,"data: URL"');
+    if (process.platform === "win32") expect(out).toContain("standalone,soft,ok");
+  }, 120_000);
+
+  // Georgia và Times New Roman là font của Windows: trên Linux (CI) không tái hiện được.
+  it.skipIf(process.platform !== "win32")("standalone: a fallback font without Vietnamese letters is named", async () => {
+    const { out } = await run(["check", "test/fixtures/du-phong.html", ...FAST, "--full"]);
+    expect(out).toMatch(/soft,standalone,"p#than .*come from Times New Roman while the letters around them use Georgia/);
+  }, 120_000);
+
+  it("standalone: a page too heavy for the app's browser pane, and --no-standalone skips it", async () => {
+    // .design-kit/test/ cũng sâu hai cấp như test/fixtures/: ../../tokens vẫn trỏ đúng.
+    const tot = readFileSync(join(root, "test", "fixtures", "tot.html"), "utf8");
+    writeFileSync(join(root, ".design-kit", "test", "nang.html"), tot.replace("</body>", `<!-- ${"x".repeat(600 * 1024)} -->\n</body>`));
+    const heavy = await run(["check", ".design-kit/test/nang.html", ...FAST, "--full"]);
+    expect(heavy.out).toMatch(/soft,standalone,file,"60\d KB: over 512 KiB \(524,288 bytes\) the Claude app's browser pane does not open the file at all/);
+    const skip = await run(["check", ".design-kit/test/nang.html", ...FAST, "--no-standalone"]);
+    expect(skip.out).toContain("standalone,soft,skipped");
   }, 120_000);
 
   it("passes a page built on the tokens", async () => {

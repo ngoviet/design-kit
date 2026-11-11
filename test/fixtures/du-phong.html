@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Font dự phòng thiếu chữ Việt</title>
+<!-- Font web chỉ nạp được qua máy chủ; mở dạng data: URL (pane của app Claude) thì rơi về Georgia,
+     vốn không có ắ, ế, ữ…: trình duyệt mượn từng chữ của Times New Roman, dấu trông như vỡ ("Ngắ n"). -->
+<link rel="stylesheet" href="../../tokens/fonts-local.css">
+<style>
+  :root { --accent: oklch(0.5 0.15 258); --font-body: "Literata", Georgia, serif; }
+  body { margin: 0; background: #fff; color: #1a1a1a; font: 400 18px/1.7 var(--font-body); }
+  main { max-width: 32em; margin: 0 auto; padding: 48px 16px; }
+  h1 { font: 650 32px/1.25 system-ui, sans-serif; margin: 0 0 16px; }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Báo cáo ngắn</h1>
+    <p id="than">Ngắn gọn, viết tiếng Việt có dấu đầy đủ: những chữ ắ, ế, ữ, ỡ, ỹ phải cùng một font với chữ quanh nó.</p>
+  </main>
+</body>
+</html>

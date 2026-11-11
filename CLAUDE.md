@@ -33,6 +33,8 @@ Chuẩn và cổng cho giao diện do agent làm.
   - `impeccable.ts`: engine Impeccable. Phiên bản và sha256 được ghim; `design-kit setup` tải engine khi thiếu.
   - `commands/mau.ts`: `doi-mau` và `kiem-mau`. Hai lệnh nạp `scripts/doi-mau-lib.mjs` lúc chạy (không bundle), nên chỉ có một nguồn thuật toán.
   - `commands/setup.ts`: kiểm trình duyệt, tải engine.
+  - `standalone.ts`: phép đo `standalone`, mở tệp dạng `data:` URL như pane của app Claude rồi so với bản http.
+  - `commands/inline.ts`: lệnh `inline`, gộp stylesheet liên kết tương đối vào trang, giữ link font.
 - `hooks/nhac-giao-dien.mjs`: hook của plugin, không phụ thuộc gói nào.
   - PostToolUse: nhắc khi có sửa tệp giao diện, tối đa 15 phút một lần.
   - Stop: đọc transcript, chặn đúng một lần nếu sau lần sửa giao diện cuối chưa chạy `design-kit check`.
@@ -70,6 +72,8 @@ Chuẩn và cổng cho giao diện do agent làm.
 - **Máy đo đạt chưa phải là đẹp.** Vòng 09/11 máy báo 0 lỗi, nhưng ảnh chụp vẫn lộ bảng "A → Z" mà không xếp, tiêu đề bị bóp, mẹo lệch chỗ. Luôn mở ảnh chụp các trạng thái vừa sửa.
 - **Hook `bash-backslash-guard`** chặn lệnh Bash có `\\`. Sửa tệp bằng Edit/Write.
 - **Trang trắng từng qua cổng** (10/11/2026, kiểm lan-topo-card ngoài HA): card đợi 3 s rồi mới tải Lit từ CDN, cổng đo lúc mạng rảnh nên gặp màn trống, mọi phép đo "đạt", 0 phát hiện. Đã thêm `render` (cứng, đợi nội dung tối đa 5 s) và `errors` (cứng). Fixture: `test/fixtures/trong.html`, `cham.html`.
+- **Trang mất CSS khi mở trong trình duyệt của app Claude** (10/11/2026, trang báo cáo hướng Giấy): pane đổi `file:///…/trang.html` thành `data:text/html;charset=utf-8,…` (percent-encoding, đọc từ `location.href`), nên mọi `<link>` tương đối không nạp, trang toàn chữ Times, `--accent` rỗng, còn cổng chạy qua http vẫn đạt. Đã thêm `standalone` (mềm) và lệnh `inline`. Pane chỉ mở tệp tối đa 512 KiB, tính theo byte tệp (đo 11/11/2026: 524 288 byte mở được, 524 289 byte báo "couldn't open"; tệp 300 KB nhiều chữ Việt, URL 753 nghìn ký tự, vẫn mở). Muốn thử bằng `mcp__Claude_Browser__*` thì đặt tệp **trong** thư mục dự án của phiên (vd `.design-kit/`): tệp ngoài thư mục đó mở thành "static snapshot", công cụ báo "page tools can't act on it".
+- **Font dự phòng thiếu chữ Việt**: Georgia không có ắ, ế, ữ, nên trình duyệt mượn từng chữ của Times New Roman ("Ngắ n"). Hướng Giấy đã đổi sang `"Times New Roman", "Noto Serif"`. Kiểm bằng CDP `CSS.getPlatformFontsForNode`: hàm này tính cả chữ của thẻ con (`<code>` ra Consolas), nên probe tách chữ có dấu vào thẻ `dk-vi` riêng rồi mới so.
 - **Kiểm thành phần sống trong app chủ** (card HA, widget) cần trang chứa giả đủ thứ app chủ cấp: `ha-card` là khối (`display:block`, thiếu thì mất nền), `ha-icon` chiếm `--mdc-icon-size` (rỗng thì nút co lại, axe báo target-size nhầm), `lang`, bề rộng co theo khổ. Lỗi do trang chứa thì ghi riêng, không tính cho thành phần.
 
 ## Quy tắc

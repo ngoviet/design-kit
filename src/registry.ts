@@ -1,5 +1,6 @@
 import { CHECK_HELP, checkCommand } from "./commands/check.js";
 import { HOME_HELP } from "./commands/home.js";
+import { INLINE_HELP, inlineCommand } from "./commands/inline.js";
 import { DOI_MAU_HELP, doiMauCommand, KIEM_MAU_HELP, kiemMauCommand } from "./commands/mau.js";
 import { SETUP_HELP, setupCommand } from "./commands/setup.js";
 import type { Runtime } from "./runtime.js";
@@ -22,6 +23,12 @@ export const COMMANDS: Record<string, CommandSpec> = {
     summary: "render and measure pages; hard failures block done, soft need a reason, screenshots for the human pass",
     help: CHECK_HELP,
     run: checkCommand,
+  },
+  inline: {
+    usage: "inline <page.html> [--ra out.html] [--dry-run]",
+    summary: "put a page's linked stylesheets into the page so it opens without a server (the Claude app's browser pane); font links stay",
+    help: INLINE_HELP,
+    run: inlineCommand,
   },
   setup: {
     usage: "setup [--download] [--no-browser]",
