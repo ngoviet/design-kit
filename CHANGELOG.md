@@ -7,12 +7,20 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `text-clip` check (soft): text cut off inside its box, which passed every other check because the letters are
+  big enough, contrasted and inside the page. Catches an ellipsis or `-webkit-line-clamp` that hides words, and
+  `overflow: hidden` or `clip` that cuts letters or whole lines, including Vietnamese accents and descenders cut by
+  a tight line height ("Ổn định" shows as "Ön đinh": the glyph ink is measured, not only the line box). Reports
+  the element (through shadow roots and slots), the text still shown and the width, e.g. `at 1280px by ellipsis:
+  shows "6/10 cổng có link · 5 phía s…"`. Text moved fully outside its box on purpose (a closed drawer, negative
+  `text-indent`, sr-only) and absolutely positioned text that escapes the clipping box are not reported. Found
+  while checking a Home Assistant card whose sub line was cut at 1280 px and only the screenshot showed it.
 - `standalone` check (soft): each local file is also opened the way the Claude app's browser pane opens it, as
   `data:text/html;charset=utf-8,…` with no server, and compared with the http render. It reports linked stylesheets
   and design tokens the page loses there, scripts by path that will not run, a file over 400 KB (the pane opens a
   file of at most 512 KiB, measured: 524,288 bytes opened, 524,289 did not), and Vietnamese letters drawn from a
-  second font because the fallback lacks them
-  (read through the Chromium DevTools protocol). Found on 10/11/2026: a Giấy report page showed bare Times text in
+  second font because the fallback lacks them (read through the Chromium DevTools protocol). Found on 10/11/2026:
+  a Giấy report page showed bare Times text in
   the pane while `design-kit check --strict` passed. `--no-standalone` skips it for pages only served over http.
 - `design-kit inline <page.html> [--ra <out.html>] [--dry-run]`: puts each relatively linked stylesheet into a
   `<style>` in the same place (relative `@import`s inlined, `url()`s rebased), keeps font stylesheets linked as an

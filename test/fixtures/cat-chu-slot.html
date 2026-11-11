@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chữ gán vào slot bị cắt</title>
+<link rel="stylesheet" href="../../tokens/fonts-local.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<style>
+  body { margin: 0; background: var(--bg); color: var(--text); font: 400 var(--fs-body)/var(--lh-body) var(--font-body); }
+  main { max-width: 64rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4); }
+  h1 { font: var(--weight-display) var(--fs-2xl)/var(--lh-tight) var(--font-display); margin: 0 0 var(--sp-4); }
+  p { max-width: var(--measure); margin: 0 0 var(--sp-4); }
+  x-chip { display: block; margin: 0 0 var(--sp-3); }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Chữ gán vào slot bị cắt</h1>
+    <p>Chữ nằm ở light DOM, hộp ellipsis nằm trong shadow root của thẻ.</p>
+    <!-- Bị cắt thật: chữ dài hơn hộp 6rem -->
+    <x-chip data-hop="chip-hop">Bộ chuyển mạch tầng hai phòng kỹ thuật</x-chip>
+    <!-- Không bị cắt: chữ ngắn vừa hộp -->
+    <x-chip data-hop="chip-ngan">NAS</x-chip>
+  </main>
+  <script>
+    customElements.define("x-chip", class extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: "open" }).innerHTML =
+          `<span id="${this.dataset.hop}" style="display:block;width:6rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><slot></slot></span>`;
+      }
+    });
+  </script>
+</body>
+</html>

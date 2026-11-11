@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chữ bị cắt mất nội dung</title>
+<link rel="stylesheet" href="../../tokens/fonts-local.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<style>
+  body { margin: 0; background: var(--bg); color: var(--text); font: 400 var(--fs-body)/var(--lh-body) var(--font-body); }
+  main { max-width: 64rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4); }
+  h1 { font: var(--weight-display) var(--fs-2xl)/var(--lh-tight) var(--font-display); margin: 0 0 var(--sp-4); }
+  h2 { font: 600 var(--fs-lg)/var(--lh-snug) var(--font-display); margin: var(--sp-6) 0 var(--sp-3); }
+  p { max-width: var(--measure); margin: 0 0 var(--sp-4); }
+  .the { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); padding: var(--sp-3); margin: 0 0 var(--sp-3); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  /* Bị cắt thật */
+  #kep { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  #hop-co-dinh { max-width: var(--measure); height: calc(2 * var(--lh-body) * 1em); overflow: hidden; }
+  #cat-clip { width: 9rem; overflow: clip; white-space: nowrap; }
+  /* line-height 1 với overflow hidden: dấu chồng của "Ổ" và dấu nặng của "ị" vượt hộp dòng nên bị cắt ("Ön đinh") */
+  .chat { display: inline-block; line-height: 1; overflow: hidden; padding: 0 var(--sp-2); }
+  /* Ô ellipsis vừa khít (không có "…") mà vẫn gọt móc dấu hỏi của "Ổ": dấu chồng cao hơn ascent của font 0,25em,
+     line-height 1,5 chưa đủ. Phải báo là overflow hidden cắt dấu, không phải ellipsis. */
+  #vua-khit { width: fit-content; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.5; }
+  /* Không bị cắt: không được báo */
+  #ten-ngan { width: 12rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #kep-ngan { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+  #logo { display: block; width: 8rem; height: 2.5rem; overflow: hidden; text-indent: -9999px; background: var(--accent); border-radius: var(--r-sm); }
+  #ngan-keo { position: relative; height: 3rem; overflow: hidden; }
+  #ngan-keo .panel { position: absolute; inset: 0; transform: translateX(110%); }
+  a:focus-visible, [tabindex]:focus-visible { outline: var(--focus-w) solid var(--focus); outline-offset: 3px; }
+  .ngoai { position: relative; height: 4rem; }
+  .ngoai .khung { width: 6rem; height: 1.5rem; overflow: hidden; }
+  #thoat { position: absolute; top: 2rem; left: 0; white-space: nowrap; }
+  /* Kiểu ScrollArea của Radix: gốc overflow hidden, khung cuộn bên trong cùng cỡ. Chữ dưới mép cuộn tới được. */
+  #cuon-goc { max-width: var(--measure); height: 4.5rem; overflow: hidden; }
+  #cuon-goc .khung-cuon { height: 100%; overflow-x: hidden; overflow-y: scroll; }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Chữ bị cắt mất nội dung</h1>
+    <!-- Cây mạng kiểu lan-topo-card: khổ hẹp xếp dọc (đủ chỗ), khổ rộng xếp ngang với thẻ rộng cố định,
+         nên dòng phụ của CRS310 chỉ bị cắt ở 1280 ("… 5 phía s…"). -->
+    <so-do-cay></so-do-cay>
+
+    <h2>Bị cắt thật</h2>
+    <p id="kep">Đoạn mô tả bị kẹp còn hai dòng bằng line-clamp: phần sau của câu này nói rằng cổng số tám đang nối với máy chủ lưu trữ ở phòng kỹ thuật, nhưng người đọc không bao giờ thấy được vì chữ bị giấu mà không có cách nào mở ra xem tiếp.</p>
+    <div class="the" id="hop-co-dinh">Thẻ cao cố định hai dòng mà nội dung dài hơn: dòng thứ ba nói rằng bộ chuyển mạch tầng hai đã mất kết nối từ sáng, và dòng này bị overflow hidden cắt mất hẳn, không có dấu ba chấm nào báo cho người đọc biết.</div>
+    <div class="the" id="cat-clip">Phòng họp tầng ba bên trái</div>
+    <p><span id="nhan-chat" class="the chat">Ổn định</span></p>
+    <div id="vua-khit">Ổn định cổng tầng hai</div>
+
+    <h2>Không bị cắt</h2>
+    <div class="the" id="ten-ngan">CRS310</div>
+    <p id="kep-ngan">Đoạn ngắn có line-clamp nhưng đủ chỗ.</p>
+    <span class="sr-only"><span id="an-chu">Chữ chỉ dành cho trình đọc màn hình, nằm trong hộp một điểm ảnh</span></span>
+    <a id="logo" href="#">Trang chủ mạng gia đình</a>
+    <div id="ngan-keo"><div class="panel" id="panel-an">Ngăn kéo đang đóng, nằm hẳn ngoài khung</div></div>
+    <p><span id="nhan-la" class="the chat">CRS310 ON</span></p>
+    <div class="ngoai"><div class="khung"><span id="thoat">Mẹo absolute thoát khung cắt</span></div></div>
+    <div id="cuon-goc"><div class="khung-cuon" tabindex="0" role="region" aria-label="Nhật ký"><p id="cuon-chu">Nhật ký dài nằm trong khung cuộn: 08:00 bật máy chủ, 08:05 sao lưu xong, 09:12 cổng 3 mất link rồi có lại, 10:40 cập nhật phần mềm bộ chuyển mạch, 11:15 kiểm tra Wi-Fi tầng hai, 12:00 nghỉ trưa.</p></div></div>
+  </main>
+  <script>
+    customElements.define("so-do-cay", class extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: "open" }).innerHTML = `
+          <style>
+            :host { display: block; }
+            .cay { display: grid; gap: var(--sp-3); }
+            @media (min-width: 1024px) { .cay { grid-template-columns: repeat(4, 13.5rem); } }
+            .node { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); padding: var(--sp-3); }
+            .ten { font-weight: 600; }
+            .sub { font-size: var(--fs-sm); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+          </style>
+          <div class="cay">
+            <div class="node"><div class="ten">Router</div><div class="sub">2 cổng có link</div></div>
+            <div class="node"><div class="ten">CRS310</div><div class="sub" id="dong-phu">6/10 cổng có link · 5 phía sau</div></div>
+            <div class="node"><div class="ten">Wi-Fi tầng 2</div><div class="sub">14 thiết bị</div></div>
+            <div class="node"><div class="ten">NAS</div><div class="sub">1 cổng</div></div>
+          </div>`;
+      }
+    });
+  </script>
+</body>
+</html>
