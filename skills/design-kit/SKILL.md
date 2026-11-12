@@ -124,6 +124,38 @@ near it, and a tour library or "Chào mừng" modal open on load.
 
 Your report names the task map and which pattern covers each hesitation point.
 
+## 2c. Words on the page: real details, and mark what you made up
+
+**Facts you filled in yourself get `data-assumed`.** Opening hours, prices, phone numbers, addresses, staff
+names, counts, ratings, testimonials: anything you did not get from the user or a source. Put the attribute on
+the smallest element that holds the fact, with the reason as its value:
+
+```html
+<p>Mở cửa <span data-assumed="giờ mở cửa mẫu, chưa hỏi chủ">7:00–21:00</span> mỗi ngày.</p>
+<meta name="description" content="…" data-assumed="viết tạm">
+```
+
+`design-kit check` lists every such element under `assumed` (where, text, reason), hidden ones included. It is
+not a finding and does not fail the page, but a page with `assumed` rows is not ready to publish: put the list in
+your report, ask the user to confirm or correct each one, then remove the attribute. Never invent a number to
+make a section "look specific"; leave the real one to the user.
+
+**The `copy` check (soft) reads the visible text**, Vietnamese first, common English too, and flags text that
+reads as unedited AI output. Lists live in `data/copy-tells.json` (edit the file, not the code):
+
+- Generation 1: stock phrases ("Trong thế giới ngày nay", "nâng tầm", "unlock the power of"), three or more
+  stock words on one page ("hành trình", "khám phá", "tuyệt vời", "seamless"), template openers ("Bạn có biết",
+  "Chào mừng bạn đến với"), chatbot residue ("Chắc chắn rồi!", "Hy vọng thông tin này hữu ích"), placeholders
+  (`[Tên công ty]`, `{{name}}`, lorem ipsum, TODO; also in `alt`, `aria-label`, `title` and the tab title),
+  markdown shown as text (`##`, `**bold**`, `[text](url)`).
+- Generation 2: a row of 3–4 short stats in or right under the hero ("10K+ khách · 99% hài lòng · 24/7"), a
+  heading in clipped fragments ("Nhanh. Gọn."), a link or button that only says "Xem thêm"/"Learn more" (give
+  it the destination, or an `aria-label` that names it). "Tiếp"/"Next" belongs to the `guide` check.
+
+Fix by rewriting with the user's real details (skill `viet-tu-nhien` for Vietnamese voice). When the wording
+is deliberate, put `data-copy-ok="<reason>"` on the element and say so in your report. Text in `code`,
+`pre`, `kbd` and hidden elements is skipped; the stat row ignores tables, `<figure>` mock-ups and filter buttons.
+
 ## 3. Gate: measure, fix, show
 
 ```bash
@@ -132,7 +164,8 @@ design-kit check <file.html|folder|http://localhost:port> --strict
 
 - Renders 320/390/1280 px × light/dark through a local http server (so `../tokens` resolve), runs axe-core
   (WCAG 2.2 AA), the shadow-DOM-aware probe, reduced-motion, Tab focus at 1280 and 390, LCP/CLS, the
-  `guide` check, and Impeccable; then the same for every state in `<page>.steps.json` (section 2b).
+  `guide` and `copy` checks, and Impeccable; then the same for every state in `<page>.steps.json` (section 2b).
+  Facts marked `data-assumed` come back under `assumed` (section 2c): report them to the user.
 - **hard** = not done. **soft** = fix, or write the reason in your report. **human** = screenshots in
   `.design-kit/shots/<page>/`: open them yourself (Read the PNGs) and judge hierarchy before showing the user.
 - A blank page fails (`render`), and so do uncaught script errors and scripts/stylesheets that fail to load

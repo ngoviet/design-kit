@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiệm bánh [Tên tiệm]</title>
+<link rel="stylesheet" href="../../tokens/fonts-local.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<style>
+  body { margin: 0; background: var(--bg); color: var(--text); font: 400 var(--fs-body)/var(--lh-body) var(--font-body); }
+  main { max-width: 40rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4); }
+  h1, h2 { font: var(--weight-display) var(--fs-xl)/var(--lh-tight) var(--font-display); margin: 0 0 var(--sp-4); }
+  p { margin: 0 0 var(--sp-4); }
+  a { color: var(--accent-text, var(--accent)); }
+  .so { display: flex; gap: var(--sp-4); flex-wrap: wrap; margin: 0 0 var(--sp-5); }
+  .the { display: grid; gap: var(--sp-2); }
+  button { min-height: var(--hit-lg); padding: 0 var(--sp-5); border: 0; border-radius: var(--r-md); background: var(--accent); color: var(--on-accent); font: 600 var(--fs-sm) var(--font-body); }
+  .an { display: none; }
+</style>
+</head>
+<body>
+  <main>
+    <!-- Thế hệ 2: tiêu đề mảnh cụt, dải chỉ số dưới hero -->
+    <section id="hero">
+      <h1 id="mau-cut">Bánh ngon. Giá mềm.</h1>
+      <p id="mo-dau">Bạn có biết mỗi chiếc bánh là một câu chuyện?</p>
+      <a href="#dat">Đặt bánh</a>
+    </section>
+    <div class="so" id="dai-so">
+      <div><strong>10K+</strong> khách</div>
+      <div><strong>99%</strong> hài lòng</div>
+      <div><strong>24/7</strong> giao hàng</div>
+    </div>
+
+    <!-- Thế hệ 1 -->
+    <p id="sao">Trong thế giới ngày nay, chúng tôi đóng vai trò quan trọng trong bữa sáng của bạn.</p>
+    <p id="chat">Chắc chắn rồi! Đây là đoạn giới thiệu cho tiệm.</p>
+    <p id="giu-cho">Liên hệ [Số điện thoại của tiệm] hoặc ghé {{dia_chi}}.</p>
+    <p id="lorem">Lorem ipsum dolor sit amet.</p>
+    <p id="md">## Thực đơn hôm nay và **bánh mì bơ tỏi** nóng hổi</p>
+    <p id="tu-yeu">Hành trình khám phá hương vị tuyệt vời, hoàn hảo từng chi tiết.</p>
+    <img id="anh" alt="[Ảnh cửa tiệm]" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="8" height="8">
+    <div class="the"><a id="xem" href="#banh">Xem thêm</a></div>
+    <button type="button" id="hoc">Learn more →</button>
+
+    <!-- data-assumed: dữ kiện agent tự điền -->
+    <p>Mở cửa <span id="gio" data-assumed="giờ mở cửa mẫu, chưa hỏi chủ">7:00–21:00</span> mỗi ngày.</p>
+    <p>Bánh mì bơ tỏi <span id="gia" data-assumed>25.000 đ</span>.</p>
+    <span class="an" id="an-gia" data-assumed="số liệu ẩn">500 suất/ngày</span>
+
+    <!-- Không được báo -->
+    <h2 id="tieu-de-thuong">Thực đơn bánh mì buổi sáng.</h2>
+    <p id="tho">Sáng nay lò ra mẻ đầu lúc 6 giờ, hết bơ tỏi trước 8 giờ.</p>
+    <p id="ma">Gõ <code>**đậm**</code> trong ô ghi chú để in đậm, hoặc <code>## mục</code> cho tiêu đề.</p>
+    <p id="cho-phep" data-copy-ok="câu chủ tự viết">Chắc chắn rồi, mai tiệm vẫn mở.</p>
+    <p id="an-chu" class="an">Chắc chắn rồi! Đoạn này đang ẩn.</p>
+    <a id="ro-dich" href="#menu" aria-label="Xem thêm thực đơn bánh ngọt">Xem thêm</a>
+    <nav aria-label="Trang"><a href="#2">Trang 2</a></nav>
+    <p id="nhan">Gọi <a href="tel:0900000000">0900 000 000</a> để đặt trước.</p>
+  </main>
+</body>
+</html>

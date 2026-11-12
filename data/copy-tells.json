@@ -1,0 +1,126 @@
+{
+  "$comment": [
+    "Dấu hiệu chữ do AI viết (hoặc chưa ai đọc lại) trên trang, cho phép đo `copy` của `design-kit check` (mềm).",
+    "Sửa danh sách ở đây, không sửa mã. Khung phân loại hai thế hệ mượn ý từ taste-skill 2.5.1 references/copy-tells.md (MIT, Leonxlnx/taste-skill); không chép văn bản.",
+    "Từ tiếng Việt lấy từ skill viet-tu-nhien mục 3 và báo cáo claude_optimize round98-ai-content-tu-nhien.md.",
+    "Mỗi nhóm: id, label (tiếng Anh, in ra output), gen (1 hoặc 2), min (số cụm KHÁC NHAU tối thiểu trên một trang mới báo; 1 = báo từng chỗ),",
+    "at: \"start\" (chỉ khớp ở đầu khối chữ), scope: \"text\" (mặc định) hoặc \"text+attr\" (cả alt, aria-label, title, <title>),",
+    "phrases: cụm chữ thường (không phân biệt hoa thường, khớp trọn từ), regex: biểu thức (cờ iu) hoặc {\"re\": \"...\", \"flags\": \"u\"} khi cần phân biệt hoa thường.",
+    "Viết cả hai kiểu bỏ dấu khi tiếng Việt có hai cách viết (toả/tỏa, kỷ/kỉ, khoá/khóa, hy/hi)."
+  ],
+  "categories": [
+    {
+      "id": "stock-phrase",
+      "label": "stock phrase",
+      "gen": 1,
+      "min": 1,
+      "phrases": [
+        "trong thế giới ngày nay", "trong kỷ nguyên số", "trong kỉ nguyên số", "trong thời đại số", "trong thời đại công nghệ",
+        "đóng vai trò quan trọng", "đóng một vai trò quan trọng", "nâng tầm", "đáng chú ý là", "điều thú vị là",
+        "lan toả giá trị", "lan tỏa giá trị", "không ngừng nỗ lực", "đầy cảm hứng", "giải pháp tối ưu", "trải nghiệm tuyệt vời",
+        "mang đến trải nghiệm", "đồng hành cùng bạn", "chìa khoá thành công", "chìa khóa thành công", "chinh phục mọi",
+        "in today's fast-paced world", "in today’s fast-paced world", "in the ever-evolving", "ever-changing landscape",
+        "unlock the power of", "unlock your potential", "look no further", "to the next level", "elevate your",
+        "seamless experience", "cutting-edge solutions", "a testament to"
+      ],
+      "regex": ["hãy cùng (\\p{L}+\\s){0,4}tìm hiểu"]
+    },
+    {
+      "id": "stock-word",
+      "label": "stock words",
+      "gen": 1,
+      "min": 3,
+      "phrases": [
+        "hành trình", "góp phần", "khám phá", "bí quyết", "chìa khoá", "chìa khóa", "tóm lại", "nhìn chung", "có thể nói",
+        "vô cùng", "tuyệt vời", "hoàn hảo", "đột phá", "tiên phong", "hàng đầu", "vượt trội", "đẳng cấp", "toàn diện",
+        "tối ưu", "liền mạch", "kiến tạo", "khơi nguồn", "bứt phá",
+        "seamless", "seamlessly", "unlock", "elevate", "empower", "cutting-edge", "next-level", "game-changer",
+        "revolutionize", "revolutionise", "world-class", "effortless", "effortlessly", "supercharge", "unleash", "delve",
+        "tapestry", "robust", "leverage", "innovative", "transformative"
+      ],
+      "regex": ["không chỉ [^.!?]{1,60} mà còn"]
+    },
+    {
+      "id": "opener",
+      "label": "template opener",
+      "gen": 1,
+      "min": 1,
+      "at": "start",
+      "phrases": [
+        "trong bối cảnh", "bạn có biết", "bạn đã bao giờ", "hãy tưởng tượng", "chào mừng bạn đến với", "chào mừng đến với",
+        "bạn đang tìm kiếm", "bạn đang tìm", "in today's", "in today’s", "welcome to", "imagine a", "imagine if",
+        "are you looking for", "have you ever", "did you know", "ever wondered"
+      ]
+    },
+    {
+      "id": "chat",
+      "label": "chatbot residue",
+      "gen": 1,
+      "min": 1,
+      "phrases": [
+        "chắc chắn rồi", "tất nhiên rồi", "tôi rất vui được giúp", "tôi rất vui khi được giúp", "tôi rất vui được hỗ trợ",
+        "là một mô hình ngôn ngữ", "là một trợ lý ai", "câu hỏi rất hay",
+        "i hope this helps", "hope this helps", "as an ai", "as a language model", "great question"
+      ],
+      "regex": [
+        "^(certainly|sure|absolutely|of course)[!,.]",
+        "^here(’s| is|'s) (a|an|the|your) ",
+        "^dưới đây là (một )?(phiên bản|bản|đoạn|nội dung|gợi ý)",
+        "h[yi] vọng (điều này|thông tin này|bài viết này|nội dung này) (sẽ )?(hữu ích|giúp ích|giúp)"
+      ]
+    },
+    {
+      "id": "placeholder",
+      "label": "placeholder left in",
+      "gen": 1,
+      "min": 1,
+      "scope": "text+attr",
+      "phrases": [
+        "lorem ipsum", "dolor sit amet", "nội dung mẫu", "văn bản mẫu", "tiêu đề mẫu", "mô tả mẫu", "chủ điền",
+        "your text here", "your company", "company name", "insert text", "placeholder text", "sample text"
+      ],
+      "regex": [
+        "\\[(?=[^\\]\\n]*\\p{L})(?=[^\\]\\n]*\\s)[^\\]\\n]{3,60}\\]",
+        "\\[(tên|name|email|sđt|phone|địa chỉ|address|logo|ảnh|image|link|url|giá|price|ngày|date)\\]",
+        "\\{\\{[^}\\n]{0,60}\\}\\}",
+        "\\$\\{[^}\\n]{0,60}\\}",
+        { "re": "\\b(TODO|TBD|FIXME|XXX)\\b", "flags": "u" }
+      ]
+    },
+    {
+      "id": "markdown",
+      "label": "markdown shown as text",
+      "gen": 1,
+      "min": 1,
+      "regex": [
+        "^#{1,6}\\s+\\S[^.!?]{0,30}",
+        "\\*\\*[^*\\s][^*]{0,80}\\*\\*",
+        "(^|\\s)__[^_\\s][^_]{0,80}__",
+        "```",
+        "\\[[^\\]\\n]{1,80}\\]\\((https?://|/|#)[^)\\s]*\\)"
+      ]
+    }
+  ],
+  "vagueLinks": {
+    "$comment": "Nút/liên kết chỉ ghi chung chung, nhiều cái giống nhau trên một trang (thế hệ 2). \"Tiếp\", \"Next\", \"Continue\" do phép đo guide bắt, không lặp ở đây.",
+    "label": "link says nothing about where it goes",
+    "names": [
+      "xem thêm", "xem chi tiết", "tìm hiểu thêm", "đọc thêm", "chi tiết", "nhấn vào đây", "bấm vào đây", "tại đây", "ở đây",
+      "learn more", "read more", "see more", "more", "click here", "here", "details"
+    ]
+  },
+  "statStrip": {
+    "$comment": "Dải 3–4 con số chỉ số ngắn ngay trong hoặc ngay dưới hero (khối chứa h1 có nút hành động): \"10K+ khách hàng · 99% hài lòng · 24/7\".",
+    "label": "row of short stats under the hero",
+    "min": 3,
+    "max": 4,
+    "maxChars": 32
+  },
+  "fragmentHeading": {
+    "$comment": "Tiêu đề hai, ba mảnh cụt: \"Nhanh. Gọn.\", \"Built for speed. Made for you.\"",
+    "label": "heading in clipped fragments",
+    "minParts": 2,
+    "maxParts": 3,
+    "maxWords": 4
+  }
+}

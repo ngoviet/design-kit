@@ -36,14 +36,14 @@ ring, motion that ignores reduced-motion, a "Next" button that does not say wher
 - **A gate, not a vibe check.** Without guidance a model picks the most common choice (Inter, a purple gradient,
   identical cards), and models grading UI agree poorly with people. So design-kit splits the work: everything
   measurable is a check in the CLI, and taste is left to a person looking at the screenshots it saves.
-- **22 checks, 6 renders per page.** *Hard* failures block "done": a blank page (the gate waits up to 5 s for content
+- **23 checks, 6 renders per page.** *Hard* failures block "done": a blank page (the gate waits up to 5 s for content
   that arrives late), an uncaught script error or a script/stylesheet that fails to load, overflow at 320 px, axe-core serious/critical,
   text under 12 px, Vietnamese headings with line height under 1.2, Vietnamese text without `lang="vi"`, animation that
   ignores `prefers-reduced-motion`, a scripted step that cannot be done, Impeccable slop and quality rules. *Soft*
   findings need a fix or a written reason: body size and line height, line length, web font loaded, focus ring missing
   or hidden, a scroll box hiding content, text cut off (an ellipsis or line clamp hiding words, overflow cutting
-  letters or Vietnamese accents), more than 12 fields on one screen, guidance, LCP, CLS, and a page that loses its
-  CSS (or its Vietnamese letters) when opened in the Claude app's browser pane.
+  letters or Vietnamese accents), more than 12 fields on one screen, guidance, copy, LCP, CLS, and a page that
+  loses its CSS (or its Vietnamese letters) when opened in the Claude app's browser pane.
 - **Sees inside shadow DOM.** Lit and Home Assistant cards are measured inside open shadow roots, where the
   Impeccable engine currently reports nothing.
 - **Measures the states behind a click.** A `<page>.steps.json` beside the page lists states such as form errors,
@@ -52,6 +52,12 @@ ring, motion that ignores reduced-motion, a "Next" button that does not say wher
   a first-time user would hesitate: a step-by-step flow that names the next step, a "Get started" checklist,
   just-in-time tips, empty states that teach, Undo instead of "Are you sure?". The `guide` check flags a button that
   only says "Next", an empty state with no way forward, and a tour that opens on load.
+- **Reads the words, and lists what the agent made up.** The `copy` check flags text that reads as unedited AI
+  output, Vietnamese first: stock phrases, template openers, chatbot residue ("Chắc chắn rồi!"), placeholders
+  (`[Tên công ty]`, `{{name}}`, lorem ipsum), markdown shown as text, a row of 3–4 vanity stats under the hero,
+  headings in fragments ("Fast. Simple.") and links that only say "Learn more". The lists live in
+  `data/copy-tells.json`. Facts the agent filled in itself (opening hours, prices, numbers) carry
+  `data-assumed="<why>"` and come back under `assumed` for the owner to confirm.
 - **Three directions, ready to copy.** *Đêm* (night: apps, dashboards), *Giấy* (paper: documents, reports) and
   *Đậm* (bold: landing pages, marketing), each a token file with light and dark themes and a generated DESIGN.md.
   All 126 color pairs pass WCAG; `design-kit doi-mau` re-hues a direction to fit a brand and re-solves lightness so
@@ -247,7 +253,8 @@ tokens/            fonts-local.css + fonts/ (self-hosted, Latin + Vietnamese), c
 design/<dir>/      DESIGN.md per direction, generated from the tokens
 blocks/html/       13 HTML/CSS blocks, each with an optional <block>.steps.json
 blocks/react/      Vite + React + shadcn/ui blocks on the same tokens
-src/               the CLI (check, probe, steps, browser, impeccable, color commands)
+src/               the CLI (check, probe, copy, steps, browser, impeccable, color commands)
+data/              copy-tells.json: the word lists for the copy check
 skills/, hooks/    the Claude Code plugin; .claude-plugin/ holds its manifest and marketplace
 scripts/           color pair check, DESIGN.md generator, font download, source export
 docs/              criteria, sources, decisions (Vietnamese)
