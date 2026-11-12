@@ -36,13 +36,14 @@ ring, motion that ignores reduced-motion, a "Next" button that does not say wher
 - **A gate, not a vibe check.** Without guidance a model picks the most common choice (Inter, a purple gradient,
   identical cards), and models grading UI agree poorly with people. So design-kit splits the work: everything
   measurable is a check in the CLI, and taste is left to a person looking at the screenshots it saves.
-- **21 checks, 6 renders per page.** *Hard* failures block "done": a blank page (the gate waits up to 5 s for content
+- **22 checks, 6 renders per page.** *Hard* failures block "done": a blank page (the gate waits up to 5 s for content
   that arrives late), an uncaught script error or a script/stylesheet that fails to load, overflow at 320 px, axe-core serious/critical,
   text under 12 px, Vietnamese headings with line height under 1.2, Vietnamese text without `lang="vi"`, animation that
   ignores `prefers-reduced-motion`, a scripted step that cannot be done, Impeccable slop and quality rules. *Soft*
   findings need a fix or a written reason: body size and line height, line length, web font loaded, focus ring missing
   or hidden, a scroll box hiding content, text cut off (an ellipsis or line clamp hiding words, overflow cutting
-  letters or Vietnamese accents), more than 12 fields on one screen, guidance, LCP, CLS.
+  letters or Vietnamese accents), more than 12 fields on one screen, guidance, LCP, CLS, and a page that loses its
+  CSS (or its Vietnamese letters) when opened in the Claude app's browser pane.
 - **Sees inside shadow DOM.** Lit and Home Assistant cards are measured inside open shadow roots, where the
   Impeccable engine currently reports nothing.
 - **Measures the states behind a click.** A `<page>.steps.json` beside the page lists states such as form errors,
@@ -109,6 +110,7 @@ design-kit check index.html --strict         # gate one page; exit 1 on any hard
 design-kit check http://localhost:5173       # a page on a running dev server
 design-kit check dist --jobs 6               # every .html in a folder, 6 at a time
 design-kit check signup.html --steps '[{"name":"error","do":[{"click":"button[type=submit]"}]}]'
+design-kit inline report.html               # put linked stylesheets into the page (opens without a server)
 ```
 
 Starting a project: copy the DESIGN.md of the closest direction into the project (the `kit:` line of `design-kit`
@@ -124,7 +126,7 @@ status: "fail: 1 of 1 pages have hard failures"
 renders: "light+dark × 320/390/1280 px via msedge, impeccable on"
 pages[1]{page,verdict,hard,soft}:
   test/fixtures/loi.html,fail,11,9
-checks[21]{check,gate,result}:
+checks[22]{check,gate,result}:
   overflow,hard,2 hard
   axe,hard,2 hard
   text-min,hard,1 hard
@@ -139,17 +141,26 @@ findings[4]{gate,check,where,detail,renders}:
 help[4]: "16 more findings: add --full","Fix hard failures, then rerun the same command; soft ones need a fix or a written reason",…
 ```
 
-A block with a steps file (two verdicts: the page as loaded, and the state after turning every filter off):
+A block with a steps file (two verdicts: the page as loaded, and the state after turning every filter off; the one
+soft finding is `standalone`, because blocks link the token files by path):
 
 ```text
 $ design-kit check blocks/html/bo-loc.html --query dk=dem
 status: "pass: 2 pages (1 of them states after steps), 0 hard failures"
 pages[2]{page,verdict,hard,soft}:
-  blocks/html/bo-loc.html?dk=dem,pass,0,0
+  blocks/html/bo-loc.html?dk=dem,pass,0,1
   blocks/html/bo-loc.html?dk=dem #tat-het,pass,0,0
 ```
 
 Screenshots go to `.design-kit/shots/`. Open them: a gate that passes is not yet a page that looks good.
+
+A page you open from disk in the Claude app's browser pane (a report, a review page) has no server behind it: the
+pane loads it as `data:text/html,…`, so every `<link rel="stylesheet">` with a relative path is dropped and the page
+shows bare Times text. The `standalone` check opens each local file the same way and reports what it loses. Run
+`design-kit inline <page.html>` after building: it puts `core.css`, the direction file and `_base.css` into `<style>`
+tags in place and keeps the font `<link>` as an extra. Do not embed fonts as base64 for the pane: it opens a file of
+at most 512 KiB (524,288 bytes) and says "couldn't open" above that. Name a fallback font that has Vietnamese letters (Giấy uses
+`"Literata", "Times New Roman", "Noto Serif", serif`): Georgia lacks them and splits words ("Ngắ n").
 
 ## Commands
 
@@ -157,6 +168,7 @@ Screenshots go to `.design-kit/shots/`. Open them: a gate that passes is not yet
 | --- | --- |
 | `design-kit` (or `home`) | Kit location, directions, blocks, browser and engine, and the `workflow` reminders |
 | `design-kit check <file\|dir\|url>...` | The gate. Exit 0 when the pages were checked (read `status`); `--strict` exits 1 on a hard failure |
+| `design-kit inline <page.html> [--ra <out.html>] [--dry-run]` | Put the page's relatively linked stylesheets into `<style>` tags in place, keep font links, so it opens without a server |
 | `design-kit setup [--download] [--no-browser]` | Find a browser and the Impeccable engine; download the pinned engine when it is missing |
 | `design-kit doi-mau --huong <dem\|giay\|dam> --nhan <0-360> [--trung-tinh <0-360>] --ra <file.css>` | Re-hue a direction's accent (and neutrals) for a brand; every color pair still passes WCAG |
 | `design-kit kiem-mau [<file.css> --huong <h>]` | Check every color-role pair for WCAG contrast and sRGB gamut, light and dark |
@@ -171,6 +183,7 @@ Flags of `check`:
 | `--schemes <light,dark>` | Color schemes to render (default both) |
 | `--shots <dir>` / `--no-shots` | Screenshot folder (default `.design-kit/shots`) / no screenshots |
 | `--no-impeccable` | Skip the Impeccable detector (faster) |
+| `--no-standalone` | Do not open local files as a `data:` URL (for a page only ever served over http) |
 | `--focus <n>` | Tab stops to inspect (default 15) |
 | `--strict` | Exit 1 when any page has a hard failure |
 | `--jobs <n>` | Pages checked at once (default 3, max 8) |
@@ -201,7 +214,10 @@ found), 2 bad usage.
    Vietnamese: 68ch holds about 93 characters of Be Vietnam Pro), fonts loaded, keyboard focus at the widest and the
    narrowest width, guidance patterns. The page is reloaded with reduced motion to catch animations that ignore it,
    and LCP/CLS are read from the first load.
-4. The Impeccable detector runs once per page, on the initial state.
+4. The Impeccable detector runs once per page, on the initial state. Each local file is also opened once as a
+   `data:` URL, the way the Claude app's browser pane opens it, and compared with the http render: stylesheets and
+   tokens it loses, its size, and (through the Chromium DevTools protocol) whether Vietnamese letters are drawn from
+   a second font.
 5. Every finding is *hard* (blocks "done"), *soft* (fix or write a reason) or *human* (hierarchy, taste and the task
    map: open the screenshots).
 

@@ -1,9 +1,11 @@
 /* design-kit · hướng GIẤY: tài liệu, báo cáo, bài viết dài. Sáng trước, có bản tối.
    Trung tính gần trung hoà (h 240, C ≤ 0.01; không dùng nền kem), màu nhấn xanh mực (h 258).
-   Thân chữ có chân Literata 18px để đọc lâu; tiêu đề không chân. */
+   Thân chữ có chân Literata 18px để đọc lâu; tiêu đề không chân.
+   Font dự phòng phải có đủ chữ Việt: Georgia thiếu ắ, ế, ữ…, nên khi Literata không nạp được (trang mở trong pane
+   của app Claude) trình duyệt mượn từng chữ của font khác và dấu trông như vỡ, "Ngắ n" (gặp 10/11/2026). */
 
 [data-dk="giay"] {
-  --font-body: "Literata", Georgia, serif;
+  --font-body: "Literata", "Times New Roman", "Noto Serif", serif;
   --font-display: "Be Vietnam Pro", system-ui, sans-serif;
   --font-ui: "Be Vietnam Pro", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;

@@ -548,6 +548,89 @@ export function probeVisible(): { text: number; media: number; undefinedTags: st
   return { text, media, undefinedTags: [...undef].slice(0, 5), unregisteredTags: [...unreg].slice(0, 5) };
 }
 
+/** Token của design-kit mà trang thiếu CSS sẽ mất: đọc trên body (biến CSS kế thừa từ html và [data-dk]). */
+export const STANDALONE_TOKENS = ["--accent", "--bg", "--text", "--font-body", "--fs-body", "--sp-4"];
+
+export interface StandaloneProbe {
+  /** Giá trị các token trong STANDALONE_TOKENS, rỗng nếu không có. */
+  tokens: Record<string, string>;
+  /** Mỗi `<link rel=stylesheet>` có href (đúng chuỗi trong thẻ): đã nạp chưa, có phải chỉ khai báo font. */
+  sheets: Array<{ href: string; loaded: boolean; fonts: boolean }>;
+  /** `<script src>` theo đường dẫn (tương đối hoặc từ gốc "/"): mở dạng data: URL thì không chạy. */
+  scripts: string[];
+}
+
+/**
+ * Trang dựa vào những tệp nào (chạy cả ở bản mở qua http lẫn bản mở dạng data: URL, rồi so).
+ * Trình duyệt trong app Claude mở `file:///…/trang.html` thành `data:text/html,…` (đã thử 10/11/2026):
+ * mọi href tương đối không phân giải được, thẻ link không có sheet.
+ */
+export function probeStandalone(tokenNames: string[]): StandaloneProbe {
+  const cs = getComputedStyle(document.body ?? document.documentElement);
+  const tokens: Record<string, string> = {};
+  for (const t of tokenNames) tokens[t] = cs.getPropertyValue(t).trim();
+  const fontUrl = /font/i;
+  const sheets = Array.from(document.querySelectorAll<HTMLLinkElement>("link[rel~=stylesheet][href]")).map((l) => {
+    const href = l.getAttribute("href") ?? "";
+    const sheet = l.sheet;
+    let fonts = false;
+    if (sheet) {
+      try {
+        const rules = Array.from(sheet.cssRules);
+        fonts = rules.length > 0 && rules.every((r) => r instanceof CSSFontFaceRule || (r instanceof CSSImportRule && fontUrl.test(r.href)));
+      } catch {
+        // Stylesheet khác nguồn (Google Fonts…) không đọc được luật: đoán theo URL.
+        fonts = fontUrl.test(href);
+      }
+    }
+    return { href, loaded: sheet !== null, fonts };
+  });
+  const scripts = Array.from(document.querySelectorAll("script[src]"))
+    .map((s) => s.getAttribute("src") ?? "")
+    .filter((s) => s && !/^([a-z][a-z0-9+.-]*:|\/\/)/i.test(s));
+  return { tokens, sheets, scripts };
+}
+
+/**
+ * Chuẩn bị hỏi CDP font nào đã vẽ chữ Việt (`CSS.getPlatformFontsForNode`, tính cả chữ của thẻ con nên phải tách).
+ * Lấy tối đa `max` nút chữ có chữ dựng sẵn dấu (U+1EA0–U+1EF9: ắ, ế, ữ…), tách mỗi nút thành các thẻ `dk-vi` (thẻ lạ nên không dính CSS của trang, như span):
+ * `data-dk-vi="i:vi"` bọc chữ có dấu đó, `data-dk-vi="i:base"` bọc phần còn lại có chữ cái. Font của hai nhóm khác
+ * nhau là font dự phòng thiếu chữ Việt. Chỉ dùng trên bản trang bỏ đi (đổi DOM). Trả về nhãn của nút thứ i.
+ */
+export function markVietnameseText(max: number): string[] {
+  const VI = /[Ạ-ỹ]/;
+  const RUN = /[Ạ-ỹ]+|[^Ạ-ỹ]+/g;
+  const out: string[] = [];
+  const nodes: Text[] = [];
+  const walker = document.createTreeWalker(document.body ?? document.documentElement, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n && nodes.length < max; n = walker.nextNode()) {
+    const parent = n.parentElement;
+    if (!parent || /^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE|TEXTAREA)$/.test(parent.tagName) || !VI.test(n.textContent ?? "")) continue;
+    const r = parent.getBoundingClientRect();
+    if (r.width <= 1 || r.height <= 1 || getComputedStyle(parent).visibility === "hidden") continue;
+    nodes.push(n as Text);
+  }
+  nodes.forEach((t, i) => {
+    const parent = t.parentElement!;
+    const id = parent.id ? `#${parent.id}` : "";
+    out.push(`${parent.tagName.toLowerCase()}${id} "${(t.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 28)}"`);
+    const frag = document.createDocumentFragment();
+    for (const run of (t.textContent ?? "").match(RUN) ?? []) {
+      const kind = VI.test(run) ? "vi" : /[A-Za-z]/.test(run) ? "base" : "";
+      if (!kind) {
+        frag.append(run);
+        continue;
+      }
+      const s = document.createElement("dk-vi");
+      s.setAttribute("data-dk-vi", `${i}:${kind}`);
+      s.textContent = run;
+      frag.append(s);
+    }
+    t.replaceWith(frag);
+  });
+  return out;
+}
+
 /** Animation còn chạy (dùng sau khi giả lập prefers-reduced-motion: reduce). */
 export function probeMotion(): { running: number; samples: string[] } {
   const anims = document.getAnimations().filter((a) => {
