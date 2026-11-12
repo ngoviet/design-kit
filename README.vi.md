@@ -36,13 +36,13 @@ chế độ giảm chuyển động, nút "Tiếp" không nói đi đâu. Làm c
 - **Cổng đo, không phải cảm tính.** Không có hướng dẫn thì mô hình chọn lựa chọn phổ biến nhất (font Inter, gradient
   tím, các thẻ giống hệt nhau), và mô hình tự chấm giao diện thì lệch nhiều so với người. Vì vậy design-kit chia việc:
   gì đo được thì thành phép đo trong CLI, còn thẩm mỹ để người xem trên ảnh chụp mà công cụ lưu lại.
-- **21 phép đo, 6 lần render mỗi trang.** Lỗi *cứng* chặn "báo xong": trang trắng (cổng đợi tối đa 5 giây cho nội
+- **22 phép đo, 6 lần render mỗi trang.** Lỗi *cứng* chặn "báo xong": trang trắng (cổng đợi tối đa 5 giây cho nội
   dung đến muộn), lỗi script chưa bắt hoặc script/stylesheet không tải được, tràn ngang ở 320 px, axe-core mức
   serious/critical, chữ dưới 12 px, tiêu đề tiếng Việt có chiều cao dòng dưới 1,2, chữ tiếng Việt mà thiếu
   `lang="vi"`, hiệu ứng bỏ qua `prefers-reduced-motion`, bước thao tác không làm được, các luật slop và chất lượng của
   Impeccable. Lỗi *mềm* phải sửa hoặc ghi lý do: cỡ và chiều cao dòng chữ thân bài, độ dài dòng, font web đã nạp,
   vòng focus thiếu hoặc bị che, khung cuộn giấu nội dung, chữ bị cắt (dấu ba chấm hay line-clamp giấu chữ, overflow
-  cắt ngang chữ hoặc cắt mất dấu tiếng Việt), hơn 12 ô nhập trên một màn, dẫn đường, LCP, CLS.
+  cắt ngang chữ hoặc cắt mất dấu tiếng Việt), hơn 12 ô nhập trên một màn, dẫn đường, chữ trên trang, LCP, CLS.
 - **Nhìn được vào shadow DOM.** Card Lit và Home Assistant được đo bên trong shadow root mở, nơi engine Impeccable
   hiện không báo gì.
 - **Đo cả trạng thái sau một cú bấm.** Tệp `<trang>.steps.json` đặt cạnh trang liệt kê các trạng thái như lỗi form,
@@ -52,6 +52,11 @@ chế độ giảm chuyển động, nút "Tiếp" không nói đi đâu. Làm c
   lần đầu dễ lúng túng: trình tự từng bước có tên bước kế, danh sách "Bắt đầu", mẹo đúng lúc, màn trống chỉ việc làm
   tiếp, Hoàn tác thay cho "Bạn có chắc không?". Phép đo `guide` báo nút chỉ ghi "Tiếp", màn trống không có lối đi
   tiếp, và tour tự bật khi mở trang.
+- **Đọc cả chữ, và liệt kê thứ agent tự bịa.** Phép đo `copy` báo chữ đọc như AI viết mà chưa ai sửa, tiếng Việt là
+  chính: cụm sáo, câu mở đầu rập khuôn, cặn hội thoại ("Chắc chắn rồi!"), chỗ trống (`[Tên công ty]`, `{{name}}`,
+  lorem ipsum), dấu markdown lọt ra trang, dải 3–4 con số khoe dưới hero, tiêu đề mảnh cụt ("Nhanh. Gọn.") và liên
+  kết chỉ ghi "Xem thêm". Danh sách nằm ở `data/copy-tells.json`. Dữ kiện agent tự điền (giờ mở cửa, giá, số liệu)
+  gắn `data-assumed="<lý do>"` và hiện ở mục `assumed` để chủ duyệt.
 - **Ba hướng, chép là dùng.** *Đêm* (ứng dụng, dashboard), *Giấy* (tài liệu, báo cáo) và *Đậm* (landing,
   marketing). Mỗi hướng là một tệp token có bản sáng và tối, kèm DESIGN.md sinh tự động. Cả 126 cặp màu đạt WCAG;
   `design-kit doi-mau` đổi sắc một hướng theo thương hiệu rồi dò lại độ sáng để mọi cặp vẫn đạt.
@@ -229,7 +234,8 @@ tokens/            fonts-local.css + fonts/ (tự host, Latin + tiếng Việt),
 design/<huong>/    DESIGN.md của từng hướng, sinh từ token
 blocks/html/       13 khối HTML/CSS, mỗi khối có thể kèm <khoi>.steps.json
 blocks/react/      khối Vite + React + shadcn/ui dùng chung token
-src/               CLI (check, probe, steps, trình duyệt, impeccable, lệnh màu)
+src/               CLI (check, probe, copy, steps, trình duyệt, impeccable, lệnh màu)
+data/              copy-tells.json: danh sách từ cho phép đo copy
 skills/, hooks/    plugin Claude Code; .claude-plugin/ chứa manifest và marketplace
 scripts/           kiểm cặp màu, sinh DESIGN.md, tải font, xuất nguồn
 docs/              tiêu chí, nguồn, quyết định

@@ -7,6 +7,20 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `copy` check (soft): visible text that reads as unedited AI output, Vietnamese first, common English too.
+  Generation 1: stock phrases ("Trong thế giới ngày nay", "unlock the power of"), three or more distinct stock
+  words on one page, template openers ("Bạn có biết"), chatbot residue ("Chắc chắn rồi!"), placeholders
+  (`[Tên công ty]`, `{{name}}`, lorem ipsum, TODO, also in `alt`, `aria-label`, `title` and the tab title) and
+  markdown shown as text. Generation 2: a row of 3–4 short stats in or right under the hero, a heading in clipped
+  fragments ("Nhanh. Gọn."), a link or button that only says "Xem thêm"/"Learn more". The lists live in
+  `data/copy-tells.json` (now shipped in the package) and are validated on load; `data-copy-ok` opts an element
+  out, `--no-copy` skips the check. The two-generation frame is borrowed from taste-skill 2.5.1
+  `references/copy-tells.md` (MIT); the Vietnamese lists come from the viet-tu-nhien skill. All 13 HTML blocks
+  pass with no `copy` finding.
+- `data-assumed`: an element holding a fact the agent filled in itself (opening hours, a price, a number) carries
+  `data-assumed="<why>"`. `design-kit check` lists each one under `assumed` (where, text, reason), hidden ones
+  included, apart from the findings, with a help line to have the owner confirm them before publishing.
+
 - `text-clip` check (soft): text cut off inside its box, which passed every other check because the letters are
   big enough, contrasted and inside the page. Catches an ellipsis or `-webkit-line-clamp` that hides words, and
   `overflow: hidden` or `clip` that cuts letters or whole lines, including Vietnamese accents and descenders cut by
