@@ -36,13 +36,14 @@ chế độ giảm chuyển động, nút "Tiếp" không nói đi đâu. Làm c
 - **Cổng đo, không phải cảm tính.** Không có hướng dẫn thì mô hình chọn lựa chọn phổ biến nhất (font Inter, gradient
   tím, các thẻ giống hệt nhau), và mô hình tự chấm giao diện thì lệch nhiều so với người. Vì vậy design-kit chia việc:
   gì đo được thì thành phép đo trong CLI, còn thẩm mỹ để người xem trên ảnh chụp mà công cụ lưu lại.
-- **22 phép đo, 6 lần render mỗi trang.** Lỗi *cứng* chặn "báo xong": trang trắng (cổng đợi tối đa 5 giây cho nội
+- **23 phép đo, 6 lần render mỗi trang.** Lỗi *cứng* chặn "báo xong": trang trắng (cổng đợi tối đa 5 giây cho nội
   dung đến muộn), lỗi script chưa bắt hoặc script/stylesheet không tải được, tràn ngang ở 320 px, axe-core mức
   serious/critical, chữ dưới 12 px, tiêu đề tiếng Việt có chiều cao dòng dưới 1,2, chữ tiếng Việt mà thiếu
   `lang="vi"`, hiệu ứng bỏ qua `prefers-reduced-motion`, bước thao tác không làm được, các luật slop và chất lượng của
   Impeccable. Lỗi *mềm* phải sửa hoặc ghi lý do: cỡ và chiều cao dòng chữ thân bài, độ dài dòng, font web đã nạp,
   vòng focus thiếu hoặc bị che, khung cuộn giấu nội dung, chữ bị cắt (dấu ba chấm hay line-clamp giấu chữ, overflow
-  cắt ngang chữ hoặc cắt mất dấu tiếng Việt), hơn 12 ô nhập trên một màn, dẫn đường, chữ trên trang, LCP, CLS.
+  cắt ngang chữ hoặc cắt mất dấu tiếng Việt), hơn 12 ô nhập trên một màn, dẫn đường, chữ trên trang, LCP, CLS, và
+  trang mất CSS (hoặc vỡ dấu tiếng Việt) khi mở trong trình duyệt của app Claude.
 - **Nhìn được vào shadow DOM.** Card Lit và Home Assistant được đo bên trong shadow root mở, nơi engine Impeccable
   hiện không báo gì.
 - **Đo cả trạng thái sau một cú bấm.** Tệp `<trang>.steps.json` đặt cạnh trang liệt kê các trạng thái như lỗi form,
@@ -113,6 +114,7 @@ design-kit check index.html --strict         # cổng cho một trang; thoát 1 
 design-kit check http://localhost:5173       # trang đang chạy trên dev server
 design-kit check dist --jobs 6               # mọi tệp .html trong thư mục, 6 trang một lúc
 design-kit check signup.html --steps '[{"name":"loi","do":[{"click":"button[type=submit]"}]}]'
+design-kit inline bao-cao.html              # gộp stylesheet liên kết vào trang (mở được khi không có máy chủ)
 ```
 
 Bắt đầu một dự án: chép DESIGN.md của hướng gần nhất vào dự án (dòng `kit:` của lệnh `design-kit` cho biết kit nằm
@@ -127,7 +129,7 @@ status: "fail: 1 of 1 pages have hard failures"
 renders: "light+dark × 320/390/1280 px via msedge, impeccable on"
 pages[1]{page,verdict,hard,soft}:
   test/fixtures/loi.html,fail,11,9
-checks[21]{check,gate,result}:
+checks[22]{check,gate,result}:
   overflow,hard,2 hard
   axe,hard,2 hard
   text-min,hard,1 hard
@@ -142,17 +144,26 @@ findings[4]{gate,check,where,detail,renders}:
 help[4]: "16 more findings: add --full","Fix hard failures, then rerun the same command; soft ones need a fix or a written reason",…
 ```
 
-Một khối có tệp steps (hai phán quyết: trang lúc vừa nạp, và trạng thái sau khi tắt hết bộ lọc):
+Một khối có tệp steps (hai phán quyết: trang lúc vừa nạp, và trạng thái sau khi tắt hết bộ lọc; phát hiện mềm duy
+nhất là `standalone`, vì khối liên kết tệp token theo đường dẫn):
 
 ```text
 $ design-kit check blocks/html/bo-loc.html --query dk=dem
 status: "pass: 2 pages (1 of them states after steps), 0 hard failures"
 pages[2]{page,verdict,hard,soft}:
-  blocks/html/bo-loc.html?dk=dem,pass,0,0
+  blocks/html/bo-loc.html?dk=dem,pass,0,1
   blocks/html/bo-loc.html?dk=dem #tat-het,pass,0,0
 ```
 
 Ảnh chụp lưu trong `.design-kit/shots/`. Hãy mở ra xem: qua cổng chưa có nghĩa là trang đã đẹp.
+
+Trang mở thẳng từ ổ đĩa trong trình duyệt của app Claude (báo cáo, trang review) không có máy chủ phía sau: pane nạp
+trang dưới dạng `data:text/html,…`, nên mọi `<link rel="stylesheet">` theo đường dẫn tương đối đều bị bỏ, trang hiện
+toàn chữ Times. Phép đo `standalone` mở từng tệp cục bộ đúng như vậy và báo trang mất gì. Dựng xong thì chạy
+`design-kit inline <trang.html>`: lệnh đưa `core.css`, tệp của hướng và `_base.css` vào các thẻ `<style>` ngay tại chỗ
+và giữ `<link>` font làm phần bổ sung. Đừng nhúng font base64 cho trang mở trong pane: pane chỉ mở tệp tối đa 512 KiB
+(524 288 byte), lớn hơn là báo "couldn't open". Font dự phòng phải có chữ Việt (hướng Giấy dùng
+`"Literata", "Times New Roman", "Noto Serif", serif`): Georgia thiếu chữ Việt nên tách chữ ("Ngắ n").
 
 ## Lệnh
 
@@ -160,6 +171,7 @@ pages[2]{page,verdict,hard,soft}:
 | --- | --- |
 | `design-kit` (hoặc `home`) | Vị trí kit, các hướng, khối, trình duyệt và engine, cùng lời nhắc `workflow` |
 | `design-kit check <tệp\|thư mục\|url>...` | Cổng. Thoát 0 khi đã kiểm xong (đọc `status`); `--strict` thoát 1 nếu có lỗi cứng |
+| `design-kit inline <trang.html> [--ra <tệp-ra.html>] [--dry-run]` | Đưa stylesheet liên kết tương đối vào các thẻ `<style>` ngay tại chỗ, giữ link font, để trang mở được khi không có máy chủ |
 | `design-kit setup [--download] [--no-browser]` | Tìm trình duyệt và engine Impeccable; tải engine ghim khi máy chưa có |
 | `design-kit doi-mau --huong <dem\|giay\|dam> --nhan <0-360> [--trung-tinh <0-360>] --ra <tệp.css>` | Đổi sắc màu nhấn (và trung tính) theo thương hiệu; mọi cặp màu vẫn đạt WCAG |
 | `design-kit kiem-mau [<tệp.css> --huong <h>]` | Kiểm mọi cặp màu theo vai trò: tương phản WCAG và gamut sRGB, cả sáng lẫn tối |
@@ -174,6 +186,7 @@ Cờ của `check`:
 | `--schemes <light,dark>` | Chế độ màu cần render (mặc định cả hai) |
 | `--shots <thư mục>` / `--no-shots` | Thư mục ảnh chụp (mặc định `.design-kit/shots`) / không chụp |
 | `--no-impeccable` | Bỏ qua Impeccable (nhanh hơn) |
+| `--no-standalone` | Không mở tệp cục bộ dưới dạng URL `data:` (cho trang chỉ phục vụ qua http) |
 | `--focus <n>` | Số điểm dừng Tab cần xem (mặc định 15) |
 | `--strict` | Thoát 1 khi có trang bị lỗi cứng |
 | `--jobs <n>` | Số trang kiểm cùng lúc (mặc định 3, tối đa 8) |
@@ -204,7 +217,9 @@ không thấy trang), 2 gọi sai cú pháp.
    hiển thị (chữ SVG co theo viewBox, chữ bị co bằng `transform`, `scale` hay `zoom`), chiều cao dòng, độ dài dòng tính bằng `em` (`ch` đo sai với tiếng Việt: 68ch
    chứa khoảng 93 ký tự Be Vietnam Pro), font đã nạp, focus bàn phím ở khổ rộng nhất và hẹp nhất, các mẫu dẫn đường.
    Trang được nạp lại ở chế độ giảm chuyển động để bắt hiệu ứng bỏ qua nó, còn LCP/CLS lấy từ lần nạp đầu.
-4. Engine Impeccable chạy một lần mỗi trang, ở trạng thái ban đầu.
+4. Engine Impeccable chạy một lần mỗi trang, ở trạng thái ban đầu. Mỗi tệp cục bộ còn được mở một lần dưới dạng URL
+   `data:`, đúng cách pane của app Claude mở, rồi so với bản render qua http: stylesheet và token bị mất, kích thước
+   tệp, và (qua giao thức DevTools của Chromium) chữ có dấu có bị vẽ bằng font thứ hai không.
 5. Mỗi phát hiện thuộc một loại: *cứng* (chặn "báo xong"), *mềm* (sửa hoặc ghi lý do) hoặc *người* (thứ bậc, thẩm mỹ
    và bản đồ tác vụ: mở ảnh chụp ra xem).
 

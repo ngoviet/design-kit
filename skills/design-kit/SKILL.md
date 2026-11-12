@@ -28,6 +28,8 @@ the tokens, the gated blocks and the gate. Never call a UI task done on "it rend
 - Fonts: `tokens/fonts.css` loads Google Fonts. For a page on the home network, a Home Assistant card, an
   offline page or anything that must not call third parties, copy `tokens/fonts-local.css` **and** the
   `tokens/fonts/` folder instead (self-hosted woff2, Latin + Vietnamese, ~410 KB, SIL OFL). Load it first.
+- A page the user opens from disk in the Claude app's browser pane (a report or review page): link the tokens
+  while you build, then run `design-kit inline <page.html>` so the CSS lives in the page (traps below).
 - Use tokens only: `var(--accent)`, `var(--sp-4)`, `var(--fs-lg)`… no raw hex, no font outside DESIGN.md.
   Text in the accent color uses `--accent-text`; fills use `--accent` with `--on-accent` text.
 
@@ -173,6 +175,11 @@ design-kit check <file.html|folder|http://localhost:port> --strict
   row "custom element never defined" (an empty one) or the note "not registered as custom elements" (one with
   children) names what the test page is missing. Findings caused by the test page
   are not the component's: say which ones you set aside and why.
+- Each local file is also opened the way the Claude app's browser pane opens it (`data:text/html,…`, no
+  server). `standalone` (soft) reports what the page loses there: linked stylesheets, empty tokens, a
+  fallback font without Vietnamese letters, or a file over 400 KB (the pane opens at most 512 KiB). A page only
+  ever served over http (an app
+  build, a dev server) can say so in the report, or pass `--no-standalone`.
 - At most 3 fix rounds; still failing → report the remaining findings instead of looping.
 - **Fix the finding, not the layout.** A hard failure is fixed in place (drop an inner border, change a
   color, add a label). Never move sections to silence a finding: in the A/B test an agent cleared
@@ -188,12 +195,24 @@ Text contrast ≥ 4.5:1 (large 3:1), non-text ≥ 3:1, both themes · targets �
 no horizontal scroll at 320 px · body ≥ 16 px, nothing under 12 px (SVG text and text under `transform`/`scale`/`zoom` count at rendered size) ·
 body line-height ≥ 1.5, Vietnamese headings ≥ 1.2 · lines ≤ 75 chars (`max-width: var(--measure)` = 32em) ·
 `lang="vi"` · every animation has a reduced-motion branch · visible focus ≥ 2 px not covered by sticky bars ·
-LCP ≤ 2.5 s, INP ≤ 200 ms, CLS ≤ 0.1 · 0 Impeccable slop findings.
+LCP ≤ 2.5 s, INP ≤ 200 ms, CLS ≤ 0.1 · 0 Impeccable slop findings · a page for the app's browser pane
+keeps its CSS in the page and stays ≤ 400 KB (the pane refuses files over 512 KiB).
 
 ## Traps already hit (do not repeat)
 
 - **`ch` lies for Vietnamese.** In Be Vietnam Pro, 68ch held ~93 characters per line. Use `em` (`--measure: 32em`).
 - **Font `@import` inside a token file vanishes when bundled.** Load `tokens/fonts.css` first (first `<link>` or first `@import`).
+- **The Claude app's browser pane drops every linked stylesheet.** It opens `file:///…/page.html` as
+  `data:text/html,…`, so `<link href="core.css">` never resolves: bare Times text, empty `--accent`, while the
+  gate (over http) passed (10/11/2026, a Giấy report page). Fix: `design-kit inline <page.html>` puts
+  `core.css`, `<direction>.css` and `_base.css` into `<style>` tags in place and keeps the font `<link>` as an
+  extra (it loads when a server is there). Do not embed fonts as base64 for the pane: it opens a file of at most
+  512 KiB (524,288 bytes opened, 524,289 did not; the encoded URL length does not matter). The `standalone` check
+  catches all of this.
+- **A fallback font without Vietnamese letters breaks words** once the web font is missing: Georgia has no
+  ắ, ế, ữ, so the browser borrows each one from Times New Roman and "Ngắn" reads "Ngắ n". Right after the web
+  font, name a fallback that has them: `"Times New Roman", "Noto Serif", serif` (Giấy uses this now) or
+  `system-ui, sans-serif`. `standalone` names the two fonts when it happens.
 - **Impeccable does not see inside shadow DOM** (tested: missed 9.9 px text and 1.55:1 contrast in an open
   shadow root). `design-kit check` and axe do; for Web Components trust them, not `imp-axi` alone.
 - **Scaled SVG text**: 13 px in a 900-wide viewBox renders ~5 px at 390 px. Give the figure a `min-width`

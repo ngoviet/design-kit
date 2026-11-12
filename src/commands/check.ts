@@ -7,13 +7,14 @@ import { launchBrowser, serveRoot, startServer, urlFor } from "../browser.js";
 import { fail } from "../errors.js";
 import { type AssumedHit, type CopyRules, loadCopyRules, probeCopy } from "../copy.js";
 import { findImpeccable, runImpeccable } from "../impeccable.js";
-import { installVitals, probeFocus, probeMotion, probePage, probeVisible, settleAnimations, type ProbeHit } from "../probe.js";
+import { installVitals, probeFocus, probeMotion, probePage, probeStandalone, probeVisible, settleAnimations, STANDALONE_TOKENS, type ProbeHit } from "../probe.js";
 import type { Runtime } from "../runtime.js";
+import { runStandalone } from "../standalone.js";
 import { loadSteps, parseSteps, runActions, STEPS_FORMAT, type StepAction, type StepState } from "../steps.js";
 
 export const CHECK_HELP = `usage: design-kit check <file|dir|url>... [flags]
-description: Design gate. Renders each page at 320/390/1280 px in light and dark, then measures what a person would hit: axe-core (WCAG 2.2 AA), horizontal overflow, text size and line height (through open shadow roots), text cut off by ellipsis or overflow, Vietnamese lang and fonts, line length, reduced motion, keyboard focus, LCP/CLS, guidance (vague "Next" buttons, dead-end empty states, up-front tours), copy that reads as unedited AI text (stock phrases, chatbot residue, placeholders, markdown left in) and the Impeccable detector. States reached by clicking (form errors, step 3, an open dialog) are measured too, from a steps file. Prints one verdict per page and state: hard failures block "done", soft ones need a reason. Facts the agent filled in itself (marked data-assumed) are listed for the owner to confirm
-flags[15]:
+description: Design gate. Renders each page at 320/390/1280 px in light and dark, then measures what a person would hit: axe-core (WCAG 2.2 AA), horizontal overflow, text size and line height (through open shadow roots), text cut off by ellipsis or overflow, Vietnamese lang and fonts, line length, reduced motion, keyboard focus, LCP/CLS, guidance (vague "Next" buttons, dead-end empty states, up-front tours), copy that reads as unedited AI text (stock phrases, chatbot residue, placeholders, markdown left in) and the Impeccable detector. States reached by clicking (form errors, step 3, an open dialog) are measured too, from a steps file. A local file is also opened the way the Claude app's browser pane opens it (a data: URL, no server), to catch a page that loses its linked CSS. Prints one verdict per page and state: hard failures block "done", soft ones need a reason. Facts the agent filled in itself (marked data-assumed) are listed for the owner to confirm
+flags[16]:
   --query <q,q>: run each page once per query string (e.g. dk=dem,dk=giay,dk=dam for design-kit blocks)
   --steps <file.json|json>: states to reach by clicking/typing, each measured like a page (overrides <page>.steps.json)
   --no-steps: ignore <page>.steps.json files next to the pages
@@ -23,6 +24,7 @@ flags[15]:
   --no-shots: do not save screenshots
   --no-impeccable: skip the Impeccable detector (faster)
   --no-copy: skip the copy check and the data-assumed list
+  --no-standalone: skip opening local files as a data: URL (a page only ever served over http)
   --focus <n>: Tab stops to inspect (default 15)
   --strict: exit 1 when any page has a hard failure
   --jobs <n>: pages checked at once (default 3, max 8)
@@ -31,15 +33,16 @@ flags[15]:
   --help: this help
 gates[3]:
   hard: a page that shows nothing (no text, image or graphic, also 5 s after the network went idle), an uncaught script error or a script/stylesheet that fails to load, overflow at 320px, axe serious/critical (contrast, target size, labels…), text < 12px, heading line-height < 1.2 in Vietnamese, missing lang="vi", animation that ignores reduced motion, a step that cannot be done (selector not found), Impeccable slop rules and quality rules a user trips on (low-contrast, tiny-text, overflow, occlusion, script errors)
-  soft: a custom element that is never defined, axe moderate/minor, body text < 16px or line-height < 1.5, lines > 80ch, a scroll box hiding content (cut-off table), text cut off (an ellipsis or line-clamp hiding words, overflow hidden/clip cutting letters or Vietnamese accents; reports the text still shown and the width), more than 12 fields on one screen, guide (button that only says "Tiếp"/"Next", empty state with no next action, tour or welcome modal on load), web font not loaded, focus ring missing or hidden, copy (generation 1: stock phrases, template openers, chatbot residue such as "Chắc chắn rồi!", placeholders like [Tên công ty] or {{name}} or lorem ipsum, markdown ## or ** shown as text; generation 2: a row of 3–4 short stats under the hero, a heading in fragments "X. Y.", a link that only says "Xem thêm"/"Learn more"; lists in data/copy-tells.json), LCP > 2.5s, CLS > 0.1, other Impeccable quality rules and advisories
+  soft: a custom element that is never defined, axe moderate/minor, body text < 16px or line-height < 1.5, lines > 80ch, a scroll box hiding content (cut-off table), text cut off (an ellipsis or line-clamp hiding words, overflow hidden/clip cutting letters or Vietnamese accents; reports the text still shown and the width), more than 12 fields on one screen, guide (button that only says "Tiếp"/"Next", empty state with no next action, tour or welcome modal on load), web font not loaded, focus ring missing or hidden, copy (generation 1: stock phrases, template openers, chatbot residue such as "Chắc chắn rồi!", placeholders like [Tên công ty] or {{name}} or lorem ipsum, markdown ## or ** shown as text; generation 2: a row of 3–4 short stats under the hero, a heading in fragments "X. Y.", a link that only says "Xem thêm"/"Learn more"; lists in data/copy-tells.json), LCP > 2.5s, CLS > 0.1, standalone (opened as a file the page loses stylesheets or tokens, is over 400 KB (the pane opens at most 512 KiB), or draws Vietnamese letters from a second font), other Impeccable quality rules and advisories
   human: hierarchy and taste, and the task map (every hesitation point has a guide pattern): open the screenshots
 steps:
   ${STEPS_FORMAT}
   Each state starts from a fresh load of the page and runs its own actions, then gets every check (Impeccable and LCP/CLS: initial state only)
   Put them in <page>.steps.json beside <page>.html and \`check\` picks them up, also when checking a folder
-notes[4]:
+notes[5]:
   data-assumed="<why>" on an element marks a fact the agent filled in (opening hours, price, a number): listed under "assumed", not a finding, until the owner confirms it and the attribute is removed
   Local files are served over http://127.0.0.1 from the nearest folder with .git or package.json, so ../ links resolve
+  standalone: the Claude app's browser pane opens file:///page.html as data:text/html,… so relative <link>s never load; fix with \`design-kit inline <page>\`
   Exit 0 whenever the pages were checked: read \`status\`. --strict turns hard failures into exit 1
   Browser: Edge, else Chrome (channel), else DK_BROWSER. Impeccable: IMPECCABLE_BIN, else the skill's bundled engine
 examples[4]:
@@ -57,6 +60,7 @@ const FLAGS: Record<string, FlagSpec> = {
   "no-shots": { type: "boolean", hint: "--no-shots" },
   "no-impeccable": { type: "boolean", hint: "--no-impeccable" },
   "no-copy": { type: "boolean", hint: "--no-copy" },
+  "no-standalone": { type: "boolean", hint: "--no-standalone" },
   focus: { type: "string", hint: "--focus <n>" },
   strict: { type: "boolean", hint: "--strict" },
   jobs: { type: "string", hint: "--jobs <n>" },
@@ -88,7 +92,7 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 const CHECKS: Array<[string, Gate]> = [
   ["render", "hard"], ["errors", "hard"], ["overflow", "hard"], ["axe", "hard"], ["text-min", "hard"], ["heading-lh", "hard"], ["lang", "hard"], ["motion", "hard"],
   ["steps", "hard"], ["impeccable", "hard"], ["body-size", "soft"], ["body-lh", "soft"], ["measure", "soft"], ["font", "soft"],
-  ["focus", "soft"], ["inner-scroll", "soft"], ["text-clip", "soft"], ["long-form", "soft"], ["guide", "soft"], ["copy", "soft"], ["lcp", "soft"], ["cls", "soft"],
+  ["focus", "soft"], ["inner-scroll", "soft"], ["text-clip", "soft"], ["long-form", "soft"], ["guide", "soft"], ["copy", "soft"], ["lcp", "soft"], ["cls", "soft"], ["standalone", "soft"],
 ];
 
 /**
@@ -186,7 +190,7 @@ async function checkPage(
   browser: Browser,
   url: string,
   label: string,
-  opts: { viewports: number[]; schemes: string[]; shotsDir?: string; focusStops: number; axeSource: string; state?: StepState; copy?: CopyRules },
+  opts: { viewports: number[]; schemes: string[]; shotsDir?: string; focusStops: number; axeSource: string; state?: StepState; standalone?: string; copy?: CopyRules },
   r: PageReport,
 ): Promise<void> {
   const actions: StepAction[] | undefined = opts.state?.do;
@@ -313,6 +317,18 @@ async function checkPage(
         hits(r, "soft", "copy", c.copy, "", render, 20);
         r.assumed.push(...c.assumed);
       }
+      // Mở như pane của app Claude (data: URL, không máy chủ) rồi so với bản http vừa đo: một lần mỗi tệp.
+      if (first && widest && !actions && opts.standalone) {
+        // Phép đo phụ: hỏng (CDP, trang tự điều hướng) thì ghi chú, không làm hỏng cả lượt kiểm.
+        try {
+          const a = await page.evaluate(probeStandalone, STANDALONE_TOKENS);
+          const res = await runStandalone(browser, opts.standalone, a, vis.text > 0 || vis.media > 0, { width: vw, height: HEIGHT[vw] ?? 900 }, scheme as "light" | "dark");
+          for (const f of res.findings) add(r, "soft", "standalone", f.where, f.detail, render);
+          r.notes.push(...res.notes);
+        } catch (e) {
+          r.notes.push(`standalone: not measured (${(e as Error).message.split("\n")[0]})`);
+        }
+      }
       // Focus: khổ rộng nhất VÀ khổ hẹp nhất có đo. Nút bị giấu ở khổ hẹp mà vẫn nhận Tab (focus lạc vào chỗ
       // không thấy) chỉ lộ ra ở khổ hẹp: bảng dữ liệu từng bị đúng lỗi này (09/11/2026).
       if (first && focusAt.has(vw)) {
@@ -374,7 +390,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const servers = new Map<string, { origin: string; close: () => void }>();
   const jobsN = Number(p.str("jobs") ?? 3);
   // Bước 1: danh sách việc (máy chủ tĩnh dựng tuần tự). Bước 2: chạy song song có giới hạn, giữ thứ tự kết quả.
-  const jobs: Array<{ url: string; label: string; r: PageReport; shotsDir?: string; state?: StepState }> = [];
+  const jobs: Array<{ url: string; label: string; r: PageReport; shotsDir?: string; state?: StepState; standalone?: string }> = [];
   try {
     for (const t of targets) {
       let base = t;
@@ -401,18 +417,20 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
             shotsDir = join(shotsBase, slug || basename(t, extname(t)));
             mkdirSync(shotsDir, { recursive: true });
           }
-          jobs.push({ url, label, r, ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}) });
+          // Mở dạng data: URL không mang query, nên chỉ cần một lần mỗi tệp: trạng thái đầu của query đầu.
+          const standalone = !p.bool("no-standalone") && !/^https?:/i.test(t) && !state && q === queries[0] ? t : undefined;
+          jobs.push({ url, label, r, ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}) });
         }
       }
     }
-    const runJob = async ({ url, label, r, shotsDir, state }: (typeof jobs)[number]): Promise<void> => {
+    const runJob = async ({ url, label, r, shotsDir, state, standalone }: (typeof jobs)[number]): Promise<void> => {
       // Impeccable tự mở trang theo URL, không phát lại được thao tác: chỉ chạy ở trạng thái đầu.
       const imp = impBin && !state
         ? Promise.all(
             [`${Math.max(...viewports)}x800`, ...(viewports.includes(390) ? ["390x844"] : [])].map(async (vp) => ({ vp, res: await runImpeccable(impBin, url, vp) })),
           )
         : Promise.resolve([]);
-      await checkPage(browser, url, label, { viewports, schemes, focusStops, axeSource, ...(copy ? { copy } : {}), ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}) }, r);
+      await checkPage(browser, url, label, { viewports, schemes, focusStops, axeSource, ...(copy ? { copy } : {}), ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}) }, r);
       for (const { vp, res } of await imp) {
         if (res.error) r.notes.push(`impeccable ${vp}: ${res.error}`);
         for (const f of res.findings ?? []) {
@@ -455,7 +473,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
     const of = (g: Gate) => reports.reduce((s, r) => s + [...r.findings.values()].filter((f) => f.check === id && f.gate === g).length, 0);
     const h = of("hard");
     const s = of("soft");
-    const skipped = (id === "impeccable" && !impBin) || (id === "copy" && !copy);
+    const skipped = (id === "impeccable" && !impBin) || (id === "standalone" && !jobs.some((j) => j.standalone)) || (id === "copy" && !copy);
     const unused = id === "steps" && !stateJobs;
     const result = skipped ? "skipped" : unused ? "none: no steps file" : h || s ? [h && `${h} hard`, s && `${s} soft`].filter(Boolean).join(", ") : "ok";
     return { check: id, gate, result };
@@ -496,6 +514,9 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   if (all.some((f) => f.gate === "hard")) help.push("Fix hard failures, then rerun the same command; soft ones need a fix or a written reason");
   if (all.some((f) => f.check === "render" && f.gate === "hard")) {
     help.push("Blank page: read the `errors` rows, or open the page in a browser console. A component that needs a host app (Home Assistant card, widget) needs a test page that provides it: the host's custom elements, data and lang");
+  }
+  if (all.some((f) => f.check === "standalone" && f.where === "data: URL")) {
+    help.push("standalone: a page opened in the Claude app's browser pane (a data: URL, no server) gets none of its linked CSS. Run `design-kit inline <page>` (CSS into the page, font links kept), or write why the page is only ever served over http and pass --no-standalone");
   }
   if (shotsBase) help.push(`Open the screenshots under ${relative(rt.cwd, shotsBase).replace(/\\/g, "/") || "."} and judge hierarchy before calling the page done`);
   // Nhắc dẫn đường mỗi lần chạy (chủ yêu cầu 09/11/2026): quy trình phức tạp đến mấy cũng phải dễ như phần hướng dẫn trong game.
