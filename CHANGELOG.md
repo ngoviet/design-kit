@@ -63,6 +63,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- The skill is reordered for long sessions. After context compaction Claude Code keeps only the first 5,000 tokens
+  of an invoked skill, and SKILL.md cost about 8.2k with its "traps" list at the end. A short "Rules" section now comes
+  first (direction and task map, blocks, `data-assumed`, the gate, screenshots, what the report must hold), the full
+  traps list moved to `skills/design-kit/reference/traps.md` in eight groups with a table of contents, and the five
+  traps that bite most stay in SKILL.md. About 5k tokens per invocation, by Claude Code's own estimate.
 - Every width gets every check. 320px used to be checked for horizontal overflow only, so the narrowest width,
   where layouts break first, had no text, axe, clipping or screenshot checks. Impeccable now also runs at 320px.
   The full gate on 13 blocks × 3 directions with every state takes 130.4 s, against 144.9 s before this release's
