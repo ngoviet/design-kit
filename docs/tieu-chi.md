@@ -12,8 +12,8 @@ Cổng có ba mức:
 - **mềm**: phải sửa, hoặc ghi lý do không sửa.
 - **người**: chủ duyệt trên ảnh chụp.
 
-Mã nguồn `s…` và luận điểm `c…` tra trong [`docs/nguon.md`](nguon.md): bản xuất có URL và câu trích. Bản gốc nằm trong kho tri thức, chủ đề `tieu-chuan-va-cach-huong-dan-ai-lam-giao-dien-web-dep-de-dun` (đợt 1, 09/11/2026: s1–s28, c1–c36; đợt 2, 14/11/2026: s29–s72, c37–c77). Mọi trích dẫn đã được kiểm lại bằng
-`research-axi kb verify` (đợt 2: 76 trên 77 khớp khi tải lại; câu trích của ReDeCheck, c40, nằm trong PDF nên kiểm tay).
+Mã nguồn `s…` và luận điểm `c…` tra trong [`docs/nguon.md`](nguon.md): bản xuất có URL và câu trích. Bản gốc nằm trong kho tri thức, chủ đề `tieu-chuan-va-cach-huong-dan-ai-lam-giao-dien-web-dep-de-dun` (đợt 1, 09/11/2026: s1–s28, c1–c36; đợt 2, 14–15/11/2026: s29–s73, c37–c78). Mọi trích dẫn đã được kiểm lại bằng
+`research-axi kb verify` (đợt 2: 77 trên 78 khớp khi tải lại; câu trích của ReDeCheck, c40, nằm trong PDF nên kiểm tay).
 
 | Tiêu chí | Ngưỡng | Đo bằng (`design-kit check`) | Cổng | Loại, nguồn |
 | --- | --- | --- | --- | --- |
@@ -47,7 +47,7 @@ Mã nguồn `s…` và luận điểm `c…` tra trong [`docs/nguon.md`](nguon.m
 | Dẫn đường đo được | Nút đi tiếp không chỉ ghi "Tiếp"/"Next" (phân trang trong `<nav>` thì được). Câu báo rỗng ("Không có … nào", "No results") có nút hoặc liên kết gỡ ngay cạnh. Không có thư viện tour (intro.js, Shepherd, driver.js…) hay hộp "Chào mừng" mở sẵn khi vào trang | `guide` | mềm | nghiên cứu: NN/g (s25–s27); quy ước design-kit |
 | Trạng thái sau tương tác | Mỗi trạng thái người dùng tới bằng thao tác (lỗi form, bước 3, menu mở, sắp xếp, không có kết quả) đạt mọi tiêu chí trên. Thao tác nào không làm được ở một khổ là lỗi | `<trang>.steps.json` hoặc `--steps`: mỗi trạng thái một dòng phán quyết; `steps` khi bấm hỏng | cứng | quy ước design-kit; A/B: agent kiểm theo trạng thái tìm thêm lỗi |
 | Form dài một màn | Không quá 12 ô nhập đang hiện cùng lúc (ô trong `<details>` đóng hay bước chưa tới không tính). Nếu nhiều hơn, chia bước hoặc ẩn bớt phần nâng cao | `long-form` | mềm | nghiên cứu: NN/g (s25, s27) |
-| Ô gõ chữ ở điện thoại | Ô nhập chữ, ô chọn, vùng nhập có chữ đủ lớn để iOS không phóng to cả trang khi chạm vào. Quy tắc nằm ở `src/zoom.ts` | `input-zoom` (khổ ≤ 480; cỡ chữ đã hiển thị) | mềm | mã nguồn WebKit: tỉ lệ phóng = 16 / cỡ chữ, bỏ qua nếu đổi dưới 10% (c43); 3/12 trang A/B dính (14/11/2026) |
+| Ô gõ chữ ở điện thoại | Ô nhập chữ, ô chọn, vùng nhập có chữ ≥ 16px ở khổ điện thoại, để iOS không phóng to cả trang khi chạm vào. Ô `disabled` không tính (không nhận focus); ô `readonly` vẫn tính (chạm vào vẫn nhận focus). Quy tắc ở `src/zoom.ts` | `input-zoom` (khổ ≤ 480; cỡ chữ đã hiển thị) | mềm | mã nguồn WebKit: tỉ lệ phóng = 16 / cỡ chữ (c43). Quy tắc bỏ qua khi đổi dưới 10% (ô 15px không còn bị phóng) chỉ có trên nhánh main từ 13/11/2026, chưa lên bản iOS nào (c78), nên ngưỡng vẫn là 16px. 3/12 trang A/B dính (14/11/2026) |
 | Màn nhìn nhanh | Dashboard: số liệu hôm nay và việc cần làm ngay nằm ở màn đầu 1280px, không nằm dưới bảng dài | ảnh chụp 1280px | người | A/B đợt 2 |
 | Phân cấp, cá tính | Mỗi màn có một điểm nhấn chính, khớp DESIGN.md | ảnh chụp 3 khổ × sáng/tối | người | nghiên cứu: LLM tự chấm chưa bằng người (s20, s21) |
 

@@ -147,7 +147,7 @@ nền, 10 mục**.
 | P6 | chờ theo tín hiệu thật thay cho `networkidle` + 300 ms | cổng 13 khối × 3 hướng: 144,9 s còn 120,0 s, phát hiện trùng từng dòng; một trang 9,0 s còn 5,85 s |
 | P4 | `focus` báo vòng mất trong chế độ màu ép buộc, đo thật bằng `forcedColors: active` | lỗi thật ở cả 4 khối React (shadcn `outline-none`), đã đổi sang `outline-hidden` |
 | P2 | `viewport` (cứng): mở trang một lần với `isMobile` | trang thiếu thẻ từng qua cổng với 0 phát hiện; trên máy thật chữ 16px hiện 6,4px |
-| P3 | `input-zoom` (mềm): ô gõ chữ nhỏ ở khổ điện thoại | 3/12 trang A/B; quy tắc ngưỡng ở `src/zoom.ts` chờ chủ quyết |
+| P3 | `input-zoom` (mềm): ô gõ chữ nhỏ ở khổ điện thoại | 3/12 trang A/B; quy tắc: dưới 16px thì báo, trừ ô `disabled` (mục dưới) |
 | P1 | khổ 320 đo đủ, Impeccable thêm ở 320, `text-covered` (mềm), sửa khối hero | hero hiện "Camer", "23/2" ở 320–360px; nguyên nhân: `<figure>` còn lề mặc định 40px |
 | P10 | hook Stop thấy tệp giao diện sửa qua shell, đòi kiểm đúng trang | thử trên transcript thật của phiên: không báo thừa |
 | P9 | SKILL.md: mục Rules lên đầu, bẫy sang `skills/design-kit/reference/traps.md` | khoảng 8,2 nghìn còn 5 nghìn token mỗi lần gọi (ước lượng của Claude Code) |
@@ -169,5 +169,11 @@ Ba việc **không làm**, kèm lý do:
 - **Tự viết lại luật dấu khuôn mẫu của chữ.** Nhãn viết hoa trên tiêu đề đã có luật Impeccable; mũi tên cuối nút gặp 0
   trang. Việc đúng là nâng ghim Impeccable (P13, ngoài gói nền, cần chủ đồng ý tải tệp chạy).
 
-Còn mở: quy tắc ngưỡng của `input-zoom` (16px phẳng hay ngưỡng tính từ mã WebKit, có tính ô chỉ đọc không) chờ chủ
-viết ở `src/zoom.ts`; các mục P5, P7, P8, P11–P13, P16–P21 trong báo cáo chưa làm.
+**Quy tắc ngưỡng `input-zoom` (15/11/2026, chủ giao em viết).** Dưới 16px thì báo; ô `disabled` bỏ qua vì không nhận
+focus; ô `readonly` vẫn tính vì chạm vào vẫn nhận focus và WebKit vẫn đi tới bước phóng to (WKContentViewInteraction.mm,
+chưa thử trên máy thật). Đính chính báo cáo đợt 2: câu "WebKit phóng to từ khoảng 14,5px trở xuống" chỉ đúng cho bản
+iOS tương lai. Blame dòng mã cho thấy quy tắc bỏ qua khi đổi dưới 10% mới vào nhánh main ngày 13/11/2026 (commit
+b2bcd4fa11, lỗi của bsky.app; c78), chưa có trong bản iOS nào đã phát hành, nên mọi iPhone đang dùng đều phóng to ô
+dưới 16px.
+
+Còn mở: các mục P5, P7, P8, P11–P13, P16–P21 trong báo cáo chưa làm.

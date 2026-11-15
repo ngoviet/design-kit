@@ -19,9 +19,11 @@ All notable changes to this project are documented here. The format follows
   shrank it: 16px text showed at 6.4px. A 2026 study of AI-generated pages found a missing viewport meta to be the
   leading root cause of their cross-device failures (46%).
 - `input-zoom` check (soft): a text input, textarea or select whose text is small at phone width, which makes iOS
-  Safari zoom the whole page in when it is tapped and leave it zoomed. WebKit's code scales by 16 / font size and
-  skips changes under 10%. The rule lives in `src/zoom.ts`; checkboxes, radios, ranges, colors and file inputs are
-  not typing fields. Found in 3 of 12 A/B pages, one of them built with the kit.
+  Safari zoom the whole page in when it is tapped and leave it zoomed. WebKit scales by 16 / font size, so every
+  shipped iOS zooms below 16px; the rule in `src/zoom.ts` reports anything under 16px. WebKit's main branch began
+  skipping changes under 10% on 13/11/2026 (15px no longer zooms there), but no iOS release has it yet. Disabled
+  fields are skipped (they cannot take focus); read-only fields still count (a tap focuses them). Checkboxes, radios,
+  ranges, colors and file inputs are not typing fields. Found in 3 of 12 A/B pages, one of them built with the kit.
 - `focus` reports a focus ring that disappears in forced-colors mode (Windows High Contrast). A ring drawn only with
   box-shadow is measured again with forced colors on while the element still has focus: box-shadow is removed there,
   while an outline, even a transparent one, is redrawn in a system color. Reading the CSS in normal mode is not

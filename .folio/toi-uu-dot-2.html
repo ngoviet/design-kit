@@ -482,7 +482,7 @@ img, svg { max-width: 100%; }
           </tr>
           <tr>
             <th scope="row">Ô nhập cỡ chữ dưới 16px</th>
-            <td data-th="Nguồn nói gì">WebKit trên iOS phóng to trang khi chạm vào ô nhập chữ nhỏ, từ khoảng 14,5px trở xuống, và việc đó gây tràn ngang (c43).</td>
+            <td data-th="Nguồn nói gì">WebKit trên iOS phóng to trang khi chạm vào ô nhập chữ dưới 16px, và việc đó gây tràn ngang (c43). Đính chính 15/11: ngưỡng khoảng 14,5px chỉ có trên nhánh main của WebKit từ 13/11/2026, chưa lên bản iOS nào (c78).</td>
             <td data-th="Đo trên kho trang">3 trên 12 trang A/B, trong đó 1 trang làm theo kit. 0 trên 39 trang khối mẫu.</td>
             <td data-th="Xếp loại"><span class="badge badge-ok">Làm trước</span></td>
           </tr>
@@ -578,7 +578,7 @@ img, svg { max-width: 100%; }
       </li>
       <li>
         <div class="head"><span class="pid">P3</span><h4>Phép đo ô nhập chữ nhỏ ở khổ điện thoại, mức mềm</h4><span class="badge badge-ok">Làm trước</span></div>
-        <p>Báo ô nhập, ô chọn, vùng nhập có cỡ chữ dưới 16px ở 390px, ghi kèm rằng WebKit hiện phóng to từ khoảng 14,5px trở xuống.</p>
+        <p>Báo ô nhập, ô chọn, vùng nhập có cỡ chữ dưới 16px ở 390px: mọi bản iOS đã phát hành đều phóng to các ô này (đính chính 15/11: ngưỡng khoảng 14,5px chỉ có trên nhánh main của WebKit từ 13/11/2026).</p>
         <p class="ev">Bằng chứng: c43, và 3 trên 12 trang A/B. Giá: gần như không. Ngưỡng lấy từ mã nguồn, chưa thử trên máy thật.</p>
       </li>
       <li>
@@ -752,7 +752,7 @@ img, svg { max-width: 100%; }
       <li>Số token của SKILL.md là ước lượng từ số ký tự, chưa đo bằng tokenizer.</li>
       <li>Nghiên cứu về meta viewport đo các công cụ sinh trang từ ảnh chụp, không phải agent viết từ đề bài. Trong kho của kit, 0 trên 51 trang thiếu thẻ này.</li>
       <li>Phép đo chữ bị che chưa thử trong shadow DOM, nơi thẻ Home Assistant sống.</li>
-      <li>Ngưỡng phóng to của iOS lấy từ mã nguồn WebKit trên nhánh chính, chưa thử trên máy thật.</li>
+      <li>Ngưỡng phóng to của iOS lấy từ mã nguồn WebKit, chưa thử trên máy thật.</li>
       <li>Máy tìm SearXNG hết giờ suốt đợt này, và trang của W3C chặn trình đọc, nên trạng thái bản nháp WCAG 3 chưa được ghi thành luận điểm.</li>
     </ul>
 

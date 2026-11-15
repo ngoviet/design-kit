@@ -91,6 +91,7 @@ Mã `s…` là nguồn, `c…` là luận điểm. `docs/tieu-chi.md` trích cá
 | c75 | Google Fonts yêu cầu ascender của font bằng chiều cao chữ Ắ (U+1EAE), tức chỉ số dọc phải chứa được dấu chồng tiếng Việt | s58 | “(typo/hhea)Ascender be equal to Abreveacute U+1EAE” |
 | c76 | Tiếng Việt ngắt dòng giữa các âm tiết: dấu cách ngăn âm tiết chứ không ngăn từ | s59 | “Line breaking can occur between syllables.” |
 | c77 | Tệp ngữ cảnh kiểu AGENTS.md: chỉ dẫn được agent làm theo tốt, còn phần tổng quan repo thì không giúp | s48 | “repository overviews, although popular and recommended by model providers, are not helpful” |
+| c78 | Quy tắc bỏ qua phóng to khi tỉ lệ đổi dưới 10% được thêm vào nhánh main của WebKit ngày 13/11/2026, để sửa lỗi phóng to thừa ở ô mật khẩu của bsky.app; test kèm theo: ô 15px không còn bị phóng, ô 14px vẫn bị | s73 | “bsky.app: Unnecessary subtle zoom in when focusing login password field” |
 
 ## Nguồn
 
@@ -168,3 +169,4 @@ Mã `s…` là nguồn, `c…` là luận điểm. `docs/tieu-chi.md` trích cá
 | s70 | paper | [Automated Layout Failure Detection for Responsive Web Pages without an Explicit Oracle (ReDeCheck)](https://philmcminn.com/publications/walsh2017.pdf) | Walsh, Kapfhammer, McMinn, ISSTA 2017, bản PDF của tác giả. research-axi không đọc PDF: câu trích đã kiểm tay bằng pdftotext ngày 14/11/2026 (chữ fi, Th mất do ligature) |
 | s71 | web | [axe-core](https://raw.githubusercontent.com/dequelabs/axe-core/develop/README.md) | Deque, README của axe-core (bên bán công cụ tự nêu độ phủ) |
 | s72 | repo | [comments](https://api.github.com/repos/pbakaus/impeccable/issues/1360/comments) | GitHub API: các bình luận của issue #1360 (trang HTML của issue không trả phần bình luận cho trình đọc) |
+| s73 | repo | [bsky.app: Unnecessary subtle zoom in when focusing login password field · WebKit/WebKit@b2bcd4f](https://github.com/WebKit/WebKit/commit/b2bcd4fa11f8985f68b5cb54bc14c38bac357c5d) | Commit WebKit 13/11/2026 thêm quy tắc bỏ qua phóng to khi tỉ lệ đổi dưới 10% (WKWebViewIOS.mm); chưa có trong bản iOS nào đã phát hành |

@@ -13,8 +13,10 @@ export interface TypingField {
   size: number;
   /** "textarea", "select", hoặc type của input ("text", "email", "search"…). */
   type: string;
-  /** readonly hoặc disabled. */
+  /** readonly: vẫn nhận focus khi chạm. */
   readonly: boolean;
+  /** disabled: không nhận focus. */
+  disabled: boolean;
 }
 export interface ProbeResult {
   scrollW: number;
@@ -203,8 +205,13 @@ export function probePage(): ProbeResult {
     // Ô mở bàn phím hay bảng chọn khi chạm: bỏ ô tích, ô chọn, thanh trượt, ô màu, ô tệp.
     if (!proxied && !["range", "color", "file"].includes(inp.type)) {
       const tag = el.tagName === "INPUT" ? inp.type : el.tagName.toLowerCase();
-      const ro = inp.readOnly === true || inp.disabled === true;
-      out.typingFields.push({ where: label(el), size: +(parseFloat(getComputedStyle(el).fontSize) * shrink(el)).toFixed(2), type: tag, readonly: ro });
+      out.typingFields.push({
+        where: label(el),
+        size: +(parseFloat(getComputedStyle(el).fontSize) * shrink(el)).toFixed(2),
+        type: tag,
+        readonly: inp.readOnly === true,
+        disabled: inp.disabled === true,
+      });
     }
     out.visibleFields++;
   }

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "../src/cli.js";
 import { impGate } from "../src/commands/check.js";
+import { inputZoomFinding } from "../src/zoom.js";
 import { isFontSheet, tagAttrs } from "../src/commands/inline.js";
 import { pageWeight, paneUrl, weightDetail } from "../src/standalone.js";
 import { parseSteps } from "../src/steps.js";
@@ -27,6 +28,24 @@ describe("impGate", () => {
     expect(impGate({ antipattern: "straggler", category: "quality", severity: "advisory" })).toBe("soft");
     // Khẩu vị bảng màu, không phải công năng (A/B đợt 2)
     expect(impGate({ antipattern: "cream-palette", category: "slop" })).toBe("soft");
+  });
+});
+
+describe("inputZoomFinding: when tapping a field makes iOS zoom the page", () => {
+  const f = (size: number, extra: Partial<{ type: string; readonly: boolean; disabled: boolean }> = {}) =>
+    inputZoomFinding({ where: "input#x", size, type: "text", readonly: false, disabled: false, ...extra });
+  it("reports anything under 16px, the size every shipped iOS zooms below", () => {
+    expect(f(13)).toMatch(/^13px text: iOS zooms the whole page in/);
+    expect(f(15.5)).toMatch(/^15\.5px text/);
+    expect(f(14, { type: "select" })).toMatch(/^14px text/);
+  });
+  it("leaves 16px and up, and disabled fields that cannot take focus", () => {
+    expect(f(16)).toBeUndefined();
+    expect(f(18)).toBeUndefined();
+    expect(f(13, { disabled: true })).toBeUndefined();
+  });
+  it("still reports a read-only field: a tap focuses it and WebKit still zooms to reveal it", () => {
+    expect(f(13, { readonly: true })).toMatch(/^13px text/);
   });
 });
 
@@ -318,6 +337,10 @@ describe("check on real pages", () => {
     expect(out).toMatch(/soft,input-zoom,.*select#chon-nho.*14px text: iOS zooms/);
     expect(out).not.toMatch(/input-zoom,.*input#du/);
     expect(out).not.toMatch(/input-zoom,.*input#tich/);
+    // 15px vẫn bị phóng trên mọi bản iOS đã phát hành; ô chỉ đọc vẫn nhận focus khi chạm; ô bị khoá thì không.
+    expect(out).toMatch(/soft,input-zoom,.*textarea#vua.*15px text: iOS zooms/);
+    expect(out).toMatch(/soft,input-zoom,.*input#chi-doc.*13px text: iOS zooms/);
+    expect(out).not.toMatch(/input-zoom,.*input#khoa/);
     const wide = await run(["check", "test/fixtures/o-nho.html", "--no-impeccable", "--no-shots", "--viewports", "1280", "--schemes", "light"]);
     expect(wide.out).toContain("input-zoom,soft,skipped");
   }, 120_000);
