@@ -447,8 +447,12 @@ export function probePage(): ProbeResult {
   return out;
 }
 
-/** Phần tử đang focus (đi xuyên shadow root) và chỉ báo focus của nó. */
-export function probeFocus(): { where: string; indicator: boolean; obscured: boolean; hidden: boolean } | null {
+/**
+ * Phần tử đang focus (đi xuyên shadow root) và chỉ báo focus của nó. `shadowOnly`: vòng focus chỉ vẽ bằng box-shadow,
+ * không có outline nào (kể cả trong suốt). Chế độ màu ép buộc (Windows High Contrast) đặt box-shadow về none, nên vòng
+ * biến mất; outline thì được tô lại bằng màu hệ thống (thử trên Edge 15/11/2026: outline trong suốt thành rgb(55, 0, 110)).
+ */
+export function probeFocus(): { where: string; indicator: boolean; shadowOnly: boolean; obscured: boolean; hidden: boolean } | null {
   let el: Element | null = document.activeElement;
   while (el && el.shadowRoot && el.shadowRoot.activeElement) el = el.shadowRoot.activeElement;
   if (!el || el === document.body || el === document.documentElement) return null;
@@ -484,7 +488,11 @@ export function probeFocus(): { where: string; indicator: boolean; obscured: boo
     const mine = (n: Element): boolean => n === el || el.contains(n) || n.contains(el) || n === target || target.contains(n) || n.contains(target);
     obscured = !!hit && !mine(hit) && !(hit.shadowRoot && hit.shadowRoot.contains(el));
   }
-  return { where, indicator: hasRing(cs) || proxies.some((p) => hasRing(getComputedStyle(p))), obscured, hidden };
+  // Hình người dùng thấy: hình thay thế nếu ô thật trong suốt (viền mặc định của ô thật cũng vô hình), không thì chính nó.
+  const seen = proxies.length ? proxies.map((p) => getComputedStyle(p)) : [cs];
+  const anyOutline = seen.some((s) => s.outlineStyle !== "none" && parseFloat(s.outlineWidth) > 0);
+  const anyShadow = seen.some((s) => s.boxShadow !== "none" && s.boxShadow !== "");
+  return { where, indicator: hasRing(cs) || proxies.some((p) => hasRing(getComputedStyle(p))), shadowOnly: anyShadow && !anyOutline, obscured, hidden };
 }
 
 /**

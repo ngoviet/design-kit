@@ -352,6 +352,17 @@ async function checkPage(
           if (!f || seen.has(f.where)) continue;
           seen.add(f.where);
           if (!f.indicator) add(r, "soft", "focus", f.where, "no visible focus ring (outline ≥ 2px or box-shadow)", render);
+          else if (f.shadowOnly) {
+            // Vòng chỉ bằng box-shadow: đo thật trong chế độ màu ép buộc, ngay khi phần tử đang focus (focus và
+            // :focus-visible giữ nguyên). Tailwind v4 `outline-hidden` chỉ thêm viền trong @media (forced-colors), nên
+            // đọc CSS ở chế độ thường là báo nhầm.
+            await page.emulateMedia({ forcedColors: "active" });
+            const g = await page.evaluate(probeFocus);
+            await page.emulateMedia({ forcedColors: null });
+            if (g && g.where === f.where && !g.indicator) {
+              add(r, "soft", "focus", f.where, "focus ring disappears in forced-colors mode (Windows High Contrast removes box-shadow): add outline: 2px solid transparent (Tailwind v4: outline-hidden)", render);
+            }
+          }
           if (f.obscured) add(r, "soft", "focus", f.where, f.hidden ? "focus lands on an element nobody can see (hidden or clipped)" : "focused element is covered by other content", render);
         }
         r.notes.push(`focus stops inspected at ${vw}px: ${seen.size}`);

@@ -7,6 +7,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `focus` reports a focus ring that disappears in forced-colors mode (Windows High Contrast). A ring drawn only with
+  box-shadow is measured again with forced colors on while the element still has focus: box-shadow is removed there,
+  while an outline, even a transparent one, is redrawn in a system color. Reading the CSS in normal mode is not
+  enough: Tailwind v4 `outline-hidden` adds its transparent outline only inside `@media (forced-colors: active)`.
+  Found in the kit's own React blocks: shadcn's `outline-none` with `ring-[3px]` left buttons, inputs and checkboxes
+  with no focus ring there; they now use `outline-hidden`.
 - `copy` check (soft): visible text that reads as unedited AI output, Vietnamese first, common English too.
   Generation 1: stock phrases ("Trong thế giới ngày nay", "unlock the power of"), three or more distinct stock
   words on one page, template openers ("Bạn có biết"), chatbot residue ("Chắc chắn rồi!"), placeholders

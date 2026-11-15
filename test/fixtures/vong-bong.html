@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixture: vòng focus chỉ bằng box-shadow</title>
+<link rel="stylesheet" href="../../tokens/fonts-local.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<style>
+  body { margin: 0; background: var(--bg); color: var(--text); font: 400 var(--fs-body)/var(--lh-body) var(--font-body); }
+  main { max-width: 40rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4); display: grid; gap: var(--sp-4); justify-items: start; }
+  h1 { font: var(--weight-display) var(--fs-2xl)/var(--lh-tight) var(--font-display); margin: 0; }
+  button, input[type="text"] { min-height: var(--hit-lg); padding: 0 var(--sp-5); border: 1px solid var(--border-strong); border-radius: var(--r-md); background: var(--surface); color: var(--text); font: 600 var(--fs-sm) var(--font-body); }
+  /* Chỉ bóng: chế độ màu ép buộc (Windows High Contrast) bỏ box-shadow, vòng focus biến mất */
+  #chi-bong:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus); }
+  /* Bóng cộng viền trong suốt: chế độ màu ép buộc tô viền bằng màu hệ thống, vòng vẫn hiện */
+  #bong-vien-trong:focus-visible { outline: 2px solid transparent; outline-offset: 2px; box-shadow: 0 0 0 3px var(--focus); }
+  /* Viền thật */
+  #vien:focus-visible { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
+  /* Công tắc tuỳ biến: ô thật trong suốt, vệt bên cạnh vẽ vòng focus chỉ bằng bóng */
+  .cong-tac { position: relative; display: inline-flex; gap: var(--sp-3); align-items: center; min-height: var(--hit-lg); }
+  .cong-tac input { position: absolute; opacity: 0; width: 44px; height: 24px; margin: 0; }
+  .cong-tac .vet { width: 44px; height: 24px; border-radius: var(--r-full); background: var(--border-strong); }
+  .cong-tac input:focus-visible + .vet { box-shadow: 0 0 0 3px var(--focus); }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Vòng focus</h1>
+    <button type="button" id="chi-bong">Lưu bản nháp</button>
+    <button type="button" id="bong-vien-trong">Gửi duyệt</button>
+    <input type="text" id="vien" aria-label="Tên bản nháp" value="Bản nháp 3">
+    <label class="cong-tac"><input type="checkbox" id="tu-dong"><span class="vet"></span>Tự lưu</label>
+  </main>
+</body>
+</html>

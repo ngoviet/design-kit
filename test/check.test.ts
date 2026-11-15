@@ -297,6 +297,17 @@ describe("check on real pages", () => {
     expect(skip.out).toContain("standalone,soft,skipped");
   }, 120_000);
 
+  it("a focus ring drawn only with box-shadow is reported: forced-colors mode removes box-shadow", async () => {
+    const { out } = await run(["check", "test/fixtures/vong-bong.html", ...FAST, "--full"]);
+    expect(out).toMatch(/focus,.*button#chi-bong.*disappears in forced-colors mode/);
+    // Công tắc tuỳ biến: ô thật trong suốt (viền mặc định 1px của nó không ai thấy), vệt bên cạnh chỉ có bóng.
+    expect(out).toMatch(/focus,.*input#tu-dong.*disappears in forced-colors mode/);
+    // Bóng cộng viền trong suốt (màu hệ thống tô lại viền), và viền thật: không báo.
+    expect(out).not.toMatch(/bong-vien-trong.*forced-colors/);
+    expect(out).not.toMatch(/input#vien.*forced-colors/);
+    expect(out).not.toContain("no visible focus ring");
+  }, 120_000);
+
   it("long-form counts fields a person can see: checkboxes in a closed <details> or a hidden step do not count", async () => {
     // Đóng: 3 ô nhập + 1 công tắc tuỳ biến (ô thật trong suốt vẫn tính). 14 ô tích trong <details> và 6 nhóm radio hidden không tính.
     const closed = await run(["check", "test/fixtures/o-an.html", ...FAST, "--full"]);
