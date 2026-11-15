@@ -488,17 +488,17 @@ export function probeFocus(): { where: string; indicator: boolean; obscured: boo
 }
 
 /**
- * Chờ các hiệu ứng có hồi kết (mở mẹo, chuyển màu focus) chạy xong, tối đa 600ms; bỏ qua hiệu ứng lặp vô hạn.
- * Đo giữa chừng một hiệu ứng mở (opacity 0 → 1) sẽ tưởng phần tử vô hình (gặp ở mẹo của khối bat-dau).
+ * Chờ các hiệu ứng có hồi kết (mở mẹo, chuyển màu focus) chạy xong, tối đa `maxMs` (mặc định 600ms); bỏ qua hiệu ứng
+ * lặp vô hạn. Đo giữa chừng một hiệu ứng mở (opacity 0 → 1) sẽ tưởng phần tử vô hình (gặp ở mẹo của khối bat-dau).
  */
-export function settleAnimations(): Promise<void> {
+export function settleAnimations(maxMs = 600): Promise<void> {
   const finite = document.getAnimations().filter((a) => {
     const t = a.effect?.getComputedTiming();
     return a.playState === "running" && t !== undefined && Number.isFinite(Number(t.endTime));
   });
   return Promise.race([
     Promise.all(finite.map((a) => a.finished.catch(() => undefined))).then(() => undefined),
-    new Promise<void>((done) => setTimeout(done, 600)),
+    new Promise<void>((done) => setTimeout(done, maxMs)),
   ]);
 }
 

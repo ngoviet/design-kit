@@ -9,6 +9,7 @@ import { type AssumedHit, type CopyRules, loadCopyRules, probeCopy } from "../co
 import { findImpeccable, runImpeccable } from "../impeccable.js";
 import { installVitals, probeFocus, probeMotion, probePage, probeStandalone, probeVisible, settleAnimations, STANDALONE_TOKENS, type ProbeHit } from "../probe.js";
 import type { Runtime } from "../runtime.js";
+import { QUIET_CAP_MS, settlePage, watchNetwork } from "../settle.js";
 import { runStandalone } from "../standalone.js";
 import { loadSteps, parseSteps, runActions, STEPS_FORMAT, type StepAction, type StepState } from "../steps.js";
 
@@ -166,6 +167,10 @@ async function axeRun(page: Page, axeSource: string): Promise<Array<{ id: string
  * Trả về số ms tính từ lúc mạng rảnh tới khi nội dung hiện, 0 nếu có sẵn, -1 nếu hết giờ vẫn trắng.
  */
 const LATE_MS = 5_000;
+/** Phép đo motion đọc các hiệu ứng còn chạy sau ngần này kể từ lúc trang (hoặc thao tác cuối) đã yên. */
+const MOTION_SETTLE_MS = 700;
+/** Hiệu ứng vào trang có hồi kết được chờ tối đa ngần này trước khi đo chữ (xem chỗ gọi settleAnimations). */
+const ENTRANCE_MS = 1_500;
 async function waitForContent(page: Page, idleAt: number): Promise<number> {
   const start = Date.now();
   const seen = async () => {
@@ -211,6 +216,7 @@ async function checkPage(
         reducedMotion: "no-preference",
       });
       const page = await ctx.newPage();
+      const net = watchNetwork(page);
       await page.addInitScript(installVitals);
       // Lỗi người dùng gặp ngay khi mở: script ném lỗi, script/stylesheet không tải được (thường là nguyên nhân
       // của trang trắng). Bỏ ERR_ABORTED (yêu cầu bị huỷ khi trang tự điều hướng), bỏ console.error (favicon 404…).
@@ -228,7 +234,7 @@ async function checkPage(
       });
       let resp;
       try {
-        resp = await page.goto(url, { waitUntil: "networkidle", timeout: 45_000 });
+        resp = await page.goto(url, { waitUntil: "load", timeout: 45_000 });
       } catch (e) {
         await ctx.close();
         fail(`${label}: ${(e as Error).message.split("\n")[0]}`, "LOAD_FAILED", ["Check the URL or that the dev server is running"]);
@@ -237,16 +243,19 @@ async function checkPage(
         await ctx.close();
         fail(`${label}: HTTP ${resp.status()}`, "LOAD_FAILED");
       }
+      // Font xong, không còn yêu cầu mạng dở, hai khung hình: thay cho networkidle (im đủ 500 ms) + 300 ms cố định,
+      // vốn chiếm 0,8 s trong mỗi 1,05 s của một lượt render (đo 14/11/2026). Xem src/settle.ts.
+      if ((await settlePage(page, net)).capped && !r.notes.some((n) => n.startsWith("network still busy"))) {
+        r.notes.push(`network still busy ${QUIET_CAP_MS / 1000} s after load (a stream or long polling?): measured anyway`);
+      }
       const idleAt = Date.now();
-      await page.evaluate(() => document.fonts.ready.then(() => undefined));
-      await page.waitForTimeout(300);
       const late = await waitForContent(page, idleAt);
       if (late > 0 && !r.notes.some((n) => n.startsWith("content appeared"))) {
         r.notes.push(`content appeared ${late} ms after the network went idle: measured after it appeared`);
       }
       if (actions) {
         // Không tới được trạng thái ⇒ chưa đo được ⇒ cứng: sửa trang (nút bị giấu ở khổ hẹp?) hoặc sửa tệp steps.
-        const err = await runActions(page, actions);
+        const err = await runActions(page, actions, net);
         if (err) {
           add(r, "hard", "steps", opts.state!.name, err, render);
           await ctx.close();
@@ -254,7 +263,10 @@ async function checkPage(
         }
       }
       // Cỡ chữ tính cả hệ số co của transform: đo giữa hiệu ứng mở scale(.95) → 1 sẽ báo nhầm chữ nhỏ.
-      await page.evaluate(settleAnimations);
+      // Chờ tới ENTRANCE_MS: trước kia 0,8 s chờ cố định cộng 600 ms ở đây cho hiệu ứng vào trang khoảng 1,4 s để
+      // xong; bỏ chờ cố định mà giữ 600 ms thì hiệu ứng mở 1,1 s bị đo giữa chừng (fixture co-gian.html, 15/11/2026).
+      // Trang không có hiệu ứng có hồi kết thì không mất thêm gì.
+      await page.evaluate(settleAnimations, ENTRANCE_MS);
       const p = await page.evaluate(probePage);
 
       // Trang trắng: không có gì để trượt nên mọi phép đo khác "đạt". Phải là lỗi cứng.
@@ -335,7 +347,7 @@ async function checkPage(
         const seen = new Set<string>();
         for (let i = 0; i < opts.focusStops; i++) {
           await page.keyboard.press("Tab");
-          await page.evaluate(settleAnimations);
+          await page.evaluate(settleAnimations, 600);
           const f = await page.evaluate(probeFocus);
           if (!f || seen.has(f.where)) continue;
           seen.add(f.where);
@@ -347,10 +359,13 @@ async function checkPage(
       // Giảm chuyển động: một lần.
       if (first && widest) {
         await page.emulateMedia({ reducedMotion: "reduce" });
-        await page.reload({ waitUntil: "networkidle" });
-        await page.waitForTimeout(400);
+        await page.reload({ waitUntil: "load" });
+        await settlePage(page, net);
         await waitForContent(page, Date.now());
-        if (actions) await runActions(page, actions);
+        if (actions) await runActions(page, actions, net);
+        // Chỉ hiệu ứng còn chạy sau MOTION_SETTLE_MS mới tính (vòng xoay, chữ chạy, chuyển cảnh dài); hiệu ứng vào
+        // trang ngắn hơn thì đã xong. Giữ đúng thời điểm đo cũ (khoảng 0,9 s sau khi nạp) để ngữ nghĩa phép đo không đổi.
+        await page.waitForTimeout(MOTION_SETTLE_MS);
         const m = await page.evaluate(probeMotion);
         if (m.running) add(r, "hard", "motion", m.samples.join(", "), `${m.running} animation(s) still run with prefers-reduced-motion: reduce`, render);
       }

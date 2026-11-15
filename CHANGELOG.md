@@ -48,6 +48,12 @@ All notable changes to this project are documented here. The format follows
 - `axe-core` floor raised to `^4.14.0`: earlier 4.x releases skipped the color-contrast check without a word when a
   computed color had a CSS Color 4 `none` component (dequelabs/axe-core#5309), which OKLCH tokens can produce.
   `playwright-core` floor raised to `^1.65.1`, and the CI image to `v1.65.1-noble` to match.
+- The gate waits for real signals instead of fixed pauses. Each render used `networkidle` (500 ms of silence, which
+  Playwright's docs advise against) plus 300 ms: 0.8 s of every 1.05 s render was waiting. Now: `load`, fonts, no
+  request in flight for 200 ms, two frames; a page that keeps the network busy (a stream) is measured after 10 s with
+  a note. Entrance animations still get up to 1.5 s to finish before text is measured, and the reduced-motion check
+  still reads what runs about 0.9 s after load. 13 blocks × 3 directions with every state: 144.9 s → 120.0 s on one
+  Windows machine, same findings line for line.
 
 ### Fixed
 
