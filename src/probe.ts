@@ -174,13 +174,18 @@ export function probePage(): ProbeResult {
       if (!GENERIC.test(first) && !loaded.has(key)) out.fontFallback.push({ where: label(el), value: first });
     }
   }
-  // Ô nhập đang hiện (bỏ hidden, nút, ô chọn trong nhóm radio tính một lần theo name)
+  // Ô nhập đang hiện (bỏ hidden, nút, ô chọn trong nhóm radio tính một lần theo name).
+  // Ô tích và ô chọn tuỳ biến thường trong suốt hoặc bị cắt còn 1px (vệt bên cạnh vẽ thay) nên không xét hộp của
+  // chính nó; nhưng phải còn được dựng: ô nằm trong <details> đang đóng, trong khối hidden hay display:none
+  // (bước chưa tới) thì người dùng chưa thấy, tính vào là báo nhầm "cất bớt đi" cho thứ đã cất (gặp 15/11/2026).
+  const rendered = (el: Element): boolean => el.checkVisibility({ checkVisibilityCSS: true, visibilityProperty: true });
   const radioNames = new Set<string>();
   for (const el of all) {
     if (!/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) continue;
     const inp = el as HTMLInputElement;
     if (["hidden", "submit", "button", "reset", "image"].includes(inp.type)) continue;
-    if (!visible(el, getComputedStyle(el)) && inp.type !== "radio" && inp.type !== "checkbox") continue;
+    const proxied = inp.type === "radio" || inp.type === "checkbox";
+    if (proxied ? !rendered(el) : !visible(el, getComputedStyle(el))) continue;
     if (inp.type === "radio") { if (radioNames.has(inp.name)) continue; radioNames.add(inp.name); }
     out.visibleFields++;
   }

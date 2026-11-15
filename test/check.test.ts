@@ -297,6 +297,16 @@ describe("check on real pages", () => {
     expect(skip.out).toContain("standalone,soft,skipped");
   }, 120_000);
 
+  it("long-form counts fields a person can see: checkboxes in a closed <details> or a hidden step do not count", async () => {
+    // Đóng: 3 ô nhập + 1 công tắc tuỳ biến (ô thật trong suốt vẫn tính). 14 ô tích trong <details> và 6 nhóm radio hidden không tính.
+    const closed = await run(["check", "test/fixtures/o-an.html", ...FAST, "--full"]);
+    expect(closed.out).toContain("long-form,soft,ok");
+    expect(closed.out).not.toContain("fields on one screen");
+    // Mở khối nâng cao (?mo=1): 3 + 1 + 14 = 18 ô đang hiện.
+    const open = await run(["check", "test/fixtures/o-an.html", ...FAST, "--full", "--query", "mo=1"]);
+    expect(open.out).toContain("18 fields on one screen");
+  }, 120_000);
+
   it("passes a page built on the tokens", async () => {
     const { out, code } = await run(["check", "test/fixtures/tot.html", ...FAST, "--strict"]);
     expect(out).toContain("pass: 1 pages, 0 hard failures");

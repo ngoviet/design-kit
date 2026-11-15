@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixture: ô tích và ô chọn đang ẩn không tính vào long-form</title>
+<link rel="stylesheet" href="../../tokens/fonts-local.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<style>
+  body { margin: 0; background: var(--bg); color: var(--text); font: 400 var(--fs-body)/var(--lh-body) var(--font-body); }
+  main { max-width: 40rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4); }
+  h1 { font: var(--weight-display) var(--fs-2xl)/var(--lh-tight) var(--font-display); margin: 0 0 var(--sp-4); }
+  label { display: flex; gap: var(--sp-3); align-items: center; min-height: var(--hit-lg); }
+  input[type="text"], input[type="email"] { min-height: var(--hit-lg); padding: 0 var(--sp-3); border: 1px solid var(--border-strong); border-radius: var(--r-sm); background: var(--surface); color: var(--text); font: inherit; }
+  input[type="checkbox"], input[type="radio"] { width: 24px; height: 24px; }
+  summary { min-height: var(--hit-lg); cursor: pointer; }
+  /* Công tắc tuỳ biến: ô thật trong suốt, vệt bên cạnh vẽ thay. Vẫn là một ô đang hiện với người dùng. */
+  .cong-tac { position: relative; }
+  .cong-tac input { position: absolute; opacity: 0; width: 44px; height: 24px; margin: 0; }
+  .cong-tac .vet { width: 44px; height: 24px; border-radius: var(--r-full); background: var(--border-strong); }
+  .cong-tac input:checked + .vet { background: var(--accent); }
+  .cong-tac input:focus-visible + .vet { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
+  :focus-visible { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Cài đặt thông báo</h1>
+    <form>
+      <label>Tên hiển thị <input type="text" name="ten" autocomplete="name"></label>
+      <label>Thư điện tử <input type="email" name="thu" autocomplete="email"></label>
+      <label>Tên thiết bị <input type="text" name="may"></label>
+      <label class="cong-tac"><input type="checkbox" name="bat"><span class="vet"></span>Bật thông báo</label>
+
+      <!-- Phần nâng cao cất đi: 14 ô tích nằm trong khối đang đóng, người dùng chưa thấy ô nào -->
+      <details id="nang-cao">
+        <summary>Tuỳ chọn nâng cao</summary>
+        <label><input type="checkbox" name="k1"> Báo khi camera mất kết nối</label>
+        <label><input type="checkbox" name="k2"> Báo khi NAS đầy trên 90%</label>
+        <label><input type="checkbox" name="k3"> Báo khi có thiết bị lạ vào mạng</label>
+        <label><input type="checkbox" name="k4"> Báo khi tốc độ tải xuống giảm một nửa</label>
+        <label><input type="checkbox" name="k5"> Báo khi bộ phát khởi động lại</label>
+        <label><input type="checkbox" name="k6"> Báo khi có bản cập nhật firmware</label>
+        <label><input type="checkbox" name="k7"> Báo khi một cổng đổi tốc độ</label>
+        <label><input type="checkbox" name="k8"> Báo khi nhiệt độ thiết bị cao</label>
+        <label><input type="checkbox" name="k9"> Gộp thông báo theo giờ</label>
+        <label><input type="checkbox" name="k10"> Tắt thông báo ban đêm</label>
+        <label><input type="checkbox" name="k11"> Gửi bản tóm tắt hằng tuần</label>
+        <label><input type="checkbox" name="k12"> Kèm sơ đồ mạng trong thư</label>
+        <label><input type="checkbox" name="k13"> Báo cả qua điện thoại</label>
+        <label><input type="checkbox" name="k14"> Báo cả qua thư</label>
+      </details>
+
+      <!-- Bước chưa tới: 6 nhóm ô chọn trong một khối hidden -->
+      <div id="buoc-2" hidden>
+        <label><input type="radio" name="r1" value="a"> Nhóm 1</label>
+        <label><input type="radio" name="r2" value="a"> Nhóm 2</label>
+        <label><input type="radio" name="r3" value="a"> Nhóm 3</label>
+        <label><input type="radio" name="r4" value="a"> Nhóm 4</label>
+        <label><input type="radio" name="r5" value="a"> Nhóm 5</label>
+        <label><input type="radio" name="r6" value="a"> Nhóm 6</label>
+      </div>
+    </form>
+  </main>
+  <script>if (new URLSearchParams(location.search).get("mo") === "1") document.getElementById("nang-cao").open = true;</script>
+</body>
+</html>

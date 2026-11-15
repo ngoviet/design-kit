@@ -46,6 +46,12 @@ All notable changes to this project are documented here. The format follows
   so when Literata did not load the browser drew those letters from another font and words split ("Ngắ n"). Đêm and
   Đậm fall back to `system-ui` (Segoe UI on Windows) and `monospace` (Consolas), which have the letters.
 
+### Fixed
+
+- `long-form` no longer counts checkboxes and radios nobody can see. Ones inside a closed `<details>`, a `hidden`
+  panel or a `display: none` step were counted, so a page that had already tucked its advanced options away was
+  told to tuck them away. A custom checkbox drawn by a sibling (transparent or clipped input) still counts.
+
 ## [0.2.1] - 2026-11-10
 
 ### Fixed
