@@ -297,6 +297,17 @@ describe("check on real pages", () => {
     expect(skip.out).toContain("standalone,soft,skipped");
   }, 120_000);
 
+  it("input-zoom: typing fields with small text at phone width are reported, other controls are not", async () => {
+    const { out } = await run(["check", "test/fixtures/o-nho.html", ...FAST, "--full"]);
+    // Ca rõ ràng ở mọi cách đặt ngưỡng: 13px và 14px bị phóng to, 16px thì không, ô tích không mở bàn phím.
+    expect(out).toMatch(/soft,input-zoom,.*input#nho.*13px text: iOS zooms/);
+    expect(out).toMatch(/soft,input-zoom,.*select#chon-nho.*14px text: iOS zooms/);
+    expect(out).not.toMatch(/input-zoom,.*input#du/);
+    expect(out).not.toMatch(/input-zoom,.*input#tich/);
+    const wide = await run(["check", "test/fixtures/o-nho.html", "--no-impeccable", "--no-shots", "--viewports", "1280", "--schemes", "light"]);
+    expect(wide.out).toContain("input-zoom,soft,skipped");
+  }, 120_000);
+
   it("a page without a viewport meta fails: a phone lays it out 980px wide and shrinks it", async () => {
     const { out, code } = await run(["check", "test/fixtures/khong-viewport.html", ...FAST, "--strict", "--full"]);
     expect(out).toContain("fail: 1 of 1");

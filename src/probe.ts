@@ -6,6 +6,16 @@ export interface ProbeHit {
   where: string;
   value: string;
 }
+/** Một ô gõ chữ: input chữ, textarea, select (trên iOS select cũng mở bảng chọn và cũng phóng to). */
+export interface TypingField {
+  where: string;
+  /** Cỡ chữ đã hiển thị, px (đã nhân hệ số co của transform, scale, zoom). */
+  size: number;
+  /** "textarea", "select", hoặc type của input ("text", "email", "search"…). */
+  type: string;
+  /** readonly hoặc disabled. */
+  readonly: boolean;
+}
 export interface ProbeResult {
   scrollW: number;
   clientW: number;
@@ -23,6 +33,8 @@ export interface ProbeResult {
   textClip: ProbeHit[];
   /** Số ô nhập đang hiện cùng lúc (form dài một màn ⇒ nên chia bước). */
   visibleFields: number;
+  /** Ô gõ chữ đang hiện (mở bàn phím khi chạm) và cỡ chữ đã hiển thị: iOS phóng to trang khi chạm vào ô chữ nhỏ. */
+  typingFields: TypingField[];
   /** Nút đi tiếp chỉ ghi "Tiếp"/"Next": không nói bước sau là gì. */
   vagueNext: ProbeHit[];
   /** Trạng thái rỗng cụt: báo "không có dữ liệu" mà không chỉ việc làm tiếp. */
@@ -47,6 +59,7 @@ export function probePage(): ProbeResult {
     innerScroll: [],
     textClip: [],
     visibleFields: 0,
+    typingFields: [],
     vagueNext: [],
     emptyDeadEnd: [],
     tour: [],
@@ -187,6 +200,12 @@ export function probePage(): ProbeResult {
     const proxied = inp.type === "radio" || inp.type === "checkbox";
     if (proxied ? !rendered(el) : !visible(el, getComputedStyle(el))) continue;
     if (inp.type === "radio") { if (radioNames.has(inp.name)) continue; radioNames.add(inp.name); }
+    // Ô mở bàn phím hay bảng chọn khi chạm: bỏ ô tích, ô chọn, thanh trượt, ô màu, ô tệp.
+    if (!proxied && !["range", "color", "file"].includes(inp.type)) {
+      const tag = el.tagName === "INPUT" ? inp.type : el.tagName.toLowerCase();
+      const ro = inp.readOnly === true || inp.disabled === true;
+      out.typingFields.push({ where: label(el), size: +(parseFloat(getComputedStyle(el).fontSize) * shrink(el)).toFixed(2), type: tag, readonly: ro });
+    }
     out.visibleFields++;
   }
   // Vùng cuộn ngang đang giấu nội dung (bảng bị cắt cột): không tràn trang nhưng người dùng phải cuộn trong khung.
