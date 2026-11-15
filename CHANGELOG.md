@@ -45,6 +45,9 @@ All notable changes to this project are documented here. The format follows
 - Giấy body font falls back to `"Times New Roman", "Noto Serif", serif` instead of Georgia. Georgia has no ắ, ế, ữ…,
   so when Literata did not load the browser drew those letters from another font and words split ("Ngắ n"). Đêm and
   Đậm fall back to `system-ui` (Segoe UI on Windows) and `monospace` (Consolas), which have the letters.
+- `axe-core` floor raised to `^4.14.0`: earlier 4.x releases skipped the color-contrast check without a word when a
+  computed color had a CSS Color 4 `none` component (dequelabs/axe-core#5309), which OKLCH tokens can produce.
+  `playwright-core` floor raised to `^1.65.1`, and the CI image to `v1.65.1-noble` to match.
 
 ### Fixed
 

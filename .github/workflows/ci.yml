@@ -4,7 +4,7 @@
 # Đây cũng là phép thử "chạy độc lập": container Linux sạch, không có Edge, không có skill Impeccable.
 # Mọi thứ cổng cần phải đến từ repo, npm, hoặc `design-kit setup`.
 # Image Playwright có sẵn Node và Chromium, PHẢI cùng phiên bản với playwright-core trong package-lock.json
-# (hiện 1.65.0). Nâng playwright-core thì đổi tag image.
+# (hiện 1.65.1). Nâng playwright-core thì đổi tag image.
 name: CI
 
 on:
@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     container:
-      image: mcr.microsoft.com/playwright:v1.65.0-noble
+      image: mcr.microsoft.com/playwright:v1.65.1-noble
     steps:
       - uses: actions/checkout@v5
 
