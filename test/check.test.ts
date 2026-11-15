@@ -297,6 +297,17 @@ describe("check on real pages", () => {
     expect(skip.out).toContain("standalone,soft,skipped");
   }, 120_000);
 
+  it("a page without a viewport meta fails: a phone lays it out 980px wide and shrinks it", async () => {
+    const { out, code } = await run(["check", "test/fixtures/khong-viewport.html", ...FAST, "--strict", "--full"]);
+    expect(out).toContain("fail: 1 of 1");
+    expect(out).toMatch(/hard,viewport,.*no <meta name=\\"?viewport\\"?>.*lays out 980px wide/);
+    expect(out).toMatch(/16px body text shows at 6\.4px/);
+    expect(code).toBe(1);
+    // Không có khổ điện thoại nào trong --viewports: không đo, bảng ghi skipped.
+    const wide = await run(["check", "test/fixtures/khong-viewport.html", "--no-impeccable", "--no-shots", "--viewports", "1280", "--schemes", "light"]);
+    expect(wide.out).toContain("viewport,hard,skipped");
+  }, 120_000);
+
   it("a focus ring drawn only with box-shadow is reported: forced-colors mode removes box-shadow", async () => {
     const { out } = await run(["check", "test/fixtures/vong-bong.html", ...FAST, "--full"]);
     expect(out).toMatch(/focus,.*button#chi-bong.*disappears in forced-colors mode/);

@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `viewport` check (hard): each page is opened once more as a phone (`isMobile`, at the widest `--viewports` width
+  ≤ 480) and the layout width read back. The other renders only size the window, and Playwright ignores the viewport
+  meta then, so a page without `width=device-width` passed with 0 findings while a phone laid it out 980px wide and
+  shrank it: 16px text showed at 6.4px. A 2026 study of AI-generated pages found a missing viewport meta to be the
+  leading root cause of their cross-device failures (46%).
 - `focus` reports a focus ring that disappears in forced-colors mode (Windows High Contrast). A ring drawn only with
   box-shadow is measured again with forced colors on while the element still has focus: box-shadow is removed there,
   while an outline, even a transparent one, is redrawn in a system color. Reading the CSS in normal mode is not

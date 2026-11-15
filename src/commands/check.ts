@@ -33,7 +33,7 @@ flags[16]:
   --full: every finding
   --help: this help
 gates[3]:
-  hard: a page that shows nothing (no text, image or graphic, also 5 s after the network went idle), an uncaught script error or a script/stylesheet that fails to load, overflow at 320px, axe serious/critical (contrast, target size, labels…), text < 12px, heading line-height < 1.2 in Vietnamese, missing lang="vi", animation that ignores reduced motion, a step that cannot be done (selector not found), Impeccable slop rules and quality rules a user trips on (low-contrast, tiny-text, overflow, occlusion, script errors)
+  hard: a page that shows nothing (no text, image or graphic, also 5 s after the network went idle), an uncaught script error or a script/stylesheet that fails to load, a page a phone lays out wider than its screen and shrinks (no width=device-width viewport meta; measured once with a mobile-emulated render at the widest --viewports width ≤ 480), overflow at 320px, axe serious/critical (contrast, target size, labels…), text < 12px, heading line-height < 1.2 in Vietnamese, missing lang="vi", animation that ignores reduced motion, a step that cannot be done (selector not found), Impeccable slop rules and quality rules a user trips on (low-contrast, tiny-text, overflow, occlusion, script errors)
   soft: a custom element that is never defined, axe moderate/minor, body text < 16px or line-height < 1.5, lines > 80ch, a scroll box hiding content (cut-off table), text cut off (an ellipsis or line-clamp hiding words, overflow hidden/clip cutting letters or Vietnamese accents; reports the text still shown and the width), more than 12 fields on one screen, guide (button that only says "Tiếp"/"Next", empty state with no next action, tour or welcome modal on load), web font not loaded, focus ring missing or hidden, copy (generation 1: stock phrases, template openers, chatbot residue such as "Chắc chắn rồi!", placeholders like [Tên công ty] or {{name}} or lorem ipsum, markdown ## or ** shown as text; generation 2: a row of 3–4 short stats under the hero, a heading in fragments "X. Y.", a link that only says "Xem thêm"/"Learn more"; lists in data/copy-tells.json), LCP > 2.5s, CLS > 0.1, standalone (opened as a file the page loses stylesheets or tokens, is over 400 KB (the pane opens at most 512 KiB), or draws Vietnamese letters from a second font), other Impeccable quality rules and advisories
   human: hierarchy and taste, and the task map (every hesitation point has a guide pattern): open the screenshots
 steps:
@@ -91,7 +91,7 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 /** Mọi kiểm tra có tên ở đây (để bảng `checks` liệt kê cả kiểm tra đã đạt). */
 const CHECKS: Array<[string, Gate]> = [
-  ["render", "hard"], ["errors", "hard"], ["overflow", "hard"], ["axe", "hard"], ["text-min", "hard"], ["heading-lh", "hard"], ["lang", "hard"], ["motion", "hard"],
+  ["render", "hard"], ["errors", "hard"], ["viewport", "hard"], ["overflow", "hard"], ["axe", "hard"], ["text-min", "hard"], ["heading-lh", "hard"], ["lang", "hard"], ["motion", "hard"],
   ["steps", "hard"], ["impeccable", "hard"], ["body-size", "soft"], ["body-lh", "soft"], ["measure", "soft"], ["font", "soft"],
   ["focus", "soft"], ["inner-scroll", "soft"], ["text-clip", "soft"], ["long-form", "soft"], ["guide", "soft"], ["copy", "soft"], ["lcp", "soft"], ["cls", "soft"], ["standalone", "soft"],
 ];
@@ -189,6 +189,40 @@ async function waitForContent(page: Page, idleAt: number): Promise<number> {
     }
   }
   return -1;
+}
+
+/**
+ * Mở trang một lần như điện thoại thật (isMobile: trình duyệt đọc thẻ meta viewport) rồi đọc bề rộng dàn trang.
+ * Các lượt render khác chỉ đặt bề rộng cửa sổ, nên Playwright bỏ qua thẻ này: trang thiếu nó vẫn dàn ở 390px và qua
+ * cổng, trong khi điện thoại dàn ở 980px rồi thu cả trang cho vừa màn (chữ 16px còn 6,4px). Thiếu meta viewport là
+ * nguyên nhân gốc đứng đầu ở trang do AI sinh (46%, WebCompat 2026, docs/nguon.md c38).
+ */
+async function checkViewport(browser: Browser, url: string, width: number, r: PageReport): Promise<void> {
+  const ctx = await browser.newContext({ viewport: { width, height: HEIGHT[width] ?? 844 }, isMobile: true, hasTouch: true });
+  try {
+    const page = await ctx.newPage();
+    const net = watchNetwork(page);
+    await page.goto(url, { waitUntil: "load", timeout: 45_000 });
+    await settlePage(page, net);
+    const v = await page.evaluate(() => {
+      const metas = Array.from(document.querySelectorAll('meta[name="viewport" i]'));
+      const text = Array.from(document.querySelectorAll("p, li, td, dd, label, span")).find((e) => (e.textContent ?? "").trim().length > 20);
+      return {
+        layout: document.documentElement.clientWidth,
+        meta: metas.length ? (metas[metas.length - 1]!.getAttribute("content") ?? "") : null,
+        fontSize: parseFloat(getComputedStyle(text ?? document.body).fontSize),
+      };
+    });
+    if (v.layout > width + 1) {
+      const shown = (v.fontSize * (width / v.layout)).toFixed(1);
+      const why = v.meta === null ? 'no <meta name="viewport">' : `<meta name="viewport" content="${v.meta}">`;
+      add(r, "hard", "viewport", "<head>",
+        `${why}: on a phone the page lays out ${v.layout}px wide and is shrunk to fit ${width}px (${Math.round((width / v.layout) * 100)}%), so ${v.fontSize}px body text shows at ${shown}px. Use <meta name="viewport" content="width=device-width, initial-scale=1">`,
+        `mobile/${width}`);
+    }
+  } finally {
+    await ctx.close();
+  }
 }
 
 async function checkPage(
@@ -416,7 +450,10 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const servers = new Map<string, { origin: string; close: () => void }>();
   const jobsN = Number(p.str("jobs") ?? 3);
   // Bước 1: danh sách việc (máy chủ tĩnh dựng tuần tự). Bước 2: chạy song song có giới hạn, giữ thứ tự kết quả.
-  const jobs: Array<{ url: string; label: string; r: PageReport; shotsDir?: string; state?: StepState; standalone?: string }> = [];
+  const jobs: Array<{ url: string; label: string; r: PageReport; shotsDir?: string; state?: StepState; standalone?: string; mobile?: boolean }> = [];
+  // Khổ điện thoại để mở trang như máy thật (phép đo viewport): khổ lớn nhất ≤ 480 trong --viewports; không có thì bỏ.
+  const phones = viewports.filter((w) => w <= 480);
+  const phoneWidth = phones.length ? Math.max(...phones) : undefined;
   try {
     for (const t of targets) {
       let base = t;
@@ -445,11 +482,13 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
           }
           // Mở dạng data: URL không mang query, nên chỉ cần một lần mỗi tệp: trạng thái đầu của query đầu.
           const standalone = !p.bool("no-standalone") && !/^https?:/i.test(t) && !state && q === queries[0] ? t : undefined;
-          jobs.push({ url, label, r, ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}) });
+          // Thẻ meta viewport không đổi theo query hay trạng thái: một lần mỗi trang, trạng thái đầu của query đầu.
+          const mobile = phoneWidth !== undefined && !state && q === queries[0];
+          jobs.push({ url, label, r, ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}), ...(mobile ? { mobile } : {}) });
         }
       }
     }
-    const runJob = async ({ url, label, r, shotsDir, state, standalone }: (typeof jobs)[number]): Promise<void> => {
+    const runJob = async ({ url, label, r, shotsDir, state, standalone, mobile }: (typeof jobs)[number]): Promise<void> => {
       // Impeccable tự mở trang theo URL, không phát lại được thao tác: chỉ chạy ở trạng thái đầu.
       const imp = impBin && !state
         ? Promise.all(
@@ -457,6 +496,13 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
           )
         : Promise.resolve([]);
       await checkPage(browser, url, label, { viewports, schemes, focusStops, axeSource, ...(copy ? { copy } : {}), ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}) }, r);
+      if (mobile && phoneWidth) {
+        try {
+          await checkViewport(browser, url, phoneWidth, r);
+        } catch (e) {
+          r.notes.push(`viewport: not measured (${(e as Error).message.split("\n")[0]})`);
+        }
+      }
       for (const { vp, res } of await imp) {
         if (res.error) r.notes.push(`impeccable ${vp}: ${res.error}`);
         for (const f of res.findings ?? []) {
@@ -499,7 +545,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
     const of = (g: Gate) => reports.reduce((s, r) => s + [...r.findings.values()].filter((f) => f.check === id && f.gate === g).length, 0);
     const h = of("hard");
     const s = of("soft");
-    const skipped = (id === "impeccable" && !impBin) || (id === "standalone" && !jobs.some((j) => j.standalone)) || (id === "copy" && !copy);
+    const skipped = (id === "impeccable" && !impBin) || (id === "standalone" && !jobs.some((j) => j.standalone)) || (id === "copy" && !copy) || (id === "viewport" && !phoneWidth);
     const unused = id === "steps" && !stateJobs;
     const result = skipped ? "skipped" : unused ? "none: no steps file" : h || s ? [h && `${h} hard`, s && `${s} soft`].filter(Boolean).join(", ") : "ok";
     return { check: id, gate, result };
