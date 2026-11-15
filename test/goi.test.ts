@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -56,6 +56,58 @@ describe("plugin hook", () => {
     const tr2 = join(tmp, "t2.jsonl");
     writeFileSync(tr2, [edit("e2", "D:/x/a.html"), bash("node dist/bin/design-kit.js check a.html --strict")].join("\n"));
     expect(runHook({ hook_event_name: "Stop", session_id: sid(), transcript_path: tr2 })).toBe("");
+  });
+});
+
+describe("plugin hook: UI files changed outside Write/Edit", () => {
+  const git = (cwd: string, ...args: string[]) => {
+    const r = spawnSync("git", args, { cwd, encoding: "utf8" });
+    expect(r.status, r.stderr).toBe(0);
+  };
+  const iso = (ms: number) => new Date(ms).toISOString();
+  const use = (id: string, name: string, input: Record<string, unknown>, at: number) =>
+    JSON.stringify({ type: "assistant", timestamp: iso(at), message: { content: [{ type: "tool_use", id, name, input }] } });
+  const result = (id: string, at: number) =>
+    JSON.stringify({ type: "user", timestamp: iso(at), message: { content: [{ type: "tool_result", tool_use_id: id, content: "ok" }] } });
+
+  it("a page edited through the shell needs a check of that page that finished after the edit", () => {
+    const repo = mkdtempSync(join(tmpdir(), "dk-hook-"));
+    git(repo, "init", "-q");
+    git(repo, "config", "user.email", "t@example.invalid");
+    git(repo, "config", "user.name", "t");
+    mkdirSync(join(repo, "trang"));
+    writeFileSync(join(repo, "trang", "a.html"), "<p>cũ</p>");
+    writeFileSync(join(repo, "ghi-chu.md"), "x");
+    git(repo, "add", ".");
+    git(repo, "commit", "-q", "-m", "init");
+    const start = Date.now() - 60_000;
+    // Sửa qua shell: không có Write/Edit nào trong transcript. Tệp .md đổi cũng không tính.
+    writeFileSync(join(repo, "trang", "a.html"), "<p>mới</p>");
+    writeFileSync(join(repo, "ghi-chu.md"), "y");
+    const edited = statSync(join(repo, "trang", "a.html")).mtimeMs;
+    const head = [JSON.stringify({ type: "user", timestamp: iso(start), message: { content: "làm trang" } }), use("b1", "Bash", { command: "node sua.mjs" }, edited - 500), result("b1", edited - 400)];
+    const tr = join(repo, "t.jsonl");
+    const stop = (lines: string[], s = sid()) => {
+      writeFileSync(tr, lines.join("\n"));
+      const out = runHook({ hook_event_name: "Stop", session_id: s, transcript_path: tr, cwd: repo });
+      return out ? (JSON.parse(out) as { decision: string; reason: string }) : undefined;
+    };
+    const blocked = stop(head);
+    expect(blocked?.decision).toBe("block");
+    expect(blocked?.reason).toContain("a.html");
+    expect(blocked?.reason).not.toContain("ghi-chu");
+    // Kiểm trang khác: chưa đủ. Kiểm đúng thư mục chứa trang, xong sau lần sửa: đủ.
+    expect(stop([...head, use("c1", "Bash", { command: "design-kit check trang/b.html --strict" }, edited + 1000), result("c1", edited + 3000)])?.decision).toBe("block");
+    expect(stop([...head, use("c2", "Bash", { command: "design-kit check trang --strict" }, edited + 1000), result("c2", edited + 3000)])).toBeUndefined();
+    // Fixture test (trang hỏng có chủ ý, kiểm qua bộ test) đổi cũng không tính.
+    mkdirSync(join(repo, "test", "fixtures"), { recursive: true });
+    writeFileSync(join(repo, "test", "fixtures", "hong.html"), "<p>hỏng có chủ ý</p>");
+    expect(stop([...head, use("c4", "Bash", { command: "design-kit check trang --strict" }, edited + 1000), result("c4", Date.now() + 5000)])).toBeUndefined();
+    // Sửa và kiểm trong cùng một lệnh: lệnh xong sau lần sửa thì tính là đã kiểm.
+    expect(stop([...head, use("c3", "PowerShell", { command: "node sua.mjs; design-kit check trang\\a.html" }, edited - 200), result("c3", edited + 2000)])).toBeUndefined();
+    // Tệp đổi trước khi phiên bắt đầu (việc của phiên khác, đã nằm sẵn): không tính.
+    const old = [JSON.stringify({ type: "user", timestamp: iso(edited + 10_000), message: { content: "việc khác" } })];
+    expect(stop(old)).toBeUndefined();
   });
 });
 

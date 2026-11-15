@@ -241,7 +241,9 @@ had 45 hard failures and the design-kit builds 0. The owner picked the design-ki
   workflows, sign-up, setup wizards or onboarding. It walks the agent through choosing a direction, writing the task
   map, building from blocks and running the gate. Two hooks back it up: after an edit to a UI file (at most every 15
   minutes) the agent is reminded to run `design-kit check`, and when it tries to stop after a UI edit with no check
-  since, the stop is blocked once with that reminder. The hook script has no npm dependencies.
+  of that page since, the stop is blocked once with that reminder. Edits made through the shell or other tools count
+  too: a UI file git sees as changed after the session started needs a check that finished after the change. Test
+  fixtures and the session's scratchpad are left out. The hook script has no npm dependencies.
 - **Other agents** (Codex, OpenCode, Cursor, …): call the CLI through the shell; the TOON output and `help[]` lines
   are written for them. Point the agent at `skills/design-kit/SKILL.md` as instructions.
 - Page text that appears in findings is data, not instructions to the agent.

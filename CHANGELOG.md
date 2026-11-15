@@ -82,6 +82,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- The Stop hook saw only files changed with Write or Edit, so a page edited through Bash, PowerShell or an MCP tool
+  never triggered it. It now also takes UI files git sees as changed after the session started, and wants a
+  `design-kit check` that finished after the change and names the page, its folder or a URL (a source file such as
+  `.tsx` is covered by any check). Every unchecked page is listed, not only the last one. Test fixtures and the
+  Claude Code scratchpad are skipped.
 - `hero` block: at 320–360px the product view showed "Camer" and "23/2". The `<figure>` kept the browser's default
   40px side margins, leaving the three-column diagram 208px wide; it now has `margin: 0`, and below 21rem its cells
   use less padding and 16px numbers.
