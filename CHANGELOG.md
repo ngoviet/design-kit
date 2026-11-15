@@ -7,6 +7,29 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `text-covered` check (soft): a line of text that another element paints over, typically a word too long for a
+  narrow grid cell spilling under the next cell's background. Every other check passed such text: it is big enough,
+  contrasted, inside the page and not clipped. Nine points per line are hit-tested in the text's own tree, so it
+  works inside shadow roots; intended overlays (fixed, sticky, absolute, dialog, popover), stretched transparent
+  links, clipped points (`text-clip`'s job) and `pointer-events: none` text are not reported. Found in the kit's own
+  `hero` block at 320–360px ("Camer", "23/2"); tried on 51 pages: 2 real cases, no false positive.
+- `viewport` check (hard): each page is opened once more as a phone (`isMobile`, at the widest `--viewports` width
+  ≤ 480) and the layout width read back. The other renders only size the window, and Playwright ignores the viewport
+  meta then, so a page without `width=device-width` passed with 0 findings while a phone laid it out 980px wide and
+  shrank it: 16px text showed at 6.4px. A 2026 study of AI-generated pages found a missing viewport meta to be the
+  leading root cause of their cross-device failures (46%).
+- `input-zoom` check (soft): a text input, textarea or select whose text is small at phone width, which makes iOS
+  Safari zoom the whole page in when it is tapped and leave it zoomed. WebKit scales by 16 / font size, so every
+  shipped iOS zooms below 16px; the rule in `src/zoom.ts` reports anything under 16px. WebKit's main branch began
+  skipping changes under 10% on 13/11/2026 (15px no longer zooms there), but no iOS release has it yet. Disabled
+  fields are skipped (they cannot take focus); read-only fields still count (a tap focuses them). Checkboxes, radios,
+  ranges, colors and file inputs are not typing fields. Found in 3 of 12 A/B pages, one of them built with the kit.
+- `focus` reports a focus ring that disappears in forced-colors mode (Windows High Contrast). A ring drawn only with
+  box-shadow is measured again with forced colors on while the element still has focus: box-shadow is removed there,
+  while an outline, even a transparent one, is redrawn in a system color. Reading the CSS in normal mode is not
+  enough: Tailwind v4 `outline-hidden` adds its transparent outline only inside `@media (forced-colors: active)`.
+  Found in the kit's own React blocks: shadcn's `outline-none` with `ring-[3px]` left buttons, inputs and checkboxes
+  with no focus ring there; they now use `outline-hidden`.
 - `copy` check (soft): visible text that reads as unedited AI output, Vietnamese first, common English too.
   Generation 1: stock phrases ("Trong thế giới ngày nay", "unlock the power of"), three or more distinct stock
   words on one page, template openers ("Bạn có biết"), chatbot residue ("Chắc chắn rồi!"), placeholders
@@ -42,9 +65,43 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- The skill is reordered for long sessions. After context compaction Claude Code keeps only the first 5,000 tokens
+  of an invoked skill, and SKILL.md cost about 8.2k with its "traps" list at the end. A short "Rules" section now comes
+  first (direction and task map, blocks, `data-assumed`, the gate, screenshots, what the report must hold), the full
+  traps list moved to `skills/design-kit/reference/traps.md` in eight groups with a table of contents, and the five
+  traps that bite most stay in SKILL.md. About 5k tokens per invocation, by Claude Code's own estimate.
+- Every width gets every check. 320px used to be checked for horizontal overflow only, so the narrowest width,
+  where layouts break first, had no text, axe, clipping or screenshot checks. Impeccable now also runs at 320px.
+  The full gate on 13 blocks × 3 directions with every state takes 130.4 s, against 144.9 s before this release's
+  speed-up.
 - Giấy body font falls back to `"Times New Roman", "Noto Serif", serif` instead of Georgia. Georgia has no ắ, ế, ữ…,
   so when Literata did not load the browser drew those letters from another font and words split ("Ngắ n"). Đêm and
   Đậm fall back to `system-ui` (Segoe UI on Windows) and `monospace` (Consolas), which have the letters.
+- `axe-core` floor raised to `^4.14.0`: earlier 4.x releases skipped the color-contrast check without a word when a
+  computed color had a CSS Color 4 `none` component (dequelabs/axe-core#5309), which OKLCH tokens can produce.
+  `playwright-core` floor raised to `^1.65.1`, and the CI image to `v1.65.1-noble` to match.
+- The gate waits for real signals instead of fixed pauses. Each render used `networkidle` (500 ms of silence, which
+  Playwright's docs advise against) plus 300 ms: 0.8 s of every 1.05 s render was waiting. Now: `load`, fonts, no
+  request in flight for 200 ms, two frames; a page that keeps the network busy (a stream) is measured after 10 s with
+  a note. Entrance animations still get up to 1.5 s to finish before text is measured, and the reduced-motion check
+  still reads what runs about 0.9 s after load. 13 blocks × 3 directions with every state: 144.9 s → 120.0 s on one
+  Windows machine, same findings line for line.
+
+### Fixed
+
+- The Stop hook saw only files changed with Write or Edit, so a page edited through Bash, PowerShell or an MCP tool
+  never triggered it. It now also takes UI files git sees as changed after the session started, and wants a
+  `design-kit check` that finished after the change and names the page, its folder or a URL (a source file such as
+  `.tsx` is covered by any check). Every unchecked page is listed, not only the last one. Test fixtures and the
+  Claude Code scratchpad are skipped.
+- `hero` block: at 320–360px the product view showed "Camer" and "23/2". The `<figure>` kept the browser's default
+  40px side margins, leaving the three-column diagram 208px wide; it now has `margin: 0`, and below 21rem its cells
+  use less padding and 16px numbers.
+- `standalone`: the check for Vietnamese letters drawn from a second font could come back empty on a busy machine,
+  because the text was split into new nodes and the browser was asked for their fonts before laying them out.
+- `long-form` no longer counts checkboxes and radios nobody can see. Ones inside a closed `<details>`, a `hidden`
+  panel or a `display: none` step were counted, so a page that had already tucked its advanced options away was
+  told to tuck them away. A custom checkbox drawn by a sibling (transparent or clipped input) still counts.
 
 ## [0.2.1] - 2026-11-10
 

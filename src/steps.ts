@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import type { Page } from "playwright-core";
 import { fail } from "./errors.js";
+import { type NetWatch, settlePage } from "./settle.js";
 
 /**
  * Trạng thái sau tương tác (lỗi form, bước 3 của trình tự, hộp thoại mở, mẹo lần đầu…).
@@ -92,7 +93,7 @@ export function describeAction(a: StepAction): string {
  * Chạy thao tác trên trang (bộ chọn của Playwright: CSS đi xuyên open shadow root, `text=…`, `role=button[name="…"]`).
  * Trả về mô tả lỗi của thao tác hỏng đầu tiên, hoặc undefined nếu chạy hết.
  */
-export async function runActions(page: Page, actions: StepAction[]): Promise<string | undefined> {
+export async function runActions(page: Page, actions: StepAction[], net: NetWatch): Promise<string | undefined> {
   const timeout = 5000;
   for (const a of actions) {
     try {
@@ -109,7 +110,8 @@ export async function runActions(page: Page, actions: StepAction[]): Promise<str
       return `${describeAction(a)} failed: ${msg.slice(0, 140)}`;
     }
   }
-  await page.waitForLoadState("networkidle", { timeout }).catch(() => undefined);
-  await page.waitForTimeout(300);
+  // Thao tác có thể gọi mạng (gửi form, tải thêm hàng): đợi mạng im và hai khung hình, không chờ cố định.
+  // Trạng thái chỉ hiện sau một hẹn giờ của trang (giả lập "đang gửi" 900 ms) thì tệp steps phải ghi `wait`.
+  await settlePage(page, net);
   return undefined;
 }

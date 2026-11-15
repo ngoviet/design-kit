@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "../src/cli.js";
 import { impGate } from "../src/commands/check.js";
+import { inputZoomFinding } from "../src/zoom.js";
 import { isFontSheet, tagAttrs } from "../src/commands/inline.js";
 import { pageWeight, paneUrl, weightDetail } from "../src/standalone.js";
 import { parseSteps } from "../src/steps.js";
@@ -27,6 +28,24 @@ describe("impGate", () => {
     expect(impGate({ antipattern: "straggler", category: "quality", severity: "advisory" })).toBe("soft");
     // Khẩu vị bảng màu, không phải công năng (A/B đợt 2)
     expect(impGate({ antipattern: "cream-palette", category: "slop" })).toBe("soft");
+  });
+});
+
+describe("inputZoomFinding: when tapping a field makes iOS zoom the page", () => {
+  const f = (size: number, extra: Partial<{ type: string; readonly: boolean; disabled: boolean }> = {}) =>
+    inputZoomFinding({ where: "input#x", size, type: "text", readonly: false, disabled: false, ...extra });
+  it("reports anything under 16px, the size every shipped iOS zooms below", () => {
+    expect(f(13)).toMatch(/^13px text: iOS zooms the whole page in/);
+    expect(f(15.5)).toMatch(/^15\.5px text/);
+    expect(f(14, { type: "select" })).toMatch(/^14px text/);
+  });
+  it("leaves 16px and up, and disabled fields that cannot take focus", () => {
+    expect(f(16)).toBeUndefined();
+    expect(f(18)).toBeUndefined();
+    expect(f(13, { disabled: true })).toBeUndefined();
+  });
+  it("still reports a read-only field: a tap focuses it and WebKit still zooms to reveal it", () => {
+    expect(f(13, { readonly: true })).toMatch(/^13px text/);
   });
 });
 
@@ -295,6 +314,67 @@ describe("check on real pages", () => {
     expect(heavy.out).toMatch(/soft,standalone,file,"60\d KB: over 512 KiB \(524,288 bytes\) the Claude app's browser pane does not open the file at all/);
     const skip = await run(["check", ".design-kit/test/nang.html", ...FAST, "--no-standalone"]);
     expect(skip.out).toContain("standalone,soft,skipped");
+  }, 120_000);
+
+  it("text-covered: text spilling under the next box is reported, through shadow roots; overlays and stretched links are not", async () => {
+    const { out } = await run(["check", "test/fixtures/che-chu.html", ...FAST, "--full"]);
+    expect(out).toMatch(/soft,text-covered,.*div\.o \\"Camera\\".*covered by div\.o/);
+    expect(out).toMatch(/soft,text-covered,.*div\.o \\"Máy_chủ_lưu_trữ\\".*covered by div\.o/);
+    expect(out).toMatch(/soft,text-covered,.*khung-so::shadow b \\"23\/26\\".*covered by/);
+    // Thanh dính, menu đang mở, liên kết phủ trong suốt, chữ không nhận con trỏ: không báo.
+    expect(out).not.toMatch(/text-covered,.*(dinh|duoi-menu|Mở chi tiết|Đoạn chữ trong thẻ|không nhận con trỏ|Đoạn cuối)/);
+  }, 120_000);
+
+  it("the narrowest width gets every check, not only overflow", async () => {
+    const { out } = await run(["check", "test/fixtures/co-gian.html", "--no-impeccable", "--no-shots", "--viewports", "320", "--schemes", "light", "--full"]);
+    expect(out).toMatch(/text-min,.*span#co-transform.*light\/320/);
+  }, 120_000);
+
+  it("input-zoom: typing fields with small text at phone width are reported, other controls are not", async () => {
+    const { out } = await run(["check", "test/fixtures/o-nho.html", ...FAST, "--full"]);
+    // Ca rõ ràng ở mọi cách đặt ngưỡng: 13px và 14px bị phóng to, 16px thì không, ô tích không mở bàn phím.
+    expect(out).toMatch(/soft,input-zoom,.*input#nho.*13px text: iOS zooms/);
+    expect(out).toMatch(/soft,input-zoom,.*select#chon-nho.*14px text: iOS zooms/);
+    expect(out).not.toMatch(/input-zoom,.*input#du/);
+    expect(out).not.toMatch(/input-zoom,.*input#tich/);
+    // 15px vẫn bị phóng trên mọi bản iOS đã phát hành; ô chỉ đọc vẫn nhận focus khi chạm; ô bị khoá thì không.
+    expect(out).toMatch(/soft,input-zoom,.*textarea#vua.*15px text: iOS zooms/);
+    expect(out).toMatch(/soft,input-zoom,.*input#chi-doc.*13px text: iOS zooms/);
+    expect(out).not.toMatch(/input-zoom,.*input#khoa/);
+    const wide = await run(["check", "test/fixtures/o-nho.html", "--no-impeccable", "--no-shots", "--viewports", "1280", "--schemes", "light"]);
+    expect(wide.out).toContain("input-zoom,soft,skipped");
+  }, 120_000);
+
+  it("a page without a viewport meta fails: a phone lays it out 980px wide and shrinks it", async () => {
+    const { out, code } = await run(["check", "test/fixtures/khong-viewport.html", ...FAST, "--strict", "--full"]);
+    expect(out).toContain("fail: 1 of 1");
+    expect(out).toMatch(/hard,viewport,.*no <meta name=\\"?viewport\\"?>.*lays out 980px wide/);
+    expect(out).toMatch(/16px body text shows at 6\.4px/);
+    expect(code).toBe(1);
+    // Không có khổ điện thoại nào trong --viewports: không đo, bảng ghi skipped.
+    const wide = await run(["check", "test/fixtures/khong-viewport.html", "--no-impeccable", "--no-shots", "--viewports", "1280", "--schemes", "light"]);
+    expect(wide.out).toContain("viewport,hard,skipped");
+  }, 120_000);
+
+  it("a focus ring drawn only with box-shadow is reported: forced-colors mode removes box-shadow", async () => {
+    const { out } = await run(["check", "test/fixtures/vong-bong.html", ...FAST, "--full"]);
+    expect(out).toMatch(/focus,.*button#chi-bong.*disappears in forced-colors mode/);
+    // Công tắc tuỳ biến: ô thật trong suốt (viền mặc định 1px của nó không ai thấy), vệt bên cạnh chỉ có bóng.
+    expect(out).toMatch(/focus,.*input#tu-dong.*disappears in forced-colors mode/);
+    // Bóng cộng viền trong suốt (màu hệ thống tô lại viền), và viền thật: không báo.
+    expect(out).not.toMatch(/bong-vien-trong.*forced-colors/);
+    expect(out).not.toMatch(/input#vien.*forced-colors/);
+    expect(out).not.toContain("no visible focus ring");
+  }, 120_000);
+
+  it("long-form counts fields a person can see: checkboxes in a closed <details> or a hidden step do not count", async () => {
+    // Đóng: 3 ô nhập + 1 công tắc tuỳ biến (ô thật trong suốt vẫn tính). 14 ô tích trong <details> và 6 nhóm radio hidden không tính.
+    const closed = await run(["check", "test/fixtures/o-an.html", ...FAST, "--full"]);
+    expect(closed.out).toContain("long-form,soft,ok");
+    expect(closed.out).not.toContain("fields on one screen");
+    // Mở khối nâng cao (?mo=1): 3 + 1 + 14 = 18 ô đang hiện.
+    const open = await run(["check", "test/fixtures/o-an.html", ...FAST, "--full", "--query", "mo=1"]);
+    expect(open.out).toContain("18 fields on one screen");
   }, 120_000);
 
   it("passes a page built on the tokens", async () => {

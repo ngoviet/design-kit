@@ -3,14 +3,19 @@
 //
 // PostToolUse (Write|Edit|MultiEdit): AI vừa ghi một tệp giao diện ⇒ nhắc bản đồ tác vụ + dẫn đường như game
 //   + chạy cổng. Mỗi phiên nhắc lần đầu, sau đó tối đa 15 phút một lần (không thành tiếng ồn).
-// Stop: phiên đã sửa giao diện mà sau lần sửa cuối chưa chạy `design-kit check` ⇒ chặn một lần, nêu tệp cần kiểm.
-//   Mỗi lần sửa chỉ bị chặn một lần: AI có thể trả lời lý do không kiểm (thay đổi không chạm giao diện) rồi dừng.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+// Stop: phiên đã sửa giao diện mà sau lần sửa chưa chạy `design-kit check` trên trang đó ⇒ chặn một lần, nêu tệp.
+//   Hai cách thấy lần sửa: lệnh Write/Edit trong transcript, và tệp giao diện git thấy đã đổi, sửa sau khi phiên bắt
+//   đầu (sửa qua Bash, PowerShell, công cụ MCP: trước 15/11/2026 hook bỏ sót hết). Mỗi trạng thái chỉ bị chặn một
+//   lần: AI có thể trả lời lý do không kiểm (không chạm giao diện, tệp do phiên khác sửa) rồi dừng.
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, isAbsolute, join, relative, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 const UI = /\.(html?|tsx|jsx|vue|svelte|astro|css|scss)$/i;
-const SKIP = /(^|[\\/])(node_modules|dist|build|\.design-kit|coverage)[\\/]|\.(test|spec|stories)\.[jt]sx?$/i;
+// Không phải giao diện người dùng: thư viện, bản build, ảnh chụp của cổng, fixture test (trang hỏng có chủ ý, kiểm
+// qua bộ test), thư mục nháp của phiên Claude Code (scratchpad).
+const SKIP = /(^|[\\/])(node_modules|dist|build|\.design-kit|coverage|fixtures|__fixtures__|scratchpad)[\\/]|\.(test|spec|stories)\.[jt]sx?$/i;
 const EVERY_MS = 15 * 60 * 1000;
 
 let input = {};
@@ -52,31 +57,90 @@ if (input.hook_event_name === "PostToolUse") {
   process.exit(0);
 }
 
+/** Đường dẫn để so: tuyệt đối, gạch xuôi, chữ thường (Windows không phân biệt hoa thường). */
+const norm = (p) => p.replace(/\\/g, "/").toLowerCase();
+
+/**
+ * Lệnh kiểm có phủ tệp này không. Trang .html: lệnh phải nêu tên tệp, đúng thư mục chứa nó (`check` chỉ lấy các
+ * .html nằm ngay trong thư mục được nêu), hoặc một URL (máy chủ dev: không ánh xạ được, tính là phủ). Tệp nguồn
+ * (.tsx, .css…) được kiểm qua trang build hay URL, nên lần chạy cổng nào cũng tính.
+ */
+function covers(cmd, file, cwd) {
+  if (!/\.html?$/i.test(file)) return true;
+  const c = ` ${norm(cmd)} `.replace(/["']/g, " ");
+  if (/https?:\/\//.test(c) || c.includes(norm(basename(file)))) return true;
+  const dirs = [norm(dirname(file)), norm(relative(cwd, dirname(file)))];
+  if (dirs[1] === "") dirs.push(".", "./");
+  return dirs.some((d) => d && (c.includes(` ${d} `) || c.includes(` ${d}/ `)));
+}
+
+/** Tệp git thấy đã đổi hoặc mới (chưa theo dõi, không bị .gitignore), đường dẫn tuyệt đối. Không phải repo git ⇒ rỗng. */
+function gitChanged(cwd) {
+  const r = spawnSync("git", ["ls-files", "--modified", "--others", "--exclude-standard", "-z"], { cwd, encoding: "utf8", timeout: 5000, windowsHide: true });
+  if (r.status !== 0 || typeof r.stdout !== "string") return [];
+  return [...new Set(r.stdout.split("\0").filter(Boolean))].map((f) => resolve(cwd, f));
+}
+
 if (input.hook_event_name === "Stop") {
   if (input.stop_hook_active || !input.transcript_path || !existsSync(input.transcript_path)) process.exit(0);
-  // Tìm lần sửa giao diện cuối và lần chạy `design-kit check` cuối trong transcript của phiên.
-  let lastEdit = null;
-  let lastCheck = -1;
+  const cwd = typeof input.cwd === "string" && input.cwd ? input.cwd : process.cwd();
+  // Đọc transcript: lần sửa qua Write/Edit (theo thứ tự dòng), lần chạy cổng (thứ tự dòng và lúc chạy xong),
+  // và mốc bắt đầu phiên (dòng sớm nhất có timestamp).
+  let start = Infinity;
+  const edits = new Map(); // tệp → { i, id }
+  const checks = []; // { i, cmd, id }
+  const doneAt = new Map(); // tool_use_id → lúc có kết quả
+  const atOf = new Map(); // tool_use_id → lúc gọi
   const lines = readFileSync(input.transcript_path, "utf8").split("\n");
   lines.forEach((line, i) => {
-    if (!line.includes('"tool_use"')) return;
+    if (!line.trim()) return;
     let o;
     try { o = JSON.parse(line); } catch { return; }
-    for (const c of o?.message?.content ?? []) {
+    const at = Date.parse(o?.timestamp ?? "");
+    if (Number.isFinite(at)) start = Math.min(start, at);
+    for (const c of Array.isArray(o?.message?.content) ? o.message.content : []) {
+      if (c?.type === "tool_result" && Number.isFinite(at)) doneAt.set(c.tool_use_id, at);
       if (c?.type !== "tool_use") continue;
-      if (["Write", "Edit", "MultiEdit"].includes(c.name) && isUi(c.input?.file_path)) lastEdit = { i, id: c.id, file: c.input.file_path };
+      if (Number.isFinite(at)) atOf.set(c.id, at);
+      if (["Write", "Edit", "MultiEdit"].includes(c.name) && isUi(c.input?.file_path)) {
+        edits.set(norm(resolve(cwd, c.input.file_path)), { i, id: c.id, file: resolve(cwd, c.input.file_path) });
+      }
       const cmd = c.input?.command;
-      if (typeof cmd === "string" && /design-kit(\.js)?\s+check\b/.test(cmd)) lastCheck = i;
+      if (typeof cmd === "string" && /design-kit(\.js)?\s+check\b/.test(cmd)) checks.push({ i, cmd, id: c.id });
     }
   });
-  if (!lastEdit || lastCheck > lastEdit.i) process.exit(0);
+  const pending = new Map(); // tệp (norm) → { file, key }
+  // (A) Sửa qua Write/Edit: cần một lần kiểm phủ tệp, gọi sau lần sửa (theo thứ tự dòng).
+  for (const [k, e] of edits) {
+    if (!checks.some((x) => x.i > e.i && covers(x.cmd, e.file, cwd))) pending.set(k, { file: e.file, key: e.id });
+  }
+  // (B) Tệp giao diện git thấy đã đổi, sửa sau khi phiên bắt đầu: cần một lần kiểm phủ tệp, xong sau lần sửa.
+  // Lấy lúc lệnh kiểm có kết quả, nên "sửa rồi kiểm" trong cùng một lệnh vẫn tính.
+  if (Number.isFinite(start)) {
+    for (const file of gitChanged(cwd)) {
+      if (!isUi(file)) continue;
+      let m;
+      try { m = statSync(file).mtimeMs; } catch { continue; }
+      if (m <= start) continue;
+      const ok = checks.some((x) => (doneAt.get(x.id) ?? atOf.get(x.id) ?? -Infinity) > m && covers(x.cmd, file, cwd));
+      if (!ok) pending.set(norm(file), { file, key: `mtime:${norm(file)}:${Math.round(m)}` });
+      else pending.delete(norm(file));
+    }
+  }
+  if (!pending.size) process.exit(0);
+  const sig = [...pending.values()].map((p) => p.key).sort().join("|");
   const s = load();
-  if (s.nagged === lastEdit.id) process.exit(0);
-  save({ ...s, nagged: lastEdit.id });
+  if (s.nagged === sig) process.exit(0);
+  save({ ...s, nagged: sig });
+  const names = [...pending.values()].map((p) => {
+    const rel = relative(cwd, p.file);
+    return (rel && !rel.startsWith("..") && !isAbsolute(rel) ? rel : p.file).replace(/\\/g, "/");
+  });
+  const shown = names.slice(0, 5).join(", ") + (names.length > 5 ? ` và ${names.length - 5} tệp khác` : "");
   const reason =
-    `design-kit: phiên này đã sửa ${basename(lastEdit.file)} nhưng chưa chạy \`design-kit check\` sau lần sửa đó. ` +
-    "Chạy cổng (kèm --strict) và tự xem ảnh chụp, nêu bản đồ tác vụ nếu là màn mới; " +
-    "nếu thay đổi không chạm giao diện người dùng thì nói ngắn lý do rồi dừng.";
+    `design-kit: phiên này đã sửa ${shown} nhưng chưa có lần \`design-kit check\` nào chạy trên đó sau lần sửa. ` +
+    "Chạy cổng (kèm --strict) trên đúng trang, thư mục chứa nó, hoặc URL hiển thị nó, và tự xem ảnh chụp; nêu bản đồ tác vụ nếu là màn mới. " +
+    "Nếu thay đổi không chạm giao diện người dùng, hoặc tệp do phiên khác hay chủ sửa, thì nói ngắn lý do rồi dừng.";
   process.stdout.write(JSON.stringify({ decision: "block", reason }));
   process.exit(0);
 }

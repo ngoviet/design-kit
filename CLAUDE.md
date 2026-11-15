@@ -5,7 +5,7 @@ Chuẩn và cổng cho giao diện do agent làm.
 - Phần chuẩn: token, ba hướng DESIGN.md, khối mẫu.
 - Phần cổng: CLI `design-kit check`, TypeScript, chuẩn AXI, khuôn theo `D:\code\imp-axi`.
 - Đóng gói:
-  - Plugin Claude Code: `.claude-plugin/` (plugin và marketplace), `skills/design-kit/SKILL.md`, `hooks/`.
+  - Plugin Claude Code: `.claude-plugin/` (plugin và marketplace), `skills/design-kit/SKILL.md` (mục Rules ở đầu, giữ quanh 5 nghìn token vì sau khi nén ngữ cảnh Claude Code chỉ giữ 5.000 token đầu; đo bằng `claude plugin details design-kit@design-kit`), `skills/design-kit/reference/traps.md` (toàn bộ bẫy, 8 nhóm), `hooks/`.
   - CLI: clone, `npm ci` (prepare build `dist/`), `npm install -g .`. Trường `files` quyết định gói npm gồm những gì (cài từ tarball).
   - Trên PC1 plugin cài từ marketplace thư mục `D:\code\design-kit` (`claude plugin marketplace add D:/code/design-kit`, `claude plugin install design-kit@design-kit`). Claude Code đọc thẳng repo, nên sửa skill hay hook là có hiệu lực ở phiên mới. Không còn junction trong `~/.claude/skills/`, đừng tạo lại, vì skill sẽ bị nạp hai lần.
 - Lý do và quyết định: `docs/quyet-dinh.md`. Ngưỡng: `docs/tieu-chi.md`. Nguồn: `docs/nguon.md`, sinh bằng `npm run nguon` từ kho research-hub, không sửa tay.
@@ -45,7 +45,7 @@ Chuẩn và cổng cho giao diện do agent làm.
 - CLI: `npm run check` (tsc, eslint, vitest; test chạy Edge thật), sau đó `npx tsup`. Lệnh toàn cục đi qua `npm link`.
 - Plugin: `claude plugin validate .`. Kiểm gói npm: `npm pack --dry-run --json --ignore-scripts`. Thêm thư mục mới mà gói cần thì phải ghi vào `files`.
 - Cổng cho mọi khối:
-  - `design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6`: gồm cả trạng thái trong các tệp `.steps.json`, tốn khoảng 10 phút.
+  - `design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6`: gồm cả trạng thái trong các tệp `.steps.json`, 105 trang và trạng thái, khoảng 3 phút trên PC1 (193 s, 15/11/2026; còn 22 phát hiện mềm có lý do: 17 `standalone` vì khối liên kết token theo đường dẫn, 5 straggler của Impeccable).
   - Trạng thái mở bằng URL: `design-kit check blocks/html/hop-thoai.html blocks/html/thong-bao.html --no-steps --query "dk=dem&mo=1,dk=giay&mo=1,dk=dam&mo=1"`. Làm tương tự với `bat-dau` (`lan-dau=1`) và `trinh-tu` (`buoc=2..5`).
 
 - Đổi màu nhấn theo thương hiệu: `design-kit doi-mau --huong dem --nhan 45 --trung-tinh 60 --ra <tệp>`. Lệnh giữ cấu trúc, chỉ đổi sắc rồi dò lại độ sáng để 42 cặp vẫn đạt. Muốn kiểm riêng một tệp: `design-kit kiem-mau <tệp> --huong <hướng>`. Các script trong `scripts/` vẫn chạy tay được.
@@ -79,6 +79,11 @@ Chuẩn và cổng cho giao diện do agent làm.
   - Chữ nằm hẳn ngoài hộp là giấu có chủ ý (ngăn kéo đóng, `text-indent` âm). Chỉ báo chữ còn hiện một phần. Fixture: `test/fixtures/cat-chu.html`.
 - **Trang mất CSS khi mở trong trình duyệt của app Claude** (10/11/2026, trang báo cáo hướng Giấy): pane đổi `file:///…/trang.html` thành `data:text/html;charset=utf-8,…` (percent-encoding, đọc từ `location.href`), nên mọi `<link>` tương đối không nạp, trang toàn chữ Times, `--accent` rỗng, còn cổng chạy qua http vẫn đạt. Đã thêm `standalone` (mềm) và lệnh `inline`. Pane chỉ mở tệp tối đa 512 KiB, tính theo byte tệp (đo 11/11/2026: 524 288 byte mở được, 524 289 byte báo "couldn't open"; tệp 300 KB nhiều chữ Việt, URL 753 nghìn ký tự, vẫn mở). Muốn thử bằng `mcp__Claude_Browser__*` thì đặt tệp **trong** thư mục dự án của phiên (vd `.design-kit/`): tệp ngoài thư mục đó mở thành "static snapshot", công cụ báo "page tools can't act on it".
 - **Font dự phòng thiếu chữ Việt**: Georgia không có ắ, ế, ữ, nên trình duyệt mượn từng chữ của Times New Roman ("Ngắ n"). Hướng Giấy đã đổi sang `"Times New Roman", "Noto Serif"`. Kiểm bằng CDP `CSS.getPlatformFontsForNode`: hàm này tính cả chữ của thẻ con (`<code>` ra Consolas), nên probe tách chữ có dấu vào thẻ `dk-vi` riêng rồi mới so.
+- **Khổ 320 từng chỉ đo tràn ngang** (đến 15/11/2026): khối hero hiện "Camer", "23/2" ở 320–360px mà cổng vẫn đạt. Nguyên nhân: `<figure>` giữ lề mặc định 40px mỗi bên. Nay mọi khổ đo đủ, có phép đo `text-covered` (hit-test 9 điểm mỗi dòng chữ bằng `elementFromPoint` của chính cây chứa chữ). Cuộn trang để hit-test thì phải đổi hộp dòng sang toạ độ tài liệu **trước** khi cuộn: bản thử đầu dùng toạ độ cũ và báo 20 lỗi giả trên một trang.
+- **Thiếu meta viewport vẫn qua cổng** vì Playwright chỉ đọc thẻ này khi context bật `isMobile`. Phép đo `viewport` mở trang thêm một lần như điện thoại.
+- **Vòng focus chỉ bằng box-shadow mất ở Windows High Contrast**, và shadcn (`outline-none` + `ring-[3px]`) dính đúng lỗi này. Đừng phán bằng CSS ở chế độ thường: Tailwind v4 `outline-hidden` chỉ thêm viền trong `@media (forced-colors: active)`. Phép đo bật `forcedColors: active` ngay khi phần tử đang focus rồi đọc lại (focus và `:focus-visible` giữ nguyên).
+- **Hook Stop từng chỉ thấy Write/Edit**: tệp sửa qua Bash, PowerShell, MCP lọt hết. Nay thêm tệp git thấy đã đổi sau khi phiên bắt đầu (so mtime với lúc lệnh kiểm có kết quả).
+- **Bỏ chờ cố định làm lộ hai chỗ dựa vào thời gian**: hiệu ứng vào trang 1,1 s bị đo giữa chừng (nay chờ hiệu ứng có hồi kết tới 1,5 s trước khi đo chữ), và CDP hỏi font của nút vừa chèn trước khi trình duyệt dàn trang (nay ép dàn trang). Đổi cách chờ thì chạy toàn bộ test vài lượt.
 - **Kiểm thành phần sống trong app chủ** (card HA, widget) cần trang chứa giả đủ thứ app chủ cấp: `ha-card` là khối (`display:block`, thiếu thì mất nền), `ha-icon` chiếm `--mdc-icon-size` (rỗng thì nút co lại, axe báo target-size nhầm), `lang`, bề rộng co theo khổ. Lỗi do trang chứa thì ghi riêng, không tính cho thành phần.
 
 ## Quy tắc

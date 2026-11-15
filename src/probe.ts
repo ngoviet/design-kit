@@ -6,6 +6,18 @@ export interface ProbeHit {
   where: string;
   value: string;
 }
+/** Một ô gõ chữ: input chữ, textarea, select (trên iOS select cũng mở bảng chọn và cũng phóng to). */
+export interface TypingField {
+  where: string;
+  /** Cỡ chữ đã hiển thị, px (đã nhân hệ số co của transform, scale, zoom). */
+  size: number;
+  /** "textarea", "select", hoặc type của input ("text", "email", "search"…). */
+  type: string;
+  /** readonly: vẫn nhận focus khi chạm. */
+  readonly: boolean;
+  /** disabled: không nhận focus. */
+  disabled: boolean;
+}
 export interface ProbeResult {
   scrollW: number;
   clientW: number;
@@ -23,6 +35,8 @@ export interface ProbeResult {
   textClip: ProbeHit[];
   /** Số ô nhập đang hiện cùng lúc (form dài một màn ⇒ nên chia bước). */
   visibleFields: number;
+  /** Ô gõ chữ đang hiện (mở bàn phím khi chạm) và cỡ chữ đã hiển thị: iOS phóng to trang khi chạm vào ô chữ nhỏ. */
+  typingFields: TypingField[];
   /** Nút đi tiếp chỉ ghi "Tiếp"/"Next": không nói bước sau là gì. */
   vagueNext: ProbeHit[];
   /** Trạng thái rỗng cụt: báo "không có dữ liệu" mà không chỉ việc làm tiếp. */
@@ -47,6 +61,7 @@ export function probePage(): ProbeResult {
     innerScroll: [],
     textClip: [],
     visibleFields: 0,
+    typingFields: [],
     vagueNext: [],
     emptyDeadEnd: [],
     tour: [],
@@ -174,14 +189,30 @@ export function probePage(): ProbeResult {
       if (!GENERIC.test(first) && !loaded.has(key)) out.fontFallback.push({ where: label(el), value: first });
     }
   }
-  // Ô nhập đang hiện (bỏ hidden, nút, ô chọn trong nhóm radio tính một lần theo name)
+  // Ô nhập đang hiện (bỏ hidden, nút, ô chọn trong nhóm radio tính một lần theo name).
+  // Ô tích và ô chọn tuỳ biến thường trong suốt hoặc bị cắt còn 1px (vệt bên cạnh vẽ thay) nên không xét hộp của
+  // chính nó; nhưng phải còn được dựng: ô nằm trong <details> đang đóng, trong khối hidden hay display:none
+  // (bước chưa tới) thì người dùng chưa thấy, tính vào là báo nhầm "cất bớt đi" cho thứ đã cất (gặp 15/11/2026).
+  const rendered = (el: Element): boolean => el.checkVisibility({ checkVisibilityCSS: true, visibilityProperty: true });
   const radioNames = new Set<string>();
   for (const el of all) {
     if (!/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) continue;
     const inp = el as HTMLInputElement;
     if (["hidden", "submit", "button", "reset", "image"].includes(inp.type)) continue;
-    if (!visible(el, getComputedStyle(el)) && inp.type !== "radio" && inp.type !== "checkbox") continue;
+    const proxied = inp.type === "radio" || inp.type === "checkbox";
+    if (proxied ? !rendered(el) : !visible(el, getComputedStyle(el))) continue;
     if (inp.type === "radio") { if (radioNames.has(inp.name)) continue; radioNames.add(inp.name); }
+    // Ô mở bàn phím hay bảng chọn khi chạm: bỏ ô tích, ô chọn, thanh trượt, ô màu, ô tệp.
+    if (!proxied && !["range", "color", "file"].includes(inp.type)) {
+      const tag = el.tagName === "INPUT" ? inp.type : el.tagName.toLowerCase();
+      out.typingFields.push({
+        where: label(el),
+        size: +(parseFloat(getComputedStyle(el).fontSize) * shrink(el)).toFixed(2),
+        type: tag,
+        readonly: inp.readOnly === true,
+        disabled: inp.disabled === true,
+      });
+    }
     out.visibleFields++;
   }
   // Vùng cuộn ngang đang giấu nội dung (bảng bị cắt cột): không tràn trang nhưng người dùng phải cuộn trong khung.
@@ -442,8 +473,128 @@ export function probePage(): ProbeResult {
   return out;
 }
 
-/** Phần tử đang focus (đi xuyên shadow root) và chỉ báo focus của nó. */
-export function probeFocus(): { where: string; indicator: boolean; obscured: boolean; hidden: boolean } | null {
+/**
+ * Chữ bị phần tử khác vẽ đè: chữ tràn khỏi hộp của nó và hộp bên cạnh (có nền) nằm trên. Mọi phép đo khác đều đạt
+ * vì chữ đủ cỡ, đủ tương phản, không tràn trang và không bị hộp cắt: khối hero của kit hiện "Camer" và "23/2" ở 320px
+ * suốt từ 09/11 tới 15/11/2026 mà cổng không báo.
+ *
+ * Mỗi dòng chữ thử 9 điểm bằng `elementFromPoint` của chính cây chứa nó (document hoặc shadow root). Bỏ qua: lớp phủ
+ * có chủ ý (chữ hay vật che nằm trong phần tử fixed/sticky/absolute, dialog, popover), vật che không vẽ gì (liên kết phủ
+ * trong suốt), điểm nằm ngoài hộp cắt của tổ tiên (đó là việc của text-clip), chữ có `pointer-events: none` (không
+ * hit-test được). Trang được cuộn từng nửa màn rồi trả về chỗ cũ.
+ */
+export function probeCovered(): ProbeHit[] {
+  const de = document.documentElement;
+  const all: Element[] = [];
+  const walk = (root: Document | ShadowRoot): void => {
+    for (const el of Array.from(root.querySelectorAll("*"))) {
+      all.push(el);
+      if (el.shadowRoot) walk(el.shadowRoot);
+    }
+  };
+  walk(document);
+  const label = (el: Element): string => {
+    const id = el.id ? `#${el.id}` : "";
+    const cls = !id && typeof el.className === "string" && el.className.trim() ? `.${el.className.trim().split(/\s+/)[0]}` : "";
+    const host = (el.getRootNode() as ShadowRoot).host;
+    const prefix = host ? `${host.tagName.toLowerCase()}::shadow ` : "";
+    const txt = (el.textContent || "").trim().replace(/\s+/g, " ").slice(0, 28);
+    return `${prefix}${el.tagName.toLowerCase()}${id}${cls}${txt ? ` "${txt}"` : ""}`;
+  };
+  // Cha theo cây phẳng: slot được gán, rồi cha, rồi shadow host.
+  const up = (el: Element): Element | null => el.assignedSlot ?? el.parentElement ?? ((el.getRootNode() as ShadowRoot).host || null);
+  const inside = (anc: Element, n: Element): boolean => {
+    for (let a: Element | null = n; a; a = up(a)) if (a === anc) return true;
+    return false;
+  };
+  const overlay = (el: Element): boolean => {
+    for (let a: Element | null = el; a && a !== de; a = up(a)) {
+      const p = getComputedStyle(a).position;
+      if (p === "fixed" || p === "sticky" || p === "absolute" || a.tagName === "DIALOG" || a.hasAttribute("popover")) return true;
+    }
+    return false;
+  };
+  const alpha = (c: string): number => {
+    const m = /rgba?\(([^)]+)\)/.exec(c);
+    if (!m) return c && c !== "transparent" ? 1 : 0;
+    const parts = m[1]!.split(/[,/\s]+/).filter(Boolean);
+    return parts.length >= 4 ? parseFloat(parts[3]!) : 1;
+  };
+  const paints = (el: Element): boolean => {
+    if (/^(IMG|VIDEO|CANVAS|SVG|IFRAME|INPUT|SELECT|TEXTAREA|BUTTON)$/i.test(el.tagName)) return true;
+    for (const pseudo of [null, "::before", "::after"]) {
+      const cs = getComputedStyle(el, pseudo);
+      if (pseudo && (cs.content === "none" || cs.content === "normal")) continue;
+      if (alpha(cs.backgroundColor) >= 0.5 || cs.backgroundImage !== "none") return true;
+    }
+    return false;
+  };
+  const clippedAt = (el: Element, x: number, y: number): boolean => {
+    for (let a = up(el); a && a !== de; a = up(a)) {
+      const cs = getComputedStyle(a);
+      if (cs.overflowX === "visible" && cs.overflowY === "visible") continue;
+      const r = a.getBoundingClientRect();
+      if (x < r.left || x > r.right || y < r.top || y > r.bottom) return true;
+    }
+    return false;
+  };
+  const shown = (el: Element): boolean => el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
+
+  // 1. Mọi dòng chữ, toạ độ tài liệu (trước khi cuộn).
+  const lines: Array<{ el: Element; top: number; left: number; width: number; height: number }> = [];
+  const range = document.createRange();
+  for (const el of all) {
+    if (["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "OPTION"].includes(el.tagName) || el.closest("svg")) continue;
+    const nodes = Array.from(el.childNodes).filter((n) => n.nodeType === 3 && (n.textContent || "").trim());
+    if (!nodes.length || !shown(el) || overlay(el) || getComputedStyle(el).pointerEvents === "none") continue;
+    for (const n of nodes) {
+      range.selectNodeContents(n);
+      for (const q of Array.from(range.getClientRects())) {
+        if (q.width >= 6 && q.height >= 6) lines.push({ el, top: q.top + scrollY, left: q.left + scrollX, width: q.width, height: q.height });
+      }
+    }
+  }
+  // 2. Cuộn từng nửa màn; mỗi dòng thử một lần, lúc nó nằm trọn trong màn.
+  const hits = new Map<Element, string>();
+  const tried = new Set<number>();
+  const sx = scrollX;
+  const sy = scrollY;
+  const docH = Math.max(de.scrollHeight, document.body ? document.body.scrollHeight : 0);
+  const step = Math.max(120, Math.floor(innerHeight / 2));
+  for (let y0 = 0, guard = 0; guard < 400; y0 += step, guard++) {
+    window.scrollTo({ top: y0, left: 0, behavior: "instant" });
+    lines.forEach((ln, i) => {
+      if (tried.has(i)) return;
+      const top = ln.top - scrollY;
+      if (top < 0 || top + ln.height > innerHeight) return;
+      tried.add(i);
+      if (hits.has(ln.el)) return;
+      const y = top + ln.height / 2;
+      const x0 = ln.left - scrollX;
+      const pts: Array<[string, number]> = [["start", x0 + 2], ["end", x0 + ln.width - 2]];
+      for (let k = 1; k <= 7; k++) pts.push(["middle", x0 + (ln.width * k) / 8]);
+      const root = ln.el.getRootNode() as Document | ShadowRoot;
+      for (const [where, x] of pts) {
+        if (x < 0 || x > innerWidth) continue;
+        const hit = root.elementFromPoint(x, y);
+        if (!hit || hit === ln.el || inside(ln.el, hit) || inside(hit, ln.el)) continue;
+        if (overlay(hit) || !paints(hit) || clippedAt(ln.el, x, y)) continue;
+        hits.set(ln.el, `covered by ${label(hit)} at its ${where}: the text spills out of its box under the next one`);
+        break;
+      }
+    });
+    if (scrollY + innerHeight >= docH - 1 || tried.size === lines.length) break;
+  }
+  window.scrollTo({ top: sy, left: sx, behavior: "instant" });
+  return Array.from(hits, ([el, value]) => ({ where: label(el), value }));
+}
+
+/**
+ * Phần tử đang focus (đi xuyên shadow root) và chỉ báo focus của nó. `shadowOnly`: vòng focus chỉ vẽ bằng box-shadow,
+ * không có outline nào (kể cả trong suốt). Chế độ màu ép buộc (Windows High Contrast) đặt box-shadow về none, nên vòng
+ * biến mất; outline thì được tô lại bằng màu hệ thống (thử trên Edge 15/11/2026: outline trong suốt thành rgb(55, 0, 110)).
+ */
+export function probeFocus(): { where: string; indicator: boolean; shadowOnly: boolean; obscured: boolean; hidden: boolean } | null {
   let el: Element | null = document.activeElement;
   while (el && el.shadowRoot && el.shadowRoot.activeElement) el = el.shadowRoot.activeElement;
   if (!el || el === document.body || el === document.documentElement) return null;
@@ -479,21 +630,25 @@ export function probeFocus(): { where: string; indicator: boolean; obscured: boo
     const mine = (n: Element): boolean => n === el || el.contains(n) || n.contains(el) || n === target || target.contains(n) || n.contains(target);
     obscured = !!hit && !mine(hit) && !(hit.shadowRoot && hit.shadowRoot.contains(el));
   }
-  return { where, indicator: hasRing(cs) || proxies.some((p) => hasRing(getComputedStyle(p))), obscured, hidden };
+  // Hình người dùng thấy: hình thay thế nếu ô thật trong suốt (viền mặc định của ô thật cũng vô hình), không thì chính nó.
+  const seen = proxies.length ? proxies.map((p) => getComputedStyle(p)) : [cs];
+  const anyOutline = seen.some((s) => s.outlineStyle !== "none" && parseFloat(s.outlineWidth) > 0);
+  const anyShadow = seen.some((s) => s.boxShadow !== "none" && s.boxShadow !== "");
+  return { where, indicator: hasRing(cs) || proxies.some((p) => hasRing(getComputedStyle(p))), shadowOnly: anyShadow && !anyOutline, obscured, hidden };
 }
 
 /**
- * Chờ các hiệu ứng có hồi kết (mở mẹo, chuyển màu focus) chạy xong, tối đa 600ms; bỏ qua hiệu ứng lặp vô hạn.
- * Đo giữa chừng một hiệu ứng mở (opacity 0 → 1) sẽ tưởng phần tử vô hình (gặp ở mẹo của khối bat-dau).
+ * Chờ các hiệu ứng có hồi kết (mở mẹo, chuyển màu focus) chạy xong, tối đa `maxMs` (mặc định 600ms); bỏ qua hiệu ứng
+ * lặp vô hạn. Đo giữa chừng một hiệu ứng mở (opacity 0 → 1) sẽ tưởng phần tử vô hình (gặp ở mẹo của khối bat-dau).
  */
-export function settleAnimations(): Promise<void> {
+export function settleAnimations(maxMs = 600): Promise<void> {
   const finite = document.getAnimations().filter((a) => {
     const t = a.effect?.getComputedTiming();
     return a.playState === "running" && t !== undefined && Number.isFinite(Number(t.endTime));
   });
   return Promise.race([
     Promise.all(finite.map((a) => a.finished.catch(() => undefined))).then(() => undefined),
-    new Promise<void>((done) => setTimeout(done, 600)),
+    new Promise<void>((done) => setTimeout(done, maxMs)),
   ]);
 }
 
@@ -628,6 +783,9 @@ export function markVietnameseText(max: number): string[] {
     }
     t.replaceWith(frag);
   });
+  // Ép dàn trang ngay: CDP hỏi font của các nút dk-vi vừa chèn; chưa dàn trang thì nút chưa có bố cục và câu trả lời
+  // rỗng (test font dự phòng chập chờn khi máy tải nặng, 15/11/2026).
+  void (document.body ?? document.documentElement).getBoundingClientRect();
   return out;
 }
 

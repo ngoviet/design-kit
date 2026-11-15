@@ -7,8 +7,10 @@ import { launchBrowser, serveRoot, startServer, urlFor } from "../browser.js";
 import { fail } from "../errors.js";
 import { type AssumedHit, type CopyRules, loadCopyRules, probeCopy } from "../copy.js";
 import { findImpeccable, runImpeccable } from "../impeccable.js";
-import { installVitals, probeFocus, probeMotion, probePage, probeStandalone, probeVisible, settleAnimations, STANDALONE_TOKENS, type ProbeHit } from "../probe.js";
+import { installVitals, probeCovered, probeFocus, probeMotion, probePage, probeStandalone, probeVisible, settleAnimations, STANDALONE_TOKENS, type ProbeHit } from "../probe.js";
 import type { Runtime } from "../runtime.js";
+import { QUIET_CAP_MS, settlePage, watchNetwork } from "../settle.js";
+import { inputZoomFinding } from "../zoom.js";
 import { runStandalone } from "../standalone.js";
 import { loadSteps, parseSteps, runActions, STEPS_FORMAT, type StepAction, type StepState } from "../steps.js";
 
@@ -18,7 +20,7 @@ flags[16]:
   --query <q,q>: run each page once per query string (e.g. dk=dem,dk=giay,dk=dam for design-kit blocks)
   --steps <file.json|json>: states to reach by clicking/typing, each measured like a page (overrides <page>.steps.json)
   --no-steps: ignore <page>.steps.json files next to the pages
-  --viewports <w,w>: widths in px (default 320,390,1280; 320 is used for overflow only)
+  --viewports <w,w>: widths in px (default 320,390,1280; every width gets every check)
   --schemes <light,dark>: color schemes to render (default light,dark)
   --shots <dir>: screenshot folder (default .design-kit/shots); --no-shots to skip
   --no-shots: do not save screenshots
@@ -32,8 +34,8 @@ flags[16]:
   --full: every finding
   --help: this help
 gates[3]:
-  hard: a page that shows nothing (no text, image or graphic, also 5 s after the network went idle), an uncaught script error or a script/stylesheet that fails to load, overflow at 320px, axe serious/critical (contrast, target size, labels…), text < 12px, heading line-height < 1.2 in Vietnamese, missing lang="vi", animation that ignores reduced motion, a step that cannot be done (selector not found), Impeccable slop rules and quality rules a user trips on (low-contrast, tiny-text, overflow, occlusion, script errors)
-  soft: a custom element that is never defined, axe moderate/minor, body text < 16px or line-height < 1.5, lines > 80ch, a scroll box hiding content (cut-off table), text cut off (an ellipsis or line-clamp hiding words, overflow hidden/clip cutting letters or Vietnamese accents; reports the text still shown and the width), more than 12 fields on one screen, guide (button that only says "Tiếp"/"Next", empty state with no next action, tour or welcome modal on load), web font not loaded, focus ring missing or hidden, copy (generation 1: stock phrases, template openers, chatbot residue such as "Chắc chắn rồi!", placeholders like [Tên công ty] or {{name}} or lorem ipsum, markdown ## or ** shown as text; generation 2: a row of 3–4 short stats under the hero, a heading in fragments "X. Y.", a link that only says "Xem thêm"/"Learn more"; lists in data/copy-tells.json), LCP > 2.5s, CLS > 0.1, standalone (opened as a file the page loses stylesheets or tokens, is over 400 KB (the pane opens at most 512 KiB), or draws Vietnamese letters from a second font), other Impeccable quality rules and advisories
+  hard: a page that shows nothing (no text, image or graphic, also 5 s after the network went idle), an uncaught script error or a script/stylesheet that fails to load, a page a phone lays out wider than its screen and shrinks (no width=device-width viewport meta; measured once with a mobile-emulated render at the widest --viewports width ≤ 480), overflow at 320px, axe serious/critical (contrast, target size, labels…), text < 12px, heading line-height < 1.2 in Vietnamese, missing lang="vi", animation that ignores reduced motion, a step that cannot be done (selector not found), Impeccable slop rules and quality rules a user trips on (low-contrast, tiny-text, overflow, occlusion, script errors)
+  soft: a custom element that is never defined, axe moderate/minor, body text < 16px or line-height < 1.5, lines > 80ch, a scroll box hiding content (cut-off table), text cut off (an ellipsis or line-clamp hiding words, overflow hidden/clip cutting letters or Vietnamese accents; reports the text still shown and the width), more than 12 fields on one screen, input-zoom (a typing field with small text at phone width: iOS zooms the page in when it is tapped; rule in src/zoom.ts), guide (button that only says "Tiếp"/"Next", empty state with no next action, tour or welcome modal on load), web font not loaded, focus ring missing or hidden, copy (generation 1: stock phrases, template openers, chatbot residue such as "Chắc chắn rồi!", placeholders like [Tên công ty] or {{name}} or lorem ipsum, markdown ## or ** shown as text; generation 2: a row of 3–4 short stats under the hero, a heading in fragments "X. Y.", a link that only says "Xem thêm"/"Learn more"; lists in data/copy-tells.json), LCP > 2.5s, CLS > 0.1, standalone (opened as a file the page loses stylesheets or tokens, is over 400 KB (the pane opens at most 512 KiB), or draws Vietnamese letters from a second font), other Impeccable quality rules and advisories
   human: hierarchy and taste, and the task map (every hesitation point has a guide pattern): open the screenshots
 steps:
   ${STEPS_FORMAT}
@@ -90,9 +92,9 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 /** Mọi kiểm tra có tên ở đây (để bảng `checks` liệt kê cả kiểm tra đã đạt). */
 const CHECKS: Array<[string, Gate]> = [
-  ["render", "hard"], ["errors", "hard"], ["overflow", "hard"], ["axe", "hard"], ["text-min", "hard"], ["heading-lh", "hard"], ["lang", "hard"], ["motion", "hard"],
+  ["render", "hard"], ["errors", "hard"], ["viewport", "hard"], ["overflow", "hard"], ["axe", "hard"], ["text-min", "hard"], ["heading-lh", "hard"], ["lang", "hard"], ["motion", "hard"],
   ["steps", "hard"], ["impeccable", "hard"], ["body-size", "soft"], ["body-lh", "soft"], ["measure", "soft"], ["font", "soft"],
-  ["focus", "soft"], ["inner-scroll", "soft"], ["text-clip", "soft"], ["long-form", "soft"], ["guide", "soft"], ["copy", "soft"], ["lcp", "soft"], ["cls", "soft"], ["standalone", "soft"],
+  ["focus", "soft"], ["inner-scroll", "soft"], ["text-clip", "soft"], ["text-covered", "soft"], ["long-form", "soft"], ["input-zoom", "soft"], ["guide", "soft"], ["copy", "soft"], ["lcp", "soft"], ["cls", "soft"], ["standalone", "soft"],
 ];
 
 /**
@@ -166,6 +168,10 @@ async function axeRun(page: Page, axeSource: string): Promise<Array<{ id: string
  * Trả về số ms tính từ lúc mạng rảnh tới khi nội dung hiện, 0 nếu có sẵn, -1 nếu hết giờ vẫn trắng.
  */
 const LATE_MS = 5_000;
+/** Phép đo motion đọc các hiệu ứng còn chạy sau ngần này kể từ lúc trang (hoặc thao tác cuối) đã yên. */
+const MOTION_SETTLE_MS = 700;
+/** Hiệu ứng vào trang có hồi kết được chờ tối đa ngần này trước khi đo chữ (xem chỗ gọi settleAnimations). */
+const ENTRANCE_MS = 1_500;
 async function waitForContent(page: Page, idleAt: number): Promise<number> {
   const start = Date.now();
   const seen = async () => {
@@ -186,6 +192,40 @@ async function waitForContent(page: Page, idleAt: number): Promise<number> {
   return -1;
 }
 
+/**
+ * Mở trang một lần như điện thoại thật (isMobile: trình duyệt đọc thẻ meta viewport) rồi đọc bề rộng dàn trang.
+ * Các lượt render khác chỉ đặt bề rộng cửa sổ, nên Playwright bỏ qua thẻ này: trang thiếu nó vẫn dàn ở 390px và qua
+ * cổng, trong khi điện thoại dàn ở 980px rồi thu cả trang cho vừa màn (chữ 16px còn 6,4px). Thiếu meta viewport là
+ * nguyên nhân gốc đứng đầu ở trang do AI sinh (46%, WebCompat 2026, docs/nguon.md c38).
+ */
+async function checkViewport(browser: Browser, url: string, width: number, r: PageReport): Promise<void> {
+  const ctx = await browser.newContext({ viewport: { width, height: HEIGHT[width] ?? 844 }, isMobile: true, hasTouch: true });
+  try {
+    const page = await ctx.newPage();
+    const net = watchNetwork(page);
+    await page.goto(url, { waitUntil: "load", timeout: 45_000 });
+    await settlePage(page, net);
+    const v = await page.evaluate(() => {
+      const metas = Array.from(document.querySelectorAll('meta[name="viewport" i]'));
+      const text = Array.from(document.querySelectorAll("p, li, td, dd, label, span")).find((e) => (e.textContent ?? "").trim().length > 20);
+      return {
+        layout: document.documentElement.clientWidth,
+        meta: metas.length ? (metas[metas.length - 1]!.getAttribute("content") ?? "") : null,
+        fontSize: parseFloat(getComputedStyle(text ?? document.body).fontSize),
+      };
+    });
+    if (v.layout > width + 1) {
+      const shown = (v.fontSize * (width / v.layout)).toFixed(1);
+      const why = v.meta === null ? 'no <meta name="viewport">' : `<meta name="viewport" content="${v.meta}">`;
+      add(r, "hard", "viewport", "<head>",
+        `${why}: on a phone the page lays out ${v.layout}px wide and is shrunk to fit ${width}px (${Math.round((width / v.layout) * 100)}%), so ${v.fontSize}px body text shows at ${shown}px. Use <meta name="viewport" content="width=device-width, initial-scale=1">`,
+        `mobile/${width}`);
+    }
+  } finally {
+    await ctx.close();
+  }
+}
+
 async function checkPage(
   browser: Browser,
   url: string,
@@ -200,6 +240,7 @@ async function checkPage(
     r.notes.push(`state ${opts.state!.name}: none of its viewports (${only!.join(",")}) is rendered, so it was not measured`);
     return;
   }
+  // Focus: khổ rộng nhất và khổ điện thoại hẹp nhất ngoài 320 (mặc định 390), như trước.
   const measured = widths.filter((w) => w !== 320);
   const focusAt = new Set([Math.max(...widths), ...(measured.length ? [Math.min(...measured)] : [])]);
   for (const scheme of opts.schemes) {
@@ -211,6 +252,7 @@ async function checkPage(
         reducedMotion: "no-preference",
       });
       const page = await ctx.newPage();
+      const net = watchNetwork(page);
       await page.addInitScript(installVitals);
       // Lỗi người dùng gặp ngay khi mở: script ném lỗi, script/stylesheet không tải được (thường là nguyên nhân
       // của trang trắng). Bỏ ERR_ABORTED (yêu cầu bị huỷ khi trang tự điều hướng), bỏ console.error (favicon 404…).
@@ -228,7 +270,7 @@ async function checkPage(
       });
       let resp;
       try {
-        resp = await page.goto(url, { waitUntil: "networkidle", timeout: 45_000 });
+        resp = await page.goto(url, { waitUntil: "load", timeout: 45_000 });
       } catch (e) {
         await ctx.close();
         fail(`${label}: ${(e as Error).message.split("\n")[0]}`, "LOAD_FAILED", ["Check the URL or that the dev server is running"]);
@@ -237,16 +279,19 @@ async function checkPage(
         await ctx.close();
         fail(`${label}: HTTP ${resp.status()}`, "LOAD_FAILED");
       }
+      // Font xong, không còn yêu cầu mạng dở, hai khung hình: thay cho networkidle (im đủ 500 ms) + 300 ms cố định,
+      // vốn chiếm 0,8 s trong mỗi 1,05 s của một lượt render (đo 14/11/2026). Xem src/settle.ts.
+      if ((await settlePage(page, net)).capped && !r.notes.some((n) => n.startsWith("network still busy"))) {
+        r.notes.push(`network still busy ${QUIET_CAP_MS / 1000} s after load (a stream or long polling?): measured anyway`);
+      }
       const idleAt = Date.now();
-      await page.evaluate(() => document.fonts.ready.then(() => undefined));
-      await page.waitForTimeout(300);
       const late = await waitForContent(page, idleAt);
       if (late > 0 && !r.notes.some((n) => n.startsWith("content appeared"))) {
         r.notes.push(`content appeared ${late} ms after the network went idle: measured after it appeared`);
       }
       if (actions) {
         // Không tới được trạng thái ⇒ chưa đo được ⇒ cứng: sửa trang (nút bị giấu ở khổ hẹp?) hoặc sửa tệp steps.
-        const err = await runActions(page, actions);
+        const err = await runActions(page, actions, net);
         if (err) {
           add(r, "hard", "steps", opts.state!.name, err, render);
           await ctx.close();
@@ -254,7 +299,10 @@ async function checkPage(
         }
       }
       // Cỡ chữ tính cả hệ số co của transform: đo giữa hiệu ứng mở scale(.95) → 1 sẽ báo nhầm chữ nhỏ.
-      await page.evaluate(settleAnimations);
+      // Chờ tới ENTRANCE_MS: trước kia 0,8 s chờ cố định cộng 600 ms ở đây cho hiệu ứng vào trang khoảng 1,4 s để
+      // xong; bỏ chờ cố định mà giữ 600 ms thì hiệu ứng mở 1,1 s bị đo giữa chừng (fixture co-gian.html, 15/11/2026).
+      // Trang không có hiệu ứng có hồi kết thì không mất thêm gì.
+      await page.evaluate(settleAnimations, ENTRANCE_MS);
       const p = await page.evaluate(probePage);
 
       // Trang trắng: không có gì để trượt nên mọi phép đo khác "đạt". Phải là lỗi cứng.
@@ -264,7 +312,7 @@ async function checkPage(
       if (!vis.text && !vis.media) {
         const all = [...vis.undefinedTags, ...vis.unregisteredTags].join(", ");
         add(r, "hard", "render", "page", `nothing visible: no text, image or graphic, also ${LATE_MS / 1000} s after the network went idle${all ? `; custom elements never defined: ${all}` : ""}`, render);
-      } else if (vw !== 320) {
+      } else {
         if (undef) add(r, "soft", "render", "page", `custom element never defined (its script failed or has not loaded): ${undef}`, render);
         if (unreg && !r.notes.some((n) => n.startsWith("not registered"))) {
           r.notes.push(`not registered as custom elements (fine for app roots and styling tags; a missing host-app component otherwise): ${unreg}`);
@@ -273,7 +321,9 @@ async function checkPage(
       for (const e of new Set(errs)) add(r, "hard", "errors", "page", e.slice(0, 200), render);
 
       if (p.scrollW > p.clientW + 1) add(r, "hard", "overflow", `${vw}px`, `page is ${p.scrollW}px wide, viewport ${p.clientW}px`, render);
-      if (vw !== 320) {
+      // Mọi khổ đều đo đủ. Trước 15/11/2026 khổ 320 chỉ đo tràn ngang, nên khối hero hiện "Camer", "23/2" ở đó mà cổng
+      // vẫn đạt; khổ hẹp nhất là nơi bố cục gãy trước tiên.
+      {
         if (p.shadowRoots && !r.notes.some((n) => n.startsWith("shadow"))) r.notes.push(`shadow roots measured: ${p.shadowRoots}`);
         hits(r, "hard", "text-min", p.textMin, "font-size", render);
         hits(r, "soft", "body-size", p.bodySmall, "body text", render);
@@ -282,7 +332,16 @@ async function checkPage(
         hits(r, "soft", "font", p.fontFallback, "web font not loaded:", render, 3);
         hits(r, "soft", "inner-scroll", p.innerScroll, "horizontal scroll hides content:", render, 3);
         hits(r, "soft", "text-clip", p.textClip, "text cut off", render);
+        hits(r, "soft", "text-covered", await page.evaluate(probeCovered), "text", render);
         if (p.visibleFields > 12) add(r, "soft", "long-form", "page", `${p.visibleFields} fields on one screen: split into named steps or tuck advanced options away`, render);
+        // Ô gõ chữ có chữ nhỏ: chỉ điện thoại phóng to khi chạm (iOS), nên chỉ đo ở khổ ≤ 480.
+        if (vw <= 480) {
+          const zoom = p.typingFields.flatMap((f) => {
+            const msg = inputZoomFinding(f);
+            return msg ? [{ where: f.where, value: msg }] : [];
+          });
+          hits(r, "soft", "input-zoom", zoom, "", render);
+        }
         hits(r, "soft", "guide", p.vagueNext, "button does not say where it goes, name the next step:", render, 3);
         hits(r, "soft", "guide", p.emptyDeadEnd, "empty state with no next action:", render, 3);
         // Tour mở bằng tay (bấm "Hướng dẫn") là được; chỉ tour tự bật lúc mở trang mới bị nhắc.
@@ -335,11 +394,22 @@ async function checkPage(
         const seen = new Set<string>();
         for (let i = 0; i < opts.focusStops; i++) {
           await page.keyboard.press("Tab");
-          await page.evaluate(settleAnimations);
+          await page.evaluate(settleAnimations, 600);
           const f = await page.evaluate(probeFocus);
           if (!f || seen.has(f.where)) continue;
           seen.add(f.where);
           if (!f.indicator) add(r, "soft", "focus", f.where, "no visible focus ring (outline ≥ 2px or box-shadow)", render);
+          else if (f.shadowOnly) {
+            // Vòng chỉ bằng box-shadow: đo thật trong chế độ màu ép buộc, ngay khi phần tử đang focus (focus và
+            // :focus-visible giữ nguyên). Tailwind v4 `outline-hidden` chỉ thêm viền trong @media (forced-colors), nên
+            // đọc CSS ở chế độ thường là báo nhầm.
+            await page.emulateMedia({ forcedColors: "active" });
+            const g = await page.evaluate(probeFocus);
+            await page.emulateMedia({ forcedColors: null });
+            if (g && g.where === f.where && !g.indicator) {
+              add(r, "soft", "focus", f.where, "focus ring disappears in forced-colors mode (Windows High Contrast removes box-shadow): add outline: 2px solid transparent (Tailwind v4: outline-hidden)", render);
+            }
+          }
           if (f.obscured) add(r, "soft", "focus", f.where, f.hidden ? "focus lands on an element nobody can see (hidden or clipped)" : "focused element is covered by other content", render);
         }
         r.notes.push(`focus stops inspected at ${vw}px: ${seen.size}`);
@@ -347,10 +417,13 @@ async function checkPage(
       // Giảm chuyển động: một lần.
       if (first && widest) {
         await page.emulateMedia({ reducedMotion: "reduce" });
-        await page.reload({ waitUntil: "networkidle" });
-        await page.waitForTimeout(400);
+        await page.reload({ waitUntil: "load" });
+        await settlePage(page, net);
         await waitForContent(page, Date.now());
-        if (actions) await runActions(page, actions);
+        if (actions) await runActions(page, actions, net);
+        // Chỉ hiệu ứng còn chạy sau MOTION_SETTLE_MS mới tính (vòng xoay, chữ chạy, chuyển cảnh dài); hiệu ứng vào
+        // trang ngắn hơn thì đã xong. Giữ đúng thời điểm đo cũ (khoảng 0,9 s sau khi nạp) để ngữ nghĩa phép đo không đổi.
+        await page.waitForTimeout(MOTION_SETTLE_MS);
         const m = await page.evaluate(probeMotion);
         if (m.running) add(r, "hard", "motion", m.samples.join(", "), `${m.running} animation(s) still run with prefers-reduced-motion: reduce`, render);
       }
@@ -390,7 +463,10 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const servers = new Map<string, { origin: string; close: () => void }>();
   const jobsN = Number(p.str("jobs") ?? 3);
   // Bước 1: danh sách việc (máy chủ tĩnh dựng tuần tự). Bước 2: chạy song song có giới hạn, giữ thứ tự kết quả.
-  const jobs: Array<{ url: string; label: string; r: PageReport; shotsDir?: string; state?: StepState; standalone?: string }> = [];
+  const jobs: Array<{ url: string; label: string; r: PageReport; shotsDir?: string; state?: StepState; standalone?: string; mobile?: boolean }> = [];
+  // Khổ điện thoại để mở trang như máy thật (phép đo viewport): khổ lớn nhất ≤ 480 trong --viewports; không có thì bỏ.
+  const phones = viewports.filter((w) => w <= 480);
+  const phoneWidth = phones.length ? Math.max(...phones) : undefined;
   try {
     for (const t of targets) {
       let base = t;
@@ -419,18 +495,27 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
           }
           // Mở dạng data: URL không mang query, nên chỉ cần một lần mỗi tệp: trạng thái đầu của query đầu.
           const standalone = !p.bool("no-standalone") && !/^https?:/i.test(t) && !state && q === queries[0] ? t : undefined;
-          jobs.push({ url, label, r, ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}) });
+          // Thẻ meta viewport không đổi theo query hay trạng thái: một lần mỗi trang, trạng thái đầu của query đầu.
+          const mobile = phoneWidth !== undefined && !state && q === queries[0];
+          jobs.push({ url, label, r, ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}), ...(mobile ? { mobile } : {}) });
         }
       }
     }
-    const runJob = async ({ url, label, r, shotsDir, state, standalone }: (typeof jobs)[number]): Promise<void> => {
-      // Impeccable tự mở trang theo URL, không phát lại được thao tác: chỉ chạy ở trạng thái đầu.
+    const runJob = async ({ url, label, r, shotsDir, state, standalone, mobile }: (typeof jobs)[number]): Promise<void> => {
+      // Impeccable tự mở trang theo URL, không phát lại được thao tác: chỉ chạy ở trạng thái đầu. Khổ rộng nhất, 390 và
+      // 320 (khổ hẹp nhất là nơi bố cục gãy trước: ở 320 nó bắt được ô số tràn 39px của khối hero, 15/11/2026).
+      const impWidths = [`${Math.max(...viewports)}x800`, ...(viewports.includes(390) ? ["390x844"] : []), ...(viewports.includes(320) && Math.max(...viewports) !== 320 ? ["320x720"] : [])];
       const imp = impBin && !state
-        ? Promise.all(
-            [`${Math.max(...viewports)}x800`, ...(viewports.includes(390) ? ["390x844"] : [])].map(async (vp) => ({ vp, res: await runImpeccable(impBin, url, vp) })),
-          )
+        ? Promise.all(impWidths.map(async (vp) => ({ vp, res: await runImpeccable(impBin, url, vp) })))
         : Promise.resolve([]);
       await checkPage(browser, url, label, { viewports, schemes, focusStops, axeSource, ...(copy ? { copy } : {}), ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}) }, r);
+      if (mobile && phoneWidth) {
+        try {
+          await checkViewport(browser, url, phoneWidth, r);
+        } catch (e) {
+          r.notes.push(`viewport: not measured (${(e as Error).message.split("\n")[0]})`);
+        }
+      }
       for (const { vp, res } of await imp) {
         if (res.error) r.notes.push(`impeccable ${vp}: ${res.error}`);
         for (const f of res.findings ?? []) {
@@ -473,7 +558,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
     const of = (g: Gate) => reports.reduce((s, r) => s + [...r.findings.values()].filter((f) => f.check === id && f.gate === g).length, 0);
     const h = of("hard");
     const s = of("soft");
-    const skipped = (id === "impeccable" && !impBin) || (id === "standalone" && !jobs.some((j) => j.standalone)) || (id === "copy" && !copy);
+    const skipped = (id === "impeccable" && !impBin) || (id === "standalone" && !jobs.some((j) => j.standalone)) || (id === "copy" && !copy) || (id === "viewport" && !phoneWidth) || (id === "input-zoom" && !viewports.some((w) => w !== 320 && w <= 480));
     const unused = id === "steps" && !stateJobs;
     const result = skipped ? "skipped" : unused ? "none: no steps file" : h || s ? [h && `${h} hard`, s && `${s} soft`].filter(Boolean).join(", ") : "ok";
     return { check: id, gate, result };

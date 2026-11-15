@@ -36,14 +36,16 @@ chế độ giảm chuyển động, nút "Tiếp" không nói đi đâu. Làm c
 - **Cổng đo, không phải cảm tính.** Không có hướng dẫn thì mô hình chọn lựa chọn phổ biến nhất (font Inter, gradient
   tím, các thẻ giống hệt nhau), và mô hình tự chấm giao diện thì lệch nhiều so với người. Vì vậy design-kit chia việc:
   gì đo được thì thành phép đo trong CLI, còn thẩm mỹ để người xem trên ảnh chụp mà công cụ lưu lại.
-- **23 phép đo, 6 lần render mỗi trang.** Lỗi *cứng* chặn "báo xong": trang trắng (cổng đợi tối đa 5 giây cho nội
-  dung đến muộn), lỗi script chưa bắt hoặc script/stylesheet không tải được, tràn ngang ở 320 px, axe-core mức
+- **26 phép đo, 6 lần render mỗi trang cộng một lần mở như điện thoại thật.** Lỗi *cứng* chặn "báo xong": trang
+  trắng (cổng đợi tối đa 5 giây cho nội dung đến muộn), lỗi script chưa bắt hoặc script/stylesheet không tải được,
+  trang mà điện thoại dàn rộng hơn màn hình (thiếu thẻ meta viewport), tràn ngang ở 320 px, axe-core mức
   serious/critical, chữ dưới 12 px, tiêu đề tiếng Việt có chiều cao dòng dưới 1,2, chữ tiếng Việt mà thiếu
   `lang="vi"`, hiệu ứng bỏ qua `prefers-reduced-motion`, bước thao tác không làm được, các luật slop và chất lượng của
   Impeccable. Lỗi *mềm* phải sửa hoặc ghi lý do: cỡ và chiều cao dòng chữ thân bài, độ dài dòng, font web đã nạp,
-  vòng focus thiếu hoặc bị che, khung cuộn giấu nội dung, chữ bị cắt (dấu ba chấm hay line-clamp giấu chữ, overflow
-  cắt ngang chữ hoặc cắt mất dấu tiếng Việt), hơn 12 ô nhập trên một màn, dẫn đường, chữ trên trang, LCP, CLS, và
-  trang mất CSS (hoặc vỡ dấu tiếng Việt) khi mở trong trình duyệt của app Claude.
+  vòng focus thiếu, bị che hoặc mất trong chế độ màu ép buộc, khung cuộn giấu nội dung, chữ bị cắt (dấu ba chấm hay
+  line-clamp giấu chữ, overflow cắt ngang chữ hoặc cắt mất dấu tiếng Việt), chữ bị hộp bên cạnh vẽ đè, ô gõ chữ dưới
+  16 px trên điện thoại, hơn 12 ô nhập trên một màn, dẫn đường, chữ trên trang, LCP, CLS, và trang mất CSS (hoặc vỡ
+  dấu tiếng Việt) khi mở trong trình duyệt của app Claude. Khổ nào cũng được đo đủ, kể cả 320 px.
 - **Nhìn được vào shadow DOM.** Card Lit và Home Assistant được đo bên trong shadow root mở, nơi engine Impeccable
   hiện không báo gì.
 - **Đo cả trạng thái sau một cú bấm.** Tệp `<trang>.steps.json` đặt cạnh trang liệt kê các trạng thái như lỗi form,
@@ -128,20 +130,20 @@ $ design-kit check test/fixtures/loi.html --limit 4
 status: "fail: 1 of 1 pages have hard failures"
 renders: "light+dark × 320/390/1280 px via msedge, impeccable on"
 pages[1]{page,verdict,hard,soft}:
-  test/fixtures/loi.html,fail,11,9
-checks[22]{check,gate,result}:
+  test/fixtures/loi.html,fail,11,10
+checks[26]{check,gate,result}:
   overflow,hard,2 hard
   axe,hard,2 hard
   text-min,hard,1 hard
   …
   guide,soft,3 soft
-count: 4 of 20 total
+count: 4 of 21 total
 findings[4]{gate,check,where,detail,renders}:
   hard,overflow,320px,"page is 480px wide, viewport 320px",light/320 dark/320
-  hard,overflow,390px,"page is 480px wide, viewport 390px",light/390 dark/390
-  hard,text-min,"topo-card::shadow span.lbl \"Cổng 1 ↓ 12 Mb/s\"",font-size 9.9px,light/390 light/1280 dark/390 dark/1280
-  hard,heading-lh,"h1 \"Bảng điều khiển mạng\"",line-height 1.00,light/390 light/1280 dark/390 dark/1280
-help[4]: "16 more findings: add --full","Fix hard failures, then rerun the same command; soft ones need a fix or a written reason",…
+  hard,text-min,"topo-card::shadow span.lbl \"Cổng 1 ↓ 12 Mb/s\"",font-size 9.9px,light/320 light/390 light/1280 dark/320 dark/390 dark/1280
+  hard,heading-lh,"h1 \"Bảng điều khiển mạng\"",line-height 1.00,light/320 light/390 light/1280 dark/320 dark/390 dark/1280
+  hard,lang,<html>,"Vietnamese text but lang=\"en\"",light/320 light/390 light/1280 dark/320 dark/390 dark/1280
+help[4]: "17 more findings: add --full","Fix hard failures, then rerun the same command; soft ones need a fix or a written reason",…
 ```
 
 Một khối có tệp steps (hai phán quyết: trang lúc vừa nạp, và trạng thái sau khi tắt hết bộ lọc; phát hiện mềm duy
@@ -236,8 +238,10 @@ chụp nằm trong [`eval/`](eval/).
 - **Claude Code**: plugin ở trên. Skill (`skills/design-kit/SKILL.md`) tự bật khi làm giao diện và khi thiết kế quy
   trình, đăng ký, trình hướng dẫn cài đặt hay hướng dẫn người dùng mới. Skill dẫn agent qua các bước chọn hướng, viết
   bản đồ tác vụ, dựng từ khối mẫu và chạy cổng. Hai hook hỗ trợ: sau khi sửa tệp giao diện (tối đa 15 phút một lần)
-  agent được nhắc chạy `design-kit check`, và khi agent định dừng sau một lần sửa giao diện mà chưa kiểm lại, hook
-  chặn đúng một lần kèm lời nhắc đó. Script hook không phụ thuộc gói npm nào.
+  agent được nhắc chạy `design-kit check`, và khi agent định dừng sau một lần sửa giao diện mà chưa kiểm lại đúng trang
+  đó, hook chặn đúng một lần kèm lời nhắc đó. Sửa qua shell hay công cụ khác cũng tính: tệp giao diện git thấy đã đổi
+  sau khi phiên bắt đầu cần một lần kiểm chạy xong sau lần đổi. Fixture test và thư mục nháp của phiên được bỏ qua.
+  Script hook không phụ thuộc gói npm nào.
 - **Agent khác** (Codex, OpenCode, Cursor…): gọi CLI qua shell; output TOON và các dòng `help[]` được viết cho
   agent. Đưa `skills/design-kit/SKILL.md` cho agent làm chỉ dẫn.
 - Chữ trên trang xuất hiện trong phát hiện là dữ liệu, không phải chỉ dẫn cho agent.

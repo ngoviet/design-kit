@@ -132,3 +132,48 @@ Gặp khi kiểm lan-topo-card bằng design-kit: lần chạy đầu cổng bá
 - **Custom element chưa định nghĩa (mềm, cùng `render`):** chỉ thẳng chỗ hỏng; ở trang preview gốc của lan-topo-card nó báo `ha-card`, đúng thứ trang chứa thiếu khiến card mất nền tối. Chỉ báo thẻ rỗng; thẻ chưa đăng ký mà có con (`app-root` của Angular, thẻ chỉ để gắn style) chỉ được ghi chú, vì trang vẫn hiện đủ.
 - **`errors` (cứng):** `pageerror` (lỗi script chưa bắt), script/stylesheet trả ≥ 400 hoặc yêu cầu hỏng. Bỏ `ERR_ABORTED` (yêu cầu bị huỷ khi trang tự điều hướng) và console.error (favicon 404 gây nhiễu, đã thấy trong lúc dò).
 - Cách sửa theo "tái hiện trước": fixture `test/fixtures/trong.html` (script 404 + lỗi ném ra, trang trắng) và `cham.html` (chữ 10px đến sau 1,5 s); hai test đỏ trên mã cũ, xanh sau khi sửa.
+
+## 14–15/11/2026: tối ưu đợt 2, chủ chọn gói nền
+
+Chủ yêu cầu "tìm kiếm thêm trên mạng để tối ưu design-kit". Năm agent tìm song song theo bảy câu hỏi con; 44 nguồn mới
+và 41 luận điểm vào kho tri thức (s29–s72, c37–c77, xem `docs/nguon.md`). Mỗi ý tưởng được thử trên 51 trang của kit
+(39 trang khối mẫu, 12 trang A/B) trước khi đề xuất. Báo cáo 22 đề xuất ở `.folio/toi-uu-dot-2.html`; chủ chọn **gói
+nền, 10 mục**.
+
+| Mã | Đã làm | Số đo |
+| --- | --- | --- |
+| P22 | `long-form` không đếm ô tích, ô chọn đang ẩn | trang báo cáo đợt 2 từng bị báo 23 ô khi danh sách 22 ô tích đang đóng |
+| P14 | sàn `axe-core` 4.14.0, `playwright-core` 1.65.1, image CI theo | bản trước 4.14.0 bỏ qua lặng lẽ tương phản với màu OKLCH có `none` |
+| P6 | chờ theo tín hiệu thật thay cho `networkidle` + 300 ms | cổng 13 khối × 3 hướng: 144,9 s còn 120,0 s, phát hiện trùng từng dòng; một trang 9,0 s còn 5,85 s |
+| P4 | `focus` báo vòng mất trong chế độ màu ép buộc, đo thật bằng `forcedColors: active` | lỗi thật ở cả 4 khối React (shadcn `outline-none`), đã đổi sang `outline-hidden` |
+| P2 | `viewport` (cứng): mở trang một lần với `isMobile` | trang thiếu thẻ từng qua cổng với 0 phát hiện; trên máy thật chữ 16px hiện 6,4px |
+| P3 | `input-zoom` (mềm): ô gõ chữ nhỏ ở khổ điện thoại | 3/12 trang A/B; quy tắc: dưới 16px thì báo, trừ ô `disabled` (mục dưới) |
+| P1 | khổ 320 đo đủ, Impeccable thêm ở 320, `text-covered` (mềm), sửa khối hero | hero hiện "Camer", "23/2" ở 320–360px; nguyên nhân: `<figure>` còn lề mặc định 40px |
+| P10 | hook Stop thấy tệp giao diện sửa qua shell, đòi kiểm đúng trang | thử trên transcript thật của phiên: không báo thừa |
+| P9 | SKILL.md: mục Rules lên đầu, bẫy sang `skills/design-kit/reference/traps.md` | khoảng 8,2 nghìn còn 5 nghìn token mỗi lần gọi (ước lượng của Claude Code) |
+| P15 | `docs/nguon.md`, `docs/tieu-chi.md`, README hai bản, mục này | — |
+
+Cổng sau gói nền: 130,4 s cho 13 khối HTML × 3 hướng kèm trạng thái (thêm Impeccable và mọi phép đo ở 320 làm chậm lại
+10 s so với sau P6, vẫn nhanh hơn bản đầu 144,9 s). Cổng toàn bộ theo CLAUDE.md (HTML và React, 105 trang và trạng
+thái): đạt, 0 lỗi cứng, 193 s; các trạng thái mở bằng URL (`mo=1`, `lan-dau=1`, `buoc=2..5`) cũng đạt. Còn 22 phát
+hiện mềm có lý do: 17 `standalone` (khối liên kết token theo đường dẫn) và 5 straggler của Impeccable (3 mới ở 320,
+cùng loại với 2 cái đã có; khối đã dùng `text-wrap: pretty`). 53 test đạt hai lượt liền.
+
+Ba việc **không làm**, kèm lý do:
+
+- **Cho mô hình chấm ảnh chụp làm cổng.** VLM chấm "hoàn hảo" 14/15 hình hỏng bố cục (c59), chỉ nhận ra 40,7% thay
+  đổi CSS nhỏ (c60). Mô hình hợp với việc xếp hạng các phương án khác nhau rõ trên nhiều ảnh chụp (c61); việc đó
+  vẫn để người duyệt.
+- **Phép đo định dạng số, ngày kiểu Việt.** 0/12 trang A/B viết sai (dấu chấm nhóm nghìn, dấu phẩy thập phân, ngày
+  trước tháng đều đúng sẵn).
+- **Tự viết lại luật dấu khuôn mẫu của chữ.** Nhãn viết hoa trên tiêu đề đã có luật Impeccable; mũi tên cuối nút gặp 0
+  trang. Việc đúng là nâng ghim Impeccable (P13, ngoài gói nền, cần chủ đồng ý tải tệp chạy).
+
+**Quy tắc ngưỡng `input-zoom` (15/11/2026, chủ giao em viết).** Dưới 16px thì báo; ô `disabled` bỏ qua vì không nhận
+focus; ô `readonly` vẫn tính vì chạm vào vẫn nhận focus và WebKit vẫn đi tới bước phóng to (WKContentViewInteraction.mm,
+chưa thử trên máy thật). Đính chính báo cáo đợt 2: câu "WebKit phóng to từ khoảng 14,5px trở xuống" chỉ đúng cho bản
+iOS tương lai. Blame dòng mã cho thấy quy tắc bỏ qua khi đổi dưới 10% mới vào nhánh main ngày 13/11/2026 (commit
+b2bcd4fa11, lỗi của bsky.app; c78), chưa có trong bản iOS nào đã phát hành, nên mọi iPhone đang dùng đều phóng to ô
+dưới 16px.
+
+Còn mở: các mục P5, P7, P8, P11–P13, P16–P21 trong báo cáo chưa làm.
