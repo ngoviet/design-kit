@@ -7,6 +7,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `text-covered` check (soft): a line of text that another element paints over, typically a word too long for a
+  narrow grid cell spilling under the next cell's background. Every other check passed such text: it is big enough,
+  contrasted, inside the page and not clipped. Nine points per line are hit-tested in the text's own tree, so it
+  works inside shadow roots; intended overlays (fixed, sticky, absolute, dialog, popover), stretched transparent
+  links, clipped points (`text-clip`'s job) and `pointer-events: none` text are not reported. Found in the kit's own
+  `hero` block at 320–360px ("Camer", "23/2"); tried on 51 pages: 2 real cases, no false positive.
 - `viewport` check (hard): each page is opened once more as a phone (`isMobile`, at the widest `--viewports` width
   ≤ 480) and the layout width read back. The other renders only size the window, and Playwright ignores the viewport
   meta then, so a page without `width=device-width` passed with 0 findings while a phone laid it out 980px wide and
@@ -57,6 +63,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Every width gets every check. 320px used to be checked for horizontal overflow only, so the narrowest width,
+  where layouts break first, had no text, axe, clipping or screenshot checks. Impeccable now also runs at 320px.
+  The full gate on 13 blocks × 3 directions with every state takes 130.4 s, against 144.9 s before this release's
+  speed-up.
 - Giấy body font falls back to `"Times New Roman", "Noto Serif", serif` instead of Georgia. Georgia has no ắ, ế, ữ…,
   so when Literata did not load the browser drew those letters from another font and words split ("Ngắ n"). Đêm and
   Đậm fall back to `system-ui` (Segoe UI on Windows) and `monospace` (Consolas), which have the letters.
@@ -72,6 +82,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- `hero` block: at 320–360px the product view showed "Camer" and "23/2". The `<figure>` kept the browser's default
+  40px side margins, leaving the three-column diagram 208px wide; it now has `margin: 0`, and below 21rem its cells
+  use less padding and 16px numbers.
+- `standalone`: the check for Vietnamese letters drawn from a second font could come back empty on a busy machine,
+  because the text was split into new nodes and the browser was asked for their fonts before laying them out.
 - `long-form` no longer counts checkboxes and radios nobody can see. Ones inside a closed `<details>`, a `hidden`
   panel or a `display: none` step were counted, so a page that had already tucked its advanced options away was
   told to tuck them away. A custom checkbox drawn by a sibling (transparent or clipped input) still counts.

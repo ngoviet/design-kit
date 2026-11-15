@@ -297,6 +297,20 @@ describe("check on real pages", () => {
     expect(skip.out).toContain("standalone,soft,skipped");
   }, 120_000);
 
+  it("text-covered: text spilling under the next box is reported, through shadow roots; overlays and stretched links are not", async () => {
+    const { out } = await run(["check", "test/fixtures/che-chu.html", ...FAST, "--full"]);
+    expect(out).toMatch(/soft,text-covered,.*div\.o \\"Camera\\".*covered by div\.o/);
+    expect(out).toMatch(/soft,text-covered,.*div\.o \\"Máy_chủ_lưu_trữ\\".*covered by div\.o/);
+    expect(out).toMatch(/soft,text-covered,.*khung-so::shadow b \\"23\/26\\".*covered by/);
+    // Thanh dính, menu đang mở, liên kết phủ trong suốt, chữ không nhận con trỏ: không báo.
+    expect(out).not.toMatch(/text-covered,.*(dinh|duoi-menu|Mở chi tiết|Đoạn chữ trong thẻ|không nhận con trỏ|Đoạn cuối)/);
+  }, 120_000);
+
+  it("the narrowest width gets every check, not only overflow", async () => {
+    const { out } = await run(["check", "test/fixtures/co-gian.html", "--no-impeccable", "--no-shots", "--viewports", "320", "--schemes", "light", "--full"]);
+    expect(out).toMatch(/text-min,.*span#co-transform.*light\/320/);
+  }, 120_000);
+
   it("input-zoom: typing fields with small text at phone width are reported, other controls are not", async () => {
     const { out } = await run(["check", "test/fixtures/o-nho.html", ...FAST, "--full"]);
     // Ca rõ ràng ở mọi cách đặt ngưỡng: 13px và 14px bị phóng to, 16px thì không, ô tích không mở bàn phím.

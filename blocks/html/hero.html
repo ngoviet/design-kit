@@ -25,7 +25,9 @@
   .proof svg { width: 16px; height: 16px; color: var(--ok); flex: none; }
 
   /* Hình sản phẩm: mô phỏng màn hình thật bằng HTML (không ảnh trang trí) */
-  .shot { border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow-2); overflow: hidden; }
+  /* margin: 0: <figure> có lề mặc định 40px mỗi bên, ở 320px khung chỉ còn 208px và chữ trong ô tràn sang ô kế
+     ("Camer", "23/2"; cổng bắt bằng text-covered từ 15/11/2026). container: ô sơ đồ và ô số thu gọn khi khung hẹp. */
+  .shot { container: shot / inline-size; margin: 0; border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow-2); overflow: hidden; }
   .shot-bar { display: flex; gap: 6px; padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border); background: var(--surface-2); }
   .shot-bar span { width: 10px; height: 10px; border-radius: 50%; background: var(--border-strong); }
   .shot-body { padding: var(--sp-5); display: grid; gap: var(--sp-4); }
@@ -42,6 +44,14 @@
   .shot .m { padding: var(--sp-3); border-radius: var(--r-md); background: var(--surface-2); min-width: 0; }
   .shot .m b { display: block; font: 500 var(--fs-md)/1.2 var(--font-mono); color: var(--text); }
   .shot .m span { font: 400 var(--fs-xs)/1.4 var(--font-ui, var(--font-body)); color: var(--text-2); }
+  /* Khung ≤ 21rem (điện thoại 320–350px): mỗi ô chỉ còn ~76px. Thu đệm và cỡ số để "Camera" (55px) và "23/26"
+     vừa ô; chữ vẫn ≥ 14px (sơ đồ) và 16px (số). Trên 21rem giữ nguyên như ở 390px. */
+  @container shot (max-width: 21rem) {
+    .shot-body { padding: var(--sp-4); }
+    .tp .node { padding-inline: var(--sp-2); }
+    .shot .m { padding: var(--sp-2); }
+    .shot .m b { font-size: var(--fs-base); }
+  }
   @media (prefers-reduced-motion: no-preference) {
     .shot { animation: len var(--dur-3) var(--ease-out) both 120ms; }
     @keyframes len { from { opacity: 0; transform: translateY(12px); } }

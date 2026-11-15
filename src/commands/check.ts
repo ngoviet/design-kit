@@ -7,7 +7,7 @@ import { launchBrowser, serveRoot, startServer, urlFor } from "../browser.js";
 import { fail } from "../errors.js";
 import { type AssumedHit, type CopyRules, loadCopyRules, probeCopy } from "../copy.js";
 import { findImpeccable, runImpeccable } from "../impeccable.js";
-import { installVitals, probeFocus, probeMotion, probePage, probeStandalone, probeVisible, settleAnimations, STANDALONE_TOKENS, type ProbeHit } from "../probe.js";
+import { installVitals, probeCovered, probeFocus, probeMotion, probePage, probeStandalone, probeVisible, settleAnimations, STANDALONE_TOKENS, type ProbeHit } from "../probe.js";
 import type { Runtime } from "../runtime.js";
 import { QUIET_CAP_MS, settlePage, watchNetwork } from "../settle.js";
 import { inputZoomFinding } from "../zoom.js";
@@ -20,7 +20,7 @@ flags[16]:
   --query <q,q>: run each page once per query string (e.g. dk=dem,dk=giay,dk=dam for design-kit blocks)
   --steps <file.json|json>: states to reach by clicking/typing, each measured like a page (overrides <page>.steps.json)
   --no-steps: ignore <page>.steps.json files next to the pages
-  --viewports <w,w>: widths in px (default 320,390,1280; 320 is used for overflow only)
+  --viewports <w,w>: widths in px (default 320,390,1280; every width gets every check)
   --schemes <light,dark>: color schemes to render (default light,dark)
   --shots <dir>: screenshot folder (default .design-kit/shots); --no-shots to skip
   --no-shots: do not save screenshots
@@ -94,7 +94,7 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 const CHECKS: Array<[string, Gate]> = [
   ["render", "hard"], ["errors", "hard"], ["viewport", "hard"], ["overflow", "hard"], ["axe", "hard"], ["text-min", "hard"], ["heading-lh", "hard"], ["lang", "hard"], ["motion", "hard"],
   ["steps", "hard"], ["impeccable", "hard"], ["body-size", "soft"], ["body-lh", "soft"], ["measure", "soft"], ["font", "soft"],
-  ["focus", "soft"], ["inner-scroll", "soft"], ["text-clip", "soft"], ["long-form", "soft"], ["input-zoom", "soft"], ["guide", "soft"], ["copy", "soft"], ["lcp", "soft"], ["cls", "soft"], ["standalone", "soft"],
+  ["focus", "soft"], ["inner-scroll", "soft"], ["text-clip", "soft"], ["text-covered", "soft"], ["long-form", "soft"], ["input-zoom", "soft"], ["guide", "soft"], ["copy", "soft"], ["lcp", "soft"], ["cls", "soft"], ["standalone", "soft"],
 ];
 
 /**
@@ -240,6 +240,7 @@ async function checkPage(
     r.notes.push(`state ${opts.state!.name}: none of its viewports (${only!.join(",")}) is rendered, so it was not measured`);
     return;
   }
+  // Focus: khổ rộng nhất và khổ điện thoại hẹp nhất ngoài 320 (mặc định 390), như trước.
   const measured = widths.filter((w) => w !== 320);
   const focusAt = new Set([Math.max(...widths), ...(measured.length ? [Math.min(...measured)] : [])]);
   for (const scheme of opts.schemes) {
@@ -311,7 +312,7 @@ async function checkPage(
       if (!vis.text && !vis.media) {
         const all = [...vis.undefinedTags, ...vis.unregisteredTags].join(", ");
         add(r, "hard", "render", "page", `nothing visible: no text, image or graphic, also ${LATE_MS / 1000} s after the network went idle${all ? `; custom elements never defined: ${all}` : ""}`, render);
-      } else if (vw !== 320) {
+      } else {
         if (undef) add(r, "soft", "render", "page", `custom element never defined (its script failed or has not loaded): ${undef}`, render);
         if (unreg && !r.notes.some((n) => n.startsWith("not registered"))) {
           r.notes.push(`not registered as custom elements (fine for app roots and styling tags; a missing host-app component otherwise): ${unreg}`);
@@ -320,7 +321,9 @@ async function checkPage(
       for (const e of new Set(errs)) add(r, "hard", "errors", "page", e.slice(0, 200), render);
 
       if (p.scrollW > p.clientW + 1) add(r, "hard", "overflow", `${vw}px`, `page is ${p.scrollW}px wide, viewport ${p.clientW}px`, render);
-      if (vw !== 320) {
+      // Mọi khổ đều đo đủ. Trước 15/11/2026 khổ 320 chỉ đo tràn ngang, nên khối hero hiện "Camer", "23/2" ở đó mà cổng
+      // vẫn đạt; khổ hẹp nhất là nơi bố cục gãy trước tiên.
+      {
         if (p.shadowRoots && !r.notes.some((n) => n.startsWith("shadow"))) r.notes.push(`shadow roots measured: ${p.shadowRoots}`);
         hits(r, "hard", "text-min", p.textMin, "font-size", render);
         hits(r, "soft", "body-size", p.bodySmall, "body text", render);
@@ -329,6 +332,7 @@ async function checkPage(
         hits(r, "soft", "font", p.fontFallback, "web font not loaded:", render, 3);
         hits(r, "soft", "inner-scroll", p.innerScroll, "horizontal scroll hides content:", render, 3);
         hits(r, "soft", "text-clip", p.textClip, "text cut off", render);
+        hits(r, "soft", "text-covered", await page.evaluate(probeCovered), "text", render);
         if (p.visibleFields > 12) add(r, "soft", "long-form", "page", `${p.visibleFields} fields on one screen: split into named steps or tuck advanced options away`, render);
         // Ô gõ chữ có chữ nhỏ: chỉ điện thoại phóng to khi chạm (iOS), nên chỉ đo ở khổ ≤ 480.
         if (vw <= 480) {
@@ -498,11 +502,11 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
       }
     }
     const runJob = async ({ url, label, r, shotsDir, state, standalone, mobile }: (typeof jobs)[number]): Promise<void> => {
-      // Impeccable tự mở trang theo URL, không phát lại được thao tác: chỉ chạy ở trạng thái đầu.
+      // Impeccable tự mở trang theo URL, không phát lại được thao tác: chỉ chạy ở trạng thái đầu. Khổ rộng nhất, 390 và
+      // 320 (khổ hẹp nhất là nơi bố cục gãy trước: ở 320 nó bắt được ô số tràn 39px của khối hero, 15/11/2026).
+      const impWidths = [`${Math.max(...viewports)}x800`, ...(viewports.includes(390) ? ["390x844"] : []), ...(viewports.includes(320) && Math.max(...viewports) !== 320 ? ["320x720"] : [])];
       const imp = impBin && !state
-        ? Promise.all(
-            [`${Math.max(...viewports)}x800`, ...(viewports.includes(390) ? ["390x844"] : [])].map(async (vp) => ({ vp, res: await runImpeccable(impBin, url, vp) })),
-          )
+        ? Promise.all(impWidths.map(async (vp) => ({ vp, res: await runImpeccable(impBin, url, vp) })))
         : Promise.resolve([]);
       await checkPage(browser, url, label, { viewports, schemes, focusStops, axeSource, ...(copy ? { copy } : {}), ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}) }, r);
       if (mobile && phoneWidth) {

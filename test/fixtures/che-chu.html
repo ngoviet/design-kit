@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixture: chữ bị hộp bên cạnh che</title>
+<link rel="stylesheet" href="../../tokens/fonts-local.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<style>
+  body { margin: 0; background: var(--bg); color: var(--text); font: 400 var(--fs-body)/var(--lh-body) var(--font-body); }
+  header.dinh { position: sticky; top: 0; z-index: 2; background: var(--surface); border-bottom: 1px solid var(--border); padding: var(--sp-3) var(--sp-4); }
+  main { max-width: 40rem; margin: 0 auto; padding: var(--sp-5) var(--sp-4) var(--sp-9); display: grid; gap: var(--sp-5); }
+  h1 { font: var(--weight-display) var(--fs-2xl)/var(--lh-tight) var(--font-display); margin: 0; }
+  p { max-width: var(--measure); margin: 0; }
+  :focus-visible { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
+  /* Ca dương: ô 3 cột hẹp, chữ một từ dài không ngắt được tràn sang ô kế, ô kế có nền vẽ đè lên */
+  .luoi { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); width: 150px; }
+  .o { position: relative; padding: var(--sp-2); border: 1px solid var(--border-strong); border-radius: var(--r-sm); background: var(--surface-2); min-width: 0; font-size: var(--fs-sm); }
+  /* Đối chứng âm: liên kết phủ cả thẻ bằng ::after trong suốt */
+  .the { position: relative; border: 1px solid var(--border-strong); border-radius: var(--r-md); padding: var(--sp-3); }
+  .the a::after { content: ""; position: absolute; inset: 0; }
+  /* Đối chứng âm: menu thả xuống đang mở phủ lên đoạn bên dưới (lớp phủ có chủ ý) */
+  .menu { position: relative; }
+  .menu ul { position: absolute; top: 100%; left: 0; z-index: 1; margin: var(--sp-1) 0 0; padding: var(--sp-2) var(--sp-3); list-style: none; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-sm); }
+  .menu button { min-height: var(--hit-lg); padding: 0 var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--r-sm); background: var(--surface); color: var(--text); font: inherit; }
+  /* Đối chứng âm: chữ không nhận con trỏ (pointer-events: none) thì không hit-test được, phải bỏ qua */
+  .nhan-mo { pointer-events: none; }
+  .dai { min-height: 120vh; }
+</style>
+</head>
+<body>
+  <header class="dinh">Thanh dính (đối chứng âm)</header>
+  <main>
+    <h1>Chữ bị hộp bên cạnh che</h1>
+    <div class="luoi" id="luoi">
+      <div class="o">Camera</div>
+      <div class="o">Máy_chủ_lưu_trữ</div>
+      <div class="o">Wi‑Fi</div>
+    </div>
+    <khung-so></khung-so>
+    <div class="the">
+      <p>Đoạn chữ trong thẻ có liên kết phủ kín cả thẻ.</p>
+      <a href="#chi-tiet">Mở chi tiết đơn hàng BM-0912</a>
+    </div>
+    <div class="menu">
+      <button type="button" aria-expanded="true">Sắp xếp theo</button>
+      <ul><li>Mới nhất</li><li>Giá tăng dần</li><li>Giá giảm dần</li></ul>
+    </div>
+    <p id="duoi-menu">Dòng chữ nằm dưới menu đang mở, bị menu phủ lên một phần như mọi menu thả xuống.</p>
+    <p class="nhan-mo">Dòng chữ không nhận con trỏ chuột, nằm yên trong khối của nó.</p>
+    <p class="dai">Đoạn cuối làm trang dài hơn một màn, để phép đo phải cuộn qua thanh dính.</p>
+  </main>
+  <script>
+    // Ca dương trong shadow DOM: ô số hẹp, số tràn sang ô kế có nền.
+    customElements.define("khung-so", class extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: "open" }).innerHTML = `
+          <style>
+            .row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; width: 160px; }
+            .m { padding: 8px; border-radius: 8px; background: #2a3442; color: #e8edf3; min-width: 0; }
+            b { display: block; font: 500 20px/1.2 ui-monospace, monospace; }
+          </style>
+          <div class="row"><div class="m"><b>23/26</b></div><div class="m"><b>182</b></div><div class="m"><b>3</b></div></div>`;
+      }
+    });
+  </script>
+</body>
+</html>

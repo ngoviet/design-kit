@@ -115,6 +115,7 @@ export async function runStandalone(
     // bằng hai font khác nhau nghĩa là font đang dùng thiếu chữ Việt.
     const labels = await page.evaluate(markVietnameseText, 30);
     if (labels.length) {
+      await twoFrames(page);
       const cdp = await ctx.newCDPSession(page);
       await cdp.send("DOM.enable");
       await cdp.send("CSS.enable");
