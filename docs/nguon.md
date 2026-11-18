@@ -1,6 +1,6 @@
 # Nguồn của bộ tiêu chí
 
-Bản xuất từ kho tri thức (`research-hub/kb/tieu-chuan-va-cach-huong-dan-ai-lam-giao-dien-web-dep-de-dun`) ngày 2026-11-15, bằng `node scripts/xuat-nguon.mjs`. **Không sửa tay**: sửa ở kho rồi xuất lại.
+Bản xuất từ kho tri thức (`research-hub/kb/tieu-chuan-va-cach-huong-dan-ai-lam-giao-dien-web-dep-de-dun`) ngày 2026-11-18, bằng `node scripts/xuat-nguon.mjs`. **Không sửa tay**: sửa ở kho rồi xuất lại.
 
 Mã `s…` là nguồn, `c…` là luận điểm. `docs/tieu-chi.md` trích các mã này. Câu trích đã được kiểm lại bằng `research-axi kb verify` (so với trang gốc).
 
@@ -92,6 +92,57 @@ Mã `s…` là nguồn, `c…` là luận điểm. `docs/tieu-chi.md` trích cá
 | c76 | Tiếng Việt ngắt dòng giữa các âm tiết: dấu cách ngăn âm tiết chứ không ngăn từ | s59 | “Line breaking can occur between syllables.” |
 | c77 | Tệp ngữ cảnh kiểu AGENTS.md: chỉ dẫn được agent làm theo tốt, còn phần tổng quan repo thì không giúp | s48 | “repository overviews, although popular and recommended by model providers, are not helpful” |
 | c78 | Quy tắc bỏ qua phóng to khi tỉ lệ đổi dưới 10% được thêm vào nhánh main của WebKit ngày 13/11/2026, để sửa lỗi phóng to thừa ở ô mật khẩu của bsky.app; test kèm theo: ô 15px không còn bị phóng, ô 14px vẫn bị | s73 | “bsky.app: Unnecessary subtle zoom in when focusing login password field” |
+| c79 | Logo dễ được nhận lại đúng nên rất tự nhiên, rất hài hoà và phức tạp vừa phải (195 logo, 13 đặc điểm thiết kế) | s74 | “should be very natural, very harmonious, and moderately elaborate” |
+| c80 | Logo tạo ấn tượng chuyên nghiệp, tích cực phải phức tạp vừa phải và tự nhiên; logo quá đơn giản hay quá rườm đều kém | s74 | “must be moderately elaborate and natural” |
+| c81 | Logo đơn giản lợi về nhận biết ngắn hạn, logo phức tạp được lợi hơn khi tiếp xúc lặp lại (dài hạn) | s75 |  |
+| c82 | Mẫu trừu tượng: nén GIF của ảnh tương phản RMS tương quan r = .634 với độ phức tạp, đối xứng gương r = −.578; gộp hai yếu tố đạt r = .823 | s76 | “RMSGIF exhibits the highest correlation with visual complexity of r = .634” |
+| c83 | Độ phức tạp chu vi (p²/a, chưa chia 4π) theo Pelli 2006: 2×3 Checkers 28, Bold Bookman 57, Sloan 65, Helvetica 67, Hebrew 90, Devanagari 99, Courier 100, Armenian 106, Bookman 107, Arabic 137, Bookman hoa 139, Chinese 199, Künstler 451; hiệu suất ≈ 9 / độ phức tạp (R² = 0,95) | s77 |  |
+| c84 | Watson 2012 chuẩn hoá độ phức tạp chu vi bằng cách chia thêm 4π (hình tròn = 1) | s78 | “It is defined as the sum of inside and outside perimeters of the foreground, squared, divided by the foreground area, divided by” |
+| c85 | Độ phức tạp chu vi tính trên ảnh điểm ảnh bị thổi phồng do viền răng cưa (ví dụ hình tròn lấy mẫu cao hơn 62%), nên phải làm mờ theo thị lực trước khi đo | s78 | “we find that it is 62% too large relative to the continuous shape” |
+| c86 | Không thể so độ phức tạp tương đối giữa hai hình nếu không chỉ định khoảng cách nhìn (mặc định Watson: 48 điểm ảnh/độ) | s78 | “even the relative complexity of different shapes cannot be known without specifying the viewing distance” |
+| c87 | Độ lệch tâm khối (DCM, trọng tâm điểm ảnh tối so với tâm hình) dự đoán điểm cân bằng tốt hơn APB (r = −0,822 so với −0,784), nhưng dự đoán độ thích chỉ yếu (khoảng −0,3) | s79 | “DCM scores accounted better for balance ratings than APB scores” |
+| c88 | Khi tìm tệp, icon phức tạp không hơn gì hình chữ nhật trơn; icon đơn giản (phân biệt được bằng vài đặc điểm) giúp người dùng | s80 | “complex icons are no better than simple rectangles” |
+| c89 | Material: icon hệ thống 24×24 dp, nội dung trong vùng sống 20×20 dp, đệm 2 dp; vùng chạm 48 dp | s81 | “Icon content is limited to the 20dp x 20dp live area, with 2dp of padding around the perimeter.” |
+| c90 | Material: nét icon hệ thống dày đều 2 dp, góc bo 2 dp mặc định; tránh nét mảnh | s81 | “System icons use a consistent stroke width of 2dp, including curves, angles, and both interior and exterior strokes.” |
+| c91 | Material 3: icon chuẩn 24 dp, hỗ trợ thêm 20, 40, 48 dp | s82 | “Supported icon sizes: 20dp, 24dp, 40dp, and 48dp” |
+| c92 | Apple HIG: icon giao diện phải đơn giản hoá cao, nét dày đều giữa các icon, dùng vector PDF hoặc SVG | s83 | “Create a recognizable, highly simplified design.” |
+| c93 | Apple HIG: icon ứng dụng 1024×1024 px; chỉ đưa chữ vào icon khi thật cần, vì chữ nhỏ khó đọc và làm rối | s84 | “Include text only when it's essential to your experience or brand.” |
+| c94 | Fluent 2: dưới 48 px icon phải giảm chi tiết; dùng đúng cỡ đã vẽ thay vì co giãn; icon có màu chỉ dùng một màu | s85 | “As the product icons scale below 48 pixels, they simplify in detail in favor of readability.” |
+| c95 | Carbon v10: icon vẽ trên khung 32 px, đệm 2 px, toạ độ nguyên điểm ảnh, nét phải expand | s86 | “32 px icons should have 2 px padding.” |
+| c96 | Carbon: icon luôn một màu đặc và phải đạt tương phản như chữ 4,5:1; vùng chạm icon ≥ 44 px; cỡ 16/20/24/32 px | s87 | “Icons are always a solid, monochromatic color and need to pass the same color contrast ratio as typography (4.5:1).” |
+| c97 | Android adaptive icon: lớp 108×108 dp, vùng an toàn 66×66 dp không bao giờ bị cắt; logo ≥ 48×48 dp và ≤ 66×66 dp | s88 | “Use a logo that's at least 48x48 dp. It must not exceed 66x66 dp” |
+| c98 | Icon maskable (W3C): vùng an toàn là hình tròn ở giữa, bán kính 2/5 (40%) cạnh ngắn của icon | s90 | “with radius 2/5 (40%) of the minimum of the icon's width and height” |
+| c99 | web.dev: phần quan trọng của icon maskable nằm trong hình tròn bán kính 40% bề rộng; 10% mép ngoài có thể bị cắt | s89 | “The outer 10% edge might be cropped on some platforms.” |
+| c100 | Chromium cần manifest có ít nhất icon 192×192 và 512×512 px | s92 | “you must provide at least a 192x192 pixel icon and a 512x512 pixel icon” |
+| c101 | Google Search: favicon phải vuông, tối thiểu 8×8 px, nên lớn hơn 48×48 px | s91 | “Your favicon must be a square (1:1 aspect ratio) that's at least 8x8px.” |
+| c102 | Apple (tài liệu Safari cũ): apple-touch-icon cho iPhone retina là 180×180 px | s93 | “180x180” |
+| c103 | WCAG 1.4.11: icon một màu là một đối tượng đồ hoạ, phải đạt 3:1 nếu cần để hiểu nội dung | s6 | “For simple graphics such as single-color icons the entire image is a graphical object.” |
+| c104 | WCAG 1.4.11: logo được miễn yêu cầu tương phản (nhưng khi logo là nút/liên kết nên chọn bản đủ tương phản) | s6 | “Logos are exempted from contrast requirements” |
+| c105 | WCAG 1.4.3: chữ nằm trong logo hay logotype được miễn yêu cầu tương phản | s5 | “Text used as part of a logo or logotype is exempted from contrast requirements” |
+| c106 | NHS: logo trên màn hình tối thiểu cao 30 px; vùng trống quanh logo bằng nửa chiều cao logo; có bản đảo trắng trên nền xanh | s94 | “The minimum size that the NHS logo can appear in digital applications is 30px high.” |
+| c107 | Logo không được dựa vào màu để tạo thứ bậc; phải còn rõ khi chuyển đen trắng và khi thu nhỏ | s95 | “A logo shouldn't rely on color alone to create hierarchy.” |
+| c108 | Thước độ màu Hasler–Süsstrunk M(3) tương quan trên 90% (95,3%) với điểm người chấm; mốc 0/15/33/45/59/82/109 = không màu → cực nhiều màu | s96 |  |
+| c109 | Thước Hasler–Süsstrunk gần người chấm nhất trong các thước độ màu; độ đẹp không tương quan trực tiếp với độ màu | s97 |  |
+| c110 | Lighthouse: ảnh > 64 px cần mật độ ≥ 0,75 × DPR (DPR làm tròn xuống 1, 1,5 hoặc 2); ảnh nhỏ ≤ 64 px (icon) cần đủ 1 × DPR | s98 | “const LARGE_IMAGE_FACTOR = 0.75;” |
+| c111 | Chrome DevTools ImageDelivery: mục tiêu khoảng 1/6 byte mỗi điểm ảnh (AVIF ~12:1), GIF > 100 KiB bị gắn cờ, tiết kiệm < 4096 byte bỏ qua | s99 | “const GIF_SIZE_THRESHOLD = 100 * 1024;” |
+| c112 | Lỗi khối JPEG là gián đoạn ở biên khối 8×8, đo được không cần ảnh gốc | s100 |  |
+| c113 | Độ nét theo toán tử Laplacian (phương sai Laplacian) là thước lấy nét tin cậy nhưng không có ngưỡng tuyệt đối; phụ thuộc nội dung và độ phân giải | s101 |  |
+| c114 | viewBox (kèm preserveAspectRatio) cho SVG co giãn khớp khung chứa | s102 | “a transform stretches or resizes the SVG viewport to fit a particular container element” |
+| c115 | SVG dùng làm ảnh (img, CSS background) bị tắt JavaScript và không nạp tài nguyên ngoài trừ khi nhúng data: URL; vì vậy chữ dựa vào web font ngoài sẽ rơi về font dự phòng | s103 | “External resources (e.g., images, stylesheets) cannot be loaded, though they can be used if inlined through data: URLs” |
+| c116 | SVG nhúng nên có role=img và nhãn để trình đọc màn hình đọc như một ảnh | s104 | “This will cause screen readers to just consider it as a single entity and describe it using the label” |
+| c117 | Phần tử title của SVG cho tên truy cập ngắn | s105 | “provides an accessible, short-text description of any SVG container element or graphics element” |
+| c118 | Icon thuần trang trí nên ẩn khỏi cây truy cập bằng aria-hidden | s106 | “Purely decorative content, such as icons or images” |
+| c119 | SVG tải lên có thể chứa thẻ script và gây XSS lưu trữ khi hiện cho người khác | s107 | “if you can upload HTML files or SVG images, you can potentially use” |
+| c120 | Mật độ cạnh và sai số nén là hai thước máy dự đoán độ phức tạp người cảm nhận tốt nhất (800 ảnh; tương quan đơn lẻ tới rs = .771, kết hợp ML rs = .832) | s108 | “edge density and compression error were the strongest predictors of human complexity ratings” |
+| c121 | Machado 2015: tương quan đơn lẻ của thước máy với độ phức tạp người chấm đạt tới rs = .771 | s108 | “obtaining correlations up to rs = .771” |
+| c122 | Với tranh nghệ thuật, kích thước nén GIF là thước dự đoán độ phức tạp cảm nhận tốt nhất | s109 | “the most successful predictor of visual complexity was Gif compression” |
+| c123 | Độ phức tạp icon đo tự động: biến thiên cấu trúc (rs = .65) và thông tin cạnh (rs = .64) tương quan tốt nhất với điểm người chấm của McDougall 1999 | s110 | “edge information (r(s) = .64)” |
+| c124 | Không có một thước độ phức tạp dùng chung cho mọi loại hình: chữ tượng hình hợp thước tần số không gian, hình viền vật thể hợp số khúc ngoặt; dung lượng JPEG cho tương quan thấp hơn | s111 | “for different classes of images different measures of complexity may be required” |
+| c125 | Dung lượng nén tương quan tốt nhất với độ phức tạp cảm nhận ở ảnh cảnh vật, nhưng với tranh vẽ chỉ cạnh theo phase congruency đạt tương đương | s112 | “measures of compressed file size correlated best with subjective complexity” |
+| c126 | Hiệu suất nhận dạng chữ tỉ lệ nghịch với độ phức tạp chu vi (chu vi trong + ngoài, bình phương, chia diện tích mực) | s113 | “efficiency is inversely proportional to perimetric complexity” |
+| c127 | Với mẫu đồ hoạ mới, đối xứng tương quan mạnh nhất với đánh giá đẹp, độ phức tạp đứng thứ hai; có khác biệt cá nhân | s114 | “symmetry had the highest correlations with aesthetic judgments of beauty” |
+| c128 | Năm đặc tính đo cho icon theo McDougall 1999: cụ thể, phức tạp, có nghĩa, quen thuộc, khoảng cách ngữ nghĩa (chuẩn cho 239 ký hiệu) | s115 | “include concreteness, complexity, meaningfulness, familiarity, and semantic distance” |
+| c129 | Tác động của độ phức tạp icon kéo dài lâu hơn tác động của độ cụ thể và gắn với hiệu quả tìm kiếm | s116 | “complexity effects were found to persist longer and to be associated with search efficacy” |
 
 ## Nguồn
 
@@ -170,3 +221,46 @@ Mã `s…` là nguồn, `c…` là luận điểm. `docs/tieu-chi.md` trích cá
 | s71 | web | [axe-core](https://raw.githubusercontent.com/dequelabs/axe-core/develop/README.md) | Deque, README của axe-core (bên bán công cụ tự nêu độ phủ) |
 | s72 | repo | [comments](https://api.github.com/repos/pbakaus/impeccable/issues/1360/comments) | GitHub API: các bình luận của issue #1360 (trang HTML của issue không trả phần bình luận cho trình đọc) |
 | s73 | repo | [bsky.app: Unnecessary subtle zoom in when focusing login password field · WebKit/WebKit@b2bcd4f](https://github.com/WebKit/WebKit/commit/b2bcd4fa11f8985f68b5cb54bc14c38bac357c5d) | Commit WebKit 13/11/2026 thêm quy tắc bỏ qua phóng to khi tỉ lệ đổi dưới 10% (WKWebViewIOS.mm); chưa có trong bản iOS nào đã phát hành |
+| s74 | web | [002224299806200202](https://api.crossref.org/works/10.1177/002224299806200202) | Henderson & Cote 1998, Journal of Marketing 62(2):14-30; tóm tắt qua Crossref (SAGE lưu). 195 logo, 13 đặc điểm thiết kế |
+| s75 | web | [van Grinsven & Das 2014, Logo design in marketing communications (J. Marketing Communications)](https://api.openalex.org/works/W1993445589) | Tóm tắt dựng lại từ abstract_inverted_index của OpenAlex (T&F chặn Cloudflare, kho Radboud 403). Thí nghiệm N=68 và N=164. |
+| s76 | web | [Predicting perceived visual complexity of abstract patterns using computational measures: The influence of mirror symmetry on complexity perception](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0185276) | Gartus & Leder 2017, PLoS One (mở). 912 mẫu trừu tượng; GIF nén + đối xứng gương dự đoán độ phức tạp |
+| s77 | paper | [Pelli et al. 2006 full text (author copy, PDF)](https://denispelli.com/pubs/pelli2006letters.pdf) | Bản PDF của tác giả; đọc bằng pdftotext ngày 18/11/2026. Định nghĩa mục 2 và chú thích 9; bảng A có độ phức tạp chu vi từng bảng chữ (không chuẩn hoá 4π). |
+| s78 | web | [Perimetric Complexity of Binary Digital Images « The Mathematica Journal](https://www.mathematica-journal.com/2012/02/17/perimetric-complexity-of-binary-digital-images/) | Watson 2012 (NASA Ames), Perimetric complexity of binary digital images, The Mathematica Journal 14. Bản PDF NASA: ntrs.nasa.gov 20110013429 ghi rõ chia cho 4π |
+| s79 | web | [fullTextXML](https://www.ebi.ac.uk/europepmc/webservices/rest/PMC4786554/fullTextXML) | Hübner & Fillinger 2016, Comparison of objective measures for predicting perceptual balance and visual aesthetic preference, Front Psychol (toàn văn XML Europe PMC). Bảng 2: tương quan điểm DCM, APB, MS, HG với điểm cân bằng |
+| s80 | paper | [Byrne 1993, Using icons to find documents: simplicity is critical (INTERCHI 93), PDF](https://acs.ist.psu.edu/misc/dirk-files/Papers/HCI-GUI_Icons/Byrne_interchi93.pdf) | PDF bản sao ở phòng lab Penn State; câu trích nằm trong tóm tắt, kiểm bằng pdftotext 18/11/2026 (verify không đọc PDF) |
+| s81 | web | [Material Design 2: System icons](https://m2.material.io/design/iconography/system-icons.html) | Trang SPA, research-axi read trả rỗng; đã render bằng Edge headless 18/11/2026 và thấy nguyên văn câu trích |
+| s82 | web | [Material Design 3: Designing icons](https://m3.material.io/styles/icons/designing-icons) | Trang SPA; đã render bằng Edge headless 18/11/2026 |
+| s83 | doc | [icons.json](https://developer.apple.com/tutorials/data/design/human-interface-guidelines/icons.json) | Apple HIG Icons (dữ liệu JSON của trang chính thức) |
+| s84 | doc | [app-icons.json](https://developer.apple.com/tutorials/data/design/human-interface-guidelines/app-icons.json) | Apple HIG App icons (dữ liệu JSON của trang chính thức) |
+| s85 | web | [Fluent 2 Design System](https://fluent2.microsoft.design/iconography) | Microsoft Fluent 2 Iconography (chính thức). Không ghi độ dày nét |
+| s86 | web | [Icons – Carbon Design System](https://v10.carbondesignsystem.com/guidelines/icons/contribute/) | IBM Carbon v10: Icons, design and production guidelines |
+| s87 | web | [Icons \| Carbon Design System](https://www.carbondesignsystem.com/building-blocks/foundations/icons/guidelines) | IBM Carbon (hiện hành): Icons usage — cỡ, vùng chạm, màu |
+| s88 | doc | [icon_design_adaptive](https://developer.android.com/develop/ui/views/launch/icon_design_adaptive) | Android Developers: Adaptive icons (chính thức) |
+| s89 | web | [maskable-icon](https://web.dev/articles/maskable-icon) | web.dev (Google): Adaptive icon support in PWAs with maskable icons |
+| s90 | web | [Web Application Manifest](https://w3c.github.io/manifest/) | W3C Web Application Manifest (Editor's Draft), mục Icon masks and safe zone |
+| s91 | doc | [Define a favicon to show in search results](https://developers.google.com/search/docs/appearance/favicon-in-search) | Google Search Central: Define a favicon to show in search results |
+| s92 | web | [add-manifest](https://web.dev/articles/add-manifest) | web.dev (Google): Add a web app manifest — cỡ icon tối thiểu cho Chromium |
+| s93 | doc | [Configuring Web Applications](https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariWebContent/ConfiguringWebApplications/ConfiguringWebApplications.html) | Apple Safari Web Content Guide (lưu trữ, cũ): apple-touch-icon kèm sizes 152x152, 167x167, 180x180 |
+| s94 | web | [NHS Identity Guidelines: NHS logo](https://www.england.nhs.uk/nhsidentity/identity-guidelines/nhs-logo/) | Hướng dẫn nhận diện chính thức của NHS England; trang dựng bằng JS, research-axi read trả rỗng; đã render bằng Edge headless 18/11/2026 |
+| s95 | web | [Logo design principles explained \| Adobe](https://www.adobe.com/express/learn/blog/logo-design-principles) | Adobe Express blog: Logo design principles explained — nguồn giáo dục của hãng phần mềm thiết kế, có động cơ bán Adobe Express; không có số |
+| s96 | paper | [Hasler & Süsstrunk 2003, Measuring colourfulness in natural images (Proc. SPIE 5007), PDF EPFL](https://infoscience.epfl.ch/record/33994/files/HaslerS03.pdf) | PDF EPFL đọc bằng pdftotext 18/11/2026: M(3) = σ_rgyb + 0.3·μ_rgyb, rg = R−G, yb = ½(R+G)−B; tương quan 95,3% với thí nghiệm (20 người, 84 ảnh); bảng 2 mốc M(3): 0 không màu, 15 hơi, 33 vừa, 45 trung bình, 59 khá, 82 nhiều, 109 cực nhiều màu |
+| s97 | paper | [Amati, Mitra & Weyrich 2014, A study of image colourfulness (PDF)](https://reality.tf.fau.de/projects/image-colourfulness/image-colourfulness.pdf) | Đánh giá độc lập: thước Hasler–Süsstrunk gần với người chấm nhất; độ đẹp không tương quan trực tiếp với độ màu |
+| s98 | web | [image-size-responsive.js](https://raw.githubusercontent.com/GoogleChrome/lighthouse/main/core/audits/image-size-responsive.js) | Lighthouse (Google), audit image-size-responsive: mật độ điểm ảnh đòi hỏi theo DPR |
+| s99 | web | [ImageDelivery.ts](https://raw.githubusercontent.com/ChromeDevTools/devtools-frontend/main/front_end/models/trace/insights/ImageDelivery.ts) | Chrome DevTools trace insight ImageDelivery (thay audit byte-efficiency cũ của Lighthouse) |
+| s100 | paper | [Wang, Sheikh & Bovik 2002, No-reference perceptual quality assessment of JPEG compressed images (ICIP), PDF](https://live.ece.utexas.edu/publications/2002/zw_icip_2002_norefjpeg.pdf) | PDF phòng LIVE (UT Austin); đọc bằng pdftotext 18/11/2026 |
+| s101 | web | [Pech-Pacheco et al. 2000, Diatom autofocusing in brightfield microscopy: a comparative study (ICPR)](https://api.openalex.org/works/W2099601760) | Tóm tắt qua OpenAlex: so phương pháp lấy nét Tenengrad và Laplacian cải tiến; không có ngưỡng tuyệt đối dùng cho ảnh web |
+| s102 | doc | [viewBox - SVG \| MDN](https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/viewBox) | MDN: viewBox |
+| s103 | doc | [SVG as an image - SVG \| MDN](https://developer.mozilla.org/en-US/docs/Web/SVG/Guides/SVG_as_an_image) | MDN: SVG as an image (giới hạn khi SVG làm ảnh) |
+| s104 | doc | [ARIA: img role - ARIA \| MDN](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/img_role) | MDN: ARIA img role |
+| s105 | doc | [<title> — the SVG accessible name element - SVG \| MDN](https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Element/title) | MDN: SVG <title> accessible name element |
+| s106 | doc | [ARIA: aria-hidden attribute - ARIA \| MDN](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-hidden) | MDN: aria-hidden |
+| s107 | web | [File uploads \| Web Security Academy](https://portswigger.net/web-security/file-upload) | PortSwigger Web Security Academy: File upload vulnerabilities |
+| s108 | web | [j.actpsy.2015.06.005&format=json&resultType=core](https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1016/j.actpsy.2015.06.005&format=json&resultType=core) | Machado et al. 2015, Computerized measures of visual complexity, Acta Psychologica 160; tóm tắt qua Europe PMC. 800 ảnh, 30 người chấm mỗi ảnh |
+| s109 | web | [000712610X498958&format=json&resultType=core](https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1348/000712610X498958&format=json&resultType=core) | Forsythe et al. 2011, Predicting beauty: fractal dimension and visual complexity in art, Br J Psychol; tóm tắt Europe PMC (không có số r trong tóm tắt) |
+| s110 | web | [BF03202562&format=json&resultType=core](https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.3758/BF03202562&format=json&resultType=core) | Forsythe, Sheehy & Sawey 2003, Measuring icon complexity: an automated analysis, Behav Res Methods; tóm tắt Europe PMC |
+| s111 | web | [p6987&format=json&resultType=core](https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1068/p6987&format=json&resultType=core) | Chikhman et al. 2012, Complexity of images: experimental and computational estimates compared, Perception 41; tóm tắt Europe PMC |
+| s112 | web | [journal.pone.0072412&format=json&resultType=core](https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1371/journal.pone.0072412&format=json&resultType=core) | Marin & Leder 2013, Examining complexity across domains, PLoS One; tóm tắt Europe PMC |
+| s113 | web | [j.visres.2006.04.023&format=json&resultType=core](https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1016/j.visres.2006.04.023&format=json&resultType=core) | Pelli, Burns, Farell & Moore-Page 2006, Feature detection and letter identification, Vision Research 46; tóm tắt Europe PMC |
+| s114 | web | [pms.2002.95.3.755&format=json&resultType=core](https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.2466/pms.2002.95.3.755&format=json&resultType=core) | Jacobsen & Höfel 2002, Aesthetic judgments of novel graphic patterns, Percept Mot Skills; tóm tắt Europe PMC |
+| s115 | web | [BF03200730&format=json&resultType=core](https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.3758/BF03200730&format=json&resultType=core) | McDougall, Curry & de Bruijn 1999, norms for 239 symbols, Behav Res Methods; tóm tắt Europe PMC |
+| s116 | web | [search?query=PMID:11218339&format=json&resultType=core](https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:11218339&format=json&resultType=core) | McDougall, de Bruijn & Curry 2000, J Exp Psychol Appl 6(4); tóm tắt Europe PMC |

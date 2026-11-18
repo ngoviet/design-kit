@@ -8,6 +8,8 @@
 //   đầu (sửa qua Bash, PowerShell, công cụ MCP: trước 15/11/2026 hook bỏ sót hết). Mỗi trạng thái chỉ bị chặn một
 //   lần: AI có thể trả lời lý do không kiểm (không chạm giao diện, tệp do phiên khác sửa) rồi dừng. Tệp không còn
 //   tồn tại (đã xoá, đã đổi tên) thì bỏ qua.
+// Hình (`.svg`, `.png`, `.jpg`, `.webp`, `.avif`, `.ico` có tên tệp hay thư mục chứa nó là logo, icon, favicon, brand,
+//   ký hiệu, minh hoạ…): hai sự kiện trên nhắc và đòi `design-kit check-image` trên tệp hay thư mục chứa nó.
 // Mod Claude Code (`.tsx`/`.jsx` trong `hooks/` của một plugin có `hooks/hooks.json`) vẽ bằng `ui.render` trong
 //   terminal hay app desktop, không có trang HTML để `design-kit check`: hai sự kiện trên nhắc và đòi
 //   `claude plugin test` (hoặc `tools/check.sh` của repo chứa mod) thay cho cổng.
@@ -22,6 +24,10 @@ const UI = /\.(html?|tsx|jsx|vue|svelte|astro|css|scss)$/i;
 const SKIP = /(^|[\\/])(node_modules|dist|build|\.design-kit|coverage|fixtures|__fixtures__|scratchpad)[\\/]|\.(test|spec|stories)\.[jt]sx?$/i;
 const MOD_UI = /\.[jt]sx$/i;
 const EVERY_MS = 15 * 60 * 1000;
+// Hình (logo, icon, ký hiệu, minh hoạ): kiểm bằng `design-kit check-image`. Chỉ xét tên tệp và thư mục chứa nó, không
+// xét cả đường dẫn: repo tên "brand-site" thì mọi ảnh trong đó sẽ thành logo.
+const IMG = /\.(svg|png|jpe?g|webp|avif|ico)$/i;
+const IMG_HINT = /logo|icon|favicon|brand|glyph|symbol|bieu-tuong|ky-hieu|apple-touch|maskable|illus|minh-hoa/i;
 
 let input = {};
 try {
@@ -35,6 +41,7 @@ const stateFile = join(stateDir, `${session}.json`);
 const load = () => { try { return JSON.parse(readFileSync(stateFile, "utf8")); } catch { return {}; } };
 const save = (s) => { try { mkdirSync(stateDir, { recursive: true }); writeFileSync(stateFile, JSON.stringify(s)); } catch { /* bỏ qua */ } };
 const isUi = (f) => typeof f === "string" && UI.test(f) && !SKIP.test(f);
+const isImg = (f) => typeof f === "string" && IMG.test(f) && !SKIP.test(f) && (IMG_HINT.test(basename(f)) || IMG_HINT.test(basename(dirname(f))));
 
 /** Đường dẫn để hiện cho AI: tương đối với cwd nếu nằm trong (cwd chính nó là "."), không thì tuyệt đối; gạch xuôi. */
 function show(p, cwd) {
@@ -73,8 +80,23 @@ function modOf(file, cwd) {
 
 if (input.hook_event_name === "PostToolUse") {
   const file = input.tool_input?.file_path;
-  if (!isUi(file)) process.exit(0);
   const cwd = typeof input.cwd === "string" ? input.cwd : "";
+  if (isImg(file)) {
+    // Hình nhắc theo nhịp riêng: sửa logo không nuốt lời nhắc cho trang web sửa ngay sau đó.
+    const s = load();
+    const now = Date.now();
+    if (s.lastRemindImg && now - s.lastRemindImg < EVERY_MS) process.exit(0);
+    save({ ...s, lastRemindImg: now });
+    const msg = [
+      `design-kit: vừa sửa hình ${basename(file)} (logo, icon, ký hiệu hay minh hoạ). Trước khi báo xong:`,
+      `1. Chạy \`design-kit check-image ${show(file, cwd)} --strict\` (bộ icon: chạy trên cả thư mục để so với nhau).`,
+      "2. Mở tờ soát trong .design-kit/shots/images và tự xem: nhận ra được ở 16 px không, bản một màu và bản đảo trên nền tối, icon có lệch khỏi bộ không.",
+      "3. Logo, icon giao diện nên là SVG: chữ chuyển thành nét, có viewBox, không script; icon một màu dùng currentColor.",
+    ].join("\n");
+    process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext: msg } }));
+    process.exit(0);
+  }
+  if (!isUi(file)) process.exit(0);
   const mod = modOf(file, cwd);
   // Mod và trang web nhắc riêng nhịp: sửa mod không nuốt lời nhắc cho trang web sửa ngay sau đó.
   const key = mod ? "lastRemindMod" : "lastRemind";
@@ -110,11 +132,23 @@ if (input.hook_event_name === "PostToolUse") {
 /** Đường dẫn để so: tuyệt đối, gạch xuôi, chữ thường (Windows không phân biệt hoa thường). */
 const norm = (p) => p.replace(/\\/g, "/").toLowerCase();
 
-const GATE = /design-kit(\.js)?\s+check\b/;
+// `check` đứng riêng: `\b` sau "check" cũng khớp "check-image" và "check-mod" (dấu gạch không phải chữ), nên một lần
+// chấm hình từng được tính như đã chạy cổng trang.
+const GATE = /design-kit(\.js)?\s+check(?![\w-])/;
+const IMG_GATE = /design-kit(\.js)?\s+check-image\b/;
 const PLUGIN_TEST = /claude(?:\.exe)?\s+plugin\s+test\b([^;&|\r\n]*)/g;
 const REPO_CHECK = /(?:^|[\s;&|(])(?:bash\s+|sh\s+|\.\/)[^\s;&|]*tools[\\/]check\.sh\b/;
-/** Lệnh có thể là một lần kiểm: cổng design-kit, `claude plugin test`, hoặc `tools/check.sh` của repo chứa mod. */
-const isCheck = (cmd) => GATE.test(cmd) || /claude(?:\.exe)?\s+plugin\s+test\b/.test(cmd) || REPO_CHECK.test(cmd);
+/** Lệnh có thể là một lần kiểm: cổng design-kit, chấm hình, `claude plugin test`, hoặc `tools/check.sh` của repo chứa mod. */
+const isCheck = (cmd) => GATE.test(cmd) || IMG_GATE.test(cmd) || /claude(?:\.exe)?\s+plugin\s+test\b/.test(cmd) || REPO_CHECK.test(cmd);
+
+/** Lệnh nêu tệp này: tên tệp, hay thư mục chứa nó (tuyệt đối hoặc tương đối với cwd; cwd là "." hay "./"). */
+function names(cmd, file, cwd) {
+  const c = ` ${norm(cmd)} `.replace(/["']/g, " ");
+  if (c.includes(norm(basename(file)))) return true;
+  const dirs = [norm(dirname(file)), norm(relative(cwd, dirname(file)))];
+  if (dirs[1] === "") dirs.push(".", "./");
+  return dirs.some((d) => d && (c.includes(` ${d} `) || c.includes(` ${d}/ `)));
+}
 
 /** Bỏ dấu nháy; trên Windows đổi đường dẫn Git Bash `/d/code/…` thành `d:/code/…`. */
 function unshell(t) {
@@ -151,15 +185,13 @@ function coversMod(cmd, mod, cwd) {
  * nêu), hoặc một URL (máy chủ dev: không ánh xạ được, tính là phủ). Tệp nguồn (.tsx, .css…) được kiểm qua trang build
  * hay URL, nên lần chạy cổng nào cũng tính.
  */
-function covers(cmd, file, cwd, mod) {
+function covers(cmd, file, cwd, mod, img) {
   if (mod) return coversMod(cmd, mod, cwd);
+  // Hình: `check-image` nêu đúng tệp hay thư mục chứa nó (lệnh chỉ đọc ảnh nằm ngay trong thư mục được nêu).
+  if (img) return IMG_GATE.test(cmd) && names(cmd, file, cwd);
   if (!GATE.test(cmd)) return false;
   if (!/\.html?$/i.test(file)) return true;
-  const c = ` ${norm(cmd)} `.replace(/["']/g, " ");
-  if (/https?:\/\//.test(c) || c.includes(norm(basename(file)))) return true;
-  const dirs = [norm(dirname(file)), norm(relative(cwd, dirname(file)))];
-  if (dirs[1] === "") dirs.push(".", "./");
-  return dirs.some((d) => d && (c.includes(` ${d} `) || c.includes(` ${d}/ `)));
+  return /https?:\/\//.test(cmd) || names(cmd, file, cwd);
 }
 
 /** Tệp git thấy đã đổi hoặc mới (chưa theo dõi, không bị .gitignore), đường dẫn tuyệt đối. Không phải repo git ⇒ rỗng. */
@@ -190,7 +222,7 @@ if (input.hook_event_name === "Stop") {
       if (c?.type === "tool_result" && Number.isFinite(at)) doneAt.set(c.tool_use_id, at);
       if (c?.type !== "tool_use") continue;
       if (Number.isFinite(at)) atOf.set(c.id, at);
-      if (["Write", "Edit", "MultiEdit"].includes(c.name) && isUi(c.input?.file_path)) {
+      if (["Write", "Edit", "MultiEdit"].includes(c.name) && (isUi(c.input?.file_path) || isImg(c.input?.file_path))) {
         edits.set(norm(resolve(cwd, c.input.file_path)), { i, id: c.id, file: resolve(cwd, c.input.file_path) });
       }
       const cmd = c.input?.command;
@@ -202,20 +234,22 @@ if (input.hook_event_name === "Stop") {
   // đã đổi tên) thì không còn gì để kiểm; chỗ mới của nó do (B) xét nếu git thấy đổi.
   for (const [k, e] of edits) {
     if (!existsSync(e.file)) continue;
-    const mod = modOf(e.file, cwd);
-    if (!checks.some((x) => x.i > e.i && covers(x.cmd, e.file, cwd, mod))) pending.set(k, { file: e.file, key: e.id, mod });
+    const img = isImg(e.file);
+    const mod = img ? undefined : modOf(e.file, cwd);
+    if (!checks.some((x) => x.i > e.i && covers(x.cmd, e.file, cwd, mod, img))) pending.set(k, { file: e.file, key: e.id, mod, img });
   }
   // (B) Tệp giao diện git thấy đã đổi, sửa sau khi phiên bắt đầu: cần một lần kiểm phủ tệp, xong sau lần sửa.
   // Lấy lúc lệnh kiểm có kết quả, nên "sửa rồi kiểm" trong cùng một lệnh vẫn tính.
   if (Number.isFinite(start)) {
     for (const file of gitChanged(cwd)) {
-      if (!isUi(file)) continue;
+      const img = isImg(file);
+      if (!isUi(file) && !img) continue;
       let m;
       try { m = statSync(file).mtimeMs; } catch { continue; }
       if (m <= start) continue;
-      const mod = modOf(file, cwd);
-      const ok = checks.some((x) => (doneAt.get(x.id) ?? atOf.get(x.id) ?? -Infinity) > m && covers(x.cmd, file, cwd, mod));
-      if (!ok) pending.set(norm(file), { file, key: `mtime:${norm(file)}:${Math.round(m)}`, mod });
+      const mod = img ? undefined : modOf(file, cwd);
+      const ok = checks.some((x) => (doneAt.get(x.id) ?? atOf.get(x.id) ?? -Infinity) > m && covers(x.cmd, file, cwd, mod, img));
+      if (!ok) pending.set(norm(file), { file, key: `mtime:${norm(file)}:${Math.round(m)}`, mod, img });
       else pending.delete(norm(file));
     }
   }
@@ -225,12 +259,19 @@ if (input.hook_event_name === "Stop") {
   if (s.nagged === sig) process.exit(0);
   save({ ...s, nagged: sig });
   const list = (names) => names.slice(0, 5).join(", ") + (names.length > 5 ? ` và ${names.length - 5} tệp khác` : "");
-  const web = [...pending.values()].filter((p) => !p.mod);
+  const web = [...pending.values()].filter((p) => !p.mod && !p.img);
   const mods = [...pending.values()].filter((p) => p.mod);
+  const imgs = [...pending.values()].filter((p) => p.img);
   const parts = [];
+  if (imgs.length) {
+    parts.push(
+      `phiên này đã sửa hình ${list(imgs.map((p) => show(p.file, cwd)))} nhưng chưa có lần \`design-kit check-image\` nào trên đó sau lần sửa. ` +
+        "Chạy `design-kit check-image <tệp hoặc thư mục chứa nó> --strict` và tự xem tờ soát trong .design-kit/shots/images.",
+    );
+  }
   if (web.length) {
     parts.push(
-      `phiên này đã sửa ${list(web.map((p) => show(p.file, cwd)))} nhưng chưa có lần \`design-kit check\` nào chạy trên đó sau lần sửa. ` +
+      `${imgs.length ? "Phiên cũng" : "phiên này"} đã sửa ${list(web.map((p) => show(p.file, cwd)))} nhưng chưa có lần \`design-kit check\` nào chạy trên đó sau lần sửa. ` +
         "Chạy cổng (kèm --strict) trên đúng trang, thư mục chứa nó, hoặc URL hiển thị nó, và tự xem ảnh chụp; nêu bản đồ tác vụ nếu là màn mới.",
     );
   }
@@ -238,7 +279,7 @@ if (input.hook_event_name === "Stop") {
     const roots = [...new Set(mods.map((p) => show(p.mod.root, cwd)))];
     const repo = [...new Set(mods.map((p) => p.mod.check).filter(Boolean))].map((f) => `\`bash ${show(f, cwd)}\``);
     parts.push(
-      `${web.length ? "Phiên cũng" : "phiên này"} đã sửa giao diện mod Claude Code ${list(mods.map((p) => show(p.file, cwd)))} nhưng chưa có lần \`claude plugin test\` nào trên mod đó sau lần sửa. ` +
+      `${web.length || imgs.length ? "Phiên cũng" : "phiên này"} đã sửa giao diện mod Claude Code ${list(mods.map((p) => show(p.file, cwd)))} nhưng chưa có lần \`claude plugin test\` nào trên mod đó sau lần sửa. ` +
         `Chạy ${roots.map((r) => `\`claude plugin test ${r}\``).join(", ")}${repo.length ? ` (hoặc ${repo.join(", ")})` : ""} và xem cây vẽ bằng \`ui.drawn()\` trong test; mod không có trang HTML nên không cần \`design-kit check\`.`,
     );
   }

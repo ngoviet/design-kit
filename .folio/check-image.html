@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="vi" data-dk="giay" data-lavish-annotate="on">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chấm điểm logo, icon và hình vẽ: design-kit check-image</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style data-dk-inline="dk/core.css">
+/* design-kit · token lõi, dùng chung cho mọi hướng thẩm mỹ.
+   Màu và font nằm ở tệp hướng (dem.css, giay.css, dam.css); tệp này chỉ có nhịp, thang, chuyển động.
+   Nguồn ngưỡng: docs/tieu-chi.md. */
+:root {
+  /* Khoảng cách: bậc 4px, 9 giá trị. Không dùng số lẻ ngoài thang. */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px; --sp-5: 24px;
+  --sp-6: 32px; --sp-7: 48px; --sp-8: 64px; --sp-9: 96px;
+
+  /* Bo góc */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 16px; --r-full: 999px;
+
+  /* Thang chữ tỉ lệ 1.25, co giãn giữa 360px và 1280px. Nhỏ nhất 12px (nhãn), thân 16px. */
+  --fs-xs:  0.75rem;                                   /* 12px: nhãn, chú thích */
+  --fs-sm:  0.875rem;                                  /* 14px: chữ phụ, ô bảng */
+  --fs-base: 1rem;                                     /* 16px: thân */
+  --fs-md:  1.25rem;                                   /* 20px */
+  --fs-lg:  clamp(1.375rem, 1.2rem + 0.6vw, 1.5625rem);  /* 22 → 25 */
+  --fs-xl:  clamp(1.625rem, 1.35rem + 1.1vw, 1.95rem);   /* 26 → 31 */
+  --fs-2xl: clamp(2rem, 1.55rem + 1.9vw, 2.45rem);       /* 32 → 39 */
+  --fs-3xl: clamp(2.5rem, 1.7rem + 3.4vw, 3.8rem);       /* 40 → 61, chỉ cho hero */
+
+  /* Giãn dòng: tiếng Việt có dấu chồng nên tiêu đề không dưới 1.2 */
+  --lh-tight: 1.2; --lh-snug: 1.35; --lh-body: 1.6;
+
+  /* Độ dài dòng */
+  /* Đo bằng em, không bằng ch: chữ Việt trong Be Vietnam Pro hẹp hơn "0" ~37%, 66ch thành ~90 ký tự/dòng.
+     32em ≈ 65–75 ký tự tiếng Việt ở cả Be Vietnam Pro lẫn Literata. */
+  --measure: 32em;
+
+  /* Chuyển động: ngắn, easing ra, không nảy */
+  --dur-1: 120ms; --dur-2: 200ms; --dur-3: 320ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Vùng bấm (WCAG 2.5.8 ≥ 24px; nút chính 44px) */
+  --hit-min: 24px; --hit: 40px; --hit-lg: 44px;
+
+  --focus-w: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+</style>
+<style data-dk-inline="dk/giay.css">
+/* design-kit · hướng GIẤY: tài liệu, báo cáo, bài viết dài. Sáng trước, có bản tối.
+   Trung tính gần trung hoà (h 240, C ≤ 0.01; không dùng nền kem), màu nhấn xanh mực (h 258).
+   Thân chữ có chân Literata 18px để đọc lâu; tiêu đề không chân. */
+
+[data-dk="giay"] {
+  --font-body: "Literata", Georgia, serif;
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-ui: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --fs-body: 1.125rem;
+  --lh-body: 1.7;
+  --weight-display: 650;
+  --tracking-display: -0.01em;
+
+  color-scheme: light;
+  --bg:          oklch(0.990 0.002 240);
+  --surface:     oklch(1 0 0);
+  --surface-2:   oklch(0.965 0.004 240);
+  --border:      oklch(0.890 0.006 240);
+  --border-strong: oklch(0.60 0.01 240);
+  --text:        oklch(0.210 0.010 240);
+  --text-2:      oklch(0.440 0.010 240);
+  --accent:      oklch(0.480 0.140 258);
+  --accent-text: oklch(0.460 0.140 258);
+  --on-accent:   oklch(0.990 0.004 258);
+  --accent-soft: oklch(0.955 0.020 258);
+  --ok:   oklch(0.480 0.110 150); --ok-soft:   oklch(0.960 0.030 150);
+  --warn: oklch(0.500 0.100 65);  --warn-soft: oklch(0.965 0.030 80);
+  --bad:  oklch(0.510 0.160 25);  --bad-soft:  oklch(0.960 0.018 25);
+  --info: oklch(0.480 0.130 258); --info-soft: oklch(0.955 0.020 258);
+  --focus: oklch(0.480 0.140 258);
+  --shadow-1: 0 1px 2px oklch(0.21 0.01 240 / 0.07);
+  --shadow-2: 0 6px 20px -8px oklch(0.21 0.01 240 / 0.16);
+}
+@media (prefers-color-scheme: dark) {
+  [data-dk="giay"]:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg:          oklch(0.190 0.006 240);
+    --surface:     oklch(0.220 0.007 240);
+    --surface-2:   oklch(0.260 0.008 240);
+    --border:      oklch(0.350 0.010 240);
+    --border-strong: oklch(0.56 0.01 240);
+    --text:        oklch(0.920 0.005 240);
+    --text-2:      oklch(0.750 0.010 240);
+    --accent:      oklch(0.760 0.110 258);
+    --accent-text: oklch(0.790 0.100 258);
+    --on-accent:   oklch(0.180 0.030 258);
+    --accent-soft: oklch(0.290 0.050 258);
+    --ok:   oklch(0.790 0.120 150); --ok-soft:   oklch(0.280 0.040 150);
+    --warn: oklch(0.830 0.110 80);  --warn-soft: oklch(0.290 0.040 80);
+    --bad:  oklch(0.770 0.120 25);  --bad-soft:  oklch(0.290 0.045 25);
+    --info: oklch(0.790 0.100 258); --info-soft: oklch(0.290 0.050 258);
+    --focus: oklch(0.760 0.110 258);
+    --shadow-1: 0 1px 2px oklch(0 0 0 / 0.4);
+    --shadow-2: 0 8px 24px -8px oklch(0 0 0 / 0.55);
+  }
+}
+[data-dk="giay"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg:          oklch(0.190 0.006 240);
+  --surface:     oklch(0.220 0.007 240);
+  --surface-2:   oklch(0.260 0.008 240);
+  --border:      oklch(0.350 0.010 240);
+  --border-strong: oklch(0.56 0.01 240);
+  --text:        oklch(0.920 0.005 240);
+  --text-2:      oklch(0.750 0.010 240);
+  --accent:      oklch(0.760 0.110 258);
+  --accent-text: oklch(0.790 0.100 258);
+  --on-accent:   oklch(0.180 0.030 258);
+  --accent-soft: oklch(0.290 0.050 258);
+  --ok:   oklch(0.790 0.120 150); --ok-soft:   oklch(0.280 0.040 150);
+  --warn: oklch(0.830 0.110 80);  --warn-soft: oklch(0.290 0.040 80);
+  --bad:  oklch(0.770 0.120 25);  --bad-soft:  oklch(0.290 0.045 25);
+  --info: oklch(0.790 0.100 258); --info-soft: oklch(0.290 0.050 258);
+  --focus: oklch(0.760 0.110 258);
+  --shadow-1: 0 1px 2px oklch(0 0 0 / 0.4);
+  --shadow-2: 0 8px 24px -8px oklch(0 0 0 / 0.55);
+}
+</style>
+<style data-dk-inline="dk/_base.css">
+/* design-kit · phần tử nền dùng chung cho mọi khối. Chỉ dùng token (tokens/core.css + một tệp hướng).
+   Chép tệp này cùng tokens/ vào dự án, hoặc lấy từng đoạn cần dùng. */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 var(--fs-body) / var(--lh-body) var(--font-body);
+  font-kerning: normal;
+}
+h1, h2, h3, h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--weight-display);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--lh-tight);
+  text-wrap: balance;
+}
+h1 { font-size: var(--fs-2xl); }
+h2 { font-size: var(--fs-xl); }
+h3 { font-size: var(--fs-md); letter-spacing: 0; line-height: var(--lh-snug); }
+p { margin: 0 0 var(--sp-4); max-width: var(--measure); text-wrap: pretty; }
+a { color: var(--accent-text); text-underline-offset: 3px; }
+:focus-visible { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+img, svg { max-width: 100%; }
+
+/* Chữ giao diện (nút, nhãn, bảng): hướng Giấy có thân chữ có chân nên tách --font-ui */
+.ui { font-family: var(--font-ui, var(--font-body)); }
+.muted { color: var(--text-2); }
+.small { font-size: var(--fs-sm); line-height: 1.5; }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.skip-link { position: absolute; left: var(--sp-4); top: -100px; z-index: 10; }
+.skip-link:focus { top: var(--sp-3); }
+
+/* Nút */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: var(--hit-lg); padding: 0 var(--sp-5);
+  border: 1px solid transparent; border-radius: var(--r-md);
+  font: 600 var(--fs-sm) / 1.2 var(--font-ui, var(--font-body));
+  text-decoration: none; cursor: pointer; white-space: nowrap;
+  transition: background-color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
+}
+.btn svg { width: 18px; height: 18px; flex: none; }
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-primary:hover { background: color-mix(in oklch, var(--accent), var(--text) 14%); }
+.btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
+.btn-secondary:hover { background: var(--surface-2); }
+.btn-ghost { background: transparent; color: var(--text); }
+.btn-ghost:hover { background: var(--surface-2); }
+.btn-danger { background: var(--bad); color: var(--surface); }
+.btn-danger:hover { background: color-mix(in oklch, var(--bad), var(--text) 14%); }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
+.btn-sm { min-height: var(--hit); padding: 0 var(--sp-4); }
+.btn-icon { min-width: var(--hit); min-height: var(--hit); padding: 0; }
+
+/* Ô nhập */
+.field { display: grid; gap: var(--sp-2); }
+.label { font: 600 var(--fs-sm) / 1.4 var(--font-ui, var(--font-body)); }
+.input {
+  width: 100%; min-height: var(--hit-lg); padding: 0 var(--sp-3);
+  border: 1px solid var(--border-strong); border-radius: var(--r-sm);
+  background: var(--surface); color: var(--text);
+  font: 400 var(--fs-base) / 1.4 var(--font-ui, var(--font-body));
+}
+.input:focus-visible { outline-offset: 0; border-color: var(--focus); }
+.input[aria-invalid="true"] { border-color: var(--bad); }
+.hint { font: 400 var(--fs-sm) / 1.5 var(--font-ui, var(--font-body)); color: var(--text-2); margin: 0; }
+.error-text { font: 500 var(--fs-sm) / 1.5 var(--font-ui, var(--font-body)); color: var(--bad); margin: 0; display: flex; gap: var(--sp-1); align-items: flex-start; }
+.error-text svg { width: 16px; height: 16px; flex: none; margin-top: 3px; }
+
+/* Huy hiệu trạng thái: luôn có chữ, màu chỉ là tín hiệu phụ */
+.badge {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  padding: 2px var(--sp-2); border-radius: var(--r-full);
+  font: 600 var(--fs-xs) / 1.5 var(--font-ui, var(--font-body)); white-space: nowrap;
+}
+.badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.badge-ok { background: var(--ok-soft); color: var(--ok); }
+.badge-warn { background: var(--warn-soft); color: var(--warn); }
+.badge-bad { background: var(--bad-soft); color: var(--bad); }
+.badge-info { background: var(--info-soft); color: var(--info); }
+.badge-muted { background: var(--surface-2); color: var(--text-2); }
+
+/* Bề mặt */
+.surface { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); }
+
+/* Khung trình bày khối mẫu (không thuộc khối) */
+.demo { max-width: 72rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4) var(--sp-8); }
+.demo > h1 { margin-bottom: var(--sp-2); }
+.demo > p.lede { color: var(--text-2); margin-bottom: var(--sp-6); }
+</style>
+<style>
+  .wrap { max-width: 64rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4) var(--sp-8); }
+  header .kicker { font: 600 var(--fs-xs) / 1.5 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--accent-text); margin: 0 0 var(--sp-2); }
+  header h1 { margin-bottom: var(--sp-3); }
+  header .lead { color: var(--text-2); font-size: var(--fs-md); line-height: 1.5; max-width: 30em; }
+  section { margin-top: var(--sp-7); }
+  section > h2 { margin-bottom: var(--sp-4); }
+  h3 { margin: var(--sp-5) 0 var(--sp-3); }
+  p, li { max-width: var(--measure); }
+  p, li, td, figcaption { text-wrap: pretty; }
+  .grid2 { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); }
+  .card { padding: var(--sp-5); min-width: 0; }
+  .card h3 { margin-top: 0; }
+  .card p:last-child, .card ul:last-child { margin-bottom: 0; }
+  ul.tight { margin: 0 0 var(--sp-4); padding-left: 1.2em; }
+  ul.tight li { margin-bottom: var(--sp-2); }
+  code, .mono { font-family: var(--font-mono); font-size: .86em; overflow-wrap: anywhere; }
+  code { background: var(--surface-2); padding: 1px 5px; border-radius: var(--r-sm); }
+
+  /* Dải số */
+  .stats { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); margin-top: var(--sp-6); }
+  .stat { padding: var(--sp-4); min-width: 0; }
+  .stat .v { font: 700 var(--fs-xl) / 1.2 var(--font-ui); color: var(--text); display: block; }
+  .stat .k { font: 400 var(--fs-sm) / 1.5 var(--font-ui); color: var(--text-2); display: block; margin-top: var(--sp-1); }
+
+  ul.cmds { list-style: none; margin: 0 0 var(--sp-4); padding: 0; display: grid; gap: var(--sp-2); }
+  ul.cmds li { max-width: none; display: grid; gap: var(--sp-1); padding: var(--sp-3) var(--sp-4); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); }
+  ul.cmds code { background: none; padding: 0; font-size: var(--fs-sm); }
+  ul.cmds span { font: 400 var(--fs-base) / 1.5 var(--font-ui); color: var(--text-2); }
+
+  /* Các bước đo: khối HTML, không vẽ chữ trong SVG (chữ SVG co theo viewBox, còn 4 px ở khổ 320) */
+  ol.steps { list-style: none; margin: 0 0 var(--sp-3); padding: 0; display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); counter-reset: b; }
+  ol.steps li { max-width: none; padding: var(--sp-4); min-width: 0; counter-increment: b; }
+  ol.steps li::before { content: counter(b); display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); font: 700 var(--fs-sm) / 1 var(--font-ui); margin-bottom: var(--sp-2); }
+  ol.steps b { display: block; font-family: var(--font-ui); margin-bottom: var(--sp-1); }
+  ol.steps p { margin: 0; font: 400 var(--fs-base) / 1.55 var(--font-ui); color: var(--text-2); }
+
+  /* Bảng: khổ hẹp xếp mỗi hàng thành một khối, nhãn cột lấy từ thead (script cuối trang) */
+  .tbl-wrap { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font: 400 var(--fs-sm) / 1.5 var(--font-ui); }
+  th, td { text-align: left; vertical-align: top; padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--border); }
+  th { background: var(--surface-2); font-weight: 600; }
+  tr:last-child td { border-bottom: 0; }
+  td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  @media (max-width: 40rem) {
+    /* Khổ điện thoại: chữ đọc liền mạch không dưới 16 px */
+    table, figcaption, .opt, .stat .k, .small, .state { font-size: var(--fs-base); }
+    table, tbody, tr, td { display: block; }
+    thead { display: none; }
+    tr { padding: var(--sp-2) 0; border-bottom: 1px solid var(--border); }
+    tr:last-child { border-bottom: 0; }
+    td { border: 0; padding: var(--sp-1) var(--sp-3); }
+    td[data-label]::before { content: attr(data-label); display: block; font-weight: 600; color: var(--text-2); font-size: var(--fs-xs); }
+  }
+
+  /* Ảnh tờ soát */
+  figure { margin: 0; min-width: 0; }
+  figure img { display: block; width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); }
+  figcaption { font: 400 var(--fs-sm) / 1.5 var(--font-ui); color: var(--text-2); margin-top: var(--sp-2); }
+  .shots { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); align-items: start; }
+
+  /* Sơ đồ */
+  .diagram { padding: var(--sp-4); }
+  .diagram svg { display: block; width: 100%; height: auto; }
+  .diagram text { font-family: var(--font-ui); }
+
+  .fix { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: var(--sp-3); align-items: start; margin-bottom: var(--sp-3); }
+  .fix .n { width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); font: 700 var(--fs-sm) / 1 var(--font-ui); }
+  .fix p { margin: 0; }
+
+  /* Câu hỏi */
+  form.ask { padding: var(--sp-5); display: grid; gap: var(--sp-5); }
+  fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: var(--sp-2); min-width: 0; }
+  legend { font: 600 var(--fs-base) / 1.4 var(--font-ui); margin-bottom: var(--sp-2); padding: 0; }
+  .opt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--sp-3); align-items: start; padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); cursor: pointer; font: 400 var(--fs-sm) / 1.5 var(--font-ui); }
+  .opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .opt input { margin-top: 4px; width: 18px; height: 18px; accent-color: var(--accent); }
+  .opt b { display: block; font-weight: 600; }
+  .opt span.sub { color: var(--text-2); }
+  textarea.input { min-height: 5.5rem; padding: var(--sp-2) var(--sp-3); line-height: 1.5; width: 100%; }
+  .actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; }
+  .state { font: 500 var(--fs-sm) / 1.5 var(--font-ui); color: var(--text-2); }
+  .state.queued { color: var(--ok); }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#noi-dung">Bỏ qua tới nội dung</a>
+<main class="wrap" id="noi-dung">
+
+<header>
+  <p class="kicker">design-kit · 18/11/2026</p>
+  <h1>Chấm điểm logo, icon và hình vẽ</h1>
+  <p class="lead">design-kit có lệnh mới <code>design-kit check-image</code>: chấm từng logo, icon, ký hiệu hay hình minh hoạ từ 0 tới 100 bằng số đo thật, nói rõ vì sao mất điểm, và lưu một tờ soát để anh xem những gì máy không chấm được.</p>
+  <div class="stats">
+    <div class="stat surface"><span class="v">3 loại hình</span><span class="k">logo, icon (cả ký hiệu, biểu tượng), minh hoạ; mỗi loại một bộ trọng số</span></div>
+    <div class="stat surface"><span class="v">100 / 100</span><span class="k">điểm trung bình của 134 icon Lucide chạy thật; độ đồng bộ của bộ: 99</span></div>
+    <div class="stat surface"><span class="v" id="so-test">120 test đạt</span><span class="k">gồm 32 test mới cho phép đo hình và lệnh</span></div>
+    <div class="stat surface"><span class="v">1 lỗi thật</span><span class="k">icon.svg của codex-chatgpt-web hiện thành ô tối trơn trên trình duyệt</span></div>
+  </div>
+</header>
+
+<section aria-labelledby="dung">
+  <h2 id="dung">Cách dùng</h2>
+  <ul class="cmds">
+    <li><code>design-kit check-image brand/logo.svg</code><span>chấm một logo</span></li>
+    <li><code>design-kit check-image icons/ --strict</code><span>cả thư mục icon, so với nhau như một bộ</span></li>
+    <li><code>design-kit check-image hero.png --kind illustration --display 1200</code><span>minh hoạ hiện rộng 1200 px</span></li>
+    <li><code>design-kit check-image brand/ --min-score 70 --strict</code><span>thoát 1 khi có hình dưới 70 điểm</span></li>
+  </ul>
+  <p>Mỗi hình nhận một dòng điểm, các tiêu chí kèm số đo, và các phát hiện <b>cứng</b> (chưa được báo xong, điểm bị giữ ≤ 49) hoặc <b>mềm</b> (sửa hoặc ghi lý do). Đọc được SVG, PNG, JPEG, WebP, AVIF, GIF, ICO. Loại hình được đoán theo tên tệp rồi theo cỡ và màu; đoán sai thì truyền <code>--kind</code>. Không thêm gói phụ thuộc nào: Edge sẵn có làm việc giải mã và vẽ.</p>
+</section>
+
+<section aria-labelledby="cham">
+  <h2 id="cham">Chấm những gì</h2>
+  <p>Mọi điểm đến từ số đo trên điểm ảnh và mã SVG, không nhờ mô hình nhìn ảnh chấm thẩm mỹ: đợt nghiên cứu trước đã thấy mô hình như vậy chấm "hoàn hảo" 14/15 hình hỏng.</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Tiêu chí</th><th>Đo gì</th><th>Logo</th><th>Icon</th><th>Minh hoạ</th><th>Căn cứ</th></tr></thead>
+      <tbody>
+        <tr><td>Thu nhỏ</td><td>Phần đường viền thuộc nét, chấm, khe mảnh hơn 1 px ở 32 và 16 px (mũi nhọn không tính)</td><td class="n">30</td><td class="n">20</td><td class="n">—</td><td>Material nét 2 dp; Fluent giảm chi tiết dưới 48 px; NHS logo ≥ 30 px</td></tr>
+        <tr><td>Tương phản</td><td>Dải viền ngoài của hình đạt 3:1 trên nền trắng và nền tối</td><td class="n">20</td><td class="n">10</td><td class="n">15</td><td>WCAG 1.4.11 (icon bắt buộc; logo được miễn nên chỉ là cổng mềm)</td></tr>
+        <tr><td>Thang xám</td><td>Các màu chạm nhau còn tách được chỉ bằng độ sáng</td><td class="n">20</td><td class="n">—</td><td class="n">10</td><td>Logo không được dựa vào màu; WCAG 1.4.1</td></tr>
+        <tr><td>Bảng màu</td><td>Số màu phẳng, phần chuyển sắc; icon nên một màu, dùng <code>currentColor</code></td><td class="n">5</td><td class="n">10</td><td class="n">—</td><td>Fluent, Carbon: icon một màu đặc</td></tr>
+        <tr><td>Lưới điểm</td><td>Cạnh thẳng nằm giữa hai điểm ảnh ở cỡ gốc (thành vệt xám 2 px)</td><td class="n">—</td><td class="n">15</td><td class="n">—</td><td>Carbon: toạ độ nguyên điểm ảnh</td></tr>
+        <tr><td>Khung</td><td>Lề, độ đầy khung, lệch tâm, khung vuông, vòng an toàn maskable</td><td class="n">—</td><td class="n">15</td><td class="n">—</td><td>Material vùng sống 20/24; W3C maskable 40%</td></tr>
+        <tr><td>Độ đơn giản</td><td>Độ phức tạp chu vi (chu vi² / diện tích)</td><td class="n">ghi</td><td class="n">10</td><td class="n">—</td><td>Pelli 2006: Helvetica 67, chữ Hán 199, Künstler 451; logo không có mức tối ưu nên chỉ ghi</td></tr>
+        <tr><td>Độ sắc</td><td>Bề rộng các cạnh mạnh nhất (ảnh bị phóng to thì cạnh rộng)</td><td class="n">—</td><td class="n">—</td><td class="n">30</td><td>Marziliano 2002; mốc tự hiệu chỉnh</td></tr>
+        <tr><td>Độ phân giải</td><td>Cỡ thật so với <code>--display</code></td><td class="n">cờ</td><td class="n">cờ</td><td class="n">15</td><td>Lighthouse: 2× tới 64 px, 1,5× trên đó</td></tr>
+        <tr><td>Tệp</td><td>SVG sạch (script là cứng; chữ sống, ảnh nhúng, tham chiếu ngoài, thiếu viewBox là mềm), định dạng, dung lượng</td><td class="n">25</td><td class="n">20</td><td class="n">30</td><td>SVG làm ảnh không nạp font ngoài; SVG chứa script gây XSS; Chrome nhắm ~1/6 byte mỗi điểm</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small muted">Nguồn đầy đủ: 43 nguồn mới (s74–s116) và 51 luận điểm (c79–c129) trong <code>docs/nguon.md</code>; ngưỡng và lý do trong <code>docs/tieu-chi.md</code>, mục "Hình".</p>
+</section>
+
+<section aria-labelledby="chi-tiet">
+  <h2 id="chi-tiet">Đo "chi tiết mất khi thu nhỏ" thế nào</h2>
+  <ol class="steps">
+    <li class="surface"><b>Vẽ lớn</b><p>SVG với cạnh ngắn 512 điểm, ảnh điểm ở cỡ thật; tách hình khỏi nền (trong suốt, ô gạch, nền đặc).</p></li>
+    <li class="surface"><b>Mở hình</b><p>Một đĩa rộng đúng 1 px của cỡ 32 hay 16 px quét qua: nét, chấm, khe mảnh hơn thế biến mất.</p></li>
+    <li class="surface"><b>Đo theo viền</b><p>Lấy phần đường viền thuộc chỗ vừa mất, tính cả ranh giới giữa các màu bên trong hình.</p></li>
+    <li class="surface"><b>Bỏ báo nhầm</b><p>Bỏ lớp "bào" ở mép do rời rạc hoá, và mũi nhọn (diện tích / cạnh nối² dưới 2) vốn chỉ bị tròn đi.</p></li>
+  </ol>
+  <p>Mốc hiệu chỉnh trên 272 icon Lucide: 99% icon mất dưới 1% ở 24 và 16 px; nét 0,5 px mất 100%; nét 1 px mất 0% ở 24 px và 100% ở 16 px.</p>
+</section>
+
+<section aria-labelledby="mau">
+  <h2 id="mau">Thử trên hình mẫu</h2>
+  <p>Mỗi hình mẫu trong <code>test/fixtures/hinh/</code> cố ý mắc (hoặc tránh) một nhóm lỗi; test đầu-cuối khoá các kết quả này.</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Hình</th><th>Điểm</th><th>Phát hiện chính</th></tr></thead>
+      <tbody>
+        <tr><td><code>logo-tot.svg</code></td><td class="n">95 tốt</td><td>Hai màu phẳng, nổi trên cả hai nền; chỉ ghi chú vạch mảnh trong lá mất ở 16 px (nên có bản favicon giản lược)</td></tr>
+        <tr><td><code>logo-xau.svg</code></td><td class="n">39 kém</td><td>Chữ sống, thiếu viewBox, vòng nét 0,6 mất 58% viền ở 32 px, chữ tối biến mất trên nền tối, đỏ cạnh xanh lá chỉ 1,09:1 khi chuyển xám, 6 màu và 61% chuyển sắc</td></tr>
+        <tr><td><code>logo-jpeg.jpg</code></td><td class="n">84 khá</td><td>Logo nên là SVG; hình phẳng lưu JPEG bị viền nhoè</td></tr>
+        <tr><td><code>bieu-tuong-doc.svg</code></td><td class="n">49 kém</td><td><b>Cứng</b>: <code>&lt;script&gt;</code> và <code>onload</code> trong SVG</td></tr>
+        <tr><td><code>icon-manh.svg</code></td><td class="n">49 kém</td><td><b>Cứng</b>: nét 0,5 px mất hết ở chính cỡ 24 px</td></tr>
+        <tr><td><code>icons/</code> (5 icon)</td><td class="n">bộ 84</td><td>Chuông nét 1 px lệch lưới và lệch bộ; sao tô đặc lẫn trong bộ nét, tô cứng <code>#111</code>, lệch tâm 3 px</td></tr>
+        <tr><td><code>minh-hoa-sac.png</code> / <code>-mo.png</code></td><td class="n">96 / 54</td><td>Cùng một cảnh: bản xuất thẳng cạnh 2,0 px; bản phóng to ×3 cạnh 9,4 px</td></tr>
+        <tr><td><code>app-maskable.svg</code></td><td class="n">khá</td><td>4% hình nằm ngoài vòng an toàn 40% của icon maskable</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="shots" style="margin-top: var(--sp-5)">
+    <figure><img src="anh/check-image/logo-xau.png" alt="Tờ soát logo xấu: các cỡ trên nền sáng và tối, thang xám, một màu, chỗ chi tiết mất ở 16 px tô đỏ và cam" width="925" height="1344" loading="lazy"><figcaption>Tờ soát của logo xấu: chữ tối mất trên nền tối, vòng nét mảnh và lòng chữ bị lấp tô đỏ/cam ở 16 px.</figcaption></figure>
+    <figure><img src="anh/check-image/chuong.png" alt="Tờ soát icon chuông nét 1 px: lưới điểm ở 24 px cho thấy nét thành vệt xám hai điểm" width="640" height="1576" loading="lazy"><figcaption>Icon chuông nét 1 px: ô "Pixels at 24 px" phóng ×8 cho thấy nét rơi giữa hai điểm ảnh thành vệt xám.</figcaption></figure>
+    <figure><img src="anh/check-image/bo-icon.png" alt="Tờ soát bộ 5 icon ở 16, 24, 32, 48 px và nền tối, cột cuối ghi icon lệch bộ" width="853" height="461" loading="lazy"><figcaption>Tờ soát bộ icon: cột cuối ghi icon nào lệch bộ và lệch ở đâu.</figcaption></figure>
+  </div>
+</section>
+
+<section aria-labelledby="that">
+  <h2 id="that">Thử trên logo và icon thật trong D:\code</h2>
+  <p>14 hình của 5 dự án (icon thương hiệu Home Assistant của karofi_ha, evncskh_ha, ariston_ha; icon của nutrikids; icon launcher của codex-chatgpt-web), 6,7 giây. Lần chạy đầu để lộ hai chỗ đo sai của chính công cụ, đã sửa (mục dưới); lần chạy sau:</p>
+  <div class="grid2">
+    <div class="card surface">
+      <h3>Lỗi thật: icon.svg không hiện logo</h3>
+      <p>Trong <code>codex-chatgpt-web/launcher/assets/icon.svg</code>, logo trắng nằm trong nhóm có <code>filter="url(#mark-shadow)"</code>. Vùng lọc khai báo theo <code>userSpaceOnUse</code> (x 116, rộng 792) nhưng nhóm bị <code>scale(28)</code>, nên vùng lọc dời ra ngoài và cắt mất cả logo. Trên Edge, icon chỉ còn ô tối trơn; bản <code>icon.png</code> cùng tên thì vẫn đủ. Công cụ báo lỗi cứng "không nổi" cho bản SVG.</p>
+    </div>
+    <div class="card surface">
+      <h3>Icon thương hiệu Home Assistant: 98–100</h3>
+      <p>Đây là icon dạng ô gạch (ô vuông bo góc, nền chuyển sắc, hình trắng ở giữa). Ariston mất điểm vì vạch cam dưới giọt nước chỉ còn 0,7 px ở 16 px. Logo PNG được nhắc nên có thêm bản SVG. Nutrikids: 42% đường viền là chi tiết mảnh ở 16 px.</p>
+    </div>
+  </div>
+  <div class="shots" style="margin-top: var(--sp-5)">
+    <figure><img src="anh/check-image/codex-svg.png" alt="Tờ soát icon.svg của codex-chatgpt-web: chỉ thấy ô tối, không có logo" width="640" height="1576" loading="lazy"><figcaption><code>icon.svg</code>: chỉ còn ô tối, logo bị vùng lọc cắt mất.</figcaption></figure>
+    <figure><img src="anh/check-image/codex-png.png" alt="Tờ soát icon.png của codex-chatgpt-web: logo nút thắt trắng hiện rõ" width="640" height="1576" loading="lazy"><figcaption><code>icon.png</code> cùng tên: logo hiện đủ, nhưng nét mảnh mất nhiều ở 16 px.</figcaption></figure>
+    <figure><img src="anh/check-image/karofi-icon.png" alt="Tờ soát icon thương hiệu karofi: giọt nước trắng trên ô xanh, bản một màu chỉ còn giọt nước" width="640" height="1576" loading="lazy"><figcaption>Ô gạch karofi_ha: bản một màu giờ chỉ lấy giọt nước, không tô đen cả ô.</figcaption></figure>
+  </div>
+</section>
+
+<section aria-labelledby="sua">
+  <h2 id="sua">Những chỗ đo sai đã sửa nhờ xem ảnh</h2>
+  <p>Máy đo đạt chưa phải là đúng: mỗi chỗ dưới đây chỉ lộ ra khi mở tờ soát hoặc chạy trên hình thật.</p>
+  <div class="fix"><span class="n">1</span><p><b>Đo theo diện tích bỏ sót nét mảnh dài.</b> Hai vòng nét 0,6 biến mất hẳn mà chỉ chiếm 7% diện tích. Đổi sang đo theo đường viền.</p></div>
+  <div class="fix"><span class="n">2</span><p><b>Mép hình tròn bị "bào" và mũi nhọn bị tính là mất.</b> Icon Lucide chuẩn từng báo 17%, ngôi sao 21%. Bỏ mảnh mỏng hơn 2 điểm và mảnh hình nêm: Lucide về dưới 1%.</p></div>
+  <div class="fix"><span class="n">3</span><p><b>Logo dài vẽ theo cạnh dài làm nét mảnh lọt mặt nạ.</b> Vẽ theo cạnh ngắn 512 điểm.</p></div>
+  <div class="fix"><span class="n">4</span><p><b>Dò chuyển sắc đục lỗ vùng màu</b> (một vòng điểm cách mép đúng 8 bị tính nhầm), làm logo tốt tụt 95 → 70; nhiễu JPEG cũng đục lỗ. Chỉ so điểm giữa vùng, lấp lỗ về vùng gần nhất.</p></div>
+  <div class="fix"><span class="n">5</span><p><b>Icon ô gạch bị coi cả ô là hình</b>: 12 icon thật bị báo "chạm mép", bản một màu thành ô đen. Thêm chế độ ô gạch: khớp mặt phẳng màu trên dải vòng trong của ô.</p></div>
+  <div class="fix"><span class="n">6</span><p><b>Tờ soát ghi đè nhau</b> khi <code>icon.svg</code> và <code>icon.png</code> cùng thư mục. Tên tờ giữ đuôi tệp.</p></div>
+</section>
+
+<section aria-labelledby="gioi-han">
+  <h2 id="gioi-han">Giới hạn và việc còn mở</h2>
+  <ul class="tight">
+    <li>Không chấm ý nghĩa, độ dễ nhận ra, độ hợp thương hiệu: các thứ đó xem trên tờ soát.</li>
+    <li>Độ phức tạp của logo chỉ được ghi, không chấm: nghiên cứu không cho mức tối ưu.</li>
+    <li>Hook của plugin giờ nhắc chạy <code>check-image</code> khi agent sửa logo, icon (theo tên tệp hoặc thư mục), và chặn một lần lúc dừng nếu chưa chấm.</li>
+    <li>Skill tăng từ khoảng 5,1 lên 5,3 nghìn token mỗi lần gọi (một gạch đầu dòng và từ khoá trong mô tả).</li>
+    <li>Kho tri thức <code>research-hub</code> có 43 nguồn mới nhưng chưa commit; repo đó đang có thay đổi của phiên khác.</li>
+    <li>Chưa commit trong design-kit: nhánh main được bảo vệ, cần PR qua CI.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="chi-phi">
+  <h2 id="chi-phi">Chi phí của việc này</h2>
+  <p id="chi-phi-noi-dung">Đo bằng <code>cc-usage</code> từ lúc anh gửi yêu cầu (15:10:16) tới 16:03:28, khử trùng lặp theo requestId; phần mở trang và trả lời sau mốc này chưa tính. Giá là giá API niêm yết, không phải tiền gói thuê bao.</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Phần</th><th>Lệnh gọi</th><th>Input</th><th>Ghi cache</th><th>Đọc cache</th><th>Output</th></tr></thead>
+      <tbody>
+        <tr><td>Phiên chính (Opus 5.5)</td><td class="n">157</td><td class="n">314</td><td class="n">555 615</td><td class="n">62 187 103</td><td class="n">300 141</td></tr>
+        <tr><td>Agent nghiên cứu nguồn (Opus 5.5)</td><td class="n">122</td><td class="n">248</td><td class="n">296 646</td><td class="n">23 589 039</td><td class="n">83 160</td></tr>
+        <tr><td><b>Tổng</b></td><td class="n"><b>279</b></td><td class="n"><b>562</b></td><td class="n"><b>852 261</b></td><td class="n"><b>85 776 142</b></td><td class="n"><b>383 301</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Quy đổi: <b>khoảng 30,75 USD</b>. Phần lớn là đọc lại ngữ cảnh (đọc cache) của phiên dài.</p>
+</section>
+
+<section aria-labelledby="hoi">
+  <h2 id="hoi">Anh chọn việc tiếp theo</h2>
+  <form class="ask surface" id="ask" data-lavish-question="check-image-tiep">
+    <fieldset>
+      <legend>Những việc anh muốn em làm tiếp (chọn nhiều)</legend>
+      <label class="opt"><input type="checkbox" name="viec" value="pr" checked><span><b>Tạo nhánh, commit và mở PR</b><span class="sub">Nhánh <code>feat/check-image</code>, CI "check" chạy trên GitHub; không merge khi anh chưa duyệt.</span></span></label>
+      <label class="opt"><input type="checkbox" name="viec" value="codex-icon"><span><b>Sửa icon.svg của codex-chatgpt-web</b><span class="sub">Đổi vùng lọc sang <code>objectBoundingBox</code> (hoặc đặt bóng ngoài nhóm co giãn), rồi chấm lại tới khi logo hiện.</span></span></label>
+      <label class="opt"><input type="checkbox" name="viec" value="hook"><span><b>Hook nhắc chạy check-image</b><span class="sub">Khi agent sửa tệp <code>.svg</code>/<code>.png</code> tên có logo, icon, favicon; chặn một lần lúc dừng nếu chưa chấm.</span></span></label>
+      <label class="opt"><input type="checkbox" name="viec" value="kb"><span><b>Commit 43 nguồn mới vào research-hub</b><span class="sub">Chỉ chủ đề tiêu chuẩn giao diện; không đụng thay đổi của phiên khác.</span></span></label>
+    </fieldset>
+    <label class="field"><span class="label">Ghi chú thêm (không bắt buộc)</span><textarea class="input" name="ghi-chu" rows="3"></textarea></label>
+    <div class="actions">
+      <button type="submit" class="btn btn-primary">Gửi lựa chọn cho agent</button>
+      <span class="state" id="ask-state" role="status" aria-live="polite">Chưa gửi. Bấm nút để xếp lựa chọn vào hàng gửi cho agent.</span>
+    </div>
+  </form>
+</section>
+
+</main>
+<script>
+  // Khổ hẹp: mỗi ô mang nhãn cột của nó (CSS hiện bằng ::before).
+  for (const table of document.querySelectorAll('table')) {
+    const heads = [...table.querySelectorAll('thead th')].map((th) => th.textContent.trim());
+    for (const tr of table.querySelectorAll('tbody tr')) [...tr.children].forEach((td, i) => { if (heads[i]) td.dataset.label = heads[i]; });
+  }
+  document.getElementById('ask').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const f = new FormData(event.currentTarget);
+    const viec = f.getAll('viec').map(String);
+    const ghi = String(f.get('ghi-chu') || '').trim();
+    const ten = { pr: 'Tạo nhánh, commit, mở PR', 'codex-icon': 'Sửa icon.svg codex-chatgpt-web', hook: 'Hook nhắc check-image', kb: 'Commit nguồn vào research-hub' };
+    const st = document.getElementById('ask-state');
+    if (!viec.length && !ghi) { st.textContent = 'Chưa chọn việc nào: chọn ít nhất một việc hoặc ghi chú.'; return; }
+    const text = `check-image, việc tiếp theo: ${viec.map((v) => ten[v]).join('; ') || '(không chọn)'}${ghi ? ' · Ghi chú: ' + ghi : ''}`;
+    if (window.lavish && typeof window.lavish.queuePrompt === 'function') {
+      window.lavish.queuePrompt(text, { tag: 'choice', text, element: event.currentTarget, queueKey: 'check-image-tiep', data: { question: 'check-image-tiep', answers: { viec, ghi } } });
+      st.textContent = 'Đã xếp vào hàng. Bấm “Send to Agent” trên thanh Folio để gửi.';
+      st.classList.add('queued');
+    } else {
+      st.textContent = 'Trang đang mở ngoài Folio: chép câu này gửi vào chat. ' + text;
+    }
+  });
+</script>
+</body>
+</html>

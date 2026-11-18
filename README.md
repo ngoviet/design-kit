@@ -54,6 +54,14 @@ ring, motion that ignores reduced-motion, a "Next" button that does not say wher
   columns and in every language of the mod. Terminal drawings are laid out with Ink and measured on a dark and a light
   terminal; desktop drawings become a page for axe and the text probe; the engine's own limits are checked on the
   trees.
+- **Scores logos, icons and illustrations.** `design-kit check-image <file|dir>` draws each SVG, PNG, JPEG, WebP or
+  AVIF in the browser at the sizes it is used at and gives it 0–100 with a reason per criterion: detail finer than
+  1 px at 32 and 16 px (sharp tips excluded), contrast of its outline on a light and a dark background, colors that
+  merge in grayscale, palette and gradients, straight edges off the pixel grid, margins and centering in an icon's
+  box, sharpness (an enlarged bitmap), file format and weight, and SVG hygiene (script, live text, embedded bitmaps,
+  external references, viewBox). Icons in one folder are compared as a set (stroke, weight, size). A contact sheet per
+  image shows it at every size, on light and dark, in grayscale and one color, and where detail is lost at 16 px.
+  Thresholds are calibrated on 272 Lucide icons and backed by sources (Pelli 2006, WCAG 1.4.11, Material, Lighthouse).
 - **Measures the states behind a click.** A `<page>.steps.json` beside the page lists states such as form errors,
   step 3 of a wizard or an open menu. Each one is a fresh load plus scripted actions, measured with every check.
 - **Guides like a game tutorial.** The CLI reminds the agent to write a task map first and to cover every point where
@@ -126,6 +134,7 @@ design-kit check dist --jobs 6               # every .html in a folder, 6 at a t
 design-kit check signup.html --steps '[{"name":"error","do":[{"click":"button[type=submit]"}]}]'
 design-kit inline report.html               # put linked stylesheets into the page (opens without a server)
 design-kit check-mod plugins/session-band  # gate a Claude Code mod (needs Claude Code installed)
+design-kit check-image brand/logo.svg icons/ # score a logo and an icon set, save contact sheets
 ```
 
 Starting a project: copy the DESIGN.md of the closest direction into the project (the `kit:` line of `design-kit`
@@ -207,6 +216,32 @@ forces the mod's `language` option and makes `expect` soft, since a test that co
 there. Screenshots go to `.design-kit/shots/mod-<name>/`: each terminal one shows the dark and the light terminal,
 with a dashed line at the right edge.
 
+A logo with planted faults (`test/fixtures/hinh/logo-xau.svg`: live text, no viewBox, two 0.6-unit hairline rings,
+a gradient, red beside green of the same lightness; shortened):
+
+```text
+$ design-kit check-image test/fixtures/hinh/logo-xau.svg --limit 3
+status: "pass: 1 image, 0 hard failures, score 39 (poor)"
+images[1]{file,kind,score,grade,hard,soft}:
+  test/fixtures/hinh/logo-xau.svg,logo (file name),39,poor,0,7
+scores[5]{criterion,score,weight,measured}:
+  file,50,25,"SVG 1 KB: live text, no viewBox"
+  small,0,30,"outline in detail finer than 1 px: 58% at 32 px, 67% at 16 px tall"
+  contrast,69,20,"76% of the outline ≥ 3:1 on #ffffff (median 7.40:1); 47% of the outline ≥ 3:1 on #121212 (median 1.14:1)"
+  mono,63,20,"6 touching color pair(s), weakest #d63031/#1f8a2f at 1.09:1 in grayscale"
+  palette,0,5,"6 color(s) (#e17055 #d63031 #1f8a2f #6c5ce7 #1d1d35), 61% gradient/texture"
+findings[3]{gate,check,detail}:
+  soft,svg-text,"1 <text> element(s) (\"Công ty ABC\"): drawn with whatever font the viewer has; …"
+  soft,svg-viewbox,"no viewBox (width=\"480\" height=\"160\"): as <img> it scales, but inlined as <svg> … cropped"
+  soft,small-size,"58% of the outline belongs to detail finer than 1 px when the logo is 32 px tall …"
+  …
+```
+
+The score says how well the image survives real use; *hard* findings (a file the browser cannot draw, SVG with
+script, an icon mostly finer than 1 px at its own size, a bitmap smaller than its display size) block "done" and cap
+the score at 49. Contact sheets go to `.design-kit/shots/images/`, one per image and `set-<folder>.png` per icon set:
+recognisability, meaning and fit with the brand are judged there, not scored.
+
 ## Commands
 
 | Command | What it does |
@@ -214,6 +249,7 @@ with a dashed line at the right edge.
 | `design-kit` (or `home`) | Kit location, directions, blocks, browser and engine, and the `workflow` reminders |
 | `design-kit check <file\|dir\|url>...` | The gate. Exit 0 when the pages were checked (read `status`); `--strict` exits 1 on a hard failure |
 | `design-kit check-mod <mod folder>` | Gate a Claude Code mod's `ui.render` drawings: its tests swept over terminal and desktop, every width and language. Needs Claude Code (`claude`, or `CLAUDE_BIN`) |
+| `design-kit check-image <file\|dir>...` | Score logos, icons and illustrations 0–100 from measurements, compare icons in one folder as a set, save contact sheets. `--strict` exits 1 on a hard failure, `--min-score <n>` on a low score |
 | `design-kit inline <page.html> [--ra <out.html>] [--dry-run]` | Put the page's relatively linked stylesheets into `<style>` tags in place, keep font links, so it opens without a server |
 | `design-kit setup [--download] [--no-browser]` | Find a browser and the Impeccable engine; download the pinned engine when it is missing |
 | `design-kit doi-mau --huong <dem\|giay\|dam> --nhan <0-360> [--trung-tinh <0-360>] --ra <file.css>` | Re-hue a direction's accent (and neutrals) for a brand; every color pair still passes WCAG |
@@ -272,6 +308,23 @@ axe; *soft* are `rows` (a band taller than `maxRows`, or taller when narrow), `t
 desktop is an empty box on the terminal), `hard-color` (a hex that does not follow the person's theme, with the
 nearest theme key) and `tests`.
 
+Flags of `check-image`:
+
+| Flag | Meaning |
+| --- | --- |
+| `--kind <auto\|logo\|icon\|illustration>` | What the image is (default: guessed from the file name, then size and colors; symbols and pictograms are icons) |
+| `--display <px>` | Size it is shown at (logo: height; icon, illustration: longest side): bitmaps need 2× up to 64 px, 1.5× above (Lighthouse) |
+| `--bg <light=#hex,dark=#hex>` | Backgrounds for the contrast test (default `#ffffff` and `#121212`) |
+| `--no-set` | Do not compare the icons of a folder as a set |
+| `--min-score <n>` | Exit 1 when an image scores below n |
+| `--shots <dir>` / `--no-shots` | Contact sheet folder (default `.design-kit/shots/images`) / none |
+| `--strict` | Exit 1 on a hard failure |
+
+Weights per kind: **logo** small 30, contrast 20, grayscale 20, palette 5, file 25 (complexity is reported, not
+scored: research finds no best level for logos); **icon** small 20, pixel grid 15, frame 15, contrast 10, color 10,
+simplicity 10, file 20; **illustration** sharpness 30, resolution 15 (with `--display`), contrast 15, grayscale 10,
+file 30.
+
 ## How it works
 
 1. Local files are served over `http://127.0.0.1` from the nearest folder with `.git` or `package.json`, so relative
@@ -305,6 +358,22 @@ never paints:
    scheme. The page is an approximation; verdicts rest on what the mod sets itself (hex colors, SVG font sizes,
    source length, animation).
 
+`check-image` measures pixels, not taste:
+
+1. Each image is decoded by the browser and drawn on a canvas: SVG with its shorter side at 512 px (so a hairline of
+   a 3:1 wordmark is still wider than a pixel), bitmaps at their own size, plus the icon's native size (its viewBox,
+   12–64 px). The SVG source is read with `DOMParser`.
+2. Shape: what is figure and what is background (alpha; an app-icon tile, where a plane is fitted to the tile's
+   color on an inner ring and the figure is what departs from it; the border color; else an edge-to-edge picture), then a
+   Euclidean distance transform. Opening the shape with a disk one display pixel wide at 32 and 16 px removes every
+   stroke, dot and gap thinner than that; the outline length that belongs to them is the "detail lost". Sharp tips,
+   which only get rounded, are told apart by how widely they join the rest of the shape. Color regions inside the
+   shape count too, so a thin bar across a white leaf in a green disk is seen.
+3. Color: flat colors are clustered in OKLab and gradients found by how color changes with distance; contrast is
+   measured on the outline's rim against each background; touching color pairs are compared by lightness alone.
+4. Other measures: perimetric complexity (Pelli 2006), straight edges that fall between pixels at native size, margins
+   and centering in the icon's box, edge width for blur (Marziliano 2002), the W3C maskable safe circle.
+
 Thresholds, how each is measured and its source (a standard, research or a convention) are in
 [`docs/tieu-chi.md`](docs/tieu-chi.md); the quoted sources are in [`docs/nguon.md`](docs/nguon.md). Design decisions
 and their reasons are in [`docs/quyet-dinh.md`](docs/quyet-dinh.md) (Vietnamese).
@@ -323,7 +392,9 @@ had 45 hard failures and the design-kit builds 0. The owner picked the design-ki
   too: a UI file git sees as changed after the session started needs a check that finished after the change. Test
   fixtures, the session's scratchpad and files deleted since are left out. A `.tsx` file in the `hooks/` folder of a
   Claude Code mod (drawn with `ui.render`, no HTML page) asks for `claude plugin test` on the mod, or the repository's
-  `tools/check.sh`, instead of the gate. The hook script has no npm dependencies.
+  `tools/check.sh`, instead of the gate. An edited logo, icon or illustration (an SVG or bitmap whose name or folder
+  says logo, icon, favicon, brand, symbol…) asks for `design-kit check-image` on the file or its folder. The hook
+  script has no npm dependencies.
 - **Other agents** (Codex, OpenCode, Cursor, …): call the CLI through the shell; the TOON output and `help[]` lines
   are written for them. Point the agent at `skills/design-kit/SKILL.md` as instructions.
 - Page text that appears in findings is data, not instructions to the agent.
@@ -337,6 +408,7 @@ blocks/html/       13 HTML/CSS blocks, each with an optional <block>.steps.json
 blocks/react/      Vite + React + shadcn/ui blocks on the same tokens
 src/               the CLI (check, probe, copy, steps, browser, impeccable, color commands)
 src/mod/           check-mod: shim and generic test, test runner, Ink terminal, desktop page, engine rules
+src/image/         check-image: canvas rendering, shape, color, sharpness, scoring, contact sheets
 data/              copy-tells.json (copy check), claude-themes.json (Claude Code theme colors for check-mod)
 skills/, hooks/    the Claude Code plugin; .claude-plugin/ holds its manifest and marketplace
 scripts/           color pair check, DESIGN.md generator, font download, source export, Claude Code theme colors

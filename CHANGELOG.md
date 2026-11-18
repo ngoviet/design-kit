@@ -7,6 +7,32 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `design-kit check-image <file|dir>...`: scores logos, icons (symbols, pictograms) and illustrations 0–100 from
+  measurements, with a reason per criterion, and compares the icons of one folder as a set. Each image (SVG, PNG,
+  JPEG, WebP, AVIF, GIF, ICO) is drawn on a canvas in the browser: SVG with its shorter side at 512 px, bitmaps at
+  their own size, icons also at their native size. Criteria: detail finer than 1 px at 32 and 16 px (a Euclidean
+  distance transform opens the shape with a disk one display pixel wide; the outline length of what vanishes is
+  counted, sharp tips are not, and color regions inside the shape count too), contrast of the outline's rim on
+  `#ffffff` and `#121212` (WCAG 1.4.11: hard for icons, soft for logos, which are exempt), touching colors that merge
+  in grayscale, palette and gradients, straight edges between pixels at native size, margins, fill and centering in an
+  icon's box, the maskable safe circle, perimetric complexity for icons (Pelli 2006; reported, not scored, for logos),
+  edge width for blur (Marziliano 2002), resolution against `--display` (Lighthouse), file format and weight, and SVG
+  hygiene (script and `on*` attributes are hard; live `<text>`, embedded bitmaps, external references, no viewBox,
+  `preserveAspectRatio="none"` are soft). Hard findings cap the score at 49; `--min-score <n>` exits 1 below n. A
+  contact sheet per image (every size on light and dark, grayscale, one color, reversed, the pixel grid at native
+  size, where detail is lost at 16 px, a squint view for illustrations) and one per icon set go to
+  `.design-kit/shots/images/`. Calibrated on 272 Lucide icons (99% lose under 1% of their outline at 24 and 16 px; a
+  0.5 px stroke loses 100%) and on one scene exported directly (edges 2.0 px) and enlarged ×1.5 to ×4 (5.6–12.3 px).
+  134 Lucide icons checked as a set: mean score 100, consistency 99, 0.13 s per icon. 43 new sources (s74–s116) and 51
+  claims (c79–c129) in `docs/nguon.md`. No new dependencies.
+- Plugin hook: an edited logo, icon or illustration (`.svg`, `.png`, `.jpg`, `.webp`, `.avif`, `.ico` whose file or
+  folder name says logo, icon, favicon, brand, symbol, …) gets a reminder to run `design-kit check-image`, and Stop
+  blocks once until a `check-image` that names the file or its folder ran after the edit.
+
+### Fixed
+
+- Plugin hook: `design-kit check-image` (and `check-mod`) no longer count as a run of the page gate; the old pattern
+  matched `check` followed by any word boundary, a hyphen included.
 - `design-kit check-mod <mod folder>`: a gate for Claude Code mods, whose hooks draw with `ui.render` and have no page
   to open. It copies the mod to a temporary folder, points its tests' `claude-code/testing` import at a shim and runs
   `claude plugin test` once per language of the mod's `language` option. Every `$.ui.mount` a test makes is drawn

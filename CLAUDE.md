@@ -41,9 +41,16 @@ Chuẩn và cổng cho giao diện do agent làm.
     - `mod/terminal.ts`: cây → Ink `renderToString` → lưới chữ, đo, ảnh ANSI → HTML. `mod/desktop.ts`: cây → trang HTML (theo lô).
     - `mod/rules.ts`: luật engine. `mod/colors.ts`: màu khoá theme (`data/claude-themes.json`, sinh bằng `node scripts/claude-themes.mjs`).
   - `test/fixtures/mods/xau/`: mod cố ý mắc mỗi lỗi một lần cho test check-mod; nằm ngoài tsc, eslint, vitest.
+  - `commands/check-image.ts` + `image/`: lệnh `check-image`, chấm logo, icon, minh hoạ 0–100.
+    - `image/render.ts`: trình duyệt giải mã và vẽ ảnh ra canvas (trả RGBA base64), đọc SVG bằng `DOMParser`.
+    - `image/shape.ts`: tách hình khỏi nền (`alpha`, `tile`, `plain`, `full`), biến đổi khoảng cách Euclid, chi tiết mất khi thu nhỏ, độ dày, lề, độ phức tạp chu vi, lưới điểm. Hàm thuần.
+    - `image/color.ts`: bảng màu OKLab, chuyển sắc, tương phản trên dải viền, phép thử thang xám. `image/sharp.ts`: bề rộng cạnh, tỉ số nén.
+    - `image/score.ts`: đường cong điểm, trọng số theo loại, phát hiện cứng/mềm, so bộ icon, đoán loại. `image/sheet.ts`: tờ soát.
+  - `test/fixtures/hinh/`: hình mẫu cho check-image (logo tốt/xấu, icon nét mảnh, SVG có script, bộ `icons/`, minh hoạ sắc/mờ, maskable).
 - `hooks/nhac-giao-dien.mjs`: hook của plugin, không phụ thuộc gói nào.
   - PostToolUse: nhắc khi có sửa tệp giao diện, tối đa 15 phút một lần.
   - Stop: đọc transcript, chặn đúng một lần nếu sau lần sửa giao diện cuối chưa chạy `design-kit check`. Tệp không còn tồn tại thì bỏ qua.
+  - Hình (svg, png, jpg, webp, avif, ico có tên tệp hay thư mục là logo, icon, favicon, brand, ký hiệu…): hai sự kiện trên đòi `design-kit check-image` trên tệp hay thư mục chứa nó. Mẫu nhận lần chạy cổng trang không được khớp `check-image`/`check-mod` (từng khớp, vì dấu gạch là ranh giới từ).
   - Mod Claude Code: tệp `.tsx`/`.jsx` trong `hooks/` của plugin gần nhất có `hooks/hooks.json` vẽ bằng `ui.render`, nên hai sự kiện trên đòi `claude plugin test` (hoặc `tools/check.sh` của repo) thay cho cổng. Phải xét "nằm trong `hooks/`", vì chính design-kit cũng là plugin có `hooks/hooks.json`: chỉ xét "thuộc plugin" thì `blocks/react/src/*.tsx` bị miễn kiểm nhầm.
 
 ## Lệnh
@@ -59,6 +66,8 @@ Chuẩn và cổng cho giao diện do agent làm.
 
 - Mod Claude Code: `design-kit check-mod <thư mục mod> --strict` (cần `claude`, hoặc `CLAUDE_BIN`). `DK_MOD_DUMP=<tệp.json>` ghi mọi cây vẽ ra tệp để soi.
 
+- Logo, icon, ký hiệu, minh hoạ: `design-kit check-image <tệp|thư mục>... [--kind logo|icon|illustration] [--display px] --strict`. Tờ soát ở `.design-kit/shots/images/`. Đổi ngưỡng thì chạy lại trên bộ Lucide (`blocks/react/node_modules/lucide-react`, xuất SVG ra scratchpad): Lucide phải giữ trung bình 100, độ đồng bộ ≥ 95.
+
 ## Bẫy đã gặp
 
 - **check-mod (18/11/2026):**
@@ -71,6 +80,15 @@ Chuẩn và cổng cho giao diện do agent làm.
   - Icon SVG (≤ 32px): app vẽ Svg không tương tác thành ảnh; trang đo cũng vẽ thành `<img>`, nên chữ "$" trong đồng xu không bị tính là chữ nhỏ.
   - colorjs.io APCA: màu gọi hàm là nền (`bg.contrast(fg, "APCA")`).
 
+- **check-image (18/11/2026):**
+  - SVG thiếu viewBox trong `<img>` của Chrome vẫn co đúng; chỉ bị cắt khi nhúng thẳng `<svg>` rồi đặt cỡ bằng CSS. Đã thử, đừng viết ngược lại.
+  - Đo chi tiết mất theo diện tích bỏ sót nét mảnh dài (hai vòng nét 0,6 biến mất hẳn mà chỉ là 7%): đo theo đường viền. Đo theo viền thì mép hình tròn bị "bào" một lớp do rời rạc hoá (Lucide báo 17%): bỏ mảnh mỏng hơn 2 điểm tham chiếu. Mũi nhọn (cánh sao) chỉ bị tròn đi: bỏ mảnh có diện tích / (cạnh nối)² < 2.
+  - Vẽ tham chiếu theo cạnh dài 512 làm nét mảnh của logo dài 3:1 còn dưới 1 điểm và lọt khỏi mặt nạ: vẽ theo cạnh ngắn 512 (cạnh dài tối đa 2048).
+  - Nhận chuyển sắc bằng "điểm cách 8 khác điểm kề": cả vòng điểm cách mép đúng 8 bị tính nhầm (so với điểm khử răng cưa), đục lỗ vùng màu và làm logo tốt tụt 95 → 70. Chỉ so điểm "trong vùng" và đòi điểm cách 4 nằm giữa.
+  - Nhiễu JPEG đục lỗ vùng màu thành "khe hẹp" giả: gán điểm chưa thuộc màu nào về vùng gần nhất, và chỉ đo vùng màu bên trong khi các màu thật sự chạm nhau.
+  - Icon dạng ô gạch (Home Assistant brands, icon ứng dụng): đọc cả ô là hình thì báo "chạm mép" và bản một màu thành ô đen. Chế độ `tile` khớp mặt phẳng màu trên dải vòng trong.
+  - Dải đỏ → vàng trong sRGB có quãng gần như phẳng theo cảm nhận (kênh lục nhỏ), nên test chuyển sắc dùng dải xám.
+  - Tên tờ soát giữ đuôi tệp (`icon.svg` và `icon.png` cùng thư mục từng ghi đè nhau); bộ icon tính theo thư mục.
 - **`ch` đo sai với chữ Việt.** Với Be Vietnam Pro, 68ch chứa khoảng 93 ký tự. Độ dài dòng dùng `em`. Probe đo độ dài dòng theo bề rộng trung bình của chính chữ trong đoạn.
 - **`@import url(...)` nằm trong tệp token** bị bundler đẩy xuống giữa tệp và bỏ đi, nên mất font. Vì vậy mới tách ra `fonts.css`.
 - **Engine Impeccable 0.1.19 bỏ sót lỗi trong shadow DOM.** Đã tái hiện bằng `test/fixtures/loi.html`, và tái hiện lại với skill 4.8.1. Probe và axe thì bắt được. Bản nháp báo lỗi ở `docs/bao-loi-impeccable-shadow-dom.md`, chỉ gửi khi chủ duyệt.
