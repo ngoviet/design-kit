@@ -165,8 +165,10 @@ async function measure(page: Page, file: string, label: string, opts: { kind?: K
     colorfulness: colorfulness(ref, ink),
     compression: compressionRatio(grayOver(ref, [255, 255, 255]), ref.w, ref.h),
   };
-  const light = contrastOn(ref, ink, opts.bg.light, opts.bg.lightHex);
-  const dark = ink.mode === "alpha" ? contrastOn(ref, ink, opts.bg.dark, opts.bg.darkHex) : undefined;
+  // Ảnh điểm nhỏ bị phóng có làm mịn: mép thành dải pha màu, dải viền đo tương phản phải nằm sau nó.
+  const upscale = vector ? 1 : ref.w / nat.nw;
+  const light = contrastOn(ref, ink, opts.bg.light, opts.bg.lightHex, upscale);
+  const dark = ink.mode === "alpha" ? contrastOn(ref, ink, opts.bg.dark, opts.bg.darkHex, upscale) : undefined;
   if (light) m.light = light;
   if (dark) m.dark = dark;
   let clear = false;

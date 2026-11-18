@@ -118,6 +118,20 @@ describe("color measures", () => {
     expect(contrastOn(bm, ink, [255, 255, 255], "#ffffff")!.strong).toBeGreaterThan(0.95);
     expect(contrastOn(bm, ink, [18, 18, 18], "#121212")!.strong).toBe(0);
   });
+  it("a small bitmap enlarged ×8 with smoothing: the blended edge band is skipped, a 6:1 red disk still passes", () => {
+    // #c02020 trên trắng: 6,05:1 theo công thức WCAG. Mép pha màu tuyến tính rộng 8 điểm như khi phóng PNG 64 px lên 512.
+    const red = [0xc0, 0x20, 0x20];
+    const bm = makeBitmap(512, 512);
+    for (let y = 0; y < 512; y++) {
+      for (let x = 0; x < 512; x++) {
+        const t = Math.min(1, Math.max(0, (160 - Math.hypot(x + 0.5 - 256, y + 0.5 - 256)) / 8 + 0.5));
+        bm.data.set([...red.map((c) => Math.round(255 + (c - 255) * t)), 255], (y * 512 + x) * 4);
+      }
+    }
+    const ink = inkOf(bm);
+    expect(contrastOn(bm, ink, [255, 255, 255], "#ffffff", 8)!.strong).toBeGreaterThan(0.8);
+    expect(contrastOn(bm, ink, [255, 255, 255], "#ffffff")!.strong).toBeLessThan(0.5); // dải viền cũ nằm trọn trong mép pha
+  });
   it("a white shape inside a dark disk does not count against the white page: it does not touch it", () => {
     // Hình tròn phủ 78% khung (chưa tới 90%): vẫn là hình trên nền trong suốt, không phải ô gạch.
     const bm = paint(paint(makeBitmap(128, 128), [30, 90, 60, 255], disk(64, 64, 50)), [255, 255, 255, 255], disk(64, 64, 20));

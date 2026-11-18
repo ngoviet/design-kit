@@ -223,8 +223,16 @@ const RIM = 3;
  * Tương phản của phần mực với nền `bg` (ảnh trong suốt đặt lên nền đó) hoặc với nền riêng của ảnh (mode plain).
  * Chỉ đo dải viền ngoài (điểm mực cách nền ≤ RIM): chiếc lá trắng nằm trong hình tròn xanh không cần nổi trên nền
  * trắng, viền của hình tròn mới cần. Lấy mẫu tối đa ~40 nghìn điểm cho nhanh.
+ * `upscale`: số điểm tham chiếu ứng với một điểm ảnh gốc (ảnh điểm nhỏ bị phóng có làm mịn). Mép của ảnh đó là một
+ * dải pha màu rộng chừng `upscale` điểm, nên dải viền bắt đầu sau nửa dải pha đó (icon PNG 64 px đỏ trên trắng, tỉ số
+ * thật 6:1, từng bị đo 1,66:1 và dính lỗi cứng). Dải đó trống (nét quá mảnh) thì đo như cũ.
  */
-export function contrastOn(bm: Bitmap, ink: Ink, bgRgb: [number, number, number], bgName: string): OnBg | undefined {
+export function contrastOn(bm: Bitmap, ink: Ink, bgRgb: [number, number, number], bgName: string, upscale = 1): OnBg | undefined {
+  const skip = upscale > 1 ? Math.ceil(upscale / 2) : 0;
+  return rimContrast(bm, ink, bgRgb, bgName, skip) ?? (skip ? rimContrast(bm, ink, bgRgb, bgName, 0) : undefined);
+}
+
+function rimContrast(bm: Bitmap, ink: Ink, bgRgb: [number, number, number], bgName: string, skip: number): OnBg | undefined {
   if (ink.mode === "full") return undefined;
   // Ô gạch: so hình với màu nền của chính ô tại chỗ đó (nền chuyển sắc); nền đặc: với màu nền của ảnh.
   const base = ink.mode === "plain" ? ink.bg! : bgRgb;
@@ -235,8 +243,11 @@ export function contrastOn(bm: Bitmap, ink: Ink, bgRgb: [number, number, number]
   const bgSet = new Uint8Array(n);
   for (let p = 0; p < n; p++) bgSet[p] = ink.cov[p]! < 0.5 ? 1 : 0;
   const toBg = edt2(bgSet, bm.w, bm.h);
+  const lo = skip * skip;
+  const hi = (skip + RIM) * (skip + RIM);
+  const inRim = (p: number) => toBg[p]! > lo && toBg[p]! <= hi;
   let rimCount = 0;
-  for (let p = 0; p < n; p++) if (!bgSet[p] && toBg[p]! <= RIM * RIM) rimCount++;
+  for (let p = 0; p < n; p++) if (!bgSet[p] && inRim(p)) rimCount++;
   const step = Math.max(1, Math.floor(rimCount / 40000));
   let seen = 0;
   let wsum = 0;
@@ -249,7 +260,7 @@ export function contrastOn(bm: Bitmap, ink: Ink, bgRgb: [number, number, number]
     const x = p % bm.w;
     const y = (p - x) / bm.w;
     const edge = x < RIM || y < RIM || x >= bm.w - RIM || y >= bm.h - RIM;
-    if (c < 0.5 || (toBg[p]! > RIM * RIM && !edge)) continue;
+    if (c < 0.5 || (!inRim(p) && !edge)) continue;
     if (seen++ % step) continue;
     const d = bm.data;
     const [r, g, b] = ink.mode === "alpha" ? over(d[p * 4]!, d[p * 4 + 1]!, d[p * 4 + 2]!, d[p * 4 + 3]!, base) : [d[p * 4]!, d[p * 4 + 1]!, d[p * 4 + 2]!];
