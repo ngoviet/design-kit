@@ -1,5 +1,6 @@
 // check-mod từ đầu tới cuối trên test/fixtures/mods/xau: một thanh cố ý mắc mỗi lỗi một lần.
-// Cần Claude Code (`claude` hoặc CLAUDE_BIN) để chạy test của mod; máy không có (CI Linux) thì bỏ qua phần đó.
+// Cần Claude Code (`claude` hoặc CLAUDE_BIN) để chạy test của mod; máy không có thì bỏ qua phần đó,
+// trừ khi DK_REQUIRE_CLAUDE=1 (CI cài Claude Code và đặt biến này): khi ấy thiếu claude là test trượt.
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -13,6 +14,7 @@ const hasClaude = (() => {
   if (r.error && process.platform === "win32") r = spawnSync(`"${bin}" --version`, { encoding: "utf8", shell: true });
   return r.status === 0 && /Claude Code/.test(r.stdout);
 })();
+const requireClaude = process.env["DK_REQUIRE_CLAUDE"] === "1";
 
 async function run(argv: string[]): Promise<{ out: string; code: number | undefined }> {
   let out = "";
@@ -37,8 +39,11 @@ describe("check-mod arguments", () => {
   });
 });
 
-describe.skipIf(!hasClaude)("check-mod on the fixture mod", () => {
-  it("finds every fault the fixture plants, on the surface it belongs to", async () => {
+describe.skipIf(!hasClaude && !requireClaude)("check-mod on the fixture mod", () => {
+  it("has Claude Code to run the mod's tests", () => {
+    expect(hasClaude, `\`${bin} --version\` failed: install Claude Code or set CLAUDE_BIN`).toBe(true);
+  });
+  it.skipIf(!hasClaude)("finds every fault the fixture plants, on the surface it belongs to", async () => {
     const { out, code } = await run(["check-mod", "test/fixtures/mods/xau", "--widths", "40,120", "--no-shots", "--full", "--strict"]);
     expect(out).toMatch(/^status: "fail: \d+ hard/m);
     expect(code).toBe(1);

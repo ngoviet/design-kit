@@ -19,6 +19,9 @@ All notable changes to this project are documented here. The format follows
   claude-kit-axi: session-band failed 12 hard (five hex colors at 2.1–2.9:1 on a light terminal and desktop),
   agents-panel 1 hard (SVG text at 11px); 29 s and 38 s. `data/claude-themes.json` holds the theme colors, refreshed by `node scripts/claude-themes.mjs`.
   New dependencies: `ink` 6.8 (the last line that runs on Node 20), `react` 19, `string-width`.
+- CI installs Claude Code 2.1.311 so the `check-mod` test on the fixture mod runs there instead of being skipped;
+  `DK_REQUIRE_CLAUDE=1` makes a missing `claude` fail the test. CI also reads the theme colors again from the
+  installed Claude Code and checks they match `data/claude-themes.json`. No sign-in or API key is needed.
 
 - `text-covered` check (soft): a line of text that another element paints over, typically a word too long for a
   narrow grid cell spilling under the next cell's background. Every other check passed such text: it is big enough,

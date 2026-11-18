@@ -26,6 +26,13 @@ jobs:
     timeout-minutes: 45
     container:
       image: mcr.microsoft.com/playwright:v1.65.1-noble
+    env:
+      # Bản Claude Code mà data/claude-themes.json đã đọc màu theme. Nâng bản thì chạy lại scripts/claude-themes.mjs.
+      CLAUDE_CODE_VERSION: 2.1.311
+      DISABLE_AUTOUPDATER: "1"
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+      # Thiếu `claude` thì test check-mod trượt, không lặng lẽ bỏ qua: xanh phải nghĩa là đã chạy.
+      DK_REQUIRE_CLAUDE: "1"
     steps:
       - uses: actions/checkout@v5
 
@@ -34,6 +41,17 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           cd blocks/react && npm ci --no-audit --no-fund
+
+      # Claude Code cho check-mod: `claude plugin validate` và `claude plugin test` chạy mod mẫu test/fixtures/mods/xau
+      # ngay trên máy, không gọi model, nên không cần đăng nhập hay khoá API. Gói npm tải bản chạy gốc cho Linux.
+      # Đọc lại màu theme từ bản vừa cài: phải khớp data/claude-themes.json đã commit.
+      - name: claude code
+        run: |
+          npm install -g --no-audit --no-fund "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
+          claude --version
+          sha256sum data/claude-themes.json > /tmp/themes.sha
+          node scripts/claude-themes.mjs
+          sha256sum -c /tmp/themes.sha
 
       # tsc, eslint, vitest (test chạy trình duyệt thật: ở đây là Chromium của Playwright).
       - name: check

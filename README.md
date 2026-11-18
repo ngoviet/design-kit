@@ -362,7 +362,10 @@ cd blocks/react && npm ci && npm run build && cd ../..
 design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6   # full gate, ~10 min
 ```
 
-The `check-mod` test on `test/fixtures/mods/xau` runs only where Claude Code is installed; elsewhere it is skipped.
+The `check-mod` test on `test/fixtures/mods/xau` runs only where Claude Code is installed; elsewhere it is skipped,
+unless `DK_REQUIRE_CLAUDE=1` is set, which turns a missing `claude` into a failure. CI installs Claude Code (pinned to
+the version `data/claude-themes.json` was read from, and checks that file still matches) and sets that variable. It
+needs no sign-in: `claude plugin validate` and `claude plugin test` run the mod locally and call no model.
 
 CI (GitHub Actions) runs the same in the Playwright container, a clean Linux machine with no Edge and no Impeccable
 skill, which also proves the kit runs on its own. A new block is merged only after it passes in all 3 directions ×

@@ -353,7 +353,10 @@ cd blocks/react && npm ci && npm run build && cd ../..
 design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6   # cổng đầy đủ, ~10 phút
 ```
 
-Test `check-mod` trên `test/fixtures/mods/xau` chỉ chạy ở máy có Claude Code; nơi khác tự bỏ qua.
+Test `check-mod` trên `test/fixtures/mods/xau` chỉ chạy ở máy có Claude Code; nơi khác tự bỏ qua, trừ khi đặt
+`DK_REQUIRE_CLAUDE=1`: khi ấy thiếu `claude` là test trượt. CI cài Claude Code (ghim đúng bản mà
+`data/claude-themes.json` đã đọc màu, và kiểm tệp đó vẫn khớp) rồi đặt biến này. Không cần đăng nhập:
+`claude plugin validate` và `claude plugin test` chạy mod ngay trên máy, không gọi model.
 
 CI (GitHub Actions) chạy đúng các bước này trong container Playwright, một máy Linux sạch không có Edge và không có
 skill Impeccable, nên cũng là phép thử kit chạy độc lập. Khối mới chỉ được gộp khi đã qua cổng ở cả 3 hướng ×
