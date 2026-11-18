@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-18
+
 ### Added
 
 - `design-kit check-image <file|dir>...`: scores logos, icons (symbols, pictograms) and illustrations 0–100 from
@@ -28,11 +30,6 @@ All notable changes to this project are documented here. The format follows
 - Plugin hook: an edited logo, icon or illustration (`.svg`, `.png`, `.jpg`, `.webp`, `.avif`, `.ico` whose file or
   folder name says logo, icon, favicon, brand, symbol, …) gets a reminder to run `design-kit check-image`, and Stop
   blocks once until a `check-image` that names the file or its folder ran after the edit.
-
-### Fixed
-
-- Plugin hook: `design-kit check-image` (and `check-mod`) no longer count as a run of the page gate; the old pattern
-  matched `check` followed by any word boundary, a hyphen included.
 - `design-kit check-mod <mod folder>`: a gate for Claude Code mods, whose hooks draw with `ui.render` and have no page
   to open. It copies the mod to a temporary folder, points its tests' `claude-code/testing` import at a shim and runs
   `claude plugin test` once per language of the mod's `language` option. Every `$.ui.mount` a test makes is drawn
@@ -160,6 +157,8 @@ All notable changes to this project are documented here. The format follows
 - `long-form` no longer counts checkboxes and radios nobody can see. Ones inside a closed `<details>`, a `hidden`
   panel or a `display: none` step were counted, so a page that had already tucked its advanced options away was
   told to tuck them away. A custom checkbox drawn by a sibling (transparent or clipped input) still counts.
+- Plugin hook: `design-kit check-image` (and `check-mod`) no longer count as a run of the page gate; the old pattern
+  matched `check` followed by any word boundary, a hyphen included.
 
 ## [0.2.1] - 2026-11-10
 
