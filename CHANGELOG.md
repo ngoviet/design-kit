@@ -11,7 +11,7 @@ All notable changes to this project are documented here. The format follows
 
 - `design-kit check-image <file|dir>...`: scores logos, icons (symbols, pictograms) and illustrations 0–100 from
   measurements, with a reason per criterion, and compares the icons of one folder as a set. Each image (SVG, PNG,
-  JPEG, WebP, AVIF, GIF, ICO) is drawn on a canvas in the browser: SVG with its shorter side at 512 px, bitmaps at
+  JPEG, WebP, AVIF, GIF, ICO, BMP) is drawn on a canvas in the browser: SVG with its shorter side at 512 px, bitmaps at
   their own size, icons also at their native size. Criteria: detail finer than 1 px at 32 and 16 px (a Euclidean
   distance transform opens the shape with a disk one display pixel wide; the outline length of what vanishes is
   counted, sharp tips are not, and color regions inside the shape count too), contrast of the outline's rim on

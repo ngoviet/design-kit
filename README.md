@@ -54,8 +54,8 @@ ring, motion that ignores reduced-motion, a "Next" button that does not say wher
   columns and in every language of the mod. Terminal drawings are laid out with Ink and measured on a dark and a light
   terminal; desktop drawings become a page for axe and the text probe; the engine's own limits are checked on the
   trees.
-- **Scores logos, icons and illustrations.** `design-kit check-image <file|dir>` draws each SVG, PNG, JPEG, WebP or
-  AVIF in the browser at the sizes it is used at and gives it 0–100 with a reason per criterion: detail finer than
+- **Scores logos, icons and illustrations.** `design-kit check-image <file|dir>` draws each SVG, PNG, JPEG, WebP,
+  AVIF, GIF, ICO or BMP in the browser at the sizes it is used at and gives it 0–100 with a reason per criterion: detail finer than
   1 px at 32 and 16 px (sharp tips excluded), contrast of its outline on a light and a dark background, colors that
   merge in grayscale, palette and gradients, straight edges off the pixel grid, margins and centering in an icon's
   box, sharpness (an enlarged bitmap), file format and weight, and SVG hygiene (script, live text, embedded bitmaps,

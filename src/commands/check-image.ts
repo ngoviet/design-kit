@@ -14,7 +14,7 @@ import { shootSetSheet, shootSheet } from "../image/sheet.js";
 import type { Runtime } from "../runtime.js";
 
 export const CHECK_IMAGE_HELP = `usage: design-kit check-image <file|dir>... [flags]
-description: Score logos, icons and symbols, and illustrations (SVG, PNG, JPEG, WebP, AVIF, GIF, ICO) from what can be measured: each image is drawn in the browser at a reference size and at the small sizes it is used at, then the pixels and the SVG source are measured. Each criterion gets 0–100 and the image a weighted score with a grade (good ≥ 85, fair ≥ 70, weak ≥ 50, poor); hard failures block "done" and cap the score at 49. A contact sheet per image (sizes on light and dark, grayscale, one color, pixel grid, detail lost at 16 px) is saved for the human pass: taste, meaning and fit with the brand are not scored. Icons checked together are also compared as a set
+description: Score logos, icons and symbols, and illustrations (SVG, PNG, JPEG, WebP, AVIF, GIF, ICO, BMP) from what can be measured: each image is drawn in the browser at a reference size and at the small sizes it is used at, then the pixels and the SVG source are measured. Each criterion gets 0–100 and the image a weighted score with a grade (good ≥ 85, fair ≥ 70, weak ≥ 50, poor); hard failures block "done" and cap the score at 49. A contact sheet per image (sizes on light and dark, grayscale, one color, pixel grid, detail lost at 16 px) is saved for the human pass: taste, meaning and fit with the brand are not scored. Icons checked together are also compared as a set
 flags[9]:
   --kind <auto|logo|icon|illustration>: what the image is (default auto: file name, then size and colors); symbols and pictograms are icons
   --display <px>: size it is shown at (CSS px; logo: height, icon and illustration: longest side): bitmaps need 2×
@@ -26,7 +26,7 @@ flags[9]:
   --strict: exit 1 when any image has a hard failure
   --full: every finding and every criterion row
 criteria[3]:
-  logo: small (detail finer than 1 px at 32 and 16 px tall) 25, contrast (shape ≥ 3:1 on light and on dark, WCAG 1.4.11) 20, mono (touching colors still apart in grayscale) 15, palette (1–3 colors, no gradient) 10, simplicity (perimetric complexity) 10, file (SVG, no live text, no embedded bitmap, no external refs, viewBox, size) 20
+  logo: small (detail finer than 1 px at 32 and 16 px tall) 30, contrast (shape ≥ 3:1 on light and on dark, WCAG 1.4.11) 20, mono (touching colors still apart in grayscale) 20, palette (1–3 colors, no gradient) 5, file (SVG, no live text, no embedded bitmap, no external refs, viewBox, size) 25; perimetric complexity is reported, not scored
   icon: small (detail finer than 1 px at its own size and at 16 px) 20, pixel (straight edges on the pixel grid) 15, frame (margin, fills its square box, centered) 15, contrast 10, color (one color, currentColor) 10, simplicity (vs Lucide icons) 10, file 20
   illustration: sharpness (edge width, Marziliano 2002) 30, resolution (with --display) 15, contrast 15, mono 10, file (format and weight) 30
 gates[3]:
@@ -67,7 +67,7 @@ const FORMATS: Record<string, { format: string; mime: string }> = {
   ".bmp": { format: "bmp", mime: "image/bmp" },
 };
 
-/** Cạnh dài của ảnh tham chiếu (hình véc-tơ); ảnh điểm đo ở cỡ thật, tối đa REF_MAX. */
+/** Cạnh ngắn của ảnh tham chiếu (hình véc-tơ, cạnh dài tối đa 2048); ảnh điểm đo ở cỡ thật, tối đa REF_MAX. */
 const REF = 512;
 const REF_MAX = 1024;
 /** Vùng giữa ở cỡ thật để đo độ sắc ảnh lớn. */
@@ -77,7 +77,7 @@ function expand(inputs: string[], cwd: string): string[] {
   const out: string[] = [];
   for (const t of inputs) {
     const p = resolve(cwd, t);
-    if (!existsSync(p)) fail(`not found: ${t}`, "VALIDATION_ERROR", ["Pass image files (svg, png, jpg, webp, avif, gif, ico) or a folder of them"]);
+    if (!existsSync(p)) fail(`not found: ${t}`, "VALIDATION_ERROR", ["Pass image files (svg, png, jpg, webp, avif, gif, ico, bmp) or a folder of them"]);
     if (statSync(p).isDirectory()) {
       const files = readdirSync(p).filter((f) => FORMATS[extname(f).toLowerCase()]).sort();
       if (!files.length) fail(`no images in ${t}`, "VALIDATION_ERROR", [`Formats: ${Object.keys(FORMATS).join(" ")}`]);
@@ -325,7 +325,7 @@ export async function checkImageCommand(args: string[], rt: Runtime): Promise<Re
       : low.length
         ? `fail: ${low.length} of ${reports.length} images score under ${minScore}`
         : `pass: ${reports.length} image${reports.length === 1 ? "" : "s"}, 0 hard failures, ${reports.length > 1 ? `mean score ${avg}` : `score ${reports[0]!.s.score} (${reports[0]!.s.grade})`}`,
-    renders: `${Object.keys(FORMATS).length} formats via ${via}; contrast on ${bg.lightHex} and ${bg.darkHex}; ${((Date.now() - t0) / 1000).toFixed(1)} s`,
+    renders: `via ${via}; contrast on ${bg.lightHex} and ${bg.darkHex}; ${((Date.now() - t0) / 1000).toFixed(1)} s`,
   };
   out["images"] = reports.map(({ it, s }) => ({
     file: it.label,

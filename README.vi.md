@@ -54,7 +54,7 @@ chế độ giảm chuyển động, nút "Tiếp" không nói đi đâu. Làm c
   mod. Cây terminal được dàn bằng Ink và đo trên terminal tối lẫn sáng; cây desktop thành trang cho axe và phép đo
   chữ; luật của engine được kiểm thẳng trên cây.
 - **Chấm điểm logo, icon và hình minh hoạ.** `design-kit check-image <tệp|thư mục>` vẽ từng tệp SVG, PNG, JPEG,
-  WebP hay AVIF trong trình duyệt ở đúng các cỡ nó được dùng, rồi chấm 0–100 kèm lý do cho từng tiêu chí: chi tiết
+  WebP, AVIF, GIF, ICO hay BMP trong trình duyệt ở đúng các cỡ nó được dùng, rồi chấm 0–100 kèm lý do cho từng tiêu chí: chi tiết
   mảnh hơn 1 px ở 32 và 16 px (không tính mũi nhọn), tương phản của đường viền trên nền sáng lẫn nền tối, các màu
   hoà vào nhau khi chuyển thang xám, bảng màu và chuyển sắc, cạnh thẳng lệch lưới điểm ảnh, lề và độ cân giữa trong
   khung icon, độ sắc (ảnh bị phóng to), định dạng và dung lượng tệp, vệ sinh SVG (script, chữ sống, ảnh điểm nhúng,
