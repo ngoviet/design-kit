@@ -177,3 +177,36 @@ b2bcd4fa11, lỗi của bsky.app; c78), chưa có trong bản iOS nào đã phá
 dưới 16px.
 
 Còn mở: các mục P5, P7, P8, P11–P13, P16–P21 trong báo cáo chưa làm.
+
+## 18/11/2026: chấm điểm logo, icon, ký hiệu và hình minh hoạ (`check-image`)
+
+Chủ yêu cầu thêm tính năng "chấm điểm được logo, ảnh vẽ, các biểu tượng, các ký hiệu". Một agent tìm nguồn song song
+(43 nguồn, 51 luận điểm: s74–s116, c79–c129); bộ tiêu chí ở `docs/tieu-chi.md`, mục "Hình".
+
+- **Điểm từ số đo, không từ mô hình nhìn ảnh.** Giữ quyết định đợt 2 (VLM chấm perfect hình hỏng, c59–c61). Phần
+  máy không đo được (ý nghĩa, độ dễ nhận ra, hợp thương hiệu) để người xem trên tờ soát.
+- **Lệnh riêng, không gộp vào `check`.** Đầu vào là tệp hình chứ không phải trang; kết quả là điểm 0–100 theo tiêu
+  chí kèm phát hiện cứng/mềm như cổng. Lỗi cứng giữ điểm ≤ 49 để "hỏng" không thể là "khá".
+- **Không thêm gói phụ thuộc.** Trình duyệt sẵn có giải mã và vẽ mọi định dạng (kể cả SVG ở đúng cỡ); mọi phép đo là
+  hàm thuần trên điểm ảnh (`src/image/`), test được không cần trình duyệt.
+- **Chi tiết mất đo theo đường viền, không theo diện tích.** Đo theo diện tích, hai vòng nét 0,6 của logo mẫu chỉ là
+  7% dù biến mất hẳn ở 32 px. Đo theo viền thì mép hình tròn bị "bào" một lớp do rời rạc hoá (icon Lucide báo 17%),
+  nên bỏ mảnh mỏng hơn 2 điểm tham chiếu; mũi nhọn (cánh sao, đầu lá) chỉ bị tròn đi nên bỏ theo hình học: diện tích /
+  (cạnh nối)² < 2. Sau đó Lucide về 99% dưới 1%, nét 0,5 px vẫn 100%.
+- **Logo không chấm độ phức tạp, số màu chỉ trọng số 5.** Nghiên cứu không cho mức tối ưu (c79–c81) và không có
+  chuẩn số màu cho logo; logo được miễn tương phản WCAG (c104), nên "không nổi trên nền" là mềm với logo, cứng với icon.
+- **Bộ icon theo thư mục.** Truyền hai thư mục thì thành hai bộ, không trộn. Độ đậm tự nhiên của Lucide dao động 0,46–
+  1,37 lần trung vị, nên chỉ báo khi ngoài 0,4–2 lần.
+
+Thử trên hình mẫu (`test/fixtures/hinh/`): logo tốt 95, logo cố ý mắc lỗi 39, ảnh minh hoạ sắc 96, cùng ảnh phóng to
+54; 134 icon Lucide chạy thật trung bình 100, độ đồng bộ 99, 0,13 s mỗi icon.
+
+Thử trên 14 logo, icon thật trong `D:\code`: icon thương hiệu Home Assistant 98–100 sau khi thêm chế độ ô gạch; tìm ra
+`codex-chatgpt-web/launcher/assets/icon.svg` không hiện logo (vùng `filter` theo `userSpaceOnUse` bị `scale(28)` đẩy ra
+ngoài).
+
+Chủ chọn trên trang Folio (18/11/2026): mở PR, sửa icon đó, thêm hook nhắc, commit nguồn vào research-hub. Hook chỉ
+xét tên tệp và thư mục chứa nó (logo, icon, favicon, brand, ký hiệu, minh hoạ…), không xét cả đường dẫn, để ảnh chụp
+màn hình hay ảnh trong repo tên "brand-site" không bị đòi chấm. Lúc làm hook lộ thêm một lỗi cũ: mẫu `check` kèm ranh
+giới từ khớp cả `check-image`, nên một lần chấm hình từng được tính như đã chạy cổng trang; mẫu mới đòi `check` không
+có chữ hay dấu gạch theo sau.

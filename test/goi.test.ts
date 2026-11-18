@@ -62,6 +62,47 @@ describe("plugin hook", () => {
   });
 });
 
+describe("plugin hook: logos, icons and illustrations", () => {
+  const line = (content: unknown[]) => JSON.stringify({ type: "assistant", message: { content } });
+  const edit = (id: string, file: string) => line([{ type: "tool_use", id, name: "Edit", input: { file_path: file } }]);
+  const bash = (id: string, cmd: string) => line([{ type: "tool_use", id, name: "Bash", input: { command: cmd } }]);
+
+  it("reminds to run check-image on a logo or icon, not on any picture, and keeps its own 15-minute rhythm", () => {
+    const s = sid();
+    const ctx = (file: string) => {
+      const out = runHook({ hook_event_name: "PostToolUse", session_id: s, cwd: tmp, tool_input: { file_path: file } });
+      return out ? (JSON.parse(out).hookSpecificOutput.additionalContext as string) : "";
+    };
+    expect(ctx(join(tmp, "anh", "chup-man-hinh.png"))).toBe("");
+    expect(ctx(join(tmp, "brand", "logo.svg"))).toContain("design-kit check-image brand/logo.svg --strict");
+    expect(ctx(join(tmp, "icons", "nha.svg"))).toBe(""); // trong 15 phút
+    // Nhịp riêng: sửa trang ngay sau đó vẫn được nhắc chạy cổng trang.
+    expect(ctx(join(tmp, "trang.html"))).toContain("design-kit check trang.html --strict");
+  });
+
+  it("Stop wants check-image on the file or its folder; a page gate or check-image does not stand in for the other", () => {
+    const dir = join(tmp, "icons");
+    mkdirSync(dir, { recursive: true });
+    const icon = join(dir, "icon-nha.svg");
+    writeFileSync(icon, "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'/>");
+    const page = join(tmp, "b.tsx");
+    writeFileSync(page, "export {}");
+    const stop = (lines: string[]) => {
+      const tr = join(tmp, `${sid()}.jsonl`);
+      writeFileSync(tr, lines.join("\n"));
+      const out = runHook({ hook_event_name: "Stop", session_id: sid(), cwd: tmp, transcript_path: tr });
+      return out ? (JSON.parse(out) as { decision: string; reason: string }) : undefined;
+    };
+    const r = stop([edit("e1", icon), bash("b1", "design-kit check page.html --strict")]);
+    expect(r?.decision).toBe("block");
+    expect(r?.reason).toContain("design-kit check-image");
+    expect(stop([edit("e1", icon), bash("b1", "design-kit check-image icons/icon-nha.svg --strict")])).toBeUndefined();
+    expect(stop([edit("e1", icon), bash("b1", "node dist/bin/design-kit.js check-image icons --strict")])).toBeUndefined();
+    // `check-image` không còn khớp nhầm cổng trang (`check\b` khớp cả "check-image").
+    expect(stop([edit("e2", page), bash("b2", "design-kit check-image icons")])?.reason).toContain("b.tsx");
+  });
+});
+
 describe("plugin hook: UI files changed outside Write/Edit", () => {
   const git = (cwd: string, ...args: string[]) => {
     const r = spawnSync("git", args, { cwd, encoding: "utf8" });

@@ -1,6 +1,6 @@
 ---
 name: design-kit
-description: Build web or app UI that is beautiful, modern and usable on the first pass, and prove it with a measured gate before calling it done. Use whenever you create or restyle a page, screen, component, dashboard, landing page, form, report page, Home Assistant card or any HTML/CSS/React UI — pick a design direction (DESIGN.md + tokens), reuse gated blocks, then run `design-kit check` (axe WCAG 2.2 AA, overflow at 320px, text size and line height through shadow DOM, reduced motion, focus, Core Web Vitals, Impeccable, states reached by clicking) and show screenshots. Also use when designing any user workflow, sign-up, booking, setup wizard, onboarding or first-run experience: plan a task map and guide the user step by step, just in time, like a good game tutorial. Vietnamese: làm giao diện, thiết kế trang web, giao diện đẹp, dashboard, landing page, form, kiểm giao diện, chuẩn giao diện, quy trình dễ dùng, hướng dẫn từng bước, làm đến đâu hướng dẫn đến đó, hướng dẫn người dùng mới.
+description: Build web or app UI that is beautiful, modern and usable on the first pass, and prove it with a measured gate before calling it done. Use whenever you create or restyle a page, screen, component, dashboard, landing page, form, report page, Home Assistant card or any HTML/CSS/React UI — pick a design direction (DESIGN.md + tokens), reuse gated blocks, then run `design-kit check` (axe WCAG 2.2 AA, overflow at 320px, text size and line height through shadow DOM, reduced motion, focus, Core Web Vitals, Impeccable, states reached by clicking) and show screenshots. Also use when designing any user workflow, sign-up, booking, setup wizard, onboarding or first-run experience: plan a task map and guide the user step by step, just in time, like a good game tutorial. Also use to score or check a logo, icon, symbol or illustration (`design-kit check-image`). Vietnamese: chấm điểm logo, icon, biểu tượng, ký hiệu, hình vẽ, làm giao diện, thiết kế trang web, giao diện đẹp, dashboard, landing page, form, kiểm giao diện, chuẩn giao diện, quy trình dễ dùng, hướng dẫn từng bước, làm đến đâu hướng dẫn đến đó, hướng dẫn người dùng mới.
 ---
 
 # design-kit: chuẩn + cổng cho giao diện do agent làm
@@ -151,6 +151,10 @@ design-kit check <file.html|folder|http://localhost:port> --strict
   `design-kit check-mod <mod folder> --strict` sweeps the mod's own tests over terminal and desktop, 40–200 columns
   and every language (needs `claude`). Color text with theme keys (`success`, `warning`, `inactive`), not hex: a hex
   has to pass on a dark and a light terminal. Write tests that mount each real state; only mounts get measured.
+- **Logos, icons, symbols, illustrations**: `design-kit check-image <file|dir> --strict` scores each 0–100 (detail
+  lost at 32/16 px, contrast on light and dark, grayscale, colors, pixel grid, sharpness, SVG hygiene) and compares a
+  folder of icons as a set; open the contact sheets in `.design-kit/shots/images/`. UI icons: one color via
+  `currentColor`, strokes ≥ 1 px at their size; logos: SVG with text outlined, a reversed version for dark.
 
 ## Thresholds (sources in `docs/tieu-chi.md`)
 

@@ -1,4 +1,5 @@
 import { CHECK_HELP, checkCommand } from "./commands/check.js";
+import { CHECK_IMAGE_HELP, checkImageCommand } from "./commands/check-image.js";
 import { CHECK_MOD_HELP, checkModCommand } from "./commands/check-mod.js";
 import { HOME_HELP } from "./commands/home.js";
 import { INLINE_HELP, inlineCommand } from "./commands/inline.js";
@@ -30,6 +31,12 @@ export const COMMANDS: Record<string, CommandSpec> = {
     summary: "gate a Claude Code mod's ui.render drawings: its tests swept over terminal and desktop, every width and language, contrast, overflow, cut text, engine limits",
     help: CHECK_MOD_HELP,
     run: checkModCommand,
+  },
+  "check-image": {
+    usage: "check-image <file|dir>... [--kind logo|icon|illustration] [--display px] [--strict]",
+    summary: "score logos, icons and illustrations 0–100 from measurements: detail lost at 16–32 px, contrast on light and dark, grayscale, colors, pixel grid, sharpness, SVG hygiene; icon sets compared; contact sheets for the human pass",
+    help: CHECK_IMAGE_HELP,
+    run: checkImageCommand,
   },
   inline: {
     usage: "inline <page.html> [--ra out.html] [--dry-run]",
