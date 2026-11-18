@@ -145,6 +145,16 @@ describe("desktop page", () => {
     expect(html).toContain('<template shadowrootmode="open">');
     expect(html).toContain("width:640px");
   });
+  it("marks text whose colors are only the app's or a theme key's as guessed, not text the mod colored", () => {
+    const html = (t: DrawNode) => desktopHtml(t, { columns: 80, scheme: "light", lang: "en", title: "t" });
+    expect(html(T({ color: "warning" }, "52%"))).toContain("data-dk-guess");
+    expect(html(T({}, "plain"))).toContain("data-dk-guess");
+    expect(html(T({ color: "#4caf6e" }, "$0.50"))).not.toContain("data-dk-guess");
+    // Màu mod tự đặt ở Text cha được thừa hưởng; nền mod tự tô thì mod chịu trách nhiệm cả chữ theme trên đó.
+    expect(html(T({ color: "#4caf6e" }, T({ bold: true }, "$0.50")))).not.toContain("data-dk-guess");
+    expect(html(B({ backgroundColor: "#202020" }, T({ color: "warning" }, "52%")))).not.toContain("data-dk-guess");
+    expect(html(B({ backgroundColor: "warning" }, T({ color: "text" }, "52%")))).toContain("data-dk-guess");
+  });
   it("scrubs scripts and handlers as the engine does", () => {
     expect(scrubSvg('<svg onload="x()"><script>alert(1)</script><rect/></svg>')).toBe("<svg><rect/></svg>");
   });

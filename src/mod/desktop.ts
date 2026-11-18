@@ -103,28 +103,49 @@ function textCss(p: Record<string, unknown>, scheme: Scheme): string {
   ]);
 }
 
-function render(c: Child, scheme: Scheme, inText: boolean): string {
-  if (typeof c === "string") return inText ? esc(c) : `<span class="t">${esc(c)}</span>`;
+/**
+ * Màu chữ và màu nền ở chỗ đang dựng có do mod tự chọn không (hex, rgb, tên ANSI). Không thì đó là màu của app hay của
+ * khoá theme, mà bản desktop này chỉ đoán: chữ như vậy mang `data-dk-guess`, và tương phản thấp ở đó chỉ là lỗi mềm.
+ */
+interface Ctx {
+  inText: boolean;
+  modFg: boolean;
+  modBg: boolean;
+}
+const OUTSIDE: Ctx = { inText: false, modFg: false, modBg: false };
+const modColor = (v: unknown, scheme: Scheme): boolean => ["raw", "named"].includes(resolveColor(v, scheme).kind);
+const guessAttr = (x: Ctx): string => (x.modFg || x.modBg ? "" : " data-dk-guess");
+
+function render(c: Child, scheme: Scheme, ctx: Ctx): string {
+  if (typeof c === "string") return ctx.inText ? esc(c) : `<span class="t"${guessAttr(ctx)}>${esc(c)}</span>`;
   const p = c.props ?? {};
-  const inner = (inside: boolean) => kids(c).map((x) => render(x, scheme, inside)).join("");
+  const inner = (next: Ctx) => kids(c).map((x) => render(x, scheme, next)).join("");
+  const modBg = ctx.modBg || modColor(p["backgroundColor"], scheme);
   switch (c.type) {
     case "Box":
-      return `<div class="b"${boxCss(p, scheme)}>${inner(false)}</div>`;
+      return `<div class="b"${boxCss(p, scheme)}>${inner({ ...ctx, inText: false, modBg })}</div>`;
     case "Text": {
       const wrap = typeof p["wrap"] === "string" ? (p["wrap"] as string) : "wrap";
-      const cls = inText ? "" : wrap === "wrap" ? "t" : "t cut";
+      const cls = ctx.inText ? "" : wrap === "wrap" ? "t" : "t cut";
       const dir = p["dir"] === "rtl" ? ' dir="rtl"' : "";
-      return `<span${cls ? ` class="${cls}"` : ""}${dir}${textCss(p, scheme)}>${inner(true)}</span>`;
+      // Màu riêng của Text thay màu thừa hưởng; dimColor không kèm màu là khoá theme inactive.
+      const own = resolveColor(p["color"], scheme).kind;
+      const modFg = own === "raw" || own === "named" ? true : own === "theme" || (own === "none" && p["dimColor"] === true) ? false : ctx.modFg;
+      const next: Ctx = { inText: true, modFg, modBg };
+      return `<span${cls ? ` class="${cls}"` : ""}${dir}${guessAttr(next)}${textCss(p, scheme)}>${inner(next)}</span>`;
     }
     case "Button": {
       const label = typeof p["label"] === "string" ? (p["label"] as string) : "";
       // role dismiss: desktop vẽ nút đóng của chính nó ở mép cuối, nhãn thành tên đọc cho trình đọc màn hình.
-      if (p["role"] === "dismiss") return `<button type="button" class="btn plain" aria-label="${esc(label || textOf(c) || "Dismiss")}">✕</button>`;
-      const body = kids(c).length ? inner(true) : esc(label);
+      if (p["role"] === "dismiss") return `<button type="button" class="btn plain" aria-label="${esc(label || textOf(c) || "Dismiss")}" data-dk-guess>✕</button>`;
+      const next: Ctx = { inText: true, modFg: false, modBg };
+      const body = kids(c).length ? inner(next) : esc(label);
       const cls = p["plain"] === true ? "btn plain" : p["variant"] === "primary" ? "btn primary" : "btn";
       const dim = p["dimColor"] === true ? ` style="color:${loadThemes()[scheme]["inactive"]}"` : "";
       const name = kids(c).length && label ? ` aria-label="${esc(label)}"` : "";
-      return `<button type="button" class="${cls}"${dim}${name}>${body}</button>`;
+      // Màu nút là CSS của bản phỏng theo; nút trơn (plain) thì nằm trên nền của chỗ chứa nó.
+      const guess = p["plain"] === true ? guessAttr(next) : " data-dk-guess";
+      return `<button type="button" class="${cls}"${dim}${name}${guess}>${body}</button>`;
     }
     case "Svg": {
       const src = typeof p["source"] === "string" ? scrubSvg(p["source"] as string) : "";
@@ -146,15 +167,15 @@ function render(c: Child, scheme: Scheme, inText: boolean): string {
       return `<select class="in" aria-label="select">${opts.map((o) => `<option${o.value === p["value"] ? " selected" : ""}>${esc(String(o.label ?? o.value ?? ""))}</option>`).join("")}</select>`;
     }
     case "Link":
-      return `<a href="${esc(String(p["url"] ?? "#"))}">${kids(c).length ? inner(true) : esc(String(p["url"] ?? ""))}</a>`;
+      return `<a href="${esc(String(p["url"] ?? "#"))}">${kids(c).length ? inner({ ...ctx, inText: true, modBg }) : esc(String(p["url"] ?? ""))}</a>`;
     case "Code":
       return `<pre class="code">${esc(String(p["source"] ?? ""))}</pre>`;
     case "Markdown":
-      return `<div class="md">${esc(String(p["source"] ?? "")) || inner(true)}</div>`;
+      return `<div class="md">${esc(String(p["source"] ?? "")) || inner({ ...ctx, inText: true, modBg })}</div>`;
     case "Client":
       return `<div class="client"${style([["width", px(p["width"], CELL_PX)], ["height", px(p["height"], ROW_PX)]])}></div>`;
     default:
-      return inText ? inner(true) : `<div class="b">${inner(false)}</div>`;
+      return ctx.inText ? inner({ ...ctx, modBg }) : `<div class="b">${inner({ ...ctx, modBg })}</div>`;
   }
 }
 
@@ -169,7 +190,7 @@ const isRtl = (lang: string): boolean => /^(he|ar|fa|ur)\b/i.test(lang);
 
 /** Một cây trong một khung rộng đúng số cột; `id` để quy phát hiện về cây. */
 export function desktopSlot(tree: DrawNode, o: { columns: number; scheme: Scheme; lang: string; id: string }): string {
-  return `<div class="slot" id="${esc(o.id)}" lang="${esc(o.lang)}"${isRtl(o.lang) ? ' dir="rtl"' : ""} style="width:${o.columns * CELL_PX}px">${render(tree, o.scheme, false)}</div>`;
+  return `<div class="slot" id="${esc(o.id)}" lang="${esc(o.lang)}"${isRtl(o.lang) ? ' dir="rtl"' : ""} style="width:${o.columns * CELL_PX}px">${render(tree, o.scheme, OUTSIDE)}</div>`;
 }
 
 /**

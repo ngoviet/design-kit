@@ -22,6 +22,10 @@ All notable changes to this project are documented here. The format follows
 - CI installs Claude Code 2.1.311 so the `check-mod` test on the fixture mod runs there instead of being skipped;
   `DK_REQUIRE_CLAUDE=1` makes a missing `claude` fail the test. CI also reads the theme colors again from the
   installed Claude Code and checks they match `data/claude-themes.json`. No sign-in or API key is needed.
+- `check-mod`: desktop contrast is soft, not hard, when both colors are the app's or a theme key's (text colored
+  `warning` on the app background): the desktop page only guesses those, and the mod followed the advice to use theme
+  keys. Text the mod colored with a hex, or set on a background it colored, stays hard. session-band had four such
+  hard failures (`warning` at 4.46:1 on the guessed `#faf9f5`); it now passes `--strict` with them as soft.
 
 - `text-covered` check (soft): a line of text that another element paints over, typically a word too long for a
   narrow grid cell spilling under the next cell's background. Every other check passed such text: it is big enough,

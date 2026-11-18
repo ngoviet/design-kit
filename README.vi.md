@@ -262,7 +262,8 @@ Cờ của `check-mod`:
 Các phép kiểm: *cứng* gồm `mount` (surface từ chối cây, nên engine vẽ bản của nó), `render`, `svg-source` (quá
 131.072 ký tự hoặc thiếu `alt`), `raster-size`, `ask-rows` (cây cho AskUserQuestion quá 12 hàng terminal hay 48
 hàng desktop ở 40 cột), `overflow`, `contrast` (4,5:1 cho chữ, 3:1 cho một ký hiệu đơn hay một dải ký tự khối, trên
-cả hai terminal và desktop), `text-min` (desktop, chữ SVG đo theo cỡ đã vẽ), `motion` và axe; *mềm* gồm `rows` (thanh
+cả hai terminal và desktop; trên desktop thành mềm khi cả hai màu là của app hay của khoá theme, thứ trang desktop chỉ
+đoán được), `text-min` (desktop, chữ SVG đo theo cỡ đã vẽ), `motion` và axe; *mềm* gồm `rows` (thanh
 cao hơn `maxRows`, hoặc cao lên khi hẹp), `text-cut`, `svg-terminal` (Svg trên desktop thành hộp rỗng trên terminal),
 `hard-color` (màu hex không theo theme của người dùng, kèm khoá theme gần nhất) và `tests`.
 

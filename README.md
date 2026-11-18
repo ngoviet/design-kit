@@ -266,7 +266,8 @@ Flags of `check-mod`:
 Its checks: *hard* are `mount` (the surface refused the tree, so the engine draws its own), `render`, `svg-source`
 (over 131,072 characters or no `alt`), `raster-size`, `ask-rows` (an AskUserQuestion tree over 12 rows on the
 terminal or 48 on desktop at 40 columns), `overflow`, `contrast` (4.5:1 for text, 3:1 for a lone symbol or a bar of
-block characters, on both terminals and on desktop), `text-min` (desktop, SVG text measured as drawn), `motion` and
+block characters, on both terminals and on desktop; on desktop it is soft when both colors are the app's or a theme
+key's, which the desktop page can only guess), `text-min` (desktop, SVG text measured as drawn), `motion` and
 axe; *soft* are `rows` (a band taller than `maxRows`, or taller when narrow), `text-cut`, `svg-terminal` (an Svg on
 desktop is an empty box on the terminal), `hard-color` (a hex that does not follow the person's theme, with the
 nearest theme key) and `tests`.

@@ -72,7 +72,7 @@ flags[10]:
   --strict: exit 1 when there is a hard failure
   --keep: keep the temporary copies of the mod (paths in notes)
 gates[3]:
-  hard: mount (the surface refused the tree the mod returned, so the engine draws its own instead), render (Ink could not lay the tree out), svg-source (Svg source over 131072 characters or no alt), raster-size (terminal Image pixels outside 1–2048 inline, 1–4096 from a file), ask-rows (an AskUserQuestion tree over 12 rows on the terminal or 48 on desktop at 40 columns), overflow (a terminal line wider than the columns: the terminal wraps it; desktop content wider than its slot), contrast (text under 4.5:1, a lone symbol under 3:1, on a dark or light terminal or on desktop via axe; APCA Lc printed beside), text-min (desktop text under 12px, SVG text measured as drawn), motion (Svg animation that keeps running under prefers-reduced-motion, SMIL always does), axe serious/critical
+  hard: mount (the surface refused the tree the mod returned, so the engine draws its own instead), render (Ink could not lay the tree out), svg-source (Svg source over 131072 characters or no alt), raster-size (terminal Image pixels outside 1–2048 inline, 1–4096 from a file), ask-rows (an AskUserQuestion tree over 12 rows on the terminal or 48 on desktop at 40 columns), overflow (a terminal line wider than the columns: the terminal wraps it; desktop content wider than its slot), contrast (text under 4.5:1, a lone symbol under 3:1, on a dark or light terminal or on desktop via axe; APCA Lc printed beside; soft on desktop when both colors are the app's or a theme key's, which the desktop page only guesses), text-min (desktop text under 12px, SVG text measured as drawn), motion (Svg animation that keeps running under prefers-reduced-motion, SMIL always does), axe serious/critical
   soft: rows (AbovePrompt taller than maxRows, or taller when narrow: text wraps instead of the band shrinking), text-cut (a Text not shown whole: ellipsis or clipped by overflow hidden), svg-terminal (an Svg on desktop is an empty box on the terminal: give the terminal a Text), hard-color (a hex/rgb color does not follow the person's light/dark theme; the nearest theme key is suggested), tests (a mod test failed while swept), axe moderate/minor
   human: open the screenshots (terminal: dark and light panels, the dashed line is the right edge)
 notes[4]:
@@ -484,7 +484,10 @@ async function checkDesktop(browser: Browser, desk: Group[], modName: string, di
           for (const n of v.nodes) {
             if (v.id === "color-contrast") {
               const m = /contrast of ([\d.]+) \(foreground color: (#\w+), background color: (#\w+).*?Expected contrast ratio of ([\d.]+:1)/.exec(n.msg);
-              add(gate, "contrast", "desktop", `${j.component} › ${htmlText(n.html)}`, m ? `${m[2]} on ${m[3]}: ${m[1]}:1, needs ${m[4]}` : n.msg.slice(0, 200), render);
+              const detail = m ? `${m[2]} on ${m[3]}: ${m[1]}:1, needs ${m[4]}` : n.msg.slice(0, 200);
+              // Chữ màu app/khoá theme trên nền app: hai màu đều là bản đoán của trang desktop, mod không sửa được ⇒ mềm.
+              if (/\bdata-dk-guess\b/.test(n.html)) add("soft", "contrast", "desktop", `${j.component} › ${htmlText(n.html)}`, `${detail}; app or theme colors on the app background, both guessed for desktop: check in the app`, render);
+              else add(gate, "contrast", "desktop", `${j.component} › ${htmlText(n.html)}`, detail, render);
             } else add(gate, "axe", "desktop", `${j.component} › ${v.id}: ${htmlText(n.html)}`, n.msg.slice(0, 200), render);
           }
         }
