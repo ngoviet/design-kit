@@ -86,6 +86,15 @@ All notable changes to this project are documented here. The format follows
   a note. Entrance animations still get up to 1.5 s to finish before text is measured, and the reduced-motion check
   still reads what runs about 0.9 s after load. 13 blocks × 3 directions with every state: 144.9 s → 120.0 s on one
   Windows machine, same findings line for line.
+- The hooks tell Claude Code mods apart from web pages. A `.tsx` or `.jsx` file inside the `hooks/` folder of a plugin
+  (the nearest parent with `.claude-plugin/plugin.json` and `hooks/hooks.json`) is drawn with `ui.render` in Claude
+  Code's terminal and desktop app, so there is no HTML page for `design-kit check`; the Stop hook blocked almost every
+  turn in a mod repo and the agent had to explain it each time. For such a file the reminder now asks for
+  `claude plugin validate` and `claude plugin test` on the mod, a look at the drawn tree through `ui.drawn()` in the
+  tests, and a task map only for a new screen or panel with controls. The Stop hook counts a `claude plugin test` on
+  the mod or a parent folder (a bare one after `cd`, a Git Bash `/d/…` path or a shell variable in a loop too), or the
+  repository's `tools/check.sh`, run after the edit. Files outside `hooks/` (a web page a plugin ships, the kit's own
+  blocks) still need the gate. Mod and web reminders keep separate 15-minute timers.
 
 ### Fixed
 
@@ -94,6 +103,9 @@ All notable changes to this project are documented here. The format follows
   `design-kit check` that finished after the change and names the page, its folder or a URL (a source file such as
   `.tsx` is covered by any check). Every unchecked page is listed, not only the last one. Test fixtures and the
   Claude Code scratchpad are skipped.
+- The Stop hook named files that no longer exist: a page edited with Write or Edit and then deleted, or a folder
+  renamed later in the session (`plugins/savvy-progress/hooks/*.tsx` kept coming back after the folder became
+  `agents-panel`). Such files are skipped.
 - `hero` block: at 320–360px the product view showed "Camer" and "23/2". The `<figure>` kept the browser's default
   40px side margins, leaving the three-column diagram 208px wide; it now has `margin: 0`, and below 21rem its cells
   use less padding and 16px numbers.

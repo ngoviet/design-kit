@@ -37,7 +37,8 @@ Chuẩn và cổng cho giao diện do agent làm.
   - `commands/inline.ts`: lệnh `inline`, gộp stylesheet liên kết tương đối vào trang, giữ link font.
 - `hooks/nhac-giao-dien.mjs`: hook của plugin, không phụ thuộc gói nào.
   - PostToolUse: nhắc khi có sửa tệp giao diện, tối đa 15 phút một lần.
-  - Stop: đọc transcript, chặn đúng một lần nếu sau lần sửa giao diện cuối chưa chạy `design-kit check`.
+  - Stop: đọc transcript, chặn đúng một lần nếu sau lần sửa giao diện cuối chưa chạy `design-kit check`. Tệp không còn tồn tại thì bỏ qua.
+  - Mod Claude Code: tệp `.tsx`/`.jsx` trong `hooks/` của plugin gần nhất có `hooks/hooks.json` vẽ bằng `ui.render`, nên hai sự kiện trên đòi `claude plugin test` (hoặc `tools/check.sh` của repo) thay cho cổng. Phải xét "nằm trong `hooks/`", vì chính design-kit cũng là plugin có `hooks/hooks.json`: chỉ xét "thuộc plugin" thì `blocks/react/src/*.tsx` bị miễn kiểm nhầm.
 
 ## Lệnh
 
