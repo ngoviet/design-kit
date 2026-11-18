@@ -48,6 +48,11 @@ chế độ giảm chuyển động, nút "Tiếp" không nói đi đâu. Làm c
   dấu tiếng Việt) khi mở trong trình duyệt của app Claude. Khổ nào cũng được đo đủ, kể cả 320 px.
 - **Nhìn được vào shadow DOM.** Card Lit và Home Assistant được đo bên trong shadow root mở, nơi engine Impeccable
   hiện không báo gì.
+- **Kiểm cả mod Claude Code.** Mod vẽ bằng `ui.render` (thanh trên ô nhập, khung bên, dòng dưới một lệnh gọi
+  công cụ) nên không có trang để mở. `design-kit check-mod <thư mục mod>` chạy chính test của mod qua bộ test của
+  Claude Code, với một lớp chặn vẽ lại mỗi lần mount trên terminal và desktop, ở 40 tới 200 cột và mọi ngôn ngữ của
+  mod. Cây terminal được dàn bằng Ink và đo trên terminal tối lẫn sáng; cây desktop thành trang cho axe và phép đo
+  chữ; luật của engine được kiểm thẳng trên cây.
 - **Đo cả trạng thái sau một cú bấm.** Tệp `<trang>.steps.json` đặt cạnh trang liệt kê các trạng thái như lỗi form,
   bước 3 của trình hướng dẫn hay menu đang mở. Mỗi trạng thái là một lần nạp trang mới cộng các thao tác, rồi được đo
   đủ mọi tiêu chí.
@@ -117,6 +122,7 @@ design-kit check http://localhost:5173       # trang đang chạy trên dev serv
 design-kit check dist --jobs 6               # mọi tệp .html trong thư mục, 6 trang một lúc
 design-kit check signup.html --steps '[{"name":"loi","do":[{"click":"button[type=submit]"}]}]'
 design-kit inline bao-cao.html              # gộp stylesheet liên kết vào trang (mở được khi không có máy chủ)
+design-kit check-mod plugins/session-band  # kiểm một mod Claude Code (cần cài Claude Code)
 ```
 
 Bắt đầu một dự án: chép DESIGN.md của hướng gần nhất vào dự án (dòng `kit:` của lệnh `design-kit` cho biết kit nằm
@@ -167,12 +173,42 @@ và giữ `<link>` font làm phần bổ sung. Đừng nhúng font base64 cho tr
 (524 288 byte), lớn hơn là báo "couldn't open". Font dự phòng phải có chữ Việt (hướng Giấy dùng
 `"Literata", "Times New Roman", "Noto Serif", serif`): Georgia thiếu chữ Việt nên tách chữ ("Ngắ n").
 
+Một mod Claude Code cố ý mắc lỗi (fixture `test/fixtures/mods/xau`, rút gọn):
+
+```text
+$ design-kit check-mod test/fixtures/mods/xau --widths 40,120 --limit 6
+status: "fail: 9 hard finding(s) across 4 distinct drawings"
+mod: xau 0.0.1 (test/fixtures/mods/xau)
+renders: "terminal: Ink 6.8.0 at 40,120 columns on dark #1e1e1e and light #ffffff; desktop: HTML approximation (8px a cell) via msedge, light #faf9f5 and dark #262624"
+runs[3]{run,tests,drawings,seconds}:
+  default,"1 pass, 0 fail",8,1.1
+  en,1 ran (expect made soft),8,0.9
+  vi,1 ran (expect made soft),8,1.4
+checks[15]{check,gate,result}:
+  svg-source,hard,1 hard
+  overflow,hard,2 hard
+  contrast,hard,2 hard
+  …
+  svg-terminal,soft,2 soft
+findings[6]{gate,check,surface,where,detail,renders}:
+  hard,svg-source,desktop,"AbovePrompt › Svg alt=\"\"","no alt: a reader that cannot see it, and a surface without Svg, get nothing",40–120
+  hard,motion,desktop,"AbovePrompt › Svg alt=\"\"",CSS animation with no prefers-reduced-motion rule,40–120
+  hard,contrast,terminal,"AbovePrompt › \"$0.50\"","#4caf6e on #ffffff: 2.74:1, needs 4.5:1 (text); APCA Lc 52.7",light/40–120
+  hard,overflow,terminal,AbovePrompt,"a line runs up to 3 cell(s) past the columns: …",40
+  …
+```
+
+`runs` có một dòng cho mỗi lượt chạy: `default` giữ tuỳ chọn riêng của từng test và báo qua/hỏng; mỗi lượt ngôn ngữ
+ép tuỳ chọn `language` của mod và làm `expect` mềm, vì test so chữ tiếng Anh sẽ dừng ở đó. Ảnh chụp nằm ở
+`.design-kit/shots/mod-<tên>/`: mỗi ảnh terminal có khung tối và khung sáng, vạch đứt là mép phải.
+
 ## Lệnh
 
 | Lệnh | Làm gì |
 | --- | --- |
 | `design-kit` (hoặc `home`) | Vị trí kit, các hướng, khối, trình duyệt và engine, cùng lời nhắc `workflow` |
 | `design-kit check <tệp\|thư mục\|url>...` | Cổng. Thoát 0 khi đã kiểm xong (đọc `status`); `--strict` thoát 1 nếu có lỗi cứng |
+| `design-kit check-mod <thư mục mod>` | Kiểm các hình mod vẽ bằng `ui.render`: test của mod được quét trên terminal và desktop, mọi bề rộng và ngôn ngữ. Cần Claude Code (`claude`, hoặc `CLAUDE_BIN`) |
 | `design-kit inline <trang.html> [--ra <tệp-ra.html>] [--dry-run]` | Đưa stylesheet liên kết tương đối vào các thẻ `<style>` ngay tại chỗ, giữ link font, để trang mở được khi không có máy chủ |
 | `design-kit setup [--download] [--no-browser]` | Tìm trình duyệt và engine Impeccable; tải engine ghim khi máy chưa có |
 | `design-kit doi-mau --huong <dem\|giay\|dam> --nhan <0-360> [--trung-tinh <0-360>] --ra <tệp.css>` | Đổi sắc màu nhấn (và trung tính) theo thương hiệu; mọi cặp màu vẫn đạt WCAG |
@@ -209,6 +245,27 @@ khổ đó:
 Mã thoát: 0 đã kiểm xong các trang, 1 có lỗi cứng khi dùng `--strict` hoặc công cụ gặp lỗi (không có trình duyệt,
 không thấy trang), 2 gọi sai cú pháp.
 
+Cờ của `check-mod`:
+
+| Cờ | Ý nghĩa |
+| --- | --- |
+| `--widths <n,n>` | Số cột cần quét (mặc định `40,52,64,78,100,120,160,200`): `bodyColumns` của AbovePrompt và Pane, `viewport.columns` của mọi component |
+| `--surfaces <terminal,desktop>` | Surface cần vẽ (mặc định cả hai) |
+| `--languages <a,b\|none>` | Các lượt ngôn ngữ ngoài lượt mặc định (mặc định: mọi giá trị của tuỳ chọn `language` trừ `auto`) |
+| `--no-tests` | Bỏ test của mod: chỉ mount mỗi component với props mặc định (thường là màn trống) |
+| `--pane-id <id>` | `requestId` cho Pane mà mod khớp bằng id tính lúc chạy (mặc định: tên mod) |
+| `--term-bg <dark=#hex,light=#hex>` | Nền terminal để đo (mặc định `#1e1e1e` và `#ffffff`) |
+| `--shots <thư mục>` / `--no-shots` | Thư mục ảnh (mặc định `.design-kit/shots/mod-<tên>`) / không chụp |
+| `--strict` | Thoát 1 khi có lỗi cứng |
+| `--keep` | Giữ các bản sao tạm của mod (đường dẫn ở `notes`) |
+
+Các phép kiểm: *cứng* gồm `mount` (surface từ chối cây, nên engine vẽ bản của nó), `render`, `svg-source` (quá
+131.072 ký tự hoặc thiếu `alt`), `raster-size`, `ask-rows` (cây cho AskUserQuestion quá 12 hàng terminal hay 48
+hàng desktop ở 40 cột), `overflow`, `contrast` (4,5:1 cho chữ, 3:1 cho một ký hiệu đơn hay một dải ký tự khối, trên
+cả hai terminal và desktop), `text-min` (desktop, chữ SVG đo theo cỡ đã vẽ), `motion` và axe; *mềm* gồm `rows` (thanh
+cao hơn `maxRows`, hoặc cao lên khi hẹp), `text-cut`, `svg-terminal` (Svg trên desktop thành hộp rỗng trên terminal),
+`hard-color` (màu hex không theo theme của người dùng, kèm khoá theme gần nhất) và `tests`.
+
 ## Cách hoạt động
 
 1. Tệp cục bộ được phục vụ qua `http://127.0.0.1` từ thư mục gần nhất có `.git` hoặc `package.json`, nên liên kết
@@ -224,6 +281,20 @@ không thấy trang), 2 gọi sai cú pháp.
    tệp, và (qua giao thức DevTools của Chromium) chữ có dấu có bị vẽ bằng font thứ hai không.
 5. Mỗi phát hiện thuộc một loại: *cứng* (chặn "báo xong"), *mềm* (sửa hoặc ghi lý do) hoặc *người* (thứ bậc, thẩm mỹ
    và bản đồ tác vụ: mở ảnh chụp ra xem).
+
+`check-mod` làm việc trên cây engine giao cho surface, vì bộ test của Claude Code chạy hook của mod nhưng không
+vẽ ra điểm ảnh:
+
+1. `claude plugin validate` cho biết mod hook những component nào; mod được chép sang thư mục tạm, dòng
+   `import … from 'claude-code/testing'` trong test được trỏ sang lớp chặn, và một test chung mount mỗi component một lần.
+2. `claude plugin test` chạy mỗi ngôn ngữ một lượt. Mỗi lần test gọi `$.ui.mount`, lớp chặn vẽ lại trên cả hai
+   surface ở mọi bề rộng rồi in `ui.drawn()`; cây giống nhau chỉ đo một lần.
+3. Cây terminal đi qua `renderToString` của Ink ở đúng số cột; khoá theme lấy màu theo theme tối và sáng mặc định của
+   Claude Code (`data/claude-themes.json`, sinh lại bằng `node scripts/claude-themes.mjs`), `dimColor` vẽ bằng màu mờ
+   của theme.
+4. Cây desktop thành trang gần với renderer của app (8 px một ô, caption 12 px tới title 22 px, Svg tới 32 px vẽ thành
+   ảnh, hình lớn hơn nhúng trong shadow root riêng), mỗi component, bề rộng và chế độ màu một trang. Trang là bản
+   phỏng theo; phán quyết dựa trên thứ mod tự đặt (màu hex, cỡ chữ SVG, độ dài source, hoạt ảnh).
 
 Ngưỡng, cách đo và nguồn của từng tiêu chí (chuẩn, nghiên cứu hay quy ước) nằm trong
 [`docs/tieu-chi.md`](docs/tieu-chi.md); nguồn và câu trích nằm trong [`docs/nguon.md`](docs/nguon.md). Các quyết định
@@ -256,9 +327,10 @@ design/<huong>/    DESIGN.md của từng hướng, sinh từ token
 blocks/html/       13 khối HTML/CSS, mỗi khối có thể kèm <khoi>.steps.json
 blocks/react/      khối Vite + React + shadcn/ui dùng chung token
 src/               CLI (check, probe, copy, steps, trình duyệt, impeccable, lệnh màu)
-data/              copy-tells.json: danh sách từ cho phép đo copy
+src/mod/           check-mod: lớp chặn và test chung, chạy test, terminal bằng Ink, trang desktop, luật engine
+data/              copy-tells.json (phép đo copy), claude-themes.json (màu theme Claude Code cho check-mod)
 skills/, hooks/    plugin Claude Code; .claude-plugin/ chứa manifest và marketplace
-scripts/           kiểm cặp màu, sinh DESIGN.md, tải font, xuất nguồn
+scripts/           kiểm cặp màu, sinh DESIGN.md, tải font, xuất nguồn, màu theme Claude Code
 docs/              tiêu chí, nguồn, quyết định
 eval/              các trang đánh giá A/B
 ```
@@ -276,9 +348,12 @@ npx tsup                         # build dist/
 node scripts/kiem-cap-mau.mjs    # cả 126 cặp màu phải đạt
 node scripts/tao-design-md.mjs   # sinh lại design/*/DESIGN.md sau khi đổi token
 npm run lint:design              # lint các tệp DESIGN.md
+node scripts/claude-themes.mjs   # sinh lại data/claude-themes.json từ Claude Code đã cài
 cd blocks/react && npm ci && npm run build && cd ../..
 design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6   # cổng đầy đủ, ~10 phút
 ```
+
+Test `check-mod` trên `test/fixtures/mods/xau` chỉ chạy ở máy có Claude Code; nơi khác tự bỏ qua.
 
 CI (GitHub Actions) chạy đúng các bước này trong container Playwright, một máy Linux sạch không có Edge và không có
 skill Impeccable, nên cũng là phép thử kit chạy độc lập. Khối mới chỉ được gộp khi đã qua cổng ở cả 3 hướng ×

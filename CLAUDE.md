@@ -35,6 +35,12 @@ Chuẩn và cổng cho giao diện do agent làm.
   - `commands/setup.ts`: kiểm trình duyệt, tải engine.
   - `standalone.ts`: phép đo `standalone`, mở tệp dạng `data:` URL như pane của app Claude rồi so với bản http.
   - `commands/inline.ts`: lệnh `inline`, gộp stylesheet liên kết tương đối vào trang, giữ link font.
+  - `commands/check-mod.ts` + `mod/`: lệnh `check-mod`, cổng cho mod Claude Code (vẽ bằng `ui.render`, không có trang).
+    - `mod/collect.ts`: đọc `claude plugin validate`, chép mod sang thư mục tạm, gắn lớp chặn, chạy `claude plugin test` mỗi ngôn ngữ một lượt.
+    - `mod/shim.ts`: mã lớp chặn (bọc `$.ui.mount`, in `DKTREE {...}`) và test chung.
+    - `mod/terminal.ts`: cây → Ink `renderToString` → lưới chữ, đo, ảnh ANSI → HTML. `mod/desktop.ts`: cây → trang HTML (theo lô).
+    - `mod/rules.ts`: luật engine. `mod/colors.ts`: màu khoá theme (`data/claude-themes.json`, sinh bằng `node scripts/claude-themes.mjs`).
+  - `test/fixtures/mods/xau/`: mod cố ý mắc mỗi lỗi một lần cho test check-mod; nằm ngoài tsc, eslint, vitest.
 - `hooks/nhac-giao-dien.mjs`: hook của plugin, không phụ thuộc gói nào.
   - PostToolUse: nhắc khi có sửa tệp giao diện, tối đa 15 phút một lần.
   - Stop: đọc transcript, chặn đúng một lần nếu sau lần sửa giao diện cuối chưa chạy `design-kit check`. Tệp không còn tồn tại thì bỏ qua.
@@ -51,7 +57,19 @@ Chuẩn và cổng cho giao diện do agent làm.
 
 - Đổi màu nhấn theo thương hiệu: `design-kit doi-mau --huong dem --nhan 45 --trung-tinh 60 --ra <tệp>`. Lệnh giữ cấu trúc, chỉ đổi sắc rồi dò lại độ sáng để 42 cặp vẫn đạt. Muốn kiểm riêng một tệp: `design-kit kiem-mau <tệp> --huong <hướng>`. Các script trong `scripts/` vẫn chạy tay được.
 
+- Mod Claude Code: `design-kit check-mod <thư mục mod> --strict` (cần `claude`, hoặc `CLAUDE_BIN`). `DK_MOD_DUMP=<tệp.json>` ghi mọi cây vẽ ra tệp để soi.
+
 ## Bẫy đã gặp
+
+- **check-mod (18/11/2026):**
+  - `$` của bộ test engine bị đóng băng: Proxy bọc thẳng `$` ném "non-configurable and non-writable property". Bọc `{}` rồi chuyển tiếp từng thuộc tính.
+  - Bảng phần tử terminal cũng có `Svg`, vẽ thành hộp rỗng (mất hình lẫn `alt`), nên `'Svg' in ui` đúng cả trên terminal và ký hiệu dự phòng không bao giờ hiện (session-band dính lỗi này). Phép kiểm `svg-terminal` so cây desktop với cây terminal.
+  - `document.getAnimations()` của Chromium không trả hoạt ảnh trong shadow root: gọi `getAnimations()` của từng shadow root (`probeMotionDeep`).
+  - Mỗi cây desktop một trang thì agents-panel mất 6,5 phút (768 trang, mỗi trang một lần axe). Gộp theo lô component × bề rộng × chế độ màu: 33 giây.
+  - Ink: một hộp `flexShrink: 0` đứng một mình thì chữ xuống dòng chứ không tràn; tràn khi nhiều phần cố định cộng lại quá số cột.
+  - Ink 7 và 8 cần Node 22, nên giữ ink 6.x (engines `node >=20`). chalk đọc `FORCE_COLOR` lúc import: đặt trước khi import động ink, không thì không có mã màu.
+  - Icon SVG (≤ 32px): app vẽ Svg không tương tác thành ảnh; trang đo cũng vẽ thành `<img>`, nên chữ "$" trong đồng xu không bị tính là chữ nhỏ.
+  - colorjs.io APCA: màu gọi hàm là nền (`bg.contrast(fg, "APCA")`).
 
 - **`ch` đo sai với chữ Việt.** Với Be Vietnam Pro, 68ch chứa khoảng 93 ký tự. Độ dài dòng dùng `em`. Probe đo độ dài dòng theo bề rộng trung bình của chính chữ trong đoạn.
 - **`@import url(...)` nằm trong tệp token** bị bundler đẩy xuống giữa tệp và bỏ đi, nên mất font. Vì vậy mới tách ra `fonts.css`.

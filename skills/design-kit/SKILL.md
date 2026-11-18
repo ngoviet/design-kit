@@ -147,6 +147,10 @@ design-kit check <file.html|folder|http://localhost:port> --strict
   only ever served over http can say so, or pass `--no-standalone`.
 - **Fix the finding, not the layout**: the information order in the 1280 screenshot must not change between rounds.
   A Vite/React app: check `dist/*.html` or the dev-server URL.
+- A **Claude Code mod** (hooks that draw with `ui.render`: a band, a pane, a row under a tool call) has no page:
+  `design-kit check-mod <mod folder> --strict` sweeps the mod's own tests over terminal and desktop, 40–200 columns
+  and every language (needs `claude`). Color text with theme keys (`success`, `warning`, `inactive`), not hex: a hex
+  has to pass on a dark and a light terminal. Write tests that mount each real state; only mounts get measured.
 
 ## Thresholds (sources in `docs/tieu-chi.md`)
 

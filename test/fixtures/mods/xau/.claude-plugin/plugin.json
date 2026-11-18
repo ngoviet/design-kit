@@ -1,0 +1,14 @@
+{
+  "name": "xau",
+  "version": "0.0.1",
+  "description": "Fixture for design-kit check-mod: a band with known design faults, one per check",
+  "userConfig": {
+    "language": {
+      "type": "string",
+      "title": "Band language",
+      "description": "auto, en or vi",
+      "default": "auto",
+      "options": ["auto", "en", "vi"]
+    }
+  }
+}

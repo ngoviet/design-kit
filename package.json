@@ -52,12 +52,16 @@
     "axe-core": "^4.14.0",
     "axi-sdk-js": "^0.1.14",
     "colorjs.io": "^0.5.2",
-    "playwright-core": "^1.65.1"
+    "ink": "^6.8.0",
+    "playwright-core": "^1.65.1",
+    "react": "^19.3.1",
+    "string-width": "^8.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@google/design.md": "^0.4.0",
     "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
     "eslint": "^10.14.0",
     "tsup": "^8.5.1",
     "typescript": "~6.0.3",

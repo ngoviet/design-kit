@@ -48,6 +48,12 @@ ring, motion that ignores reduced-motion, a "Next" button that does not say wher
   Vietnamese letters) when opened in the Claude app's browser pane. Every width gets every check, 320 px included.
 - **Sees inside shadow DOM.** Lit and Home Assistant cards are measured inside open shadow roots, where the
   Impeccable engine currently reports nothing.
+- **Gates Claude Code mods too.** A mod draws with `ui.render` (a band above the prompt, a pane, a row under a
+  tool call) and has no page to open. `design-kit check-mod <mod folder>` runs the mod's own tests through Claude
+  Code's test kit with a shim that draws every mount again on the terminal and the desktop surface, at 40 to 200
+  columns and in every language of the mod. Terminal drawings are laid out with Ink and measured on a dark and a light
+  terminal; desktop drawings become a page for axe and the text probe; the engine's own limits are checked on the
+  trees.
 - **Measures the states behind a click.** A `<page>.steps.json` beside the page lists states such as form errors,
   step 3 of a wizard or an open menu. Each one is a fresh load plus scripted actions, measured with every check.
 - **Guides like a game tutorial.** The CLI reminds the agent to write a task map first and to cover every point where
@@ -119,6 +125,7 @@ design-kit check http://localhost:5173       # a page on a running dev server
 design-kit check dist --jobs 6               # every .html in a folder, 6 at a time
 design-kit check signup.html --steps '[{"name":"error","do":[{"click":"button[type=submit]"}]}]'
 design-kit inline report.html               # put linked stylesheets into the page (opens without a server)
+design-kit check-mod plugins/session-band  # gate a Claude Code mod (needs Claude Code installed)
 ```
 
 Starting a project: copy the DESIGN.md of the closest direction into the project (the `kit:` line of `design-kit`
@@ -170,12 +177,43 @@ tags in place and keeps the font `<link>` as an extra. Do not embed fonts as bas
 at most 512 KiB (524,288 bytes) and says "couldn't open" above that. Name a fallback font that has Vietnamese letters (Giấy uses
 `"Literata", "Times New Roman", "Noto Serif", serif`): Georgia lacks them and splits words ("Ngắ n").
 
+A Claude Code mod with planted faults (the fixture in `test/fixtures/mods/xau`, shortened):
+
+```text
+$ design-kit check-mod test/fixtures/mods/xau --widths 40,120 --limit 6
+status: "fail: 9 hard finding(s) across 4 distinct drawings"
+mod: xau 0.0.1 (test/fixtures/mods/xau)
+renders: "terminal: Ink 6.8.0 at 40,120 columns on dark #1e1e1e and light #ffffff; desktop: HTML approximation (8px a cell) via msedge, light #faf9f5 and dark #262624"
+runs[3]{run,tests,drawings,seconds}:
+  default,"1 pass, 0 fail",8,1.1
+  en,1 ran (expect made soft),8,0.9
+  vi,1 ran (expect made soft),8,1.4
+checks[15]{check,gate,result}:
+  svg-source,hard,1 hard
+  overflow,hard,2 hard
+  contrast,hard,2 hard
+  …
+  svg-terminal,soft,2 soft
+findings[6]{gate,check,surface,where,detail,renders}:
+  hard,svg-source,desktop,"AbovePrompt › Svg alt=\"\"","no alt: a reader that cannot see it, and a surface without Svg, get nothing",40–120
+  hard,motion,desktop,"AbovePrompt › Svg alt=\"\"",CSS animation with no prefers-reduced-motion rule,40–120
+  hard,contrast,terminal,"AbovePrompt › \"$0.50\"","#4caf6e on #ffffff: 2.74:1, needs 4.5:1 (text); APCA Lc 52.7",light/40–120
+  hard,overflow,terminal,AbovePrompt,"a line runs up to 3 cell(s) past the columns: …",40
+  …
+```
+
+`runs` has one row per run: `default` keeps each test's own options and reports its pass/fail; every language run
+forces the mod's `language` option and makes `expect` soft, since a test that compares English text would stop
+there. Screenshots go to `.design-kit/shots/mod-<name>/`: each terminal one shows the dark and the light terminal,
+with a dashed line at the right edge.
+
 ## Commands
 
 | Command | What it does |
 | --- | --- |
 | `design-kit` (or `home`) | Kit location, directions, blocks, browser and engine, and the `workflow` reminders |
 | `design-kit check <file\|dir\|url>...` | The gate. Exit 0 when the pages were checked (read `status`); `--strict` exits 1 on a hard failure |
+| `design-kit check-mod <mod folder>` | Gate a Claude Code mod's `ui.render` drawings: its tests swept over terminal and desktop, every width and language. Needs Claude Code (`claude`, or `CLAUDE_BIN`) |
 | `design-kit inline <page.html> [--ra <out.html>] [--dry-run]` | Put the page's relatively linked stylesheets into `<style>` tags in place, keep font links, so it opens without a server |
 | `design-kit setup [--download] [--no-browser]` | Find a browser and the Impeccable engine; download the pinned engine when it is missing |
 | `design-kit doi-mau --huong <dem\|giay\|dam> --nhan <0-360> [--trung-tinh <0-360>] --ra <file.css>` | Re-hue a direction's accent (and neutrals) for a brand; every color pair still passes WCAG |
@@ -211,6 +249,28 @@ A steps file is a list of states. Each state starts from a fresh load and runs i
 Exit codes: 0 the pages were checked, 1 a hard failure under `--strict` or a tool error (no browser, page not
 found), 2 bad usage.
 
+Flags of `check-mod`:
+
+| Flag | Meaning |
+| --- | --- |
+| `--widths <n,n>` | Columns to sweep (default `40,52,64,78,100,120,160,200`): `bodyColumns` of AbovePrompt and Pane, `viewport.columns` of every component |
+| `--surfaces <terminal,desktop>` | Surfaces to draw on (default both) |
+| `--languages <a,b\|none>` | Language runs besides the default one (default: every value of the mod's `language` option but `auto`) |
+| `--no-tests` | Skip the mod's tests: only mount each component with default props (usually its empty state) |
+| `--pane-id <id>` | `requestId` for a Pane the mod matches by a computed id (default: the mod's name) |
+| `--term-bg <dark=#hex,light=#hex>` | Terminal backgrounds to measure against (default `#1e1e1e` and `#ffffff`) |
+| `--shots <dir>` / `--no-shots` | Screenshot folder (default `.design-kit/shots/mod-<name>`) / no screenshots |
+| `--strict` | Exit 1 on a hard failure |
+| `--keep` | Keep the temporary copies of the mod (their paths are in `notes`) |
+
+Its checks: *hard* are `mount` (the surface refused the tree, so the engine draws its own), `render`, `svg-source`
+(over 131,072 characters or no `alt`), `raster-size`, `ask-rows` (an AskUserQuestion tree over 12 rows on the
+terminal or 48 on desktop at 40 columns), `overflow`, `contrast` (4.5:1 for text, 3:1 for a lone symbol or a bar of
+block characters, on both terminals and on desktop), `text-min` (desktop, SVG text measured as drawn), `motion` and
+axe; *soft* are `rows` (a band taller than `maxRows`, or taller when narrow), `text-cut`, `svg-terminal` (an Svg on
+desktop is an empty box on the terminal), `hard-color` (a hex that does not follow the person's theme, with the
+nearest theme key) and `tests`.
+
 ## How it works
 
 1. Local files are served over `http://127.0.0.1` from the nearest folder with `.git` or `package.json`, so relative
@@ -228,6 +288,21 @@ found), 2 bad usage.
    a second font.
 5. Every finding is *hard* (blocks "done"), *soft* (fix or write a reason) or *human* (hierarchy, taste and the task
    map: open the screenshots).
+
+`check-mod` works on the tree the engine hands a surface, since Claude Code's test kit runs the mod's hooks but
+never paints:
+
+1. `claude plugin validate` names the components the mod hooks; the mod is copied to a temporary folder, its tests'
+   `import … from 'claude-code/testing'` point at a shim, and a generic test mounts each component once.
+2. `claude plugin test` runs once per language. Each `$.ui.mount` a test makes is first drawn again on both surfaces
+   at every width, and `ui.drawn()` is printed; identical trees are measured once.
+3. Terminal trees go through Ink's `renderToString` at the exact column count, with theme keys colored from Claude
+   Code's default dark and light themes (`data/claude-themes.json`, refreshed by `node scripts/claude-themes.mjs`) and
+   `dimColor` drawn in the theme's dim color.
+4. Desktop trees become a page close to the app's renderer (8 px a cell, caption 12 px to title 22 px, an Svg up to
+   32 px drawn as an image, larger ones inline in a shadow root of their own), one page per component, width and
+   scheme. The page is an approximation; verdicts rest on what the mod sets itself (hex colors, SVG font sizes,
+   source length, animation).
 
 Thresholds, how each is measured and its source (a standard, research or a convention) are in
 [`docs/tieu-chi.md`](docs/tieu-chi.md); the quoted sources are in [`docs/nguon.md`](docs/nguon.md). Design decisions
@@ -260,9 +335,10 @@ design/<dir>/      DESIGN.md per direction, generated from the tokens
 blocks/html/       13 HTML/CSS blocks, each with an optional <block>.steps.json
 blocks/react/      Vite + React + shadcn/ui blocks on the same tokens
 src/               the CLI (check, probe, copy, steps, browser, impeccable, color commands)
-data/              copy-tells.json: the word lists for the copy check
+src/mod/           check-mod: shim and generic test, test runner, Ink terminal, desktop page, engine rules
+data/              copy-tells.json (copy check), claude-themes.json (Claude Code theme colors for check-mod)
 skills/, hooks/    the Claude Code plugin; .claude-plugin/ holds its manifest and marketplace
-scripts/           color pair check, DESIGN.md generator, font download, source export
+scripts/           color pair check, DESIGN.md generator, font download, source export, Claude Code theme colors
 docs/              criteria, sources, decisions (Vietnamese)
 eval/              A/B evaluation pages
 ```
@@ -281,9 +357,12 @@ npx tsup                         # build dist/
 node scripts/kiem-cap-mau.mjs    # all 126 color pairs must pass
 node scripts/tao-design-md.mjs   # regenerate design/*/DESIGN.md after a token change
 npm run lint:design              # lint the DESIGN.md files
+node scripts/claude-themes.mjs   # refresh data/claude-themes.json from the installed Claude Code
 cd blocks/react && npm ci && npm run build && cd ../..
 design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6   # full gate, ~10 min
 ```
+
+The `check-mod` test on `test/fixtures/mods/xau` runs only where Claude Code is installed; elsewhere it is skipped.
 
 CI (GitHub Actions) runs the same in the Playwright container, a clean Linux machine with no Edge and no Impeccable
 skill, which also proves the kit runs on its own. A new block is merged only after it passes in all 3 directions ×

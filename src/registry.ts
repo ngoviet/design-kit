@@ -1,4 +1,5 @@
 import { CHECK_HELP, checkCommand } from "./commands/check.js";
+import { CHECK_MOD_HELP, checkModCommand } from "./commands/check-mod.js";
 import { HOME_HELP } from "./commands/home.js";
 import { INLINE_HELP, inlineCommand } from "./commands/inline.js";
 import { DOI_MAU_HELP, doiMauCommand, KIEM_MAU_HELP, kiemMauCommand } from "./commands/mau.js";
@@ -23,6 +24,12 @@ export const COMMANDS: Record<string, CommandSpec> = {
     summary: "render and measure pages; hard failures block done, soft need a reason, screenshots for the human pass",
     help: CHECK_HELP,
     run: checkCommand,
+  },
+  "check-mod": {
+    usage: "check-mod <mod folder> [--widths n,n] [--surfaces terminal,desktop] [--strict]",
+    summary: "gate a Claude Code mod's ui.render drawings: its tests swept over terminal and desktop, every width and language, contrast, overflow, cut text, engine limits",
+    help: CHECK_MOD_HELP,
+    run: checkModCommand,
   },
   inline: {
     usage: "inline <page.html> [--ra out.html] [--dry-run]",

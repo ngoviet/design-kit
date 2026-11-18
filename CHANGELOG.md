@@ -7,6 +7,19 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `design-kit check-mod <mod folder>`: a gate for Claude Code mods, whose hooks draw with `ui.render` and have no page
+  to open. It copies the mod to a temporary folder, points its tests' `claude-code/testing` import at a shim and runs
+  `claude plugin test` once per language of the mod's `language` option. Every `$.ui.mount` a test makes is drawn
+  again on the terminal and desktop surfaces at 40–200 columns and the tree the surface is handed (`ui.drawn()`) is
+  printed; a generic test mounts each component the mod hooks with default props. Terminal trees are laid out with Ink
+  6 at the exact column count and measured on a dark and a light terminal (overflow, cut text, rows, WCAG 2 and APCA
+  contrast with theme keys from Claude Code's own themes, fixed hex colors); desktop trees become a page close to the
+  app's renderer for axe, the text probe (SVG text as drawn) and reduced motion; the engine's limits (Svg source
+  131,072 characters and `alt`, AskUserQuestion rows, terminal Image pixels) are checked on the trees. First run on
+  claude-kit-axi: session-band failed 12 hard (five hex colors at 2.1–2.9:1 on a light terminal and desktop),
+  agents-panel 1 hard (SVG text at 11px); 29 s and 38 s. `data/claude-themes.json` holds the theme colors, refreshed by `node scripts/claude-themes.mjs`.
+  New dependencies: `ink` 6.8 (the last line that runs on Node 20), `react` 19, `string-width`.
+
 - `text-covered` check (soft): a line of text that another element paints over, typically a word too long for a
   narrow grid cell spilling under the next cell's background. Every other check passed such text: it is big enough,
   contrasted, inside the page and not clipped. Nine points per line are hit-tested in the text's own tree, so it

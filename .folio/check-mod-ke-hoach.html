@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="vi" data-dk="giay" data-lavish-annotate="on">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kế hoạch: design-kit check-mod</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="dk/core.css">
+<link rel="stylesheet" href="dk/giay.css">
+<link rel="stylesheet" href="dk/_base.css">
+<style>
+  .wrap { max-width: 64rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4) var(--sp-8); }
+  header .kicker { font: 600 var(--fs-xs) / 1.5 var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--accent-text); margin: 0 0 var(--sp-2); }
+  header h1 { margin-bottom: var(--sp-3); }
+  header .lead { color: var(--text-2); font-size: var(--fs-md); line-height: 1.5; }
+  section { margin-top: var(--sp-7); }
+  section > h2 { margin-bottom: var(--sp-4); }
+  h3 { margin: var(--sp-5) 0 var(--sp-3); }
+  .grid2 { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); }
+  .card { padding: var(--sp-5); min-width: 0; }
+  .card h3 { margin-top: 0; }
+  .card p:last-child, .card ul:last-child { margin-bottom: 0; }
+  ul.tight { margin: 0 0 var(--sp-4); padding-left: 1.2em; }
+  ul.tight li { margin-bottom: var(--sp-2); max-width: var(--measure); }
+  code, .mono { font-family: var(--font-mono); font-size: .86em; overflow-wrap: anywhere; }
+  code { background: var(--surface-2); padding: 1px 5px; border-radius: var(--r-sm); }
+
+  /* Luồng */
+  .flow { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-3); }
+  .flow > li { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); gap: var(--sp-3); align-items: start; }
+  .flow .n { width: 2.5rem; height: 2.5rem; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); font: 700 var(--fs-sm) / 1 var(--font-ui); }
+  .flow .box { padding: var(--sp-3) var(--sp-4); min-width: 0; }
+  .flow .box strong { font-family: var(--font-ui); }
+  .flow .box p { margin: var(--sp-1) 0 0; font-size: var(--fs-sm); line-height: 1.55; color: var(--text-2); }
+  .split { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+  .lane { border: 1px solid var(--border); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); min-width: 0; }
+  .lane strong { font-family: var(--font-ui); }
+  .lane p { margin: var(--sp-1) 0 0; font-size: var(--fs-sm); line-height: 1.55; color: var(--text-2); }
+
+  /* Bảng: khổ hẹp xếp mỗi hàng thành một khối, nhãn cột lấy từ thead (script cuối trang) */
+  .tbl-wrap { border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font: 400 var(--fs-sm) / 1.5 var(--font-ui); }
+  th, td { text-align: left; vertical-align: top; padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--border); }
+  th { background: var(--surface-2); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.chk { font-family: var(--font-mono); font-size: .9em; white-space: nowrap; }
+  @media (max-width: 40rem) {
+    table, tbody, tr, td { display: block; }
+    thead { display: none; }
+    tr { padding: var(--sp-2) 0; border-bottom: 1px solid var(--border); }
+    tr:last-child { border-bottom: 0; }
+    td { border: 0; padding: var(--sp-1) var(--sp-3); }
+    td[data-label]::before { content: attr(data-label); display: block; font-weight: 600; color: var(--text-2); font-size: var(--fs-xs); }
+  }
+
+  /* Terminal minh hoạ: chỉ phần nền tối vẽ chữ màu; nền sáng nói bằng ô màu và số đo */
+  .term { background: #1e1e1e; color: #e8e8e8; border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); font: 400 14px / 1.6 var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
+  .term .dim-d { color: #a0a0a0; }
+  .term .money { color: #4caf6e; }
+  .cap { font: 500 var(--fs-sm) / 1.5 var(--font-ui); color: var(--text-2); margin: 0 0 var(--sp-2); }
+  .cap code { font-size: 1em; }
+  .sw { display: inline-block; width: 1.1em; height: 1.1em; border-radius: 3px; vertical-align: -.2em; border: 1px solid var(--border-strong); margin-right: var(--sp-1); }
+
+  /* TOON mẫu */
+  pre.toon { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-4); font: 400 13px / 1.55 var(--font-mono); margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* Câu hỏi */
+  form.ask { padding: var(--sp-5); display: grid; gap: var(--sp-5); }
+  fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: var(--sp-2); min-width: 0; }
+  legend { font: 600 var(--fs-base) / 1.4 var(--font-ui); margin-bottom: var(--sp-2); padding: 0; }
+  .opt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--sp-3); align-items: start; padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); cursor: pointer; font: 400 var(--fs-sm) / 1.5 var(--font-ui); }
+  .opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .opt input { margin-top: 4px; width: 18px; height: 18px; accent-color: var(--accent); }
+  .opt b { display: block; font-weight: 600; }
+  .opt span.sub { color: var(--text-2); }
+  textarea.input { min-height: 5.5rem; padding: var(--sp-2) var(--sp-3); line-height: 1.5; }
+  .actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; }
+  .state { font: 500 var(--fs-sm) / 1.5 var(--font-ui); color: var(--text-2); }
+  .state.queued { color: var(--ok); }
+  .rec { color: var(--accent-text); font-weight: 600; }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<header>
+  <p class="kicker">Kế hoạch · đã duyệt · bản đầu đã làm</p>
+  <h1>Lệnh <code>design-kit check-mod</code>: kiểm giao diện mod Claude Code</h1>
+  <p class="lead">Hai mod session-band và agents-panel vẽ bằng hook <code>ui.render</code>, không có trang HTML, nên <code>design-kit check</code> hiện không kiểm được. Lệnh mới lấy cây vẽ từ chính engine, dựng lại thành hình cho desktop và terminal, rồi đo như cổng hiện có.</p>
+</header>
+
+<section aria-labelledby="h-ket-qua">
+  <h2 id="h-ket-qua">Kết quả bản đầu (18/11/2026)</h2>
+  <p>Đã làm theo kế hoạch: Ink + React cho terminal, chữ dưới 12px trong SVG tính lỗi cứng. Chạy <code>design-kit check-mod</code> trên hai mod thật, mọi bề rộng 40–200 cột, cả terminal và desktop, sáng và tối:</p>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th scope="col">Mod</th><th scope="col">Đã quét</th><th scope="col">Lỗi cứng</th><th scope="col">Mềm</th><th scope="col">Thời gian</th></tr></thead>
+    <tbody>
+      <tr><td><b>session-band</b></td><td>17 test qua; 912 cây, 110 khác nhau; en, vi</td><td><span class="badge badge-bad">12</span> tương phản: 5 màu hex cố định (#4caf6e, #e2a94e, #e0846b, #4fb3a9, #8b8cf8) chỉ đạt 2,1–2,9:1 trên terminal sáng và trên desktop sáng</td><td>6 màu cứng (gợi ý <code>success</code>, <code>warning</code>, <code>claude</code>…), 1 chữ bị gọt ở desktop 52 cột</td><td>29 giây</td></tr>
+      <tr><td><b>agents-panel</b></td><td>22 test qua; 1.840 cây, 572 khác nhau; en, ru, he, vi</td><td><span class="badge badge-bad">1</span> chữ SVG 11px trong khung Agents (“Cost”, “Tokens”, “Time” và 47 chữ khác)</td><td>1 màu cứng #888780 cho thanh tiến độ</td><td>38 giây</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <ul class="tight" style="margin-top: var(--sp-4)">
+    <li>Mod fixture <code>test/fixtures/mods/xau</code> cố ý mắc mỗi lỗi một lần; test tích hợp xác nhận lệnh bắt đủ cả 8 loại. 26 test mới, cả bộ <code>npm run check</code> qua.</li>
+    <li>Lần đầu agents-panel mất 6,5 phút (mỗi cây desktop một trang). Sau khi gộp theo lô (component × bề rộng × chế độ màu) còn 38 giây.</li>
+    <li>Ảnh chụp: <code>D:\code\claude-kit-axi\.design-kit\shots\mod-session-band</code> và <code>mod-agents-panel</code>. Mỗi ảnh terminal có khung tối và sáng, vạch đứt là mép phải.</li>
+    <li>Chưa commit. Thêm 3 gói: <code>ink</code> 6.8 (bản cuối chạy được trên Node 20), <code>react</code> 19, <code>string-width</code>.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="h-hien-trang">
+  <h2 id="h-hien-trang">Hiện trạng và đích</h2>
+  <div class="grid2">
+    <div class="surface card">
+      <h3>Bây giờ</h3>
+      <ul class="tight">
+        <li><code>design-kit check</code> chỉ mở trang HTML/URL trong Edge rồi đo (axe, cỡ chữ, tràn, chuyển động, ảnh chụp).</li>
+        <li>Bộ test của engine (<code>claude-code/testing</code>) chạy hook và trả cây vẽ dạng dữ liệu qua <code>ui.drawn()</code>, nhưng không vẽ điểm ảnh: tài liệu ghi rõ kit chỉ kiểm hook, “never a surface's paint”.</li>
+        <li>Test của hai mod chỉ mount trên <code>terminal</code>, ở một bề rộng (120 cột) và tiếng Anh.</li>
+      </ul>
+    </div>
+    <div class="surface card">
+      <h3>Đích của bản đầu</h3>
+      <ul class="tight">
+        <li><code>design-kit check-mod plugins/session-band</code> in một phán quyết chuẩn AXI (TOON, tổng, cứng/mềm, mã thoát 0/1/2) và ảnh chụp.</li>
+        <li>Mỗi component mod hook (AbovePrompt, Pane, ToolUse…) được đo trên <b>terminal và desktop</b>, quét bề rộng 40→200 cột, sáng và tối, mọi ngôn ngữ trong tuỳ chọn <code>language</code>.</li>
+        <li>Chạy được trên hai mod thật, có test, README.md và README.vi.md.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-thu">
+  <h2 id="h-thu">Đã chạy thử: lấy được cây vẽ</h2>
+  <p>Chép session-band ra thư mục tạm, đổi dòng <code>import … from 'claude-code/testing'</code> trong tệp test thành một lớp chặn. Lớp này bọc <code>$.ui.mount</code>: mỗi lần test mount, nó mount thêm cùng component ở các surface và bề rộng khác, in <code>ui.drawn()</code> ra stdout, rồi trả lại lần mount gốc cho test.</p>
+  <div class="grid2">
+    <div class="surface card">
+      <h3>Kết quả</h3>
+      <ul class="tight">
+        <li><b>16/16 test</b> của mod vẫn qua khi bị bọc.</li>
+        <li><b>96 cây vẽ</b> (3 bề rộng × 2 surface × 16 lần mount) trong <b>3,4 giây</b>.</li>
+        <li>Cây desktop có <code>Svg</code> kèm <code>source</code>, <code>alt</code>, <code>width</code>, <code>height</code>; desktop tự thêm <code>weight: "semibold"</code> cho chữ <code>bold</code>.</li>
+        <li><code>$</code> của test bị đóng băng (frozen), nên lớp chặn bọc một đối tượng rỗng thay vì bọc thẳng <code>$</code>.</li>
+      </ul>
+    </div>
+    <div class="surface card">
+      <h3>Một phát hiện có ngay</h3>
+      <p>Trên terminal, chỗ mỗi biểu tượng của thanh là một <code>Box</code> rỗng (<code>flexDirection: column</code>, không có con). Mod kiểm <code>'Svg' in ui</code>, mà bảng terminal vẫn trả <code>Svg</code> rồi vẽ thành hộp rỗng, nên các ký hiệu dự phòng <code>⚡ $ ⧗</code> không bao giờ hiện và chữ <code>alt</code> cũng mất.</p>
+      <p class="small muted">Đã xác nhận: phiên khác đã sửa trong <code>band.tsx</code> (rẽ nhánh theo <code>e.surface</code>), nên giờ terminal vẽ <code>⚡ $ ⧗</code>. Phép kiểm <code>svg-terminal</code> vẫn giữ, có mod fixture mắc đúng lỗi này để test.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-luong">
+  <h2 id="h-luong">Cách làm</h2>
+  <ol class="flow">
+    <li><span class="n">1</span><div class="surface box"><strong>Đọc mod</strong><p><code>claude plugin validate &lt;mod&gt;</code> cho danh sách component mod hook (vd <code>ui.render{component=AbovePrompt}</code>, <code>ui.render{component=Pane, requestId=?}</code>). <code>plugin.json</code> cho các giá trị của tuỳ chọn <code>language</code>.</p></div></li>
+    <li><span class="n">2</span><div class="surface box"><strong>Chép sang thư mục tạm, gắn lớp chặn</strong><p>Giống <code>tools/bench/run.sh</code>: không cài gì lên máy. Thêm <code>__dk_shim.ts</code>, đổi import trong <code>*.test.ts(x)</code>. Thêm một test chung mount từng component với props mặc định (cho mod chưa có test mount).</p></div></li>
+    <li><span class="n">3</span><div class="surface box"><strong>Chạy <code>claude plugin test</code>, mỗi ngôn ngữ một lượt</strong><p>Lượt tiếng Anh giữ <code>expect</code> như cũ để báo test hỏng. Lượt ngôn ngữ khác đổi <code>expect</code> thành mềm (không ném lỗi), vì test so chữ tiếng Anh sẽ trượt mà vẫn cần đi tiếp để mount. Mỗi lần mount quét terminal + desktop × bề rộng 40, 52, 64, 78, 100, 120, 160, 200 cột.</p></div></li>
+    <li><span class="n">4</span><div class="surface box"><strong>Gộp cây trùng</strong><p>Cây giống hệt nhau ở nhiều bề rộng hay nhiều test chỉ dựng một lần; báo cáo ghi dải bề rộng (vd <code>78–200</code>).</p></div></li>
+    <li><span class="n">5</span><div class="split">
+        <div class="lane"><strong>5a · Desktop</strong><p>Cây → trang HTML gần renderer của app: Box → flex, Text → span (màu, đậm, mờ, cỡ <code>caption…title</code>), Button → nút, Svg → svg nội tuyến theo <code>width/height</code>. Sáng và tối. Mở trong Edge, chạy phần đo sẵn có của design-kit: axe (tương phản), cỡ chữ kể cả chữ trong SVG đã co theo viewBox, tràn, chữ bị cắt, <code>prefers-reduced-motion</code>, ảnh chụp.</p></div>
+        <div class="lane"><strong>5b · Terminal</strong><p>Cây → Ink (React cho terminal, cùng họ với renderer của Claude Code) ghi vào stdout giả rộng đúng số cột → lưới ký tự có màu. Đo: số hàng, dòng vượt bề rộng, chữ bị cắt hay xuống dòng, tương phản từng ô với nền terminal tối và sáng (WCAG 2 và APCA), màu hex cứng. Xuất SVG rồi PNG.</p></div>
+      </div></li>
+    <li><span class="n">6</span><div class="surface box"><strong>Luật engine và phán quyết</strong><p>Kiểm luật engine trên cây (bảng dưới), gom phát hiện theo component › phần tử, in TOON như <code>check</code>, ảnh vào <code>.design-kit/shots/mod-&lt;tên&gt;/</code>.</p></div></li>
+  </ol>
+</section>
+
+<section aria-labelledby="h-kiem">
+  <h2 id="h-kiem">Các phép kiểm</h2>
+  <p>Ngưỡng theo <code>docs/tieu-chi.md</code> của cổng hiện có, trừ chỗ ghi khác. Cứng thì chặn “xong”, mềm cần sửa hoặc ghi lý do.</p>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th scope="col">Phép kiểm</th><th scope="col">Ở đâu</th><th scope="col">Cổng</th><th scope="col">Báo khi</th></tr></thead>
+    <tbody>
+      <tr><td class="chk">mount</td><td>cả hai</td><td><span class="badge badge-bad">cứng</span></td><td>Surface từ chối cây mod trả về (phần tử hay prop không có, hộp hỏi quá số hàng): engine sẽ vẽ bản mặc định thay cho mod.</td></tr>
+      <tr><td class="chk">svg-source</td><td>desktop</td><td><span class="badge badge-bad">cứng</span></td><td><code>source</code> của Svg dài quá 131.072 ký tự, hoặc thiếu <code>alt</code>.</td></tr>
+      <tr><td class="chk">raster-size</td><td>terminal</td><td><span class="badge badge-bad">cứng</span></td><td>Raster/Image ngoài 1–4096 px mỗi chiều (Raster 1–2048).</td></tr>
+      <tr><td class="chk">ask-rows</td><td>cả hai</td><td><span class="badge badge-bad">cứng</span></td><td>Cây cho hộp AskUserQuestion quá 12 hàng (terminal) hay 48 hàng (desktop), đo ở 40 cột.</td></tr>
+      <tr><td class="chk">rows</td><td>terminal</td><td><span class="badge badge-warn">mềm</span></td><td>AbovePrompt cao hơn <code>maxRows</code> (engine cuộn), hoặc cao lên khi khổ hẹp lại (chữ xuống dòng thay vì thanh co lại).</td></tr>
+      <tr><td class="chk">overflow</td><td>cả hai</td><td><span class="badge badge-bad">cứng</span></td><td>Terminal: dòng rộng hơn số cột (terminal tự xuống dòng, vỡ bố cục). Desktop: nội dung tràn khỏi khung.</td></tr>
+      <tr><td class="chk">contrast</td><td>cả hai</td><td><span class="badge badge-bad">cứng</span></td><td>Chữ dưới 4,5:1 với nền (terminal tối và sáng; desktop qua axe). APCA Lc in kèm để tham khảo.</td></tr>
+      <tr><td class="chk">text-min</td><td>desktop</td><td><span class="badge badge-bad">cứng</span></td><td>Chữ dưới 12px, kể cả chữ trong SVG sau khi co theo viewBox (agents-panel đang dùng 11px). Xem câu hỏi 3.</td></tr>
+      <tr><td class="chk">motion</td><td>desktop</td><td><span class="badge badge-bad">cứng</span></td><td>Svg có <code>@keyframes</code>, <code>animation</code> hay SMIL <code>&lt;animate&gt;</code> mà vẫn chạy khi bật giảm chuyển động.</td></tr>
+      <tr><td class="chk">text-cut</td><td>cả hai</td><td><span class="badge badge-warn">mềm</span></td><td>Chữ của một Text không hiện đủ ở một bề rộng (dấu “…” hay bị khung <code>overflow: hidden</code> gọt). Báo phần còn thấy và dải bề rộng.</td></tr>
+      <tr><td class="chk">svg-terminal</td><td>terminal</td><td><span class="badge badge-warn">mềm</span></td><td>Chỗ desktop có Svg thì terminal là hộp rỗng: hình và <code>alt</code> mất, nên cần một Text dự phòng.</td></tr>
+      <tr><td class="chk">hard-color</td><td>terminal</td><td><span class="badge badge-warn">mềm</span></td><td>Màu hex/rgb cứng: không theo theme sáng/tối của người dùng. Gợi ý khoá theme gần nhất (<code>success</code>, <code>warning</code>, <code>subtle</code>…).</td></tr>
+      <tr><td class="chk">tests</td><td>—</td><td><span class="badge badge-warn">mềm</span></td><td>Test của mod hỏng ở lượt tiếng Anh khi bị bọc (ghi chú, không phải lỗi giao diện).</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section aria-labelledby="h-minh-hoa">
+  <h2 id="h-minh-hoa">Minh hoạ: thanh session-band ở 120 cột</h2>
+  <p>Dựng tay từ cây đã lấy được, để thấy loại lỗi tương phản lệnh sẽ bắt. Màu chi phí <code>#4caf6e</code> là hex cứng nên không đổi theo theme: nền tối thì đạt, nền terminal sáng thì không.</p>
+  <p class="cap">Terminal tối (#1E1E1E), chữ thật như mod vẽ, biểu tượng bỏ qua</p>
+  <div class="term" role="img" aria-label="Thanh trên nền terminal tối: Turn 1, chi phí lượt 0,50 đô la màu xanh lá, tổng 0,50 đô la, cache 60m, context 12%"><span class="dim-d">Turn</span> <b>1</b>   <b>—</b>   <b class="money">$0.50</b> <span class="dim-d">|</span> <b>$0.50</b>   <b>60m</b>      <b>12%</b> <span class="dim-d">×</span></div>
+  <div class="tbl-wrap" style="margin-top: var(--sp-4)">
+  <table>
+    <thead><tr><th scope="col">Màu chữ <code>$0.50</code></th><th scope="col">Nền tối #1E1E1E</th><th scope="col">Nền sáng #FFFFFF</th></tr></thead>
+    <tbody>
+      <tr><td><span class="sw" style="background:#4caf6e"></span><code>#4caf6e</code> (hex cứng)</td><td><span class="badge badge-ok">6,08:1 · APCA Lc 47,3</span></td><td><span class="badge badge-bad">2,74:1 · APCA Lc 52,7</span> dưới 4,5:1</td></tr>
+      <tr><td><span class="sw" style="background:rgb(78,186,101)"></span><code>success</code> (khoá theme)</td><td>theme tối: <code>rgb(78,186,101)</code></td><td>theme sáng: <code>rgb(44,122,57)</code>, tự đổi theo theme</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small muted">Số đo bằng <code>colorjs.io</code> (đã có trong design-kit). Màu khoá theme lấy từ bản Claude Code 2.1.311 đã cài.</p>
+</section>
+
+<section aria-labelledby="h-ra">
+  <h2 id="h-ra">Lệnh và đầu ra</h2>
+<pre class="toon" aria-label="Ví dụ đầu ra TOON (minh hoạ)">$ design-kit check-mod plugins/session-band
+status: "fail: 1 of 9 drawings has hard failures"
+mod: session-band 0.3.1-axi.1
+components: AbovePrompt
+drawings: "9 distinct from 16 mod tests + 1 generic, en+vi, terminal+desktop, 40–200 columns"
+checks[13]{check,gate,result}:
+  contrast,hard,1 hard
+  svg-terminal,soft,4 soft
+  hard-color,soft,6 soft
+  ...
+findings[11]{gate,check,surface,where,detail,renders}:
+  hard,contrast,terminal,"AbovePrompt › Text \"$0.50\"","#4caf6e on #ffffff 2.7:1 (needs 4.5), APCA Lc -57.9",light/40–200
+  soft,svg-terminal,terminal,"AbovePrompt › Svg alt=\"speed\"",empty box on terminal; ⚡ fallback never drawn,dark+light/40–200
+  ...
+shots: ".design-kit/shots/mod-session-band (36)"
+help[3]: ...</pre>
+  <p class="small muted">Số liệu trong ví dụ là minh hoạ. Cờ dự kiến: <code>--widths</code>, <code>--surfaces terminal,desktop</code>, <code>--languages</code> (mặc định mọi giá trị của tuỳ chọn <code>language</code>), <code>--no-tests</code> (chỉ cảnh chung), <code>--term-bg</code>, <code>--shots</code>/<code>--no-shots</code>, <code>--strict</code>. Mã thoát: 0 đã kiểm, 1 có lỗi cứng khi <code>--strict</code>, 2 dùng sai (không có <code>claude</code>, không phải thư mục mod).</p>
+  <h3>Tệp sẽ thêm</h3>
+  <ul class="tight">
+    <li><code>src/commands/check-mod.ts</code>: lệnh, cờ, tổng hợp TOON. Đăng ký trong <code>src/registry.ts</code>.</li>
+    <li><code>src/mod/collect.ts</code> (chép, gắn lớp chặn, chạy test, đọc cây), <code>src/mod/shim.ts</code> (mã lớp chặn và test chung), <code>src/mod/desktop.ts</code> (cây → HTML), <code>src/mod/terminal.ts</code> (Ink → lưới, SVG), <code>src/mod/rules.ts</code> (luật engine), <code>src/mod/colors.ts</code> (khoá theme, WCAG, APCA qua <code>colorjs.io</code> có sẵn).</li>
+    <li><code>data/claude-themes.json</code>: màu khoá theme của Claude Code (sáng, tối) lấy từ bản cài 2.1.311.</li>
+    <li>Test: <code>test/fixtures/mod-xau/</code> (mod cố ý sai: hex tương phản thấp, Svg quá dài, hoạt ảnh không tôn trọng giảm chuyển động, thanh tràn) và cây ghi sẵn để test chạy được trên CI không có <code>claude</code>.</li>
+    <li>README.md và README.vi.md (cùng mục), CHANGELOG, mục bẫy trong CLAUDE.md, nhắc trong SKILL.md.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="h-rui-ro">
+  <h2 id="h-rui-ro">Giả định và rủi ro</h2>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th scope="col">Điều</th><th scope="col">Hệ quả</th><th scope="col">Cách giữ trung thực</th></tr></thead>
+    <tbody>
+      <tr><td>Trang HTML cho desktop là bản phỏng theo, không phải renderer thật của app.</td><td>Font, cỡ chữ của <code>caption…title</code>, khoảng cách có thể lệch vài px.</td><td>Ghi chú “desktop: approximate” trong đầu ra; ngưỡng chỉ dựa trên thứ mod tự đặt (màu, cỡ chữ SVG, độ dài source).</td></tr>
+      <tr><td>Màu khoá theme trên desktop không có tài liệu.</td><td>Tương phản của <code>color="success"</code> trên desktop chỉ là ước lượng.</td><td>Dùng bảng màu theme terminal của Claude Code; phát hiện từ khoá theme ghi “theme approx”.</td></tr>
+      <tr><td>Ink gốc khác bản Ink sửa của Claude Code.</td><td>Ngắt dòng, cắt chữ, bề rộng emoji có thể lệch ở mép.</td><td>Chỉ báo cứng khi lệch rõ (dòng vượt bề rộng); chữ bị cắt là mềm.</td></tr>
+      <tr><td>Nền terminal và bảng 16 màu khác nhau theo máy.</td><td>Màu tên (<code>red</code>) khó phán.</td><td>Đo với #1E1E1E và #FFFFFF (đổi bằng <code>--term-bg</code>); màu tên được báo là phụ thuộc bảng màu.</td></tr>
+      <tr><td>Lớp chặn mount thêm giữa test.</td><td>Hook vẽ có tác dụng phụ (vd session-band ghi <code>lastDrawn.columns</code>) có thể làm test lệch.</td><td>Lần mount gốc luôn chạy sau cùng; test hỏng chỉ thành ghi chú <code>tests</code>.</td></tr>
+      <tr><td>Cần <code>claude</code> 2.1.3xx trên PATH.</td><td>CI Linux của design-kit không có.</td><td>Test tích hợp tự bỏ qua khi thiếu; test đơn vị dùng cây ghi sẵn.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="small muted">Ngoài bản đầu: surface <code>vscode</code> và <code>mobile</code>, bấm nút rồi đo lại trạng thái sau đó, hover, tệp cảnh riêng của mod (<code>design-kit.scenes.tsx</code>).</p>
+</section>
+
+<section aria-labelledby="h-hoi">
+  <h2 id="h-hoi">Cần chủ quyết</h2>
+  <form class="surface ask ui" data-lavish-question="check-mod-plan" id="ask">
+    <fieldset>
+      <legend>1. Duyệt kế hoạch?</legend>
+      <label class="opt"><input type="radio" name="duyet" value="duyet" checked><span><b>Duyệt, làm theo kế hoạch</b><span class="sub">Bắt đầu làm ngay, không commit khi chưa được bảo.</span></span></label>
+      <label class="opt"><input type="radio" name="duyet" value="sua"><span><b>Duyệt nhưng sửa vài điểm</b><span class="sub">Ghi điểm cần sửa ở ô dưới.</span></span></label>
+      <label class="opt"><input type="radio" name="duyet" value="dung"><span><b>Chưa làm</b><span class="sub">Ghi lý do ở ô dưới.</span></span></label>
+    </fieldset>
+    <fieldset>
+      <legend>2. Dựng lưới terminal bằng gì?</legend>
+      <label class="opt"><input type="radio" name="terminal" value="ink" checked><span><b>Ink + React <span class="rec">(khuyên)</span></b><span class="sub">Cùng họ renderer với Claude Code nên ngắt dòng, cắt chữ, padding, viền giống nhất. Thêm 2 gói phụ thuộc (ink, react).</span></span></label>
+      <label class="opt"><input type="radio" name="terminal" value="tu-viet"><span><b>Tự viết bố cục đơn giản</b><span class="sub">Không thêm gói, nhưng flex, wrap và truncate phải tự làm, dễ lệch so với thật.</span></span></label>
+    </fieldset>
+    <fieldset>
+      <legend>3. Chữ dưới 12px trong SVG của mod (agents-panel dùng 11px)</legend>
+      <label class="opt"><input type="radio" name="chu-nho" value="cung" checked><span><b>Cứng, như <code>design-kit check</code> <span class="rec">(khuyên)</span></b><span class="sub">Một chuẩn cho mọi giao diện; agents-panel sẽ phải tăng lên 12px.</span></span></label>
+      <label class="opt"><input type="radio" name="chu-nho" value="mem"><span><b>Mềm cho mod</b><span class="sub">Khung app chật hơn trang web; 11px được phép nếu ghi lý do.</span></span></label>
+    </fieldset>
+    <div class="field">
+      <label class="label" for="ghi-chu">Ghi chú thêm (không bắt buộc)</label>
+      <textarea class="input" id="ghi-chu" name="ghi-chu" placeholder="Vd: thêm bề rộng 30 cột, bỏ desktop…"></textarea>
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn btn-primary">Gửi câu trả lời</button>
+      <span class="state" id="ask-state" role="status" aria-live="polite">Chưa gửi. Bấm nút để xếp câu trả lời vào hàng gửi cho agent.</span>
+    </div>
+  </form>
+</section>
+
+</main>
+<script>
+  // Khổ hẹp: mỗi ô mang nhãn cột của nó (CSS hiện bằng ::before).
+  for (const table of document.querySelectorAll('table')) {
+    const heads = [...table.querySelectorAll('thead th')].map((th) => th.textContent.trim());
+    for (const tr of table.querySelectorAll('tbody tr')) [...tr.children].forEach((td, i) => { if (heads[i]) td.dataset.label = heads[i]; });
+  }
+  document.getElementById('ask').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const f = new FormData(event.currentTarget);
+    const answers = { duyet: f.get('duyet'), terminal: f.get('terminal'), 'chu-nho': f.get('chu-nho'), 'ghi-chu': String(f.get('ghi-chu') || '').trim() };
+    const label = { duyet: 'Duyệt, làm theo kế hoạch', sua: 'Duyệt nhưng sửa vài điểm', dung: 'Chưa làm', ink: 'Ink + React', 'tu-viet': 'Tự viết bố cục', cung: 'Cứng', mem: 'Mềm cho mod' };
+    const text = `Kế hoạch check-mod: ${label[answers.duyet]} · Terminal: ${label[answers.terminal]} · Chữ < 12px trong SVG: ${label[answers['chu-nho']]}${answers['ghi-chu'] ? ' · Ghi chú: ' + answers['ghi-chu'] : ''}`;
+    const st = document.getElementById('ask-state');
+    if (window.lavish && typeof window.lavish.queuePrompt === 'function') {
+      window.lavish.queuePrompt(text, { tag: 'choice', text, element: event.currentTarget, queueKey: 'check-mod-plan', data: { question: 'check-mod-plan', answers } });
+      st.textContent = 'Đã xếp vào hàng. Bấm “Send to Agent” trên thanh Folio để gửi.';
+      st.classList.add('queued');
+    } else {
+      st.textContent = 'Trang đang mở ngoài Folio: chép câu này gửi vào chat. ' + text;
+    }
+  });
+</script>
+</body>
+</html>
