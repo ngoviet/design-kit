@@ -40,8 +40,18 @@ const stateDir = join(tmpdir(), "design-kit-hook");
 const stateFile = join(stateDir, `${session}.json`);
 const load = () => { try { return JSON.parse(readFileSync(stateFile, "utf8")); } catch { return {}; } };
 const save = (s) => { try { mkdirSync(stateDir, { recursive: true }); writeFileSync(stateFile, JSON.stringify(s)); } catch { /* bỏ qua */ } };
-const isUi = (f) => typeof f === "string" && UI.test(f) && !SKIP.test(f);
-const isImg = (f) => typeof f === "string" && IMG.test(f) && !SKIP.test(f) && (IMG_HINT.test(basename(f)) || IMG_HINT.test(basename(dirname(f))));
+/**
+ * Tệp nằm trong phần bỏ qua (node_modules, dist, fixtures…). Tệp trong thư mục của phiên: xét đường dẫn tương đối,
+ * để dự án nằm trong thư mục tên `build` hay `dist` (D:\build\shop\index.html) không bị bỏ qua cả dự án như trước
+ * 19/11/2026. Tệp ngoài thư mục đó (scratchpad của phiên): xét cả đường dẫn.
+ */
+const skipped = (f) => {
+  const base = typeof input.cwd === "string" && input.cwd ? input.cwd : process.cwd();
+  const rel = relative(base, resolve(base, f));
+  return SKIP.test(rel && !rel.startsWith("..") && !isAbsolute(rel) ? rel : f);
+};
+const isUi = (f) => typeof f === "string" && UI.test(f) && !skipped(f);
+const isImg = (f) => typeof f === "string" && IMG.test(f) && !skipped(f) && (IMG_HINT.test(basename(f)) || IMG_HINT.test(basename(dirname(f))));
 
 /** Đường dẫn để hiện cho AI: tương đối với cwd nếu nằm trong (cwd chính nó là "."), không thì tuyệt đối; gạch xuôi. */
 function show(p, cwd) {
@@ -134,14 +144,18 @@ const norm = (p) => p.replace(/\\/g, "/").toLowerCase();
 
 // `check` đứng riêng: `\b` sau "check" cũng khớp "check-image" và "check-mod" (dấu gạch không phải chữ), nên một lần
 // chấm hình từng được tính như đã chạy cổng trang.
-const GATE = /design-kit(\.js)?\s+check(?![\w-])/;
-const IMG_GATE = /design-kit(\.js)?\s+check-image\b/;
+// Lệnh phải ĐƯỢC CHẠY: đứng đầu một đoạn lệnh (đầu dòng, sau ; & | ( hay `time`), có thể qua npx hay node <đường dẫn>.
+// Trước 19/11/2026 chỉ cần chuỗi xuất hiện, nên `grep "design-kit check" README.md` hay một lời commit nhắc lệnh cũng
+// được tính là đã chạy cổng.
+const RUN_AT = String.raw`(?:^|[;&|(\n]\s*|\btime\s+)(?:npx\s+(?:-\S+\s+)*)?(?:node\s+)?["']?(?:[^\s"']*[\\/])?design-kit(?:\.js)?["']?\s+`;
+const GATE = new RegExp(`${RUN_AT}check(?![\\w-])`);
+const IMG_GATE = new RegExp(`${RUN_AT}check-image\\b`);
 const PLUGIN_TEST = /claude(?:\.exe)?\s+plugin\s+test\b([^;&|\r\n]*)/g;
 // Cổng mod của chính design-kit cũng chạy `claude plugin test` trên mod (kèm phép đo), nên tính như lệnh đó.
-const MOD_GATE = /design-kit(?:\.js)?\s+check-mod\b([^;&|\r\n]*)/g;
+const MOD_GATE = new RegExp(`${RUN_AT}check-mod\\b([^;&|\\r\\n]*)`, "g");
 const REPO_CHECK = /(?:^|[\s;&|(])(?:bash\s+|sh\s+|\.\/)[^\s;&|]*tools[\\/]check\.sh\b/;
 /** Lệnh có thể là một lần kiểm: cổng design-kit, chấm hình, `claude plugin test`, hoặc `tools/check.sh` của repo chứa mod. */
-const isCheck = (cmd) => GATE.test(cmd) || IMG_GATE.test(cmd) || /claude(?:\.exe)?\s+plugin\s+test\b/.test(cmd) || /design-kit(?:\.js)?\s+check-mod\b/.test(cmd) || REPO_CHECK.test(cmd);
+const isCheck = (cmd) => GATE.test(cmd) || IMG_GATE.test(cmd) || /claude(?:\.exe)?\s+plugin\s+test\b/.test(cmd) || new RegExp(`${RUN_AT}check-mod\\b`).test(cmd) || REPO_CHECK.test(cmd);
 
 /**
  * Lệnh nêu tệp này: một đối số trỏ đúng tệp hay thư mục chứa nó (tuyệt đối, hoặc tương đối với cwd), hoặc đúng tên tệp

@@ -90,3 +90,6 @@ export async function settleAfterChange(page: Page, net: NetWatch): Promise<{ ca
   if (net.inflight() === 0 && net.lastActivity() < mark) return { capped: false };
   return settlePage(page, net);
 }
+
+/** Nội dung có thể đến sau khi mạng đã rảnh (card đợi thư viện rồi mới vẽ): đợi tối đa ngần này trước khi coi là trắng. */
+export const LATE_MS = 5_000;

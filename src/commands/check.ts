@@ -9,7 +9,7 @@ import { type AssumedHit, type CopyRules, loadCopyRules, probeCopy } from "../co
 import { findImpeccable, runImpeccable } from "../impeccable.js";
 import { installSchemeWatch, installVitals, probeCovered, probeFingerprint, probeFocus, probeMotion, probePage, probeStandalone, probeVisible, schemeReadOnce, settleAnimations, STANDALONE_TOKENS, type ProbeHit } from "../probe.js";
 import type { Runtime } from "../runtime.js";
-import { type NetWatch, QUIET_CAP_MS, settleAfterChange, settlePage, watchNetwork } from "../settle.js";
+import { LATE_MS, type NetWatch, QUIET_CAP_MS, settleAfterChange, settlePage, watchNetwork } from "../settle.js";
 import { inputZoomFinding } from "../zoom.js";
 import { runStandalone } from "../standalone.js";
 import { loadSteps, parseSteps, runActions, STEPS_FORMAT, type StepAction, type StepState } from "../steps.js";
@@ -175,7 +175,7 @@ async function axeRun(page: Page, axeSource: string): Promise<Array<{ id: string
  * thì gặp trang trắng và mọi phép đo đều "đạt". Đợi tới khi có chữ hoặc đồ hoạ, tối đa LATE_MS.
  * Trả về số ms tính từ lúc mạng rảnh tới khi nội dung hiện, 0 nếu có sẵn, -1 nếu hết giờ vẫn trắng.
  */
-const LATE_MS = 5_000;
+
 /** Phép đo motion đọc các hiệu ứng còn chạy sau ngần này kể từ lúc trang (hoặc thao tác cuối) đã yên. */
 const MOTION_SETTLE_MS = 700;
 /** Hiệu ứng vào trang có hồi kết được chờ tối đa ngần này trước khi đo chữ (xem chỗ gọi settleAnimations). */

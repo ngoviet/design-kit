@@ -59,6 +59,21 @@ describe("plugin hook", () => {
     const tr2 = join(tmp, "t2.jsonl");
     writeFileSync(tr2, [edit("e2", page), bash("node dist/bin/design-kit.js check a.html --strict")].join("\n"));
     expect(runHook({ hook_event_name: "Stop", session_id: sid(), transcript_path: tr2 })).toBe("");
+    // Chỉ nhắc tới lệnh (grep, lời commit) không phải đã chạy cổng (19/11/2026).
+    const tr3 = join(tmp, "t3.jsonl");
+    writeFileSync(tr3, [edit("e3", page), bash('grep -n "design-kit check a.html" README.md'), bash("echo nho chay design-kit check a.html")].join("\n"));
+    expect(JSON.parse(runHook({ hook_event_name: "Stop", session_id: sid(), transcript_path: tr3 })).decision).toBe("block");
+    const tr4 = join(tmp, "t4.jsonl");
+    writeFileSync(tr4, [edit("e4", page), bash(`cd x && npx design-kit check a.html; node "${root.replace(/\\/g, "/")}/dist/bin/design-kit.js" check a.html`)].join("\n"));
+    expect(runHook({ hook_event_name: "Stop", session_id: sid(), transcript_path: tr4 })).toBe("");
+  });
+
+  it("a project inside a folder named build or dist is still a UI project", () => {
+    const proj = join(tmp, "build", "shop");
+    const ctx = runHook({ hook_event_name: "PostToolUse", session_id: sid(), cwd: proj, tool_input: { file_path: join(proj, "index.html") } });
+    expect(ctx).toContain("design-kit check index.html --strict");
+    // Còn trong dự án thì dist/ vẫn bị bỏ qua.
+    expect(runHook({ hook_event_name: "PostToolUse", session_id: sid(), cwd: proj, tool_input: { file_path: join(proj, "dist", "index.html") } })).toBe("");
   });
 });
 

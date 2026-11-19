@@ -46,6 +46,14 @@ All notable changes to this project are documented here. The format follows
 - `check-image`: a folder named like an image is skipped, one unreadable image no longer aborts the run, an SVG
   thinner than about 600:1 is measured from its viewBox, and `../logo.svg` no longer overwrites the sheet of
   `logo.svg`.
+- The global `--fields a,b` flag was accepted but did nothing: every table in the output now keeps only those
+  columns (a table with none of them is left whole).
+- `standalone`: the `data:` URL copy waits up to 5 s for late content like the http render, instead of reporting
+  "shows nothing" for a page that draws after a timer.
+- Hook: a check counts only when the command runs it (start of a command, after `;`, `&`, `|`, `(` or `time`,
+  through `npx` or `node <path>`), not when `echo`, `grep` or a commit message mentions it; the skip list
+  (`build`, `dist`, `fixtures`…) is matched on the path inside the session folder, so a project that lives in a
+  folder named `build` is still reminded.
 - Hook: a check counts for a file only when an argument points at that file or its folder (a similar name in another
   folder used to count); `design-kit check-mod` counts for a mod like `claude plugin test`.
 

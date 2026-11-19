@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { Browser } from "playwright-core";
 import { markVietnameseText, probeStandalone, probeVisible, STANDALONE_TOKENS, type StandaloneProbe } from "./probe.js";
-import { twoFrames } from "./settle.js";
+import { LATE_MS, twoFrames } from "./settle.js";
 
 /**
  * Trang mở thẳng từ tệp, không qua máy chủ. Trình duyệt trong app Claude đổi `file:///…/trang.html` thành
@@ -85,8 +85,14 @@ export async function runStandalone(
     await page.evaluate(() => document.fonts.ready.then(() => undefined));
     // Trang data: không có máy chủ để gọi: hai khung hình là đủ cho bố cục, không cần chờ cố định.
     await twoFrames(page);
+    let visB = await page.evaluate(probeVisible);
+    // Bản http đợi nội dung đến muộn tới 5 s (card đợi thư viện rồi mới vẽ); bản data: phải đợi như vậy, không thì
+    // báo nhầm "shows nothing" cho trang vẽ sau một hẹn giờ (19/11/2026).
+    for (const start = Date.now(); visibleA && !visB.text && !visB.media && Date.now() - start < LATE_MS; ) {
+      await page.waitForTimeout(250);
+      visB = await page.evaluate(probeVisible);
+    }
     const b = await page.evaluate(probeStandalone, STANDALONE_TOKENS);
-    const visB = await page.evaluate(probeVisible);
 
     const loadedB = new Set(b.sheets.filter((s) => s.loaded).map((s) => s.href));
     const lost = a.sheets.filter((s) => s.loaded && !loadedB.has(s.href));

@@ -294,6 +294,8 @@ describe("check on real pages", () => {
     expect(out).toMatch(/text-min,.*p#nho.*10\.0px/);
     expect(out).not.toContain("nothing visible");
     expect(out).toMatch(/content appeared \d+ ms after the network went idle/);
+    // Bản data: URL cũng đợi nội dung đến muộn: không báo nhầm "shows nothing" (19/11/2026).
+    expect(out).not.toMatch(/standalone,.*shows nothing/);
   }, 120_000);
 
   it("standalone: a page that links its CSS by path loses it when opened as a file", async () => {
