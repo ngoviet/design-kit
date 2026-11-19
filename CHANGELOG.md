@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- axe-core 4.14.1 (fewer false `target-size` and contrast results on absolutely positioned elements). The full gate
+  gives the same findings as with 4.14.0.
 - `check` loads each page once and resizes it and switches it to dark in place, instead of a fresh load for every
   width and color scheme (7 loads per page become 3). Each page is verified, and measured again with fresh loads (with
   a note saying why) when any check differs: one fresh load at the narrowest width must give the same layout and
