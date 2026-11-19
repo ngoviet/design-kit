@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Băng chữ chạy có nút tạm dừng</title>
+<style>body { margin: 0; font: 400 16px/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; } main { max-width: 40rem; margin: 0 auto; padding: 32px 16px; }
+  .bang { overflow: hidden; white-space: nowrap; background: #eef; padding: 8px 0; }
+  .bang span { display: inline-block; animation: chay 12s linear infinite; }
+  @keyframes chay { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+  @media (prefers-reduced-motion: reduce) { .bang span { animation: none; } }
+  .xoay { width: 24px; height: 24px; border: 3px solid #444; border-top-color: transparent; border-radius: 50%; animation: xoay 1s linear infinite; }
+  @keyframes xoay { to { transform: rotate(1turn); } }
+  @media (prefers-reduced-motion: reduce) { .xoay { animation: none; } }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Tin khuyến mãi</h1>
+    <button type="button">Tạm dừng băng chữ</button>
+    <div class="bang" id="bang"><span>Giảm giá 30% cho mọi đơn hàng trong tuần này, giao hàng miễn phí toàn quốc</span></div>
+    <p>Vòng xoay nhỏ là chỉ báo đang tải, không tính.</p>
+    <div class="xoay" role="img" aria-label="Đang tải"></div>
+  </main>
+</body>
+</html>

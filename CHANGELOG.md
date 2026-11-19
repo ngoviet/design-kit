@@ -24,6 +24,18 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `check` soft checks: `pause` (WCAG 2.2.2: an animation that runs forever or longer than 5 s, or a video that plays
+  itself, with no pause/stop control on the page; spinners under 64 px and anything inside `aria-busy`, `status`,
+  `progressbar` or `alert` are left out), `reveal` (text that stays invisible after scrolling the whole page with
+  reduced motion: a scroll reveal that only runs when motion is allowed; absolutely positioned tips are left out) and
+  `axe-bp` (axe's `best-practice` rules: heading order, one `h1`, a `main` landmark…). On the kit's 105 pages and
+  states: `pause` 0, `reveal` 0, `axe-bp` found the `bai-viet` block had no `main` landmark (fixed).
+- `check --waivers <file>` (default `.design-kit/waivers.json`): soft findings reviewed as fine, each with a reason of
+  12+ characters, at most 5 per page. They are listed under `waived`, never hidden; a waiver on a hard finding is
+  refused and one that matches nothing is reported. `--no-waivers` shows everything.
+- `check` reuses the result of a local page whose every loaded file is unchanged since its last check with the same
+  flags, design-kit code, axe, Impeccable engine and browser (`.design-kit/cache`); the output says how many pages
+  were reused. `--no-cache` measures everything again.
 - `check --sweep`: horizontal overflow at in-between widths (360, 414, 480, 600, 768, 900, 1024, 1180 inside the
   `--viewports` range), measured on the open page.
 

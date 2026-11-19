@@ -7,6 +7,7 @@ import { inputZoomFinding } from "../src/zoom.js";
 import { isFontSheet, tagAttrs } from "../src/commands/inline.js";
 import { pageWeight, paneUrl, weightDetail } from "../src/standalone.js";
 import { parseSteps } from "../src/steps.js";
+import { applyWaivers, parseWaivers } from "../src/waivers.js";
 
 const root = join(__dirname, "..");
 
@@ -29,6 +30,61 @@ describe("impGate", () => {
     // Khẩu vị bảng màu, không phải công năng (A/B đợt 2)
     expect(impGate({ antipattern: "cream-palette", category: "slop" })).toBe("soft");
   });
+});
+
+describe("waivers (N8)", () => {
+  const f = (gate: "hard" | "soft", check: string, where: string) => ({ gate, check, where });
+  const reports = () => [
+    { target: "a.html?dk=dem", findings: new Map([["1", f("soft", "standalone", "data: URL")], ["2", f("hard", "axe", "color-contrast")], ["3", f("soft", "guide", "button")]]) },
+    { target: "a.html?dk=giay #loi", findings: new Map([["1", f("soft", "standalone", "data: URL")]]) },
+  ];
+  const w = (check: string, where: string, page = "a.html") => ({ page, check, where, reason: "khối liên kết token theo đường dẫn" });
+  it("removes matching soft findings on every query and state of the page, refuses hard ones, reports unused", () => {
+    const rs = reports();
+    const res = applyWaivers(rs, [w("standalone", "data: URL"), w("axe", "color-contrast"), w("copy", "p", "b.html")]);
+    expect(rs[0]!.findings.size).toBe(2);
+    expect(rs[1]!.findings.size).toBe(0);
+    expect(res.used).toEqual([expect.objectContaining({ check: "standalone", count: 2 })]);
+    expect(res.refused.map((x) => x.check)).toEqual(["axe"]);
+    expect(res.unused.map((x) => x.page)).toEqual(["b.html"]);
+  });
+  it("uses only the first 5 waivers of a page and rejects a reason that says nothing", () => {
+    const many = Array.from({ length: 6 }, (_, i) => w("guide", `x${i}`));
+    expect(applyWaivers(reports(), many).tooMany).toEqual(["a.html"]);
+    expect(() => parseWaivers('[{"page":"a.html","check":"guide","where":"b","reason":"ok"}]', "w.json")).toThrow(/shorter than 12/);
+    expect(() => parseWaivers('{"page":"a.html"}', "w.json")).toThrow(/JSON array/);
+  });
+  it("check lists waived findings and drops them from the counts", async () => {
+    const file = join(root, ".design-kit", "test", "mien-tru.json");
+    mkdirSync(join(root, ".design-kit", "test"), { recursive: true });
+    writeFileSync(file, JSON.stringify([{ page: "test/fixtures/tot.html", check: "standalone", where: "data: URL", reason: "trang mẫu liên kết token theo đường dẫn, chỉ chạy qua http" }]));
+    const { out } = await run(["check", "test/fixtures/tot.html", ...FAST, "--waivers", ".design-kit/test/mien-tru.json", "--full"]);
+    expect(out).toMatch(/waived\[1\]\{page,check,where,findings,reason\}:\n {2}test\/fixtures\/tot\.html,standalone,"data: URL",1,/);
+    expect(out).toContain("standalone,soft,ok");
+    const missing = await run(["check", "test/fixtures/tot.html", ...FAST, "--waivers", "khong-co.json"]);
+    expect(missing.out).toContain("--waivers: not found");
+  }, 120_000);
+});
+
+describe("cache (N7)", () => {
+  it("reuses the result of an unchanged page and measures again when a file it loads changes", async () => {
+    const d = join(root, ".design-kit", "test", "dem-test");
+    mkdirSync(d, { recursive: true });
+    writeFileSync(join(d, "a.html"), '<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Đệm</title><link rel="stylesheet" href="kieu.css"></head><body><main><h1>Trang đệm</h1><p>Đoạn chữ thử bộ đệm của cổng.</p></main></body></html>');
+    writeFileSync(join(d, "kieu.css"), `body{font:16px/1.6 system-ui;color:#111;background:#fff} /* ${Date.now()} */`);
+    const args = ["check", ".design-kit/test/dem-test/a.html", ...FAST, "--full"];
+    expect((await run(args)).out).not.toContain("cache:");
+    const again = await run(args);
+    expect(again.out).toContain("1 of 1 pages unchanged since their last check");
+    expect(again.out).toContain("pass: 1 pages");
+    // Một tệp trang nạp đổi (CSS, không phải HTML): đo lại.
+    writeFileSync(join(d, "kieu.css"), "body{font:11px/1.6 system-ui;color:#111;background:#fff}");
+    const changed = await run(args);
+    expect(changed.out).not.toContain("cache:");
+    expect(changed.out).toMatch(/hard,text-min,.*11\.0px/);
+    // Cờ khác là khoá khác; --no-cache luôn đo.
+    expect((await run([...args, "--no-cache"])).out).not.toContain("cache:");
+  }, 120_000);
 });
 
 describe("inputZoomFinding: when tapping a field makes iOS zoom the page", () => {
@@ -409,6 +465,29 @@ describe("check on real pages", () => {
       expect(out).toMatch(/hard,overflow,768px/);
     }, 120_000);
   });
+
+  it("pause (WCAG 2.2.2): a marquee that runs forever with no pause control is soft; a spinner or a pause button is fine", async () => {
+    const a = await run(["check", "test/fixtures/chay-mai.html", ...FAST, "--full"]);
+    expect(a.out).toMatch(/soft,pause,span,"?chay runs forever with no pause or stop control/);
+    expect(a.out).not.toMatch(/pause,div\.xoay/);
+    const b = await run(["check", "test/fixtures/chay-co-dung.html", ...FAST, "--full"]);
+    expect(b.out).toContain("pause,soft,ok");
+  }, 120_000);
+
+  it("reveal: text that a scroll reveal never shows with reduced motion is soft; a hover tip and a working reveal are fine", async () => {
+    const a = await run(["check", "test/fixtures/hien-dan.html", ...FAST, "--full"]);
+    expect(a.out).toMatch(/soft,reveal,h2#phan-1,.*stays invisible/);
+    expect(a.out).toMatch(/soft,reveal,h2#phan-2/);
+    expect(a.out).not.toMatch(/reveal,span\.meo/);
+    const b = await run(["check", "test/fixtures/hien-dan-dung.html", ...FAST, "--full"]);
+    expect(b.out).toContain("reveal,soft,ok");
+  }, 120_000);
+
+  it("axe-bp: best-practice rules are soft findings of their own, WCAG rules keep their gate", async () => {
+    const { out } = await run(["check", "test/fixtures/chay-mai.html", ...FAST, "--full"]);
+    expect(out).toMatch(/axe-bp,soft,/);
+    expect(out).not.toMatch(/hard,axe-bp/);
+  }, 120_000);
 
   it("--sweep finds overflow that only happens between the default widths", async () => {
     const base = ["check", "test/fixtures/tran-giua.html", "--no-impeccable", "--no-shots", "--no-standalone", "--schemes", "light"];

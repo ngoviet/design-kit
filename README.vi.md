@@ -265,6 +265,8 @@ Cờ của `check`:
 | `--strict` | Thoát 1 khi có trang bị lỗi cứng |
 | `--jobs <n>` | Số trang kiểm cùng lúc (mặc định 3, tối đa 8) |
 | `--sweep` | Đo thêm tràn ngang ở các khổ trung gian (360, 414, 480, 600, 768, 900, 1024, 1180 trong dải `--viewports`), khoảng 0,1 giây mỗi khổ |
+| `--waivers <tệp>` / `--no-waivers` | Phát hiện mềm đã xét là ổn, mỗi mục kèm lý do (mặc định `.design-kit/waivers.json`, tối đa 5 mục mỗi trang; liệt kê ở mục `waived`) / hiện mọi phát hiện |
+| `--no-cache` | Đo lại mọi trang. Mặc định trang cục bộ mà mọi tệp nó nạp chưa đổi kể từ lần kiểm trước (cùng cờ) dùng lại kết quả cũ |
 | `--fresh` | Nạp lại trang cho mỗi khổ và mỗi chế độ màu. Mặc định trang được nạp một lần rồi đổi khổ, đổi sang tối ngay tại chỗ; một lần nạp mới mỗi trang phải cho cùng bố cục, trang nào lệch thì đo lại bằng cách nạp mới |
 | `--limit <n>` / `--full` | Số phát hiện hiển thị (mặc định 25) / hiện hết |
 

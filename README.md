@@ -270,6 +270,8 @@ Flags of `check`:
 | `--strict` | Exit 1 when any page has a hard failure |
 | `--jobs <n>` | Pages checked at once (default 3, max 8) |
 | `--sweep` | Also check horizontal overflow at in-between widths (360, 414, 480, 600, 768, 900, 1024, 1180 inside the `--viewports` range), about 0.1 s per width |
+| `--waivers <file>` / `--no-waivers` | Soft findings reviewed as fine, each with a reason (default `.design-kit/waivers.json`, at most 5 per page; listed under `waived`) / show every finding |
+| `--no-cache` | Measure every page again. By default a local page whose loaded files are all unchanged since its last check with the same flags reuses that result |
 | `--fresh` | Load the page again for every width and color scheme. By default a page is loaded once, then resized and switched to dark in place; one fresh load per page must give the same layout, and a page that differs is redone fresh |
 | `--limit <n>` / `--full` | Findings to show (default 25) / every finding |
 

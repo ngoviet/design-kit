@@ -1,22 +1,26 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
-import { basename, extname, join, relative, resolve } from "node:path";
+import { basename, dirname, extname, join, relative, resolve } from "node:path";
 import type { Browser, BrowserContext, Page } from "playwright-core";
 import { type FlagSpec, listFlag, parseCommandArgs } from "../args.js";
 import { launchBrowser, serveRoot, startServer, urlFor } from "../browser.js";
 import { fail } from "../errors.js";
 import { type AssumedHit, type CopyRules, loadCopyRules, probeCopy } from "../copy.js";
 import { findImpeccable, runImpeccable } from "../impeccable.js";
-import { installSchemeWatch, installVitals, probeCovered, probeFingerprint, probeFocus, probeMotion, probePage, probeStandalone, probeVisible, schemeReadOnce, settleAnimations, STANDALONE_TOKENS, type ProbeHit } from "../probe.js";
+import { installSchemeWatch, installVitals, probeCovered, probeFingerprint, probeFocus, probeMotion, probePage, probePause, probeReveal, probeStandalone, probeVisible, schemeReadOnce, settleAnimations, STANDALONE_TOKENS, type ProbeHit } from "../probe.js";
 import type { Runtime } from "../runtime.js";
 import { LATE_MS, type NetWatch, QUIET_CAP_MS, settleAfterChange, settlePage, watchNetwork } from "../settle.js";
 import { inputZoomFinding } from "../zoom.js";
+import { applyWaivers, loadWaivers, WAIVER_MAX_PER_PAGE } from "../waivers.js";
+import { cacheKey, depPath, entryValid, fileSha, readEntry, sha, writeEntry } from "../cache.js";
+import { VERSION } from "../version.js";
+import { fileURLToPath } from "node:url";
 import { runStandalone } from "../standalone.js";
 import { loadSteps, parseSteps, runActions, STEPS_FORMAT, type StepAction, type StepState } from "../steps.js";
 
 export const CHECK_HELP = `usage: design-kit check <file|dir|url>... [flags]
 description: Design gate. Renders each page at 320/390/1280 px in light and dark, then measures what a person would hit: axe-core (WCAG 2.2 AA), horizontal overflow, text size and line height (through open shadow roots), text cut off by ellipsis or overflow, Vietnamese lang and fonts, line length, reduced motion, keyboard focus, LCP/CLS, guidance (vague "Next" buttons, dead-end empty states, up-front tours), copy that reads as unedited AI text (stock phrases, chatbot residue, placeholders, markdown left in) and the Impeccable detector. States reached by clicking (form errors, step 3, an open dialog) are measured too, from a steps file. A local file is also opened the way the Claude app's browser pane opens it (a data: URL, no server), to catch a page that loses its linked CSS. Prints one verdict per page and state: hard failures block "done", soft ones need a reason. Facts the agent filled in itself (marked data-assumed) are listed for the owner to confirm
-flags[18]:
+flags[21]:
   --query <q,q>: run each page once per query string (e.g. dk=dem,dk=giay,dk=dam for design-kit blocks)
   --steps <file.json|json>: states to reach by clicking/typing, each measured like a page (overrides <page>.steps.json)
   --no-steps: ignore <page>.steps.json files next to the pages
@@ -30,6 +34,9 @@ flags[18]:
   --focus <n>: Tab stops to inspect (default 15)
   --strict: exit 1 when any page has a hard failure
   --jobs <n>: pages checked at once (default 3, max 8)
+  --waivers <file.json>: soft findings reviewed as fine, each with a reason (default .design-kit/waivers.json when it exists); listed under "waived", never hidden; --no-waivers ignores the file
+  --no-waivers: show every finding, ignoring the waivers file
+  --no-cache: measure every page again; by default a local page whose every loaded file is unchanged since its last check (same flags, same design-kit, axe, Impeccable and browser) reuses that result, and the output says how many
   --sweep: also check horizontal overflow at in-between widths (360, 414, 480, 600, 768, 900, 1024, 1180 within the --viewports range), on the open page; about 0.1 s per width
   --fresh: load the page again for every width and color scheme (default: load once, resize and switch scheme in place, verified against one fresh load per page and redone fresh when the layout differs)
   --limit <n>: findings to show (default 25)
@@ -72,6 +79,9 @@ const FLAGS: Record<string, FlagSpec> = {
   "no-steps": { type: "boolean", hint: "--no-steps" },
   fresh: { type: "boolean", hint: "--fresh" },
   sweep: { type: "boolean", hint: "--sweep" },
+  waivers: { type: "string", hint: "--waivers <file.json>" },
+  "no-waivers": { type: "boolean", hint: "--no-waivers" },
+  "no-cache": { type: "boolean", hint: "--no-cache" },
 };
 
 type Gate = "hard" | "soft";
@@ -89,6 +99,8 @@ interface PageReport {
   notes: string[];
   shots: number;
   assumed: AssumedHit[];
+  /** URL mọi yêu cầu mạng của trang (bộ đệm N7 đổi thành tệp cục bộ để băm). */
+  deps: Set<string>;
 }
 
 const HEIGHT: Record<number, number> = { 320: 720, 390: 844, 1280: 800 };
@@ -100,7 +112,7 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 const CHECKS: Array<[string, Gate]> = [
   ["render", "hard"], ["errors", "hard"], ["viewport", "hard"], ["overflow", "hard"], ["axe", "hard"], ["text-min", "hard"], ["heading-lh", "hard"], ["lang", "hard"], ["motion", "hard"],
   ["steps", "hard"], ["impeccable", "hard"], ["body-size", "soft"], ["body-lh", "soft"], ["measure", "soft"], ["font", "soft"],
-  ["focus", "soft"], ["inner-scroll", "soft"], ["text-clip", "soft"], ["text-covered", "soft"], ["long-form", "soft"], ["input-zoom", "soft"], ["guide", "soft"], ["copy", "soft"], ["lcp", "soft"], ["cls", "soft"], ["standalone", "soft"],
+  ["focus", "soft"], ["inner-scroll", "soft"], ["text-clip", "soft"], ["text-covered", "soft"], ["long-form", "soft"], ["input-zoom", "soft"], ["guide", "soft"], ["copy", "soft"], ["lcp", "soft"], ["cls", "soft"], ["standalone", "soft"], ["axe-bp", "soft"], ["pause", "soft"], ["reveal", "soft"],
 ];
 
 /**
@@ -149,22 +161,57 @@ function add(r: PageReport, gate: Gate, check: string, where: string, detail: st
   r.findings.set(key, f);
 }
 
+/** Báo cáo trang dạng JSON được (cho bộ đệm N7): Map, Set đổi thành mảng. */
+interface CachedReport {
+  findings: Array<Omit<Finding, "renders"> & { renders: string[] }>;
+  notes: string[];
+  shots: number;
+  assumed: AssumedHit[];
+}
+const saveReport = (r: PageReport): CachedReport => ({
+  findings: [...r.findings.values()].map((f) => ({ ...f, renders: [...f.renders] })),
+  notes: r.notes,
+  shots: r.shots,
+  assumed: r.assumed,
+});
+function restoreReport(r: PageReport, c: CachedReport): void {
+  for (const f of c.findings) r.findings.set(`${f.check}|${f.where}|${f.detail}`, { ...f, renders: new Set(f.renders) });
+  r.notes.push(...c.notes);
+  r.shots = c.shots;
+  r.assumed.push(...c.assumed);
+}
+
+/**
+ * Băm mã của chính cổng: mọi tệp .js/.ts/.mjs/.json ở thư mục của module này và thư mục cha (dist/ khi chạy bản build,
+ * src/ khi chạy test). Sửa probe hay luật thì mục đệm cũ hết hiệu lực dù chưa tăng phiên bản.
+ */
+function codeSha(): string {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const files = [here, dirname(here)].flatMap((d) => readdirSync(d).filter((f) => /\.(js|ts|mjs|json)$/.test(f)).sort().map((f) => join(d, f)));
+  return sha(files.map((f) => fileSha(f) ?? "").join(","));
+}
+
 function hits(r: PageReport, gate: Gate, check: string, list: ProbeHit[], what: string, render: string, max = 6): void {
   for (const h of list.slice(0, max)) add(r, gate, check, h.where, what ? `${what} ${h.value}` : h.value, render);
   if (list.length > max) add(r, gate, check, `+${list.length - max} more`, what || `more ${check} findings`, render);
 }
 
-async function axeRun(page: Page, axeSource: string): Promise<Array<{ id: string; impact: string; help: string; nodes: string[] }>> {
+/**
+ * axe một lần cho cả WCAG và nhóm `best-practice` (thứ tự tiêu đề, một h1, vùng main…). `wcag`: luật có thẻ WCAG
+ * (cứng theo mức nghiêm trọng như trước); luật chỉ thuộc best-practice thì chỉ là phát hiện mềm `axe-bp` (N6, 19/11/2026).
+ */
+async function axeRun(page: Page, axeSource: string): Promise<Array<{ id: string; impact: string; help: string; wcag: boolean; nodes: string[] }>> {
   // Nạp qua evaluate (CDP), không qua thẻ <script>: trang có CSP `script-src 'self'` chặn thẻ chèn vào và trước kia làm
   // hỏng cả lượt kiểm. Trang đang mở (đổi khổ tại chỗ) đã có axe thì không nạp lại.
   if (!(await page.evaluate(() => "axe" in window))) await page.evaluate(axeSource);
   return page.evaluate(async (tags) => {
-    const w = window as unknown as { axe: { run: (c: unknown, o: unknown) => Promise<{ violations: Array<{ id: string; impact: string; help: string; nodes: Array<{ target: unknown[]; any: Array<{ message: string }> }> }> }> } };
-    const res = await w.axe.run(document, { runOnly: { type: "tag", values: tags }, resultTypes: ["violations"] });
+    const w = window as unknown as { axe: { run: (c: unknown, o: unknown) => Promise<{ violations: Array<{ id: string; impact: string; help: string; tags: string[]; nodes: Array<{ target: unknown[]; any: Array<{ message: string }> }> }> }> } };
+    const res = await w.axe.run(document, { runOnly: { type: "tag", values: [...tags, "best-practice"] }, resultTypes: ["violations"] });
     return res.violations.map((v) => ({
       id: v.id,
       impact: v.impact ?? "minor",
       help: v.help,
+      wcag: v.tags.some((t) => tags.includes(t)),
       nodes: v.nodes.slice(0, 4).map((n) => `${JSON.stringify(n.target).slice(1, -1).replace(/"/g, "")}${n.any[0] ? `: ${n.any[0].message}` : ""}`),
     }));
   }, AXE_TAGS);
@@ -276,6 +323,7 @@ async function openPage(browser: Browser, url: string, label: string, vw: number
   try {
     const page = await ctx.newPage();
     const net = watchNetwork(page);
+    page.on("request", (q) => r.deps.add(q.url()));
     await page.addInitScript(installVitals);
     await page.addInitScript(installSchemeWatch);
     // Lỗi người dùng gặp ngay khi mở: script ném lỗi, script/stylesheet không tải được (thường là nguyên nhân
@@ -389,9 +437,15 @@ async function measureRender(
   }
   // axe chạy ở mọi khổ và mọi chế độ: tương phản bản tối hay hỏng nhất.
   for (const v of await axeRun(page, opts.axeSource)) {
+    if (!v.wcag) {
+      for (const n of v.nodes) add(r, "soft", "axe-bp", v.id, n.slice(0, 220), render);
+      continue;
+    }
     const gate: Gate = v.impact === "serious" || v.impact === "critical" ? "hard" : "soft";
     for (const n of v.nodes) add(r, gate, "axe", `${v.id}`, n.slice(0, 220), render);
   }
+  // WCAG 2.2.2: chuyển động tự chạy quá 5 giây không có nút dừng. Một lần, ở trạng thái đầu (N4, 19/11/2026).
+  if (at.first && at.widest && !at.actions) hits(r, "soft", "pause", await page.evaluate(probePause), "", render, 4);
   if (opts.shotsDir) {
     await page.screenshot({ path: join(opts.shotsDir, `${scheme}-${vw}.png`), fullPage: true });
     r.shots++;
@@ -475,6 +529,8 @@ async function motionPass(L: Loaded, vw: number, scheme: string, actions: StepAc
   await page.waitForTimeout(MOTION_SETTLE_MS);
   const m = await page.evaluate(probeMotion);
   if (m.running) add(r, "hard", "motion", m.samples.join(", "), `${m.running} animation(s) still run with prefers-reduced-motion: reduce`, `${scheme}/${vw}`);
+  // Chữ hiện dần khi cuộn mà không bao giờ hiện với người bật giảm chuyển động (N5, 19/11/2026).
+  hits(r, "soft", "reveal", await page.evaluate(probeReveal), "", `${scheme}/${vw}`, 4);
 }
 
 /** Khổ được đo focus: rộng nhất và khổ hẹp nhất ngoài 320 (mặc định 390). */
@@ -648,10 +704,11 @@ async function checkPage(browser: Browser, url: string, label: string, opts: Pag
   }
   if (!opts.fresh) {
     // Đo vào bản nháp: tự kiểm lệch thì bỏ nháp, đo lại theo cách cũ.
-    const draft: PageReport = { target: r.target, findings: new Map(), checks: new Map(), notes: [], shots: 0, assumed: [] };
+    const draft: PageReport = { target: r.target, findings: new Map(), checks: new Map(), notes: [], shots: 0, assumed: [], deps: new Set() };
     const why = await checkReuse(browser, url, label, widths, opts, draft);
     if (why === undefined) {
       for (const [k, f] of draft.findings) r.findings.set(k, f);
+      for (const d of draft.deps) r.deps.add(d);
       r.notes.push(...draft.notes);
       r.shots += draft.shots;
       r.assumed.push(...draft.assumed);
@@ -675,6 +732,8 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const limit = p.global.full ? Infinity : (p.global.limit ?? 25);
   const targets = expandTargets(p.positionals, rt.cwd);
   const shotsBase = p.bool("no-shots") ? undefined : resolve(rt.cwd, p.str("shots") ?? ".design-kit/shots");
+  const waiversArg = p.str("waivers");
+  const waivers = p.bool("no-waivers") ? [] : loadWaivers(resolve(rt.cwd, waiversArg ?? join(".design-kit", "waivers.json")), waiversArg ?? ".design-kit/waivers.json", waiversArg !== undefined);
   const stepsArg = p.str("steps");
   const explicitSteps = stepsArg !== undefined ? loadSteps(stepsArg, (f) => resolve(rt.cwd, f)) : undefined;
   /** Trạng thái của một trang: --steps, nếu không thì tệp <trang>.steps.json bên cạnh (trừ khi --no-steps). */
@@ -693,15 +752,25 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const servers = new Map<string, { origin: string; close: () => void }>();
   const jobsN = Number(p.str("jobs") ?? 3);
   // Bước 1: danh sách việc (máy chủ tĩnh dựng tuần tự). Bước 2: chạy song song có giới hạn, giữ thứ tự kết quả.
-  const jobs: Array<{ url: string; label: string; r: PageReport; shotsDir?: string; state?: StepState; standalone?: string; mobile?: boolean }> = [];
+  const jobs: Array<{ url: string; label: string; r: PageReport; shotsDir?: string; state?: StepState; standalone?: string; mobile?: boolean; served?: { root: string; origin: string } }> = [];
   // Khổ điện thoại để mở trang như máy thật (phép đo viewport): khổ lớn nhất ≤ 480 trong --viewports; không có thì bỏ.
   const phones = viewports.filter((w) => w <= PHONE_MAX);
   const sweep = p.bool("sweep") ? SWEEP_WIDTHS.filter((w) => w > Math.min(...viewports) && w < Math.max(...viewports) && !viewports.includes(w)) : [];
   if (p.bool("sweep") && p.bool("fresh")) fail("--sweep needs resize in place: drop --fresh", "VALIDATION_ERROR");
   const phoneWidth = phones.length ? Math.max(...phones) : undefined;
+  // Bộ đệm (N7): tắt bằng --no-cache. Dấu vân của lượt chạy: mọi thứ ngoài nội dung trang quyết định kết quả.
+  const cacheDir = p.bool("no-cache") ? undefined : resolve(rt.cwd, ".design-kit", "cache");
+  const runPrint = cacheDir
+    ? {
+        v: VERSION, code: codeSha(), axe: sha(axeSource), imp: impBin ? (fileSha(impBin) ?? impBin) : null, browser: browser.version(),
+        viewports, schemes, focusStops, copy: copy ? sha(JSON.stringify(copy)) : null, sweep, fresh: p.bool("fresh"),
+      }
+    : undefined;
+  let cachedN = 0;
   try {
     for (const t of targets) {
       let base = t;
+      let served: { root: string; origin: string } | undefined;
       if (!/^https?:/i.test(t)) {
         const root = serveRoot(t);
         if (!servers.has(root)) {
@@ -709,6 +778,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
           servers.set(root, { origin: s.origin, close: () => s.server.close() });
         }
         base = urlFor(servers.get(root)!.origin, root, t);
+        served = { root, origin: servers.get(root)!.origin };
       }
       const states = statesFor(t);
       for (const q of queries) {
@@ -716,7 +786,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
         // Trạng thái đầu (không thao tác) rồi từng trạng thái trong tệp steps: mỗi cái một dòng phán quyết.
         for (const state of [undefined, ...states]) {
           const label = `${/^https?:/i.test(t) ? t : relative(rt.cwd, t).replace(/\\/g, "/")}${q ? `?${q}` : ""}${state ? ` #${state.name}` : ""}`;
-          const r: PageReport = { target: label, findings: new Map(), checks: new Map(), notes: [], shots: 0, assumed: [] };
+          const r: PageReport = { target: label, findings: new Map(), checks: new Map(), notes: [], shots: 0, assumed: [], deps: new Set() };
           let shotsDir: string | undefined;
           if (shotsBase) {
             // Tên theo đường dẫn tương đối (không chỉ tên tệp): blocks/html/x.html và blocks/react/dist/x.html không ghi đè nhau.
@@ -729,11 +799,24 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
           const standalone = !p.bool("no-standalone") && !/^https?:/i.test(t) && !state && q === queries[0] ? t : undefined;
           // Thẻ meta viewport không đổi theo query hay trạng thái: một lần mỗi trang, trạng thái đầu của query đầu.
           const mobile = phoneWidth !== undefined && !state && q === queries[0];
-          jobs.push({ url, label, r, ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}), ...(mobile ? { mobile } : {}) });
+          jobs.push({ url, label, r, ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}), ...(mobile ? { mobile } : {}), ...(served ? { served } : {}) });
         }
       }
     }
-    const runJob = async ({ url, label, r, shotsDir, state, standalone, mobile }: (typeof jobs)[number]): Promise<void> => {
+    const runJob = async ({ url, label, r, shotsDir, state, standalone, mobile, served }: (typeof jobs)[number]): Promise<void> => {
+      // Bộ đệm (N7): trang cục bộ không đổi kể từ lần đo trước thì dùng lại kết quả. Khoá gồm mọi thứ quyết định kết quả
+      // trừ nội dung tệp; nội dung các tệp mà trang đã nạp được băm trong mục và phải còn nguyên.
+      const key = cacheDir && served
+        ? cacheKey({ fp: runPrint, label, state: state ?? null, standalone: !!standalone, mobile: !!mobile, shots: shotsDir ?? null })
+        : undefined;
+      if (key) {
+        const e = readEntry<CachedReport>(cacheDir!, key);
+        if (e && entryValid(e)) {
+          restoreReport(r, e.report);
+          cachedN++;
+          return;
+        }
+      }
       // Impeccable tự mở trang theo URL, không phát lại được thao tác: chỉ chạy ở trạng thái đầu. Khổ rộng nhất, 390 và
       // 320 (khổ hẹp nhất là nơi bố cục gãy trước: ở 320 nó bắt được ô số tràn 39px của khối hero, 15/11/2026).
       // Mỗi bề rộng một lần: khổ rộng nhất là 390 thì trước kia chạy cả 390x800 lẫn 390x844 (thừa một tiến trình).
@@ -769,6 +852,12 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
       if (!impBin && !p.bool("no-impeccable")) r.notes.push("impeccable: engine not found, run `design-kit setup` (downloads the pinned engine) or set IMPECCABLE_BIN");
       if (impBin && state) r.notes.push("states (#name): every check except Impeccable and LCP/CLS, which run on the initial state");
       if (shotsDir) r.notes.push(`screenshots: ${relative(rt.cwd, shotsDir).replace(/\\/g, "/")} (${r.shots})`);
+      // Lỗi tạm (Impeccable hỏng, mạng bận, phép đo phụ không chạy được) không được đệm: lần sau đo lại.
+      if (key && served && !r.notes.some((n) => /^impeccable \d|^network still busy|not measured/.test(n))) {
+        const deps = [...r.deps].map((u) => depPath(u, served.origin, served.root)).filter((x): x is string => !!x);
+        const shots = shotsDir ? readdirSync(shotsDir).filter((f) => f.endsWith(".png")).map((f) => join(shotsDir, f)) : [];
+        writeEntry(cacheDir!, key, deps, shots, saveReport(r));
+      }
     };
     const loadFailed: string[] = [];
     let next = 0;
@@ -795,6 +884,8 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   }
 
   const reports = jobs.map((j) => j.r);
+  // Miễn trừ có lý do: gỡ phát hiện mềm đã được xét trước khi đếm (N8).
+  const wv = applyWaivers(reports, waivers);
   // ---- Tổng hợp TOON ----
   const count = (r: PageReport, g: Gate) => [...r.findings.values()].filter((f) => f.gate === g).length;
   const hardPages = reports.filter((r) => count(r, "hard") > 0).length;
@@ -853,6 +944,14 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
     });
   });
   if (assumed.length) out["assumed"] = assumed;
+  if (cachedN) out["cache"] = `${cachedN} of ${jobs.length} pages unchanged since their last check: results reused (--no-cache measures again)`;
+  if (wv.used.length) out["waived"] =wv.used.map((w) => ({ page: w.page, check: w.check, where: w.where, findings: w.count, reason: w.reason }));
+  const waiverNotes = [
+    ...wv.unused.map((w) => `waiver matches nothing (fixed? remove it): ${w.page} ${w.check} ${w.where}`),
+    ...wv.refused.map((w) => `waiver not applied, a hard finding cannot be waived: ${w.page} ${w.check} ${w.where}`),
+    ...wv.tooMany.map((pg) => `more than ${WAIVER_MAX_PER_PAGE} waivers for ${pg}: only the first ${WAIVER_MAX_PER_PAGE} apply; fix the page instead`),
+  ];
+  if (waiverNotes.length) out["notes"] = [...((out["notes"] as string[] | undefined) ?? []), ...waiverNotes];
   const help: string[] = [];
   if (assumed.length) help.push(`${assumed.length} fact(s) the agent filled in (data-assumed): list them for the owner to confirm or correct, then remove the attribute; a page with assumed facts is not ready to publish`);
   if (all.some((f) => f.check === "copy")) help.push("copy: rewrite flagged text with the owner's real details and words (skill viet-tu-nhien), or put data-copy-ok on the element when the wording is deliberate; lists in data/copy-tells.json");

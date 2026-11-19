@@ -969,3 +969,100 @@ export function probeFingerprint(): { hash: string; count: number; skipped: numb
   }
   return { hash: h.toString(16), count: lines.length, skipped, lines };
 }
+
+/**
+ * WCAG 2.2.2 (mức A, Pause, Stop, Hide): nội dung chuyển động tự chạy quá 5 giây, đứng cạnh nội dung khác, phải có
+ * cách dừng. Báo hiệu ứng vô hạn hoặc dài hơn 5 giây (CSS/Web Animations, cả trong open shadow root) và video tự phát
+ * lặp hay dài hơn 5 giây không có điều khiển, khi trang không có nút dừng nào (tên chứa dừng/tạm dừng/pause/stop/ẩn).
+ * Bỏ qua chỉ báo đang tải (trong [aria-busy=true], role status/progressbar/alert, hay nhỏ hơn 64×64px: vòng xoay)
+ * và hiệu ứng ẩn khỏi trình đọc (aria-hidden) mà không có chữ.
+ */
+export function probePause(): Array<{ where: string; value: string }> {
+  const out: Array<{ where: string; value: string }> = [];
+  const label = (el: Element): string => el.tagName.toLowerCase() + (el.id ? `#${el.id}` : typeof el.className === "string" && el.className.trim() ? `.${el.className.trim().split(/\s+/)[0]}` : "");
+  const up = (e: Element): Element | null => e.parentElement ?? (e.parentNode instanceof ShadowRoot ? e.parentNode.host : null);
+  const exempt = (el: Element): boolean => {
+    const r = el.getBoundingClientRect();
+    if (r.width <= 64 && r.height <= 64) return true;
+    for (let e: Element | null = el; e; e = up(e)) {
+      if (e.getAttribute("aria-busy") === "true" || /^(status|progressbar|alert)$/.test(e.getAttribute("role") ?? "")) return true;
+    }
+    return !(el.textContent ?? "").trim() && el.closest("[aria-hidden=true]") !== null;
+  };
+  const NAME = /(tạm\s*dừng|dừng|pause|stop|ẩn|hide)/i;
+  const controls: Element[] = [];
+  const anims: Animation[] = [];
+  const walk = (root: Document | ShadowRoot): void => {
+    anims.push(...root.getAnimations());
+    for (const el of Array.from(root.querySelectorAll("*"))) {
+      if (el.matches("button, [role=button], input[type=button], input[type=checkbox], [role=switch]")) controls.push(el);
+      if (el.shadowRoot) walk(el.shadowRoot);
+    }
+  };
+  walk(document);
+  const named = (el: Element): string => [el.getAttribute("aria-label"), el.getAttribute("title"), (el as HTMLInputElement).value, el.textContent, ...Array.from((el as HTMLInputElement).labels ?? []).map((l) => l.textContent)].filter(Boolean).join(" ");
+  if (controls.some((c) => NAME.test(named(c)))) return out;
+  const seen = new Set<Element>();
+  for (const a of anims) {
+    if (a.playState !== "running") continue;
+    const t = a.effect?.getComputedTiming();
+    const total = Number(t?.endTime);
+    if (!(t?.iterations === Infinity || total > 5000)) continue;
+    const el = (a.effect as KeyframeEffect | null)?.target;
+    if (!el || seen.has(el) || exempt(el)) continue;
+    seen.add(el);
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) continue;
+    out.push({ where: label(el), value: `${(a as CSSAnimation).animationName || "animation"} runs ${t?.iterations === Infinity ? "forever" : `${Math.round(total / 1000)} s`} with no pause or stop control on the page` });
+  }
+  for (const v of Array.from(document.querySelectorAll("video"))) {
+    if (v.paused || v.controls || exempt(v)) continue;
+    if (v.loop || v.duration > 5) out.push({ where: label(v), value: `video plays by itself${v.loop ? " in a loop" : ` for ${Math.round(v.duration)} s`} with no controls or pause button` });
+  }
+  return out;
+}
+
+/**
+ * Chữ "hiện dần khi cuộn" không bao giờ hiện: sau khi cuộn hết trang (nhịp 150 ms mỗi màn) mà chữ vẫn trong suốt
+ * (opacity < 0,05 ở chính nó hay tổ tiên). Gọi ở lượt giảm chuyển động: script chỉ gắn lớp "hiện" khi không bật giảm
+ * chuyển động là lỗi hay gặp, người dùng đó thấy những dải trống. Bỏ qua phần tử định vị absolute/fixed (mẹo, menu
+ * chờ hover), aria-hidden, [hidden], details đóng, dialog đóng.
+ */
+export async function probeReveal(): Promise<Array<{ where: string; value: string }>> {
+  const de = document.documentElement;
+  const step = Math.max(200, Math.round(innerHeight * 0.8));
+  for (let y = 0, i = 0; y < de.scrollHeight && i < 30; y += step, i++) {
+    window.scrollTo({ top: y, left: 0, behavior: "instant" });
+    await new Promise((ok) => setTimeout(ok, 150));
+  }
+  window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  await new Promise((ok) => setTimeout(ok, 50));
+  const up = (e: Element): Element | null => e.parentElement ?? (e.parentNode instanceof ShadowRoot ? e.parentNode.host : null);
+  const out: Array<{ where: string; value: string }> = [];
+  const hit = new Set<Element>();
+  const walk = (root: Document | ShadowRoot): void => {
+    for (const el of Array.from(root.querySelectorAll("*"))) {
+      if (el.shadowRoot) walk(el.shadowRoot);
+      if (["SCRIPT", "STYLE", "TEMPLATE", "NOSCRIPT"].includes(el.tagName)) continue;
+      let own = "";
+      for (const n of Array.from(el.childNodes)) if (n.nodeType === 3) own += n.textContent ?? "";
+      if (own.trim().length < 2) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) continue;
+      if (el.closest("[aria-hidden=true], [hidden], details:not([open]) > :not(summary), dialog:not([open])")) continue;
+      let faded: Element | null = null;
+      let skip = false;
+      for (let e: Element | null = el; e && e !== de; e = up(e)) {
+        const cs = getComputedStyle(e);
+        if (cs.position === "absolute" || cs.position === "fixed") { skip = true; break; }
+        if (!faded && Number(cs.opacity) < 0.05) faded = e;
+      }
+      if (skip || !faded || hit.has(faded)) continue;
+      hit.add(faded);
+      const id = faded.tagName.toLowerCase() + (faded.id ? `#${faded.id}` : typeof faded.className === "string" && faded.className.trim() ? `.${faded.className.trim().split(/\s+/)[0]}` : "");
+      out.push({ where: id, value: `"${own.trim().slice(0, 40)}" stays invisible after scrolling the whole page with reduced motion (a scroll reveal that never runs)` });
+    }
+  };
+  walk(document);
+  return out;
+}
