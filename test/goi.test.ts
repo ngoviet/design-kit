@@ -74,6 +74,9 @@ describe("plugin hook", () => {
     expect(ctx).toContain("design-kit check index.html --strict");
     // Còn trong dự án thì dist/ vẫn bị bỏ qua.
     expect(runHook({ hook_event_name: "PostToolUse", session_id: sid(), cwd: proj, tool_input: { file_path: join(proj, "dist", "index.html") } })).toBe("");
+    // cwd của phiên nằm ngay trong test/fixtures của repo: fixture vẫn bị bỏ qua (xét theo gốc repo git).
+    const fx = join(root, "test", "fixtures");
+    expect(runHook({ hook_event_name: "PostToolUse", session_id: sid(), cwd: fx, tool_input: { file_path: join(fx, "tot.html") } })).toBe("");
   });
 });
 

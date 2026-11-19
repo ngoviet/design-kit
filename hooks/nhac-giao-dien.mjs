@@ -46,9 +46,16 @@ const save = (s) => { try { mkdirSync(stateDir, { recursive: true }); writeFileS
  * 19/11/2026. Tệp ngoài thư mục đó (scratchpad của phiên): xét cả đường dẫn.
  */
 const skipped = (f) => {
-  const base = typeof input.cwd === "string" && input.cwd ? input.cwd : process.cwd();
-  const rel = relative(base, resolve(base, f));
-  return SKIP.test(rel && !rel.startsWith("..") && !isAbsolute(rel) ? rel : f);
+  const cwd = typeof input.cwd === "string" && input.cwd ? input.cwd : process.cwd();
+  const abs = resolve(cwd, f);
+  // Gốc so: repo git gần nhất chứa tệp (cwd của phiên có thể nằm sâu trong test/fixtures), không có thì cwd.
+  let base = cwd;
+  for (let d = dirname(abs); ; d = dirname(d)) {
+    if (existsSync(join(d, ".git"))) { base = d; break; }
+    if (dirname(d) === d) break;
+  }
+  const rel = relative(base, abs);
+  return SKIP.test(rel && !rel.startsWith("..") && !isAbsolute(rel) ? rel : abs);
 };
 const isUi = (f) => typeof f === "string" && UI.test(f) && !skipped(f);
 const isImg = (f) => typeof f === "string" && IMG.test(f) && !skipped(f) && (IMG_HINT.test(basename(f)) || IMG_HINT.test(basename(dirname(f))));
