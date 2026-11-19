@@ -424,7 +424,7 @@ node scripts/tao-design-md.mjs   # sinh lại design/*/DESIGN.md sau khi đổi 
 npm run lint:design              # lint các tệp DESIGN.md
 node scripts/claude-themes.mjs   # sinh lại data/claude-themes.json từ Claude Code đã cài
 cd blocks/react && npm ci && npm run build && cd ../..
-design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6   # cổng đầy đủ, ~10 phút
+design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6   # cổng đầy đủ, ~2 phút
 ```
 
 Test `check-mod` trên `test/fixtures/mods/xau` chỉ chạy ở máy có Claude Code; nơi khác tự bỏ qua, trừ khi đặt

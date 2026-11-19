@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menu bị ẩn ở khổ hẹp, không hiện lại</title>
+<style>body { margin: 0; font: 400 16px/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; } main { padding: 32px 16px; }
+  @media (prefers-color-scheme: dark) { body { background: #111; color: #eee; } nav a { color: #3a3a3a; } }
+  nav a { margin-right: 16px; }
+</style>
+</head>
+<body>
+  <main>
+    <nav id="nav"><a href="#a">Trang chủ</a><a href="#b">Liên hệ</a></nav>
+    <h1>Trang giới thiệu</h1><p>Menu bị ẩn khi màn hẹp lại và không bao giờ hiện lại khi màn rộng ra.</p>
+  </main>
+  <script>
+    const mq = matchMedia("(max-width: 600px)");
+    const nav = document.getElementById("nav");
+    mq.addEventListener("change", (e) => { if (e.matches) nav.hidden = true; });
+    if (mq.matches) nav.hidden = true;
+  </script>
+</body>
+</html>

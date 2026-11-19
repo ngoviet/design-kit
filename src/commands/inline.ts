@@ -109,14 +109,15 @@ function inlineCss(css: string, fromDir: string, ctx: CssCtx, chain: string[]): 
       return "";
     }
     imported.push(`/* ---- @import ${ref} ---- */\n${inlineCss(readFileSync(file, "utf8"), dirname(file), ctx, [...chain, file])}\n`);
-    return `\u0000dk-import-${imported.length - 1}\u0000`;
+    return `dk-import-${imported.length - 1}`;
   });
   body = body.replace(URL_FN, (whole, d: string | undefined, s: string | undefined, u: string | undefined) => {
     const ref = (d ?? s ?? u ?? "").trim();
     if (!ref || NOT_PATH.test(ref)) return whole;
     return `url("${rebase(ref, fromDir, ctx.outDir, ctx.root)}")`;
   });
-  body = body.replace(/\u0000dk-import-(\d+)\u0000/g, (_, i: string) => imported[Number(i)]!);
+  // Ký tự vùng dùng riêng U+E000 (không phải ký tự điều khiển: eslint no-control-regex) làm dấu giữ chỗ.
+  body = body.replace(/dk-import-(\d+)/g, (_, i: string) => imported[Number(i)]!);
   return [...hoisted, body.trim()].join("\n");
 }
 

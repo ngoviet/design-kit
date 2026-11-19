@@ -911,37 +911,52 @@ export function schemeReadOnce(): boolean {
  * chỗ (P7): dấu vân của trang đã đổi khổ phải trùng hệt dấu vân của một lần nạp mới ở cùng khổ.
  * Trả kèm `count` (số phần tử đã tính) và `sample` (vài dòng đầu) để ghi chú khi lệch.
  */
-export function probeFingerprint(): { hash: string; count: number; lines: string[] } {
+export function probeFingerprint(): { hash: string; count: number; skipped: number; lines: string[] } {
   const lines: string[] = [];
   const sx = window.scrollX;
   const sy = window.scrollY;
-  // Phần tử đang chạy hiệu ứng (khung xương nhấp nháy, vòng xoay) và con của nó đổi độ mờ, màu, vị trí theo thời gian,
-  // không theo cách nạp: bỏ khỏi dấu vân, không thì hai lần đo ở hai thời điểm luôn lệch (trang-thai React, 19/11/2026).
-  const animated = new Set<Element>();
+  // Hiệu ứng đang chạy (khung xương nhấp nháy, vòng xoay, nền chuyển màu) đổi giá trị theo thời gian, không theo cách
+  // nạp: hai lần đo ở hai thời điểm luôn lệch (trang-thai React, 19/11/2026). Hiệu ứng không đụng hình học: bỏ màu và
+  // độ mờ của phần tử đó và cây con (màu kế thừa), giữ vị trí và cỡ. Hiệu ứng transform (vòng xoay, trượt): bỏ cả cây
+  // con. Bản đầu bỏ cả cây con với mọi hiệu ứng, nên nền body chuyển màu làm dấu vân gần rỗng và tự kiểm qua mù.
+  const paint = new Set<Element>();
+  const geometry = new Set<Element>();
+  const GEO = /^(transform|translate|rotate|scale|offset|left|top|right|bottom|width|height|margin|padding|inset)/i;
   const collect = (root: Document | ShadowRoot): void => {
     for (const a of root.getAnimations()) {
-      const t = (a.effect as KeyframeEffect | null)?.target;
-      if (a.playState === "running" && t) animated.add(t);
+      const eff = a.effect as KeyframeEffect | null;
+      const t = eff?.target;
+      if (a.playState !== "running" || !t) continue;
+      const props = (eff!.getKeyframes() as Array<Record<string, unknown>>).flatMap((k) => Object.keys(k)).filter((p) => !["offset", "easing", "composite", "computedOffset"].includes(p));
+      const transition = (a as CSSTransition).transitionProperty;
+      if ([...props, ...(transition ? [transition] : [])].some((p) => GEO.test(p.replace(/-/g, "")))) geometry.add(t);
+      else paint.add(t);
     }
     for (const el of Array.from(root.querySelectorAll("*"))) if (el.shadowRoot) collect(el.shadowRoot);
   };
   collect(document);
-  const moving = (el: Element): boolean => {
+  const under = (el: Element, set: Set<Element>): boolean => {
+    if (!set.size) return false;
     for (let e: Element | null = el; e; e = e.parentElement ?? (e.parentNode instanceof ShadowRoot ? e.parentNode.host : null)) {
-      if (animated.has(e)) return true;
+      if (set.has(e)) return true;
     }
     return false;
   };
+  let skipped = 0;
   const walk = (root: Document | ShadowRoot): void => {
     for (const el of Array.from(root.querySelectorAll("*"))) {
       if (el.shadowRoot) walk(el.shadowRoot);
-      if (animated.size && moving(el)) continue;
       const r = el.getBoundingClientRect();
       if (!r.width && !r.height) continue;
       const cs = getComputedStyle(el);
       if (cs.display === "none" || cs.visibility === "hidden") continue;
+      if (under(el, geometry)) {
+        skipped++;
+        continue;
+      }
       const tag = el.tagName.toLowerCase() + (el.id ? `#${el.id}` : "");
-      lines.push(`${tag} ${Math.round(r.left + sx)},${Math.round(r.top + sy)} ${Math.round(r.width)}x${Math.round(r.height)} ${cs.color} ${cs.backgroundColor} ${cs.fontSize} ${cs.opacity}`);
+      const box = `${Math.round(r.left + sx)},${Math.round(r.top + sy)} ${Math.round(r.width)}x${Math.round(r.height)} ${cs.fontSize}`;
+      lines.push(under(el, paint) ? `${tag} ${box}` : `${tag} ${box} ${cs.color} ${cs.backgroundColor} ${cs.opacity}`);
     }
   };
   walk(document);
@@ -952,5 +967,5 @@ export function probeFingerprint(): { hash: string; count: number; lines: string
     h ^= all.charCodeAt(i);
     h = Math.imul(h, 0x01000193) >>> 0;
   }
-  return { hash: h.toString(16), count: lines.length, lines };
+  return { hash: h.toString(16), count: lines.length, skipped, lines };
 }

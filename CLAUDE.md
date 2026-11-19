@@ -59,7 +59,7 @@ Chuẩn và cổng cho giao diện do agent làm.
 - CLI: `npm run check` (tsc, eslint, vitest; test chạy Edge thật), sau đó `npx tsup`. Lệnh toàn cục đi qua `npm link`.
 - Plugin: `claude plugin validate .`. Kiểm gói npm: `npm pack --dry-run --json --ignore-scripts`. Thêm thư mục mới mà gói cần thì phải ghi vào `files`.
 - Cổng cho mọi khối:
-  - `design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6`: gồm cả trạng thái trong các tệp `.steps.json`, 105 trang và trạng thái, khoảng 3 phút trên PC1 (193 s, 15/11/2026; còn 22 phát hiện mềm có lý do: 17 `standalone` vì khối liên kết token theo đường dẫn, 5 straggler của Impeccable).
+  - `design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6`: gồm cả trạng thái trong các tệp `.steps.json`, 105 trang và trạng thái, khoảng 2 phút trên PC1 (132 s, 19/11/2026, nạp một lần rồi đổi khổ tại chỗ; `--fresh` nạp mới mọi lượt: 178 s, cùng phán quyết và phát hiện; còn 22 phát hiện mềm có lý do: 17 `standalone` vì khối liên kết token theo đường dẫn, 5 straggler của Impeccable).
   - Trạng thái mở bằng URL: `design-kit check blocks/html/hop-thoai.html blocks/html/thong-bao.html --no-steps --query "dk=dem&mo=1,dk=giay&mo=1,dk=dam&mo=1"`. Làm tương tự với `bat-dau` (`lan-dau=1`) và `trinh-tu` (`buoc=2..5`).
 
 - Đổi màu nhấn theo thương hiệu: `design-kit doi-mau --huong dem --nhan 45 --trung-tinh 60 --ra <tệp>`. Lệnh giữ cấu trúc, chỉ đổi sắc rồi dò lại độ sáng để 42 cặp vẫn đạt. Muốn kiểm riêng một tệp: `design-kit kiem-mau <tệp> --huong <hướng>`. Các script trong `scripts/` vẫn chạy tay được.
@@ -69,6 +69,13 @@ Chuẩn và cổng cho giao diện do agent làm.
 - Logo, icon, ký hiệu, minh hoạ: `design-kit check-image <tệp|thư mục>... [--kind logo|icon|illustration] [--display px] --strict`. Tờ soát ở `.design-kit/shots/images/`. Đổi ngưỡng thì chạy lại trên bộ Lucide (`blocks/react/node_modules/lucide-react`, xuất SVG ra scratchpad): Lucide phải giữ trung bình 100, độ đồng bộ ≥ 95.
 
 ## Bẫy đã gặp
+
+- **Đổi khổ tại chỗ (P7, 19/11/2026):**
+  - Hiệu ứng vô hạn (khung xương `animate-pulse`, vòng xoay) làm dấu vân lệch giữa hai thời điểm đo: dấu vân bỏ qua phần tử đang chạy hiệu ứng và con của nó.
+  - Trạng thái sau thao tác không được đổi khổ: con trỏ chuột còn ở toạ độ của khổ cũ nên `:hover` rơi vào phần tử khác (thong-bao `#loi`, thanh-ben `#ngan-keo`). Trạng thái dùng mỗi khổ một lần nạp, chỉ đổi chế độ màu tại chỗ.
+  - Trang đọc `prefers-color-scheme` một lần lúc nạp mà không nghe `change` thì không đổi màu khi `emulateMedia`: `installSchemeWatch` phát hiện, mỗi chế độ màu nạp riêng (fixture `doc-mau.html`). Trang đọc khổ màn một lần: tự kiểm bắt, đo lại kiểu cũ (`doc-kho.html`).
+  - Ghi chú về một trang cụ thể phải kèm tên trang, vì ghi chú của nhiều trang bị gộp và khử trùng lặp.
+- **Hook `bash-backslash-guard` chặn cả heredoc Python** có dấu gạch ngược kép: sửa tệp bằng Edit.
 
 - **check-mod (18/11/2026):**
   - `$` của bộ test engine bị đóng băng: Proxy bọc thẳng `$` ném "non-configurable and non-writable property". Bọc `{}` rồi chuyển tiếp từng thuộc tính.

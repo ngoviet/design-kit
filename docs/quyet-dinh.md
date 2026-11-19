@@ -210,3 +210,28 @@ xét tên tệp và thư mục chứa nó (logo, icon, favicon, brand, ký hiệ
 màn hình hay ảnh trong repo tên "brand-site" không bị đòi chấm. Lúc làm hook lộ thêm một lỗi cũ: mẫu `check` kèm ranh
 giới từ khớp cả `check-image`, nên một lần chấm hình từng được tính như đã chạy cổng trang; mẫu mới đòi `check` không
 có chữ hay dấu gạch theo sau.
+
+## 19/11/2026: rà soát đợt 3, đổi khổ tại chỗ (P7), `--sweep` (P5)
+
+Chủ yêu cầu rà soát, sửa lỗi, test lại, và nghiên cứu thêm chức năng hay đổi cấu trúc để nhanh và chính xác hơn.
+
+- **Rà lỗi bằng hai agent đọc mã độc lập**, mỗi phát hiện phải có test đỏ trên mã cũ rồi xanh trên mã mới. 25 lỗi được
+  báo, 20 lỗi đã sửa kèm test (danh sách trong CHANGELOG, mục Unreleased). Lỗi nặng nhất: `check-mod --shots <thư mục>`
+  xoá cả thư mục được chỉ định; trên Windows, `claude.cmd` làm `check-mod` báo "pass" mà không test nào chạy; một trang
+  hỏng (CSP, 404) làm hỏng cả lượt kiểm nhiều trang.
+- **P7, đổi khổ tại chỗ**, kèm tự kiểm như báo cáo đợt 2 đề xuất: trang đầu nạp một lần ở khổ rộng nhất, đổi khổ và
+  chế độ màu ngay trên trang; một lần nạp mới ở khổ hẹp có đo focus phải cho đúng dấu vân bố cục và màu, lệch thì đo
+  lại kiểu cũ. Trạng thái sau thao tác chỉ đổi chế độ màu (đổi khổ làm con trỏ chuột rơi vào phần tử khác). Cổng toàn
+  bộ 105 trang: 132 s, `--fresh` 178 s, phán quyết và mọi phát hiện trùng hệt, 0 trang phải quay về cách cũ.
+  Reviewer độc lập (phiên sạch) dựng 4 trang qua mù bản tự kiểm đầu (chỉ so ở 390): lỗi script chỉ khi nạp hẹp, nền
+  body chuyển động làm dấu vân gần rỗng, `--viewports 320,1280` không kiểm đổi khổ, trang giữ trạng thái từ khổ hẹp khi
+  đo bản tối ở 1280. Bản sửa so ở khổ hẹp nhất, ở khổ focus hẹp (đổi khổ lên từ trang kiểm), và ở khổ rộng nhất sau
+  khi đã đi qua các khổ hẹp; báo lỗi script của trang kiểm; dấu vân giữ hình học của phần tử chạy hiệu ứng màu, chỉ
+  bỏ cây con của hiệu ứng hình học, và không tin dấu vân khi phần bị bỏ lớn hơn phần còn lại. 4 trang đó thành test.
+  Giới hạn còn lại: khổ giữa (khác hẹp nhất, khác khổ focus, khác rộng nhất) không có so riêng.
+- **P5, `--sweep`**, tắt mặc định: đo tràn ngang ở 8 khổ trung gian trên trang đang mở, khoảng 0,1 giây mỗi khổ.
+- **Không làm trong đợt này, để chủ chọn** (báo cáo `.folio/toi-uu-dot-3.html`): nâng axe-core 4.14.1 và engine
+  Impeccable 0.1.27 (tải tệp chạy mới), các phép đo mềm mới từ nghiên cứu (nút dừng cho hiệu ứng trên 5 giây theo WCAG
+  2.2.2, chữ hiện dần khi cuộn mà không bao giờ hiện, thẻ `best-practice` của axe ở mức mềm), lỗi hook còn lại (mẫu
+  `SKIP` so đường dẫn tuyệt đối, chữ nhắc lệnh trong `grep` tính như đã chạy cổng), bản `data:` URL chưa đợi nội dung
+  đến muộn, cờ `--fields` không lệnh nào dùng.

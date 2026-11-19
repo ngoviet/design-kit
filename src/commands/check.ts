@@ -513,24 +513,33 @@ async function checkFresh(browser: Browser, url: string, label: string, widths: 
 }
 
 /**
- * Cách mới (P7): nạp một lần ở khổ rộng nhất, đổi khổ và chế độ màu ngay trên trang. Tự kiểm: một lần nạp mới ở khổ
- * hẹp có đo focus phải cho đúng dấu vân bố cục và màu như trang đã đổi khổ; lệch (trang đọc khổ màn bằng script lúc
- * nạp, nội dung đổi theo giờ) thì trả lý do và trang đó được đo lại theo cách cũ. Script đọc chế độ màu một lần lúc
- * nạp thì mỗi chế độ màu nạp riêng. Số lần nạp mỗi trang từ 7 (2 chế độ màu × 3 khổ + giảm chuyển động) còn 3.
+ * Cách mới (P7): nạp một lần ở khổ rộng nhất, đổi khổ và chế độ màu ngay trên trang. Tự kiểm, lệch ở bước nào thì trả
+ * lý do và trang đó được đo lại theo cách cũ:
+ * - một lần nạp mới ở khổ HẸP NHẤT phải cho đúng dấu vân bố cục và màu như trang đã đổi khổ (trang đọc khổ màn bằng
+ *   script lúc nạp); lỗi script của lần nạp đó cũng được báo (lỗi chỉ có ở khổ hẹp);
+ * - khổ hẹp có đo focus (390) khác khổ hẹp nhất: trang kiểm đổi khổ lên đó, dấu vân phải trùng trang chính (hai đường
+ *   đổi khổ khác nhau cho cùng kết quả), rồi đo focus trên trang kiểm (chưa từng nhận Tab);
+ * - quay lại khổ rộng nhất, dấu vân phải trùng lần nạp đầu (trang giữ trạng thái từ khổ hẹp: menu bị ẩn không hiện lại);
+ * - phần trang đang chạy hiệu ứng hình học quá lớn để so thì không tin dấu vân.
+ * Script đọc chế độ màu một lần lúc nạp thì mỗi chế độ màu nạp riêng. Số lần nạp mỗi trang từ 7 còn 3.
  */
 async function checkReuse(browser: Browser, url: string, label: string, widths: number[], opts: PageOpts, r: PageReport): Promise<string | undefined> {
   if (opts.state) return checkStateInPlace(browser, url, label, widths, opts.state.do, opts, r);
   const desc = [...widths].sort((a, b) => b - a);
   const widestW = desc[0]!;
+  const narrowW = desc[desc.length - 1]!;
   const first = opts.schemes[0]!;
   const focusAt = focusWidths(widths);
-  // Khổ tự kiểm: khổ hẹp có đo focus (lần nạp mới đó dùng luôn cho phép đo focus). Chỉ một khổ thì không đổi khổ.
-  const checkW = desc.length > 1 ? Math.min(...focusAt) : undefined;
+  const fpMain = new Map<number, string>();
+  const fingerprint = async (L: Loaded): Promise<{ hash: string; why?: string }> => {
+    await L.page.evaluate(settleAnimations, ENTRANCE_MS);
+    const f = await L.page.evaluate(probeFingerprint);
+    return { hash: f.hash, ...(f.skipped > f.count ? { why: `${f.skipped} of ${f.skipped + f.count} elements move with a running animation, too many to verify` } : {}) };
+  };
   const main = await openPage(browser, url, label, widestW, first, r);
   try {
     const perScheme = opts.schemes.length > 1 && (await main.page.evaluate(schemeReadOnce));
     if (perScheme) r.notes.push("a script reads prefers-color-scheme once without listening for changes: each color scheme loaded fresh");
-    let fp: string | undefined;
     for (const [si, scheme] of opts.schemes.entries()) {
       let L = main;
       if (si > 0 && perScheme) {
@@ -540,9 +549,10 @@ async function checkReuse(browser: Browser, url: string, label: string, widths: 
         for (const [i, vw] of desc.entries()) {
           // Trang vừa nạp đã đúng khổ rộng nhất và đúng chế độ màu; mọi lượt khác đổi tại chỗ.
           if (!(i === 0 && (si === 0 || L !== main))) await switchTo(L, vw, scheme);
-          if (si === 0 && vw === checkW) {
-            await L.page.evaluate(settleAnimations, ENTRANCE_MS);
-            fp = (await L.page.evaluate(probeFingerprint)).hash;
+          if (si === 0) {
+            const f = await fingerprint(L);
+            if (f.why) return f.why;
+            fpMain.set(vw, f.hash);
           }
           await measureRender(browser, L, vw, scheme, opts, r, { first: si === 0, widest: i === 0, actions: false });
         }
@@ -550,24 +560,34 @@ async function checkReuse(browser: Browser, url: string, label: string, widths: 
         if (L !== main) await L.ctx.close().catch(() => undefined);
       }
     }
-    if (checkW !== undefined) {
-      const F = await openPage(browser, url, label, checkW, first, r);
+    if (desc.length > 1) {
+      const F = await openPage(browser, url, label, narrowW, first, r);
       try {
-        await F.page.evaluate(settleAnimations, ENTRANCE_MS);
-        const fresh = await F.page.evaluate(probeFingerprint);
-        if (fresh.hash !== fp) return `layout at ${checkW}px after resizing differs from a fresh load`;
-        if (focusAt.has(checkW)) await focusPass(F.page, checkW, first, opts.focusStops, r);
+        if ((await fingerprint(F)).hash !== fpMain.get(narrowW)) return `layout at ${narrowW}px after resizing differs from a fresh load`;
+        // Lỗi script chỉ xảy ra khi trang nạp ở khổ hẹp (khởi tạo menu điện thoại) không đổi bố cục vẫn phải báo.
+        for (const e of new Set(F.errs)) add(r, "hard", "errors", "page", e.slice(0, 200), `${first}/${narrowW}`);
+        for (const w of [...focusAt].filter((x) => x !== widestW)) {
+          if (w !== narrowW) {
+            await switchTo(F, w, first);
+            if ((await fingerprint(F)).hash !== fpMain.get(w)) return `layout at ${w}px differs between resizing down and resizing up`;
+          }
+          await focusPass(F.page, w, first, opts.focusStops, r);
+        }
       } finally {
         await F.ctx.close().catch(() => undefined);
       }
     }
-    // Khổ trung gian: chỉ tràn ngang, chế độ màu đầu, trên trang đang mở (đã qua tự kiểm ở trên).
+    // Khổ trung gian: chỉ tràn ngang, chế độ màu đầu, trên trang đang mở; đợi hiệu ứng (bề rộng chuyển dần qua mốc).
     for (const w of opts.sweep ?? []) {
       await switchTo(main, w, first);
+      await main.page.evaluate(settleAnimations, ENTRANCE_MS);
       const o = await main.page.evaluate(() => ({ s: document.documentElement.scrollWidth, c: document.documentElement.clientWidth }));
       if (o.s > o.c + 1) add(r, "hard", "overflow", `${w}px`, `page is ${o.s}px wide, viewport ${o.c}px`, `${first}/${w}`);
     }
     await switchTo(main, widestW, first);
+    // Đã đi qua các khổ hẹp (và chế độ màu khác): trang phải về đúng như lần nạp đầu, không thì bản tối và focus ở khổ
+    // rộng đã đo trên một trang mang trạng thái từ khổ hẹp.
+    if ((await fingerprint(main)).hash !== fpMain.get(widestW)) return `layout at ${widestW}px after visiting narrower widths differs from the first load`;
     if (focusAt.has(widestW)) await focusPass(main.page, widestW, first, opts.focusStops, r);
     await motionPass(main, widestW, first, undefined, r);
     return undefined;

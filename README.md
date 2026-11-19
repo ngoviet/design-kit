@@ -434,7 +434,7 @@ node scripts/tao-design-md.mjs   # regenerate design/*/DESIGN.md after a token c
 npm run lint:design              # lint the DESIGN.md files
 node scripts/claude-themes.mjs   # refresh data/claude-themes.json from the installed Claude Code
 cd blocks/react && npm ci && npm run build && cd ../..
-design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6   # full gate, ~10 min
+design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6   # full gate, ~2 min
 ```
 
 The `check-mod` test on `test/fixtures/mods/xau` runs only where Claude Code is installed; elsewhere it is skipped,

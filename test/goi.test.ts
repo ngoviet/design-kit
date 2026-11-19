@@ -105,6 +105,13 @@ describe("plugin hook: logos, icons and illustrations", () => {
     expect(stop([edit("e3", icon), bash("b3", "design-kit check-image khac/icons")])?.decision).toBe("block");
     // Tên trơn (chạy sau khi cd vào thư mục) vẫn tính.
     expect(stop([edit("e4", icon), bash("b4", "cd icons && design-kit check-image icon-nha.svg")])).toBeUndefined();
+    // Đường dẫn tương đối sau cd, và đường dẫn có dấu cách trong nháy.
+    const sau = join(tmp, "nhom anh", "logos");
+    mkdirSync(sau, { recursive: true });
+    const logo = join(sau, "logo-moi.svg");
+    writeFileSync(logo, "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'/>");
+    expect(stop([edit("e5", logo), bash("b5", 'cd "nhom anh" && design-kit check-image logos/logo-moi.svg')])).toBeUndefined();
+    expect(stop([edit("e6", logo), bash("b6", 'design-kit check-image "nhom anh/logos" --strict')])).toBeUndefined();
   });
 });
 
@@ -233,6 +240,9 @@ describe("plugin hook: Claude Code mods", () => {
     // Cổng mod của chính design-kit chạy plugin test trên mod: cũng đủ (trước 19/11/2026 bị chặn nhầm).
     expect(stop(after("design-kit check-mod plugins/khung-mod --strict"))).toBeUndefined();
     expect(stop(after("design-kit check-mod plugins/mod-khac"))?.decision).toBe("block");
+    // Cờ có giá trị đứng trước thư mục mod: giá trị đó không phải thư mục mod.
+    expect(stop(after("design-kit check-mod --shots out plugins/khung-mod --strict"))).toBeUndefined();
+    expect(stop(after("design-kit check-mod --widths 60,100 plugins/khung-mod"))).toBeUndefined();
     if (process.platform === "win32") {
       // Git Bash viết C:\x thành /c/x.
       const gitBash = mod.replace(/\\/g, "/").replace(/^([A-Za-z]):/, (_, d: string) => `/${d.toLowerCase()}`);

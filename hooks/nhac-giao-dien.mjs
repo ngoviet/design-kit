@@ -152,13 +152,29 @@ function names(cmd, file, cwd) {
   const f = norm(file);
   const d = norm(dirname(file));
   const base = norm(basename(file));
-  return cmd.split(/[\s;&|()]+/).some((raw) => {
-    const t = unshell(raw);
+  // Đường dẫn tương đối tính từ cwd hoặc từ thư mục `cd` gần nhất trong cùng lệnh; giữ nguyên đường dẫn trong nháy
+  // (có dấu cách).
+  const bases = [cwd, ...cdDirs(cmd, cwd)];
+  return [...cmd.matchAll(/"([^"]*)"|'([^']*)'|([^\s;&|()]+)/g)].some((m) => {
+    const t = unshell(m[1] ?? m[2] ?? m[3] ?? "");
     if (!t || t.startsWith("-")) return false;
     if (!/[\\/]/.test(t) && norm(t) === base) return true;
-    const abs = norm(resolve(cwd, t)).replace(/\/+$/, "");
-    return abs === f || abs === d;
+    return bases.some((b) => {
+      const abs = norm(resolve(b, t)).replace(/\/+$/, "");
+      return abs === f || abs === d;
+    });
   });
+}
+
+/** Các thư mục mà lệnh `cd` (hay Set-Location…) trong lệnh chuyển tới, nối tiếp nhau từ cwd. */
+function cdDirs(cmd, cwd) {
+  const out = [];
+  let base = cwd;
+  for (const cd of cmd.matchAll(/(?:^|[;&|(\n]\s*)(?:cd|pushd|Set-Location|Push-Location)\s+(?:-\w+\s+)*("[^"]*"|'[^']*'|[^\s;&|)]+)/gi)) {
+    base = resolve(base, unshell(cd[1]));
+    out.push(base);
+  }
+  return out;
 }
 
 /** Bỏ dấu nháy; trên Windows đổi đường dẫn Git Bash `/d/code/…` thành `d:/code/…`. */
@@ -182,10 +198,15 @@ function coversMod(cmd, mod, cwd) {
     for (const cd of cmd.slice(0, m.index).matchAll(/(?:^|[;&|(\n]\s*)(?:cd|pushd|Set-Location|Push-Location)\s+(?:-\w+\s+)*("[^"]*"|'[^']*'|[^\s;&|)]+)/gi)) {
       base = resolve(base, unshell(cd[1]));
     }
-    const arg = m[1].trim().split(/\s+/).find((t) => t && !t.startsWith("-") && !/^\d*[<>]/.test(t));
-    if (arg && /[$%]/.test(arg)) return true;
-    const dir = norm(resolve(base, arg ? unshell(arg) : "."));
-    if (root === dir || root.startsWith(dir.endsWith("/") ? dir : `${dir}/`)) return true;
+    // Mọi đối số không phải cờ, bỏ giá trị của cờ có giá trị đứng trước (`check-mod --shots out <mod>`): trước kia chỉ
+    // lấy đối số đầu, nên "out" bị coi là thư mục mod.
+    const toks = m[1].trim().split(/\s+/);
+    const args = toks.filter((t, i) => t && !t.startsWith("-") && !/^\d*[<>]/.test(t) && !/^--(shots|widths|surfaces|languages|pane-id|term-bg|limit|fields)$/.test(toks[i - 1] ?? ""));
+    if (args.some((a) => /[$%]/.test(a))) return true;
+    for (const a of args.length ? args : ["."]) {
+      const dir = norm(resolve(base, unshell(a)));
+      if (root === dir || root.startsWith(dir.endsWith("/") ? dir : `${dir}/`)) return true;
+    }
   }
   return false;
 }

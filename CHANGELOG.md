@@ -8,10 +8,15 @@ All notable changes to this project are documented here. The format follows
 ### Changed
 
 - `check` loads each page once and resizes it and switches it to dark in place, instead of a fresh load for every
-  width and color scheme (7 loads per page become 3). Each page is verified: one fresh load at the narrow focus width
-  must give the same layout and color fingerprint as the resized page, otherwise the page is measured again with
-  fresh loads and a note says why. A page whose script reads `prefers-color-scheme` once without listening for
-  changes gets one load per color scheme. `--fresh` keeps the old way.
+  width and color scheme (7 loads per page become 3). Each page is verified, and measured again with fresh loads (with
+  a note saying why) when any check differs: one fresh load at the narrowest width must give the same layout and
+  color fingerprint as the resized page, and its script errors are reported; that page resized up to the narrow focus
+  width must match the main page there; the main page back at the widest width must match its first load. Elements
+  moved by a running animation are left out of the fingerprint, and a page where most of them move is redone fresh.
+  A page whose script reads `prefers-color-scheme` once without listening for changes gets one load per color
+  scheme. States after steps get one load per width and switch only the color scheme in place (resizing a clicked
+  page moves the mouse onto another element). `--fresh` keeps the old way. Full gate on PC1: 105 pages and states,
+  same verdicts and findings as `--fresh`.
 - A page that does not load (wrong URL, dev server down, HTTP ≥ 400) is a hard `render` finding for that page only;
   the other pages are still checked. The command fails with `LOAD_FAILED` only when no page loads.
 
@@ -25,6 +30,24 @@ All notable changes to this project are documented here. The format follows
 - The `input-zoom` row said `skipped` when 320 was the only phone width, while the check ran there and reported
   findings.
 - An unexpected error in one page no longer closes the browser under the pages still being checked.
+- `check`: axe is injected through `evaluate`, so a page with `script-src 'self'` is checked instead of aborting the
+  run; a line-height of exactly 1.2 (1.5 for body text) no longer fails through float error; animations inside open
+  shadow roots count for `motion` and for the entrance wait; `.htm`, `.gif`, `.ttf`, `.otf`, `.wasm`, `.mp4`, `.webm`
+  get their MIME types; a page in a drive root is served instead of 403; a failed Impeccable scan leaves a note
+  instead of looking clean; Impeccable no longer runs twice at 390; `data-assumed` facts are listed once per page,
+  not once per `--query`; a step that fails after the reduced-motion reload leaves a note instead of measuring the
+  wrong state; the help names the real browser order.
+- `inline`: `url()` inside a nested relative `@import` is rewritten once (was `css/css/sub/img.png`).
+- `check-mod`: `--shots <dir>` removes only the files it writes, never the folder; when `claude` is a `.cmd` shim
+  the run waits for the shell retry instead of reporting a pass with no test run, and a timeout stops the whole
+  process tree; a color that only looks like one (`#12345`, `rgb(nope)`) is unknown instead of aborting the run.
+- `doi-mau`: chroma is rounded down, so hues 10–35 and 250–285 of `dem` stay inside sRGB; the status says
+  "below WCAG or out of sRGB gamut". `kiem-mau` with the wrong `--huong` says which block is missing.
+- `check-image`: a folder named like an image is skipped, one unreadable image no longer aborts the run, an SVG
+  thinner than about 600:1 is measured from its viewBox, and `../logo.svg` no longer overwrites the sheet of
+  `logo.svg`.
+- Hook: a check counts for a file only when an argument points at that file or its folder (a similar name in another
+  folder used to count); `design-kit check-mod` counts for a mod like `claude plugin test`.
 
 ## [0.3.0] - 2026-11-18
 

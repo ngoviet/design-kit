@@ -377,6 +377,37 @@ describe("check on real pages", () => {
     expect(out).toMatch(/hard,motion,.*xoay.*prefers-reduced-motion/);
   }, 120_000);
 
+  // Bốn ca reviewer độc lập dựng ra (19/11/2026), mỗi ca từng làm cách đổi khổ tại chỗ cho "pass" trong khi --fresh trượt.
+  describe("resize in place: the self-check is not fooled", () => {
+    const O = ["--no-impeccable", "--no-shots", "--no-standalone", "--no-copy", "--full"];
+    const verdict = (out: string, f: string) => new RegExp(`${f}\\.html,(pass|fail)`).exec(out)?.[1];
+    it("a script error that only happens when loaded narrow is reported", async () => {
+      const { out } = await run(["check", "test/fixtures/loi-hep.html", "--viewports", "390,1280", ...O]);
+      expect(out).toMatch(/hard,errors,page,"uncaught ReferenceError: khoiTaoMenuDiDong/);
+    }, 120_000);
+    it("an animated body background does not blind the fingerprint", async () => {
+      const { out } = await run(["check", "test/fixtures/nen-chay.html", "--viewports", "390,1280", ...O]);
+      expect(out).toMatch(/hard,overflow,390px/);
+    }, 120_000);
+    it("a page that keeps state from a narrow width is redone fresh, so dark at 1280 is measured right", async () => {
+      const a = await run(["check", "test/fixtures/an-menu.html", "--viewports", "390,1280", ...O]);
+      const b = await run(["check", "test/fixtures/an-menu.html", "--viewports", "390,1280", ...O, "--fresh"]);
+      expect(a.out).toContain("after visiting narrower widths differs from the first load");
+      expect(verdict(a.out, "an-menu")).toBe(verdict(b.out, "an-menu"));
+      expect(a.out).toMatch(/hard,axe,color-contrast,.*dark\/1280/);
+    }, 120_000);
+    it("with 320 and one wide width the resize is still verified (at the narrowest width)", async () => {
+      const { out } = await run(["check", "test/fixtures/doc-kho.html", "--viewports", "320,1280", "--schemes", "light", ...O]);
+      expect(out).toContain("layout at 320px after resizing differs from a fresh load");
+      expect(out).toContain("overflow,hard,ok");
+      expect(out.match(/focus stops inspected at 1280px/g)?.length).toBe(1);
+    }, 120_000);
+    it("--sweep waits for a width transition before reading overflow", async () => {
+      const { out } = await run(["check", "test/fixtures/tran-chuyen.html", "--schemes", "light", "--sweep", ...O]);
+      expect(out).toMatch(/hard,overflow,768px/);
+    }, 120_000);
+  });
+
   it("--sweep finds overflow that only happens between the default widths", async () => {
     const base = ["check", "test/fixtures/tran-giua.html", "--no-impeccable", "--no-shots", "--no-standalone", "--schemes", "light"];
     expect((await run(base)).out).toContain("overflow,hard,ok");

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tràn ở khổ trung gian</title>
+<style>
+  body { margin: 0; font: 400 16px/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+  main { padding: 32px 16px; }
+  .the { box-sizing: border-box; background: #eef; padding: 16px; width: 100%; transition: width 1s; }
+  /* Lỗi chỉ có ở máy tính bảng dọc: khối rộng cố định 820px trong dải 700–860px. */
+  @media (min-width: 700px) and (max-width: 860px) { .the { width: 820px; } }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Thẻ tóm tắt</h1>
+    <div class="the">Khối này tràn ngang ở khổ máy tính bảng, còn ở 320, 390 và 1280 thì vừa.</div>
+  </main>
+</body>
+</html>
