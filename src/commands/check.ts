@@ -36,7 +36,7 @@ flags[21]:
   --jobs <n>: pages checked at once (default 3, max 8)
   --waivers <file.json>: soft findings reviewed as fine, each with a reason (default .design-kit/waivers.json when it exists); listed under "waived", never hidden; --no-waivers ignores the file
   --no-waivers: show every finding, ignoring the waivers file
-  --no-cache: measure every page again; by default a local page whose every loaded file is unchanged since its last check (same flags, same design-kit, axe, Impeccable and browser) reuses that result, and the output says how many
+  --no-cache: measure every page again (and refresh the cache); by default a local page whose every loaded file is unchanged since its last check (same flags, same design-kit, axe, Impeccable and browser) reuses that result, and the output says how many
   --sweep: also check horizontal overflow at in-between widths (360, 414, 480, 600, 768, 900, 1024, 1180 within the --viewports range), on the open page; about 0.1 s per width
   --fresh: load the page again for every width and color scheme (default: load once, resize and switch scheme in place, verified against one fresh load per page and redone fresh when the layout differs)
   --limit <n>: findings to show (default 25)
@@ -758,14 +758,14 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const sweep = p.bool("sweep") ? SWEEP_WIDTHS.filter((w) => w > Math.min(...viewports) && w < Math.max(...viewports) && !viewports.includes(w)) : [];
   if (p.bool("sweep") && p.bool("fresh")) fail("--sweep needs resize in place: drop --fresh", "VALIDATION_ERROR");
   const phoneWidth = phones.length ? Math.max(...phones) : undefined;
-  // Bộ đệm (N7): tắt bằng --no-cache. Dấu vân của lượt chạy: mọi thứ ngoài nội dung trang quyết định kết quả.
-  const cacheDir = p.bool("no-cache") ? undefined : resolve(rt.cwd, ".design-kit", "cache");
-  const runPrint = cacheDir
-    ? {
-        v: VERSION, code: codeSha(), axe: sha(axeSource), imp: impBin ? (fileSha(impBin) ?? impBin) : null, browser: browser.version(),
-        viewports, schemes, focusStops, copy: copy ? sha(JSON.stringify(copy)) : null, sweep, fresh: p.bool("fresh"),
-      }
-    : undefined;
+  // Bộ đệm (N7). Dấu vân của lượt chạy: mọi thứ ngoài nội dung trang quyết định kết quả. --no-cache đo lại mọi trang
+  // nhưng vẫn ghi mục mới, để lượt sau dùng được.
+  const cacheDir: string | undefined = resolve(rt.cwd, ".design-kit", "cache");
+  const readCache = !p.bool("no-cache");
+  const runPrint = {
+    v: VERSION, code: codeSha(), axe: sha(axeSource), imp: impBin ? (fileSha(impBin) ?? impBin) : null, browser: browser.version(),
+    viewports, schemes, focusStops, copy: copy ? sha(JSON.stringify(copy)) : null, sweep, fresh: p.bool("fresh"),
+  };
   let cachedN = 0;
   try {
     for (const t of targets) {
@@ -809,7 +809,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
       const key = cacheDir && served
         ? cacheKey({ fp: runPrint, label, state: state ?? null, standalone: !!standalone, mobile: !!mobile, shots: shotsDir ?? null })
         : undefined;
-      if (key) {
+      if (key && readCache) {
         const e = readEntry<CachedReport>(cacheDir!, key);
         if (e && entryValid(e)) {
           restoreReport(r, e.report);
