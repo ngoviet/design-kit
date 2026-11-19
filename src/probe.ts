@@ -989,7 +989,8 @@ export function probePause(): Array<{ where: string; value: string }> {
     }
     return !(el.textContent ?? "").trim() && el.closest("[aria-hidden=true]") !== null;
   };
-  const NAME = /(tạm\s*dừng|dừng|pause|stop|ẩn|hide)/i;
+  // Nguyên từ: so chuỗi con thì "Chuẩn bị", "khẩn", "nonstop" cũng thành nút dừng và tắt phép đo cho cả trang.
+  const NAME = /(?<!\p{L})(tạm\s*dừng|dừng|pause|stop|ẩn|hide)(?!\p{L})/iu;
   const controls: Element[] = [];
   const anims: Animation[] = [];
   const walk = (root: Document | ShadowRoot): void => {
@@ -1006,7 +1007,9 @@ export function probePause(): Array<{ where: string; value: string }> {
   for (const a of anims) {
     if (a.playState !== "running") continue;
     const t = a.effect?.getComputedTiming();
-    const total = Number(t?.endTime);
+    // Thời gian chuyển động thật (activeDuration), không tính trễ trước khi chạy: hiệu ứng 0,8 s trễ 5,5 s không phải
+    // chuyển động 6 s.
+    const total = Number(t?.activeDuration);
     if (!(t?.iterations === Infinity || total > 5000)) continue;
     const el = (a.effect as KeyframeEffect | null)?.target;
     if (!el || seen.has(el) || exempt(el)) continue;
@@ -1038,7 +1041,17 @@ export async function probeReveal(): Promise<Array<{ where: string; value: strin
   window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   await new Promise((ok) => setTimeout(ok, 50));
   const up = (e: Element): Element | null => e.parentElement ?? (e.parentNode instanceof ShadowRoot ? e.parentNode.host : null);
-  const out: Array<{ where: string; value: string }> = [];
+  /** Tổ tiên (hay chính nó) trong suốt; null nếu không; "skip" nếu nằm trong phần tử absolute/fixed. */
+  const fadedOf = (el: Element): Element | null | "skip" => {
+    let faded: Element | null = null;
+    for (let e: Element | null = el; e && e !== de; e = up(e)) {
+      const cs = getComputedStyle(e);
+      if (cs.position === "absolute" || cs.position === "fixed") return "skip";
+      if (!faded && Number(cs.opacity) < 0.05) faded = e;
+    }
+    return faded;
+  };
+  const candidates: Array<{ faded: Element; own: string }> = [];
   const hit = new Set<Element>();
   const walk = (root: Document | ShadowRoot): void => {
     for (const el of Array.from(root.querySelectorAll("*"))) {
@@ -1049,20 +1062,30 @@ export async function probeReveal(): Promise<Array<{ where: string; value: strin
       if (own.trim().length < 2) continue;
       const r = el.getBoundingClientRect();
       if (r.width < 1 || r.height < 1) continue;
+      // Ẩn có chủ ý (visibility hidden: khung thu gọn, ngăn kéo đóng) không phải hiện dần hỏng.
+      if (getComputedStyle(el).visibility === "hidden") continue;
       if (el.closest("[aria-hidden=true], [hidden], details:not([open]) > :not(summary), dialog:not([open])")) continue;
-      let faded: Element | null = null;
-      let skip = false;
-      for (let e: Element | null = el; e && e !== de; e = up(e)) {
-        const cs = getComputedStyle(e);
-        if (cs.position === "absolute" || cs.position === "fixed") { skip = true; break; }
-        if (!faded && Number(cs.opacity) < 0.05) faded = e;
-      }
-      if (skip || !faded || hit.has(faded)) continue;
+      const faded = fadedOf(el);
+      if (!faded || faded === "skip" || hit.has(faded)) continue;
       hit.add(faded);
-      const id = faded.tagName.toLowerCase() + (faded.id ? `#${faded.id}` : typeof faded.className === "string" && faded.className.trim() ? `.${faded.className.trim().split(/\s+/)[0]}` : "");
-      out.push({ where: id, value: `"${own.trim().slice(0, 40)}" stays invisible after scrolling the whole page with reduced motion (a scroll reveal that never runs)` });
+      candidates.push({ faded, own: own.trim() });
     }
   };
   walk(document);
+  // Cho từng ứng viên một cơ hội nữa: cuộn nó vào giữa màn (cuộn cả khung cuộn bên trong, không chỉ cửa sổ), đợi hiệu
+  // ứng của nó xong (cả độ trễ), rồi mới kết luận. Bản đầu chỉ cuộn cửa sổ và đọc sau 150 ms, nên báo nhầm hiện dần
+  // đúng nằm trong khung cuộn riêng hay có transition-delay.
+  const out: Array<{ where: string; value: string }> = [];
+  for (const { faded, own } of candidates.slice(0, 12)) {
+    faded.scrollIntoView({ block: "center", behavior: "instant" });
+    await new Promise((ok) => setTimeout(ok, 200));
+    const anims = faded.getAnimations({ subtree: true }).filter((a) => a.playState === "running" || a.pending);
+    await Promise.race([Promise.all(anims.map((a) => a.finished.catch(() => undefined))), new Promise((ok) => setTimeout(ok, 1500))]);
+    const still = fadedOf(faded);
+    if (!still || still === "skip") continue;
+    const id = still.tagName.toLowerCase() + (still.id ? `#${still.id}` : typeof still.className === "string" && still.className.trim() ? `.${still.className.trim().split(/\s+/)[0]}` : "");
+    out.push({ where: id, value: `"${own.slice(0, 40)}" stays invisible after scrolling the whole page with reduced motion (a scroll reveal that never runs)` });
+  }
+  window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   return out;
 }

@@ -87,7 +87,8 @@ export function applyWaivers<F extends WaivableFinding>(
   }
   return {
     used: [...count].map(([w, n]) => ({ ...w, count: n })),
-    unused: active.filter((w) => !count.has(w) && !refused.has(w)),
+    // Chỉ trang có trong lượt chạy này: chạy một phần trang thì mục của trang khác không phải "không khớp gì".
+    unused: active.filter((w) => !count.has(w) && !refused.has(w) && reports.some((r) => pageOf(r.target) === w.page)),
     refused: [...refused],
     tooMany,
   };

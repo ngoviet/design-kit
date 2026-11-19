@@ -68,6 +68,8 @@ Chuẩn và cổng cho giao diện do agent làm.
 
 - Logo, icon, ký hiệu, minh hoạ: `design-kit check-image <tệp|thư mục>... [--kind logo|icon|illustration] [--display px] --strict`. Tờ soát ở `.design-kit/shots/images/`. Đổi ngưỡng thì chạy lại trên bộ Lucide (`blocks/react/node_modules/lucide-react`, xuất SVG ra scratchpad): Lucide phải giữ trung bình 100, độ đồng bộ ≥ 95.
 
+- Bộ đệm của cổng: `.design-kit/cache/`, bật mặc định, khoá gồm cả băm mã trong `dist/` (hay `src/` khi chạy test), nên sửa probe là hết hiệu lực. Đo thời gian hay so phát hiện giữa hai bản thì luôn thêm `--no-cache`. Miễn trừ: `.design-kit/waivers.json`.
+
 ## Bẫy đã gặp
 
 - **Đổi khổ tại chỗ (P7, 19/11/2026):**

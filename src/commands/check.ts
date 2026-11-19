@@ -99,8 +99,11 @@ interface PageReport {
   notes: string[];
   shots: number;
   assumed: AssumedHit[];
-  /** URL mọi yêu cầu mạng của trang (bộ đệm N7 đổi thành tệp cục bộ để băm). */
-  deps: Set<string>;
+  /**
+   * Bộ đệm N7: mỗi URL trên máy chủ cục bộ mà trang nhận, kèm băm của đúng thân phản hồi trang đã nhận ("missing" khi
+   * ≥ 400, "unreadable" khi hỏng). Băm lúc nhận chứ không lúc job xong: tệp sửa giữa lượt đo không được đệm sai.
+   */
+  deps: Map<string, Array<Promise<string>>>;
 }
 
 const HEIGHT: Record<number, number> = { 320: 720, 390: 844, 1280: 800 };
@@ -323,7 +326,11 @@ async function openPage(browser: Browser, url: string, label: string, vw: number
   try {
     const page = await ctx.newPage();
     const net = watchNetwork(page);
-    page.on("request", (q) => r.deps.add(q.url()));
+    const dep = (u: string, h: Promise<string>): void => {
+      if (/^http:\/\/127\.0\.0\.1:\d+\//.test(u)) r.deps.set(u, [...(r.deps.get(u) ?? []), h]);
+    };
+    page.on("response", (s) => dep(s.url(), s.status() >= 400 ? Promise.resolve("missing") : s.body().then((b) => sha(b), () => "unreadable")));
+    page.on("requestfailed", (q) => dep(q.url(), Promise.resolve("unreadable")));
     await page.addInitScript(installVitals);
     await page.addInitScript(installSchemeWatch);
     // Lỗi người dùng gặp ngay khi mở: script ném lỗi, script/stylesheet không tải được (thường là nguyên nhân
@@ -704,11 +711,11 @@ async function checkPage(browser: Browser, url: string, label: string, opts: Pag
   }
   if (!opts.fresh) {
     // Đo vào bản nháp: tự kiểm lệch thì bỏ nháp, đo lại theo cách cũ.
-    const draft: PageReport = { target: r.target, findings: new Map(), checks: new Map(), notes: [], shots: 0, assumed: [], deps: new Set() };
+    const draft: PageReport = { target: r.target, findings: new Map(), checks: new Map(), notes: [], shots: 0, assumed: [], deps: new Map() };
     const why = await checkReuse(browser, url, label, widths, opts, draft);
     if (why === undefined) {
       for (const [k, f] of draft.findings) r.findings.set(k, f);
-      for (const d of draft.deps) r.deps.add(d);
+      for (const [u, l] of draft.deps) r.deps.set(u, [...(r.deps.get(u) ?? []), ...l]);
       r.notes.push(...draft.notes);
       r.shots += draft.shots;
       r.assumed.push(...draft.assumed);
@@ -786,7 +793,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
         // Trạng thái đầu (không thao tác) rồi từng trạng thái trong tệp steps: mỗi cái một dòng phán quyết.
         for (const state of [undefined, ...states]) {
           const label = `${/^https?:/i.test(t) ? t : relative(rt.cwd, t).replace(/\\/g, "/")}${q ? `?${q}` : ""}${state ? ` #${state.name}` : ""}`;
-          const r: PageReport = { target: label, findings: new Map(), checks: new Map(), notes: [], shots: 0, assumed: [], deps: new Set() };
+          const r: PageReport = { target: label, findings: new Map(), checks: new Map(), notes: [], shots: 0, assumed: [], deps: new Map() };
           let shotsDir: string | undefined;
           if (shotsBase) {
             // Tên theo đường dẫn tương đối (không chỉ tên tệp): blocks/html/x.html và blocks/react/dist/x.html không ghi đè nhau.
@@ -807,7 +814,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
       // Bộ đệm (N7): trang cục bộ không đổi kể từ lần đo trước thì dùng lại kết quả. Khoá gồm mọi thứ quyết định kết quả
       // trừ nội dung tệp; nội dung các tệp mà trang đã nạp được băm trong mục và phải còn nguyên.
       const key = cacheDir && served
-        ? cacheKey({ fp: runPrint, label, state: state ?? null, standalone: !!standalone, mobile: !!mobile, shots: shotsDir ?? null })
+        ? cacheKey({ fp: runPrint, label, root: served.root, state: state ?? null, standalone: !!standalone, mobile: !!mobile, shots: shotsDir ?? null })
         : undefined;
       if (key && readCache) {
         const e = readEntry<CachedReport>(cacheDir!, key);
@@ -852,11 +859,24 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
       if (!impBin && !p.bool("no-impeccable")) r.notes.push("impeccable: engine not found, run `design-kit setup` (downloads the pinned engine) or set IMPECCABLE_BIN");
       if (impBin && state) r.notes.push("states (#name): every check except Impeccable and LCP/CLS, which run on the initial state");
       if (shotsDir) r.notes.push(`screenshots: ${relative(rt.cwd, shotsDir).replace(/\\/g, "/")} (${r.shots})`);
-      // Lỗi tạm (Impeccable hỏng, mạng bận, phép đo phụ không chạy được) không được đệm: lần sau đo lại.
-      if (key && served && !r.notes.some((n) => /^impeccable \d|^network still busy|not measured/.test(n))) {
-        const deps = [...r.deps].map((u) => depPath(u, served.origin, served.root)).filter((x): x is string => !!x);
+      // Không đệm khi kết quả có thể là tạm: Impeccable hỏng, mạng bận, phép đo phụ không chạy được, hay có lỗi cứng
+      // `errors`/`render` (tài nguyên ngoài máy không tải được lúc này; trang tự sửa xong thì lần sau phải đo lại).
+      const transient = r.notes.some((n) => /^impeccable \d|^network still busy|not measured/.test(n))
+        || [...r.findings.values()].some((f) => f.gate === "hard" && (f.check === "errors" || f.check === "render"));
+      if (key && served && !transient) {
+        // Mỗi URL một nội dung trong cả lượt đo: nhận hai nội dung khác nhau (tệp sửa giữa chừng) hay không đọc được thì
+        // không đệm.
+        const deps: Array<{ path: string; sha: string }> = [];
+        let consistent = true;
+        for (const [u, list] of r.deps) {
+          const got = new Set(await Promise.all(list));
+          const path = depPath(u, served.origin, served.root);
+          if (!path) continue;
+          if (got.size !== 1 || got.has("unreadable")) consistent = false;
+          deps.push({ path, sha: [...got][0]! });
+        }
         const shots = shotsDir ? readdirSync(shotsDir).filter((f) => f.endsWith(".png")).map((f) => join(shotsDir, f)) : [];
-        writeEntry(cacheDir!, key, deps, shots, saveReport(r));
+        if (consistent) writeEntry(cacheDir!, key, deps, shots, saveReport(r));
       }
     };
     const loadFailed: string[] = [];

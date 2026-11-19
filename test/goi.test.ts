@@ -68,6 +68,36 @@ describe("plugin hook", () => {
     expect(runHook({ hook_event_name: "Stop", session_id: sid(), transcript_path: tr4 })).toBe("");
   });
 
+  it("counts every real way of running the gate, and no mention inside quotes or a heredoc", () => {
+    // Bảng lệnh của reviewer độc lập (19/11/2026). Sửa .css (không phải .html) để chỉ còn phép dò "đã chạy cổng".
+    const line = (content: unknown[]) => JSON.stringify({ type: "assistant", message: { content } });
+    const edit = (id: string, file: string) => line([{ type: "tool_use", id, name: "Edit", input: { file_path: file } }]);
+    const bash = (cmd: string) => line([{ type: "tool_use", id: "b", name: "Bash", input: { command: cmd } }]);
+    const css = join(tmp, "kieu-hook.css");
+    writeFileSync(css, "p{color:#111}");
+    const stopAfter = (cmd: string) => {
+      const tr = join(tmp, `${sid()}.jsonl`);
+      writeFileSync(tr, [edit("e", css), bash(cmd)].join("\n"));
+      const out = runHook({ hook_event_name: "Stop", session_id: sid(), transcript_path: tr });
+      return out ? (JSON.parse(out) as { decision: string }).decision : "allow";
+    };
+    const runs = [
+      "npm exec design-kit check a.html", "npm exec -- design-kit check a.html", "pnpm exec design-kit check a.html",
+      "npx -y design-kit@latest check a.html", "FORCE_COLOR=0 design-kit check a.html", "timeout 600 design-kit check a.html",
+      " design-kit check a.html", "if design-kit check a.html; then echo ok; fi", "for f in *.html; do design-kit check $f; done",
+      "foreach ($f in $x) { design-kit check $f }", "cmd /c design-kit check a.html", "design-kit.cmd check a.html",
+      "node --no-warnings dist/bin/design-kit.js check a.html", 'node "D:/my code/dist/bin/design-kit.js" check a.html',
+      "& design-kit check a.html", "npx --yes design-kit check a.html", "node .\\dist\\bin\\design-kit.js check a.html",
+    ];
+    for (const c of runs) expect([c, stopAfter(c)]).toEqual([c, "allow"]);
+    const mentions = [
+      'git commit -m "fix: a.html; design-kit check a.html passes"', 'rg "check-image|design-kit check a.html" docs',
+      'echo "(design-kit check a.html)"', "git commit -F - <<EOF\nsửa\ndesign-kit check a.html --strict: pass\nEOF",
+      "echo nho chay design-kit check a.html",
+    ];
+    for (const c of mentions) expect([c, stopAfter(c)]).toEqual([c, "block"]);
+  });
+
   it("a project inside a folder named build or dist is still a UI project", () => {
     const proj = join(tmp, "build", "shop");
     const ctx = runHook({ hook_event_name: "PostToolUse", session_id: sid(), cwd: proj, tool_input: { file_path: join(proj, "index.html") } });

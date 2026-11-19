@@ -154,15 +154,25 @@ const norm = (p) => p.replace(/\\/g, "/").toLowerCase();
 // Lệnh phải ĐƯỢC CHẠY: đứng đầu một đoạn lệnh (đầu dòng, sau ; & | ( hay `time`), có thể qua npx hay node <đường dẫn>.
 // Trước 19/11/2026 chỉ cần chuỗi xuất hiện, nên `grep "design-kit check" README.md` hay một lời commit nhắc lệnh cũng
 // được tính là đã chạy cổng.
-const RUN_AT = String.raw`(?:^|[;&|(\n]\s*|\btime\s+)(?:npx\s+(?:-\S+\s+)*)?(?:node\s+)?["']?(?:[^\s"']*[\\/])?design-kit(?:\.js)?["']?\s+`;
+// Đầu đoạn lệnh có thể kèm: biến môi trường (FORCE_COLOR=0), timeout/nice, cmd /c, npx/npm exec/pnpm exec/yarn/bunx
+// (kèm cờ, `--`, `@phiên-bản`), node (kèm cờ), đường dẫn tới design-kit(.js/.cmd), kể cả trong nháy có dấu cách.
+const RUN_AT = String.raw`(?:^|[;&|({\n]|\b(?:do|then|else|time|if|elif|while|until)\b)\s*(?:\w+=\S*\s+)*(?:(?:timeout|nice)\s+\S+\s+)?(?:cmd(?:\.exe)?\s+\/c\s+)?(?:(?:npx|bunx|yarn|pnpm\s+exec|npm\s+exec)\s+(?:-\S+\s+)*(?:--\s+)?)?(?:node(?:\.exe)?\s+(?:-\S+\s+)*)?(?:"[^"]*[\\/]|'[^']*[\\/]|[^\s"';&|]*[\\/])?design-kit(?:@[^\s"']+)?(?:\.js|\.mjs|\.cmd)?["']?\s+`;
 const GATE = new RegExp(`${RUN_AT}check(?![\\w-])`);
 const IMG_GATE = new RegExp(`${RUN_AT}check-image\\b`);
+/**
+ * Phần lệnh thật sự chạy: bỏ thân heredoc và chuỗi trong nháy (trừ chuỗi là đường dẫn tới design-kit), để lời commit
+ * hay `echo "…; design-kit check a.html"` không được tính là đã chạy cổng (reviewer 19/11/2026).
+ */
+const runText = (cmd) => cmd
+  .replace(/<<-?\s*(['"]?)(\w+)\1[\s\S]*?\n\s*\2\b/g, "<<H")
+  .replace(/"[^"]*"|'[^']*'/g, (m) => (/design-kit(?:\.js|\.mjs|\.cmd)?["']$/.test(m) ? m : "Q"));
+const ran = (re, cmd) => re.test(runText(cmd));
 const PLUGIN_TEST = /claude(?:\.exe)?\s+plugin\s+test\b([^;&|\r\n]*)/g;
 // Cổng mod của chính design-kit cũng chạy `claude plugin test` trên mod (kèm phép đo), nên tính như lệnh đó.
 const MOD_GATE = new RegExp(`${RUN_AT}check-mod\\b([^;&|\\r\\n]*)`, "g");
 const REPO_CHECK = /(?:^|[\s;&|(])(?:bash\s+|sh\s+|\.\/)[^\s;&|]*tools[\\/]check\.sh\b/;
 /** Lệnh có thể là một lần kiểm: cổng design-kit, chấm hình, `claude plugin test`, hoặc `tools/check.sh` của repo chứa mod. */
-const isCheck = (cmd) => GATE.test(cmd) || IMG_GATE.test(cmd) || /claude(?:\.exe)?\s+plugin\s+test\b/.test(cmd) || new RegExp(`${RUN_AT}check-mod\\b`).test(cmd) || REPO_CHECK.test(cmd);
+const isCheck = (cmd) => ran(GATE, cmd) || ran(IMG_GATE, cmd) || /claude(?:\.exe)?\s+plugin\s+test\b/.test(cmd) || ran(new RegExp(`${RUN_AT}check-mod\\b`), cmd) || REPO_CHECK.test(cmd);
 
 /**
  * Lệnh nêu tệp này: một đối số trỏ đúng tệp hay thư mục chứa nó (tuyệt đối, hoặc tương đối với cwd), hoặc đúng tên tệp
@@ -241,8 +251,8 @@ function coversMod(cmd, mod, cwd) {
 function covers(cmd, file, cwd, mod, img) {
   if (mod) return coversMod(cmd, mod, cwd);
   // Hình: `check-image` nêu đúng tệp hay thư mục chứa nó (lệnh chỉ đọc ảnh nằm ngay trong thư mục được nêu).
-  if (img) return IMG_GATE.test(cmd) && names(cmd, file, cwd);
-  if (!GATE.test(cmd)) return false;
+  if (img) return ran(IMG_GATE, cmd) && names(cmd, file, cwd);
+  if (!ran(GATE, cmd)) return false;
   if (!/\.html?$/i.test(file)) return true;
   return /https?:\/\//.test(cmd) || names(cmd, file, cwd);
 }

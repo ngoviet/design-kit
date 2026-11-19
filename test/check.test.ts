@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "../src/cli.js";
@@ -46,7 +46,9 @@ describe("waivers (N8)", () => {
     expect(rs[1]!.findings.size).toBe(0);
     expect(res.used).toEqual([expect.objectContaining({ check: "standalone", count: 2 })]);
     expect(res.refused.map((x) => x.check)).toEqual(["axe"]);
-    expect(res.unused.map((x) => x.page)).toEqual(["b.html"]);
+    // b.html không có trong lượt chạy: không nhắc gỡ. Mục của a.html không khớp gì thì nhắc.
+    expect(res.unused).toEqual([]);
+    expect(applyWaivers(reports(), [w("copy", "p")]).unused.map((x) => x.where)).toEqual(["p"]);
   });
   it("uses only the first 5 waivers of a page and rejects a reason that says nothing", () => {
     const many = Array.from({ length: 6 }, (_, i) => w("guide", `x${i}`));
@@ -84,6 +86,58 @@ describe("cache (N7)", () => {
     expect(changed.out).toMatch(/hard,text-min,.*11\.0px/);
     // Cờ khác là khoá khác; --no-cache luôn đo.
     expect((await run([...args, "--no-cache"])).out).not.toContain("cache:");
+  }, 120_000);
+
+  // Ba ca reviewer độc lập dựng ra (19/11/2026), mỗi ca từng cho kết quả cũ từ bộ đệm.
+  const page = (dir: string, body: string) => {
+    const d = join(root, ".design-kit", "test", dir);
+    rmSync(d, { recursive: true, force: true });
+    mkdirSync(d, { recursive: true });
+    writeFileSync(join(d, "a.html"), `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Đệm</title>${body}`);
+    return { d, args: ["check", `.design-kit/test/${dir}/a.html`, ...FAST, "--no-standalone", "--full"] };
+  };
+  it("a file that was missing (404) and appears later is measured again", async () => {
+    const { d, args } = page("dem-thieu", '<style>body{margin:0;font:16px/1.6 system-ui}</style></head><body><main><h1>Ảnh</h1><p>Ảnh chưa có.</p><img src="anh.svg" alt="Sơ đồ"></main></body></html>');
+    expect((await run(args)).out).toContain("overflow,hard,ok");
+    writeFileSync(join(d, "anh.svg"), '<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="20"><rect width="2000" height="20"/></svg>');
+    const after = await run(args);
+    expect(after.out).not.toContain("cache:");
+    expect(after.out).toMatch(/hard,overflow,390px/);
+  }, 120_000);
+  it("a page with a hard load error is not cached: fixing the missing stylesheet is seen", async () => {
+    const { d, args } = page("dem-loi", '<link rel="stylesheet" href="kieu.css"></head><body><main><h1>Kiểu</h1><p>Thiếu tệp kiểu.</p></main></body></html>');
+    expect((await run(args)).out).toMatch(/hard,errors,.*kieu\.css/);
+    writeFileSync(join(d, "kieu.css"), "body{margin:0;font:16px/1.6 system-ui;color:#111;background:#fff}");
+    const after = await run(args);
+    expect(after.out).not.toContain("cache:");
+    expect(after.out).toContain("errors,hard,ok");
+  }, 120_000);
+});
+
+describe("pause and reveal: cases from the independent review", () => {
+  const page = (name: string, html: string) => {
+    const d = join(root, ".design-kit", "test", "pr");
+    mkdirSync(d, { recursive: true });
+    writeFileSync(join(d, `${name}.html`), `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${name}</title>${html}`);
+    return `.design-kit/test/pr/${name}.html`;
+  };
+  const O = ["--no-impeccable", "--no-shots", "--no-standalone", "--no-cache", "--viewports", "1280", "--schemes", "light", "--full"];
+  const css = "<style>body{margin:0;font:16px/1.6 system-ui;color:#111;background:#fff} main{padding:16px}";
+  it("pause: a button whose name only contains 'ẩn' inside a word does not count as a pause control; a delay is not motion", async () => {
+    const a = page("chuan-bi", `${css} .bang span{display:inline-block;animation:chay 12s linear infinite} @keyframes chay{to{transform:translateX(-100%)}} @media (prefers-reduced-motion:reduce){.bang span{animation:none}}</style></head><body><main><h1>Tin</h1><button type="button">Chuẩn bị đơn hàng</button><div class="bang"><span>Giảm giá 30% cho mọi đơn hàng trong tuần này</span></div></main></body></html>`);
+    expect((await run(["check", a, ...O])).out).toMatch(/soft,pause,span/);
+    const b = page("tre", `${css} .hop{width:200px;height:100px;background:#eef;animation:lac .8s ease 5.5s both} @keyframes lac{from{opacity:.5}to{opacity:1}} @media (prefers-reduced-motion:reduce){.hop{animation:none}}</style></head><body><main><h1>Hộp</h1><div class="hop">Hộp hiện sau một lúc</div></main></body></html>`);
+    expect((await run(["check", b, ...O])).out).toContain("pause,soft,ok");
+  }, 120_000);
+  it("reveal: a working reveal in an inner scroll box, a collapsed hidden panel and a delayed transition are fine", async () => {
+    const script = '<script>const io=new IntersectionObserver((es)=>es.forEach((e)=>e.isIntersecting&&e.target.classList.add("in")));document.querySelectorAll(".reveal").forEach((el)=>io.observe(el));</script>';
+    const sections = '<section><h2 class="reveal" id="p1">Phần một của câu chuyện</h2></section><section><h2 class="reveal" id="p2">Phần hai của câu chuyện</h2></section>';
+    const box = page("khung-cuon", `${css} main{height:100vh;overflow:auto} section{min-height:90vh} .reveal{opacity:0;transition:opacity .3s} .reveal.in{opacity:1}</style></head><body><main><h1>Chuyện</h1>${sections}</main>${script}</body></html>`);
+    expect((await run(["check", box, ...O])).out).toContain("reveal,soft,ok");
+    const panel = page("thu-gon", `${css} .tam{max-height:0;overflow:hidden;opacity:0;visibility:hidden}</style></head><body><main><h1>Câu hỏi</h1><div class="tam" id="t1">Câu trả lời đang thu gọn</div></main></body></html>`);
+    expect((await run(["check", panel, ...O])).out).toContain("reveal,soft,ok");
+    const late = page("tre-hien", `${css} section{min-height:90vh} .reveal{opacity:0;transition:opacity .6s ease .5s} .reveal.in{opacity:1}</style></head><body><main><h1>Chuyện</h1>${sections}</main>${script}</body></html>`);
+    expect((await run(["check", late, ...O])).out).toContain("reveal,soft,ok");
   }, 120_000);
 });
 

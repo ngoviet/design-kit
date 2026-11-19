@@ -60,18 +60,24 @@ export function readEntry<R>(dir: string, key: string): CacheEntry<R> | undefine
   }
 }
 
-/** Mục còn dùng được: mọi tệp phụ thuộc còn đúng băm, mọi ảnh chụp đã ghi còn đó. */
+/**
+ * Mục còn dùng được: mọi tệp phụ thuộc còn đúng băm của nội dung trang đã nhận, tệp trang từng nhận 404 ("missing")
+ * vẫn chưa có, mọi ảnh chụp đã ghi còn đó.
+ */
 export function entryValid(e: CacheEntry<unknown>): boolean {
-  return e.deps.length > 0 && e.deps.every((d) => fileSha(d.path) === d.sha) && e.shots.every((s) => existsSync(s));
+  return e.deps.length > 0
+    && e.deps.every((d) => (d.sha === "missing" ? fileSha(d.path) === undefined : fileSha(d.path) === d.sha))
+    && e.shots.every((s) => existsSync(s));
 }
 
-export function writeEntry<R>(dir: string, key: string, deps: Iterable<string>, shots: string[], report: R): void {
-  const list: Array<{ path: string; sha: string }> = [];
-  for (const p of new Set(deps)) {
-    const h = fileSha(p);
-    if (h) list.push({ path: p, sha: h });
-  }
-  if (!list.length) return;
+/**
+ * Ghi mục: `deps` là băm của đúng thân phản hồi trang đã nhận (lấy lúc nhận), hay "missing" khi máy chủ trả ≥ 400.
+ * Trước bản sửa 19/11/2026 băm đọc lại tệp lúc job xong, nên tệp sửa giữa lượt đo được ghi băm mới cạnh kết quả cũ, và
+ * tệp 404 bị bỏ khỏi danh sách nên tạo tệp sau đó vẫn trúng đệm.
+ */
+export function writeEntry<R>(dir: string, key: string, deps: Array<{ path: string; sha: string }>, shots: string[], report: R): void {
+  const list = [...new Map(deps.map((d) => [d.path, d])).values()];
+  if (!list.some((d) => d.sha !== "missing")) return;
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, `${key}.json`), JSON.stringify({ deps: list, shots, report }));
 }
