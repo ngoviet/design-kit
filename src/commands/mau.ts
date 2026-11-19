@@ -70,7 +70,7 @@ export async function doiMauCommand(args: string[], rt: Runtime): Promise<Record
   const rel = relative(rt.cwd, out).replace(/\\/g, "/") || out;
   if (r.check.fails.length) process.exitCode = 1;
   return {
-    status: r.check.fails.length ? `fail: ${r.check.fails.length} of ${r.check.total} pairs below WCAG` : `pass: ${r.check.total} pairs`,
+    status: r.check.fails.length ? `fail: ${r.check.fails.length} of ${r.check.total} pairs below WCAG or out of sRGB gamut` : `pass: ${r.check.total} pairs`,
     file: `${rel}${existed ? " (overwritten)" : ""}`,
     accent: `light ${r.accent.light}, dark ${r.accent.dark}`,
     ...(r.check.fails.length ? { fails: r.check.fails } : {}),
@@ -85,10 +85,15 @@ export async function kiemMauCommand(args: string[], rt: Runtime): Promise<Recor
   const huong = p.str("huong") ?? "dem";
   if (!m.HUONG.includes(huong)) fail("--huong must be dem, giay or dam", "VALIDATION_ERROR");
   if (file && !existsSync(resolve(rt.cwd, file))) fail(`not found: ${file}`, "VALIDATION_ERROR");
-  const r = file ? m.kiemMau([[resolve(rt.cwd, file), huong]]) : m.kiemMau();
+  let r: ReturnType<typeof m.kiemMau>;
+  try {
+    r = file ? m.kiemMau([[resolve(rt.cwd, file), huong]]) : m.kiemMau();
+  } catch (e) {
+    fail(`${file ?? "tokens"}: ${(e as Error).message}`, "VALIDATION_ERROR", ["Pass the --huong whose [data-dk] blocks the file holds (dem, giay or dam)"]);
+  }
   if (r.fails.length) process.exitCode = 1;
   return {
-    status: r.fails.length ? `fail: ${r.fails.length} of ${r.total} pairs below WCAG` : `pass: ${r.total} pairs`,
+    status: r.fails.length ? `fail: ${r.fails.length} of ${r.total} pairs below WCAG or out of sRGB gamut` : `pass: ${r.total} pairs`,
     checked: file ? `${file} as ${huong}` : "tokens/dem.css, tokens/giay.css, tokens/dam.css",
     fails: r.fails.length ? r.fails : "0 failing pairs",
   };

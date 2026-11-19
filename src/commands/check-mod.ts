@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
@@ -128,6 +128,18 @@ interface Group {
 }
 
 const SCHEMES: Scheme[] = ["dark", "light"];
+
+/** Tệp ảnh và trang mà check-mod ghi vào thư mục ảnh. */
+const SHOT_FILE = /^(terminal-.*\.png|desktop-.*\.(png|html))$/;
+
+/**
+ * Xoá ảnh của lượt trước trong thư mục ảnh: chỉ các tệp lệnh này ghi, không xoá cả thư mục. Trước 19/11/2026 lệnh
+ * xoá đệ quy cả thư mục, nên `--shots .` hay `--shots docs` xoá sạch thư mục được chỉ định.
+ */
+export function clearShots(dir: string): void {
+  if (!existsSync(dir)) return;
+  for (const f of readdirSync(dir)) if (SHOT_FILE.test(f)) rmSync(join(dir, f), { force: true });
+}
 
 export async function checkModCommand(args: string[], rt: Runtime): Promise<Record<string, unknown>> {
   const p = parseCommandArgs("check-mod", args, FLAGS, { min: 1, max: 1, usage: "<mod folder>" });
@@ -322,7 +334,7 @@ export async function checkModCommand(args: string[], rt: Runtime): Promise<Reco
   const shotsDir = p.bool("no-shots") ? undefined : resolve(rt.cwd, p.str("shots") ?? join(".design-kit", "shots", `mod-${name}`));
   // Trang đo theo lô ở thư mục tạm; thư mục ảnh chỉ giữ ảnh và trang một cây của các ảnh đó.
   const pagesDir = join(tmpdir(), `dk-mod-pages-${process.pid}-${Date.now()}`);
-  if (shotsDir) rmSync(shotsDir, { recursive: true, force: true });
+  if (shotsDir) clearShots(shotsDir);
   mkdirSync(pagesDir, { recursive: true });
   let shots = 0;
   let via = "";

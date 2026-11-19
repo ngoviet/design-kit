@@ -100,6 +100,11 @@ describe("plugin hook: logos, icons and illustrations", () => {
     expect(stop([edit("e1", icon), bash("b1", "node dist/bin/design-kit.js check-image icons --strict")])).toBeUndefined();
     // `check-image` không còn khớp nhầm cổng trang (`check\b` khớp cả "check-image").
     expect(stop([edit("e2", page), bash("b2", "design-kit check-image icons")])?.reason).toContain("b.tsx");
+    // Tên gần giống ở thư mục khác không phủ tệp này (trước 19/11/2026 so chuỗi con: "footer-icon-nha.svg" chứa "icon-nha.svg").
+    expect(stop([edit("e3", icon), bash("b3", "design-kit check-image old/footer-icon-nha.svg")])?.decision).toBe("block");
+    expect(stop([edit("e3", icon), bash("b3", "design-kit check-image khac/icons")])?.decision).toBe("block");
+    // Tên trơn (chạy sau khi cd vào thư mục) vẫn tính.
+    expect(stop([edit("e4", icon), bash("b4", "cd icons && design-kit check-image icon-nha.svg")])).toBeUndefined();
   });
 });
 
@@ -225,6 +230,9 @@ describe("plugin hook: Claude Code mods", () => {
     expect(stop(after("cd plugins/khung-mod && claude plugin test"))).toBeUndefined();
     expect(stop(after('for m in khung-mod; do claude plugin test "plugins/$m"; done'))).toBeUndefined();
     expect(stop(after("bash tools/check.sh"))).toBeUndefined();
+    // Cổng mod của chính design-kit chạy plugin test trên mod: cũng đủ (trước 19/11/2026 bị chặn nhầm).
+    expect(stop(after("design-kit check-mod plugins/khung-mod --strict"))).toBeUndefined();
+    expect(stop(after("design-kit check-mod plugins/mod-khac"))?.decision).toBe("block");
     if (process.platform === "win32") {
       // Git Bash viết C:\x thành /c/x.
       const gitBash = mod.replace(/\\/g, "/").replace(/^([A-Za-z]):/, (_, d: string) => `/${d.toLowerCase()}`);
@@ -280,6 +288,18 @@ describe("color commands", () => {
     expect(readFileSync(join(tmp, "dem.css"), "utf8")).toContain("--trung-tinh 60");
     const b = await run(["kiem-mau", "dem.css", "--huong", "dem"]);
     expect(b.out).toContain("pass: 42 pairs");
+  });
+  it("doi-mau stays inside sRGB at hues where rounding used to push chroma out (dem 20, 250)", async () => {
+    for (const h of ["20", "250"]) {
+      const a = await run(["doi-mau", "--huong", "dem", "--nhan", h, "--ra", `dem-${h}.css`]);
+      expect(a.out).toContain("pass: 42 pairs");
+    }
+  });
+  it("kiem-mau with the wrong --huong says which block is missing", async () => {
+    const { out, code } = await run(["kiem-mau", join(root, "tokens", "dem.css"), "--huong", "giay"]);
+    expect(out).toContain('no [data-dk=\\"giay\\"] block in the file');
+    expect(out).toContain("VALIDATION_ERROR");
+    expect(code).toBe(2);
   });
   it("doi-mau without --ra is a usage error", async () => {
     const { out, code } = await run(["doi-mau", "--huong", "dem", "--nhan", "45"]);

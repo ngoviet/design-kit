@@ -177,3 +177,35 @@ describe("engine rules", () => {
     expect(engineRules(B({}, img), "ToolUse")[0]).toMatchObject({ check: "raster-size" });
   });
 });
+
+describe("robustness (rà soát 19/11/2026)", () => {
+  it("a color that only looks like one is unknown, not a crash in the contrast check", () => {
+    for (const v of ["#12345", "rgb(nope)", "hsl(1,2)"]) expect(resolveColor(v, "dark").kind).toBe("unknown");
+    expect(resolveColor("#123456", "dark").kind).toBe("raw");
+    expect(resolveColor("rgb(10, 20, 30)", "dark").kind).toBe("raw");
+  });
+
+  it("clearShots removes only the files check-mod writes, never the folder or other files", async () => {
+    const { mkdtempSync, writeFileSync, readdirSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const { clearShots } = await import("../src/commands/check-mod.js");
+    const d = mkdtempSync(join(tmpdir(), "dk-shots-"));
+    for (const f of ["terminal-a-1-80.png", "desktop-a-1-80-dark.png", "desktop-a-1-80-dark.html", "README.md", "logo.png"]) writeFileSync(join(d, f), "x");
+    clearShots(d);
+    expect(readdirSync(d).sort()).toEqual(["README.md", "logo.png"]);
+    clearShots(join(d, "khong-co"));
+  });
+
+  it.runIf(process.platform === "win32")("runAsync waits for the shell retry of a .cmd shim instead of returning empty output", async () => {
+    const { mkdtempSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const { runAsync } = await import("../src/mod/collect.js");
+    const d = mkdtempSync(join(tmpdir(), "dk-cmd-"));
+    writeFileSync(join(d, "gia.cmd"), "@echo off\r\necho (pass) xin chao\r\n");
+    const r = await runAsync(join(d, "gia"), [], 20_000);
+    expect(r.out).toContain("(pass) xin chao");
+    expect(r.code).toBe(0);
+  });
+});

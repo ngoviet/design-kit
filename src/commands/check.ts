@@ -1,22 +1,22 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { basename, extname, join, relative, resolve } from "node:path";
-import type { Browser, Page } from "playwright-core";
+import type { Browser, BrowserContext, Page } from "playwright-core";
 import { type FlagSpec, listFlag, parseCommandArgs } from "../args.js";
 import { launchBrowser, serveRoot, startServer, urlFor } from "../browser.js";
 import { fail } from "../errors.js";
 import { type AssumedHit, type CopyRules, loadCopyRules, probeCopy } from "../copy.js";
 import { findImpeccable, runImpeccable } from "../impeccable.js";
-import { installVitals, probeCovered, probeFocus, probeMotion, probePage, probeStandalone, probeVisible, settleAnimations, STANDALONE_TOKENS, type ProbeHit } from "../probe.js";
+import { installSchemeWatch, installVitals, probeCovered, probeFingerprint, probeFocus, probeMotion, probePage, probeStandalone, probeVisible, schemeReadOnce, settleAnimations, STANDALONE_TOKENS, type ProbeHit } from "../probe.js";
 import type { Runtime } from "../runtime.js";
-import { QUIET_CAP_MS, settlePage, watchNetwork } from "../settle.js";
+import { type NetWatch, QUIET_CAP_MS, settleAfterChange, settlePage, watchNetwork } from "../settle.js";
 import { inputZoomFinding } from "../zoom.js";
 import { runStandalone } from "../standalone.js";
 import { loadSteps, parseSteps, runActions, STEPS_FORMAT, type StepAction, type StepState } from "../steps.js";
 
 export const CHECK_HELP = `usage: design-kit check <file|dir|url>... [flags]
 description: Design gate. Renders each page at 320/390/1280 px in light and dark, then measures what a person would hit: axe-core (WCAG 2.2 AA), horizontal overflow, text size and line height (through open shadow roots), text cut off by ellipsis or overflow, Vietnamese lang and fonts, line length, reduced motion, keyboard focus, LCP/CLS, guidance (vague "Next" buttons, dead-end empty states, up-front tours), copy that reads as unedited AI text (stock phrases, chatbot residue, placeholders, markdown left in) and the Impeccable detector. States reached by clicking (form errors, step 3, an open dialog) are measured too, from a steps file. A local file is also opened the way the Claude app's browser pane opens it (a data: URL, no server), to catch a page that loses its linked CSS. Prints one verdict per page and state: hard failures block "done", soft ones need a reason. Facts the agent filled in itself (marked data-assumed) are listed for the owner to confirm
-flags[16]:
+flags[18]:
   --query <q,q>: run each page once per query string (e.g. dk=dem,dk=giay,dk=dam for design-kit blocks)
   --steps <file.json|json>: states to reach by clicking/typing, each measured like a page (overrides <page>.steps.json)
   --no-steps: ignore <page>.steps.json files next to the pages
@@ -30,6 +30,8 @@ flags[16]:
   --focus <n>: Tab stops to inspect (default 15)
   --strict: exit 1 when any page has a hard failure
   --jobs <n>: pages checked at once (default 3, max 8)
+  --sweep: also check horizontal overflow at in-between widths (360, 414, 480, 600, 768, 900, 1024, 1180 within the --viewports range), on the open page; about 0.1 s per width
+  --fresh: load the page again for every width and color scheme (default: load once, resize and switch scheme in place, verified against one fresh load per page and redone fresh when the layout differs)
   --limit <n>: findings to show (default 25)
   --full: every finding
   --help: this help
@@ -46,7 +48,7 @@ notes[5]:
   Local files are served over http://127.0.0.1 from the nearest folder with .git or package.json, so ../ links resolve
   standalone: the Claude app's browser pane opens file:///page.html as data:text/html,… so relative <link>s never load; fix with \`design-kit inline <page>\`
   Exit 0 whenever the pages were checked: read \`status\`. --strict turns hard failures into exit 1
-  Browser: Edge, else Chrome (channel), else DK_BROWSER. Impeccable: IMPECCABLE_BIN, else the skill's bundled engine
+  Browser: DK_BROWSER, else Edge, else Chrome (channel), else Playwright's Chromium. Impeccable: IMPECCABLE_BIN, else the skill's bundled engine
 examples[4]:
   design-kit check index.html
   design-kit check blocks/html --query dk=dem,dk=giay,dk=dam --strict
@@ -68,6 +70,8 @@ const FLAGS: Record<string, FlagSpec> = {
   jobs: { type: "string", hint: "--jobs <n>" },
   steps: { type: "string", hint: "--steps <file.json|json>" },
   "no-steps": { type: "boolean", hint: "--no-steps" },
+  fresh: { type: "boolean", hint: "--fresh" },
+  sweep: { type: "boolean", hint: "--sweep" },
 };
 
 type Gate = "hard" | "soft";
@@ -88,6 +92,8 @@ interface PageReport {
 }
 
 const HEIGHT: Record<number, number> = { 320: 720, 390: 844, 1280: 800 };
+/** Khổ tối đa còn tính là điện thoại (phép đo input-zoom, viewport). */
+const PHONE_MAX = 480;
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 /** Mọi kiểm tra có tên ở đây (để bảng `checks` liệt kê cả kiểm tra đã đạt). */
@@ -149,7 +155,9 @@ function hits(r: PageReport, gate: Gate, check: string, list: ProbeHit[], what: 
 }
 
 async function axeRun(page: Page, axeSource: string): Promise<Array<{ id: string; impact: string; help: string; nodes: string[] }>> {
-  await page.addScriptTag({ content: axeSource });
+  // Nạp qua evaluate (CDP), không qua thẻ <script>: trang có CSP `script-src 'self'` chặn thẻ chèn vào và trước kia làm
+  // hỏng cả lượt kiểm. Trang đang mở (đổi khổ tại chỗ) đã có axe thì không nạp lại.
+  if (!(await page.evaluate(() => "axe" in window))) await page.evaluate(axeSource);
   return page.evaluate(async (tags) => {
     const w = window as unknown as { axe: { run: (c: unknown, o: unknown) => Promise<{ violations: Array<{ id: string; impact: string; help: string; nodes: Array<{ target: unknown[]; any: Array<{ message: string }> }> }> }> } };
     const res = await w.axe.run(document, { runOnly: { type: "tag", values: tags }, resultTypes: ["violations"] });
@@ -226,210 +234,412 @@ async function checkViewport(browser: Browser, url: string, width: number, r: Pa
   }
 }
 
-async function checkPage(
+interface PageOpts {
+  viewports: number[];
+  schemes: string[];
+  shotsDir?: string;
+  focusStops: number;
+  axeSource: string;
+  state?: StepState;
+  standalone?: string;
+  copy?: CopyRules;
+  /** Nạp lại trang cho mỗi khổ và chế độ màu (cách cũ), không đổi tại chỗ. */
+  fresh?: boolean;
+  /** Khổ trung gian chỉ đo tràn ngang (--sweep). */
+  sweep?: number[];
+}
+
+/**
+ * Khổ trung gian cho --sweep (P5): điện thoại lớn, máy tính bảng dọc và ngang, laptop nhỏ. Kiểm tay ở vài khổ gợi ý chỉ
+ * thấy 66–81% lỗi bố cục mà quét cả dải tìm ra (ReDeCheck, docs/nguon.md c40).
+ */
+export const SWEEP_WIDTHS = [360, 414, 480, 600, 768, 900, 1024, 1180];
+
+/** Trang không mở được (sai URL, máy chủ dev chưa chạy, HTTP ≥ 400): lỗi của riêng trang đó, không của cả lượt kiểm. */
+export class PageLoadError extends Error {}
+
+interface Loaded {
+  ctx: BrowserContext;
+  page: Page;
+  net: NetWatch;
+  /** Lỗi script, script/stylesheet không tải được, tích luỹ suốt đời trang. */
+  errs: string[];
+}
+
+/** Mở một trang ở khổ và chế độ màu cho trước, đợi yên và đợi nội dung đến muộn. Ném PageLoadError nếu không mở được. */
+async function openPage(browser: Browser, url: string, label: string, vw: number, scheme: string, r: PageReport): Promise<Loaded> {
+  const ctx = await browser.newContext({
+    viewport: { width: vw, height: HEIGHT[vw] ?? 900 },
+    colorScheme: scheme as "light" | "dark",
+    reducedMotion: "no-preference",
+  });
+  try {
+    const page = await ctx.newPage();
+    const net = watchNetwork(page);
+    await page.addInitScript(installVitals);
+    await page.addInitScript(installSchemeWatch);
+    // Lỗi người dùng gặp ngay khi mở: script ném lỗi, script/stylesheet không tải được (thường là nguyên nhân
+    // của trang trắng). Bỏ ERR_ABORTED (yêu cầu bị huỷ khi trang tự điều hướng), bỏ console.error (favicon 404…).
+    const errs: string[] = [];
+    const short = (u: string) => u.replace(/^https?:\/\/127\.0\.0\.1:\d+/, "");
+    page.on("pageerror", (e) => errs.push(`uncaught ${e.name}: ${e.message.split("\n")[0]}`));
+    page.on("response", (s) => {
+      const t = s.request().resourceType();
+      if ((t === "script" || t === "stylesheet") && s.status() >= 400) errs.push(`${t} failed to load: ${short(s.url())} (HTTP ${s.status()})`);
+    });
+    page.on("requestfailed", (q) => {
+      const t = q.resourceType();
+      const why = q.failure()?.errorText ?? "";
+      if ((t === "script" || t === "stylesheet") && !/ERR_ABORTED/.test(why)) errs.push(`${t} failed to load: ${short(q.url())} (${why})`);
+    });
+    let resp;
+    try {
+      resp = await page.goto(url, { waitUntil: "load", timeout: 45_000 });
+    } catch (e) {
+      throw new PageLoadError(`${label}: ${(e as Error).message.split("\n")[0]}`);
+    }
+    if (resp && resp.status() >= 400) throw new PageLoadError(`${label}: HTTP ${resp.status()}`);
+    // Font xong, không còn yêu cầu mạng dở, hai khung hình: thay cho networkidle (im đủ 500 ms) + 300 ms cố định,
+    // vốn chiếm 0,8 s trong mỗi 1,05 s của một lượt render (đo 14/11/2026). Xem src/settle.ts.
+    if ((await settlePage(page, net)).capped && !r.notes.some((n) => n.startsWith("network still busy"))) {
+      r.notes.push(`network still busy ${QUIET_CAP_MS / 1000} s after load (a stream or long polling?): measured anyway`);
+    }
+    const idleAt = Date.now();
+    const late = await waitForContent(page, idleAt);
+    if (late > 0 && !r.notes.some((n) => n.startsWith("content appeared"))) {
+      r.notes.push(`content appeared ${late} ms after the network went idle: measured after it appeared`);
+    }
+    return { ctx, page, net, errs };
+  } catch (e) {
+    await ctx.close().catch(() => undefined);
+    throw e;
+  }
+}
+
+/** Đổi khổ và chế độ màu ngay trên trang đang mở (P7), về đầu trang, đợi bố cục mới. */
+async function switchTo(L: Loaded, vw: number, scheme: string): Promise<void> {
+  await L.page.setViewportSize({ width: vw, height: HEIGHT[vw] ?? 900 });
+  await L.page.emulateMedia({ colorScheme: scheme as "light" | "dark" });
+  await L.page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
+  await settleAfterChange(L.page, L.net);
+}
+
+/** Mọi phép đo của một lượt render (một khổ, một chế độ màu) trên trang đã yên và đã tới trạng thái cần đo. */
+async function measureRender(
   browser: Browser,
-  url: string,
-  label: string,
-  opts: { viewports: number[]; schemes: string[]; shotsDir?: string; focusStops: number; axeSource: string; state?: StepState; standalone?: string; copy?: CopyRules },
+  L: Loaded,
+  vw: number,
+  scheme: string,
+  opts: PageOpts,
   r: PageReport,
+  at: { first: boolean; widest: boolean; actions: boolean },
 ): Promise<void> {
-  const actions: StepAction[] | undefined = opts.state?.do;
+  const { page } = L;
+  const render = `${scheme}/${vw}`;
+  // Cỡ chữ tính cả hệ số co của transform: đo giữa hiệu ứng mở scale(.95) → 1 sẽ báo nhầm chữ nhỏ.
+  // Chờ tới ENTRANCE_MS: trước kia 0,8 s chờ cố định cộng 600 ms ở đây cho hiệu ứng vào trang khoảng 1,4 s để
+  // xong; bỏ chờ cố định mà giữ 600 ms thì hiệu ứng mở 1,1 s bị đo giữa chừng (fixture co-gian.html, 15/11/2026).
+  // Trang không có hiệu ứng có hồi kết thì không mất thêm gì.
+  await page.evaluate(settleAnimations, ENTRANCE_MS);
+  const p = await page.evaluate(probePage);
+
+  // Trang trắng: không có gì để trượt nên mọi phép đo khác "đạt". Phải là lỗi cứng.
+  const vis = await page.evaluate(probeVisible);
+  const undef = vis.undefinedTags.join(", ");
+  const unreg = vis.unregisteredTags.join(", ");
+  if (!vis.text && !vis.media) {
+    const all = [...vis.undefinedTags, ...vis.unregisteredTags].join(", ");
+    add(r, "hard", "render", "page", `nothing visible: no text, image or graphic, also ${LATE_MS / 1000} s after the network went idle${all ? `; custom elements never defined: ${all}` : ""}`, render);
+  } else {
+    if (undef) add(r, "soft", "render", "page", `custom element never defined (its script failed or has not loaded): ${undef}`, render);
+    if (unreg && !r.notes.some((n) => n.startsWith("not registered"))) {
+      r.notes.push(`not registered as custom elements (fine for app roots and styling tags; a missing host-app component otherwise): ${unreg}`);
+    }
+  }
+  for (const e of new Set(L.errs)) add(r, "hard", "errors", "page", e.slice(0, 200), render);
+
+  if (p.scrollW > p.clientW + 1) add(r, "hard", "overflow", `${vw}px`, `page is ${p.scrollW}px wide, viewport ${p.clientW}px`, render);
+  // Mọi khổ đều đo đủ. Trước 15/11/2026 khổ 320 chỉ đo tràn ngang, nên khối hero hiện "Camer", "23/2" ở đó mà cổng
+  // vẫn đạt; khổ hẹp nhất là nơi bố cục gãy trước tiên.
+  if (p.shadowRoots && !r.notes.some((n) => n.startsWith("shadow"))) r.notes.push(`shadow roots measured: ${p.shadowRoots}`);
+  hits(r, "hard", "text-min", p.textMin, "font-size", render);
+  hits(r, "soft", "body-size", p.bodySmall, "body text", render);
+  hits(r, "soft", "body-lh", p.bodyTight, "line-height", render);
+  hits(r, "soft", "measure", p.measure, "line length", render, 3);
+  hits(r, "soft", "font", p.fontFallback, "web font not loaded:", render, 3);
+  hits(r, "soft", "inner-scroll", p.innerScroll, "horizontal scroll hides content:", render, 3);
+  hits(r, "soft", "text-clip", p.textClip, "text cut off", render);
+  hits(r, "soft", "text-covered", await page.evaluate(probeCovered), "text", render);
+  if (p.visibleFields > 12) add(r, "soft", "long-form", "page", `${p.visibleFields} fields on one screen: split into named steps or tuck advanced options away`, render);
+  // Ô gõ chữ có chữ nhỏ: chỉ điện thoại phóng to khi chạm (iOS), nên chỉ đo ở khổ điện thoại.
+  if (vw <= PHONE_MAX) {
+    const zoom = p.typingFields.flatMap((f) => {
+      const msg = inputZoomFinding(f);
+      return msg ? [{ where: f.where, value: msg }] : [];
+    });
+    hits(r, "soft", "input-zoom", zoom, "", render);
+  }
+  hits(r, "soft", "guide", p.vagueNext, "button does not say where it goes, name the next step:", render, 3);
+  hits(r, "soft", "guide", p.emptyDeadEnd, "empty state with no next action:", render, 3);
+  // Tour mở bằng tay (bấm "Hướng dẫn") là được; chỉ tour tự bật lúc mở trang mới bị nhắc.
+  if (!at.actions) hits(r, "soft", "guide", p.tour, "up-front tour, teach in context instead:", render, 1);
+  if (p.vietnamese) {
+    hits(r, "hard", "heading-lh", p.headingTight, "line-height", render);
+    if (!/^vi\b/i.test(p.lang)) add(r, "hard", "lang", "<html>", `Vietnamese text but lang="${p.lang}"`, render);
+  }
+  // axe chạy ở mọi khổ và mọi chế độ: tương phản bản tối hay hỏng nhất.
+  for (const v of await axeRun(page, opts.axeSource)) {
+    const gate: Gate = v.impact === "serious" || v.impact === "critical" ? "hard" : "soft";
+    for (const n of v.nodes) add(r, gate, "axe", `${v.id}`, n.slice(0, 220), render);
+  }
+  if (opts.shotsDir) {
+    await page.screenshot({ path: join(opts.shotsDir, `${scheme}-${vw}.png`), fullPage: true });
+    r.shots++;
+  }
+  // Vitals: một lần (chế độ đầu, khổ rộng nhất), ở lần nạp đầu, trước khi bấm phím nào.
+  if (at.first && at.widest && !at.actions) {
+    const v = await page.evaluate(() => (window as unknown as { __dk: { lcp: number; cls: number } }).__dk);
+    if (v.lcp > 2500) add(r, "soft", "lcp", "page", `LCP ${Math.round(v.lcp)} ms > 2500`, render);
+    if (v.cls > 0.1) add(r, "soft", "cls", "page", `CLS ${v.cls.toFixed(3)} > 0.1`, render);
+    r.notes.push(`lab vitals: LCP ${Math.round(v.lcp)} ms, CLS ${v.cls.toFixed(3)} (local load; field p75 decides)`);
+  }
+  // Chữ trên trang và dữ kiện tự điền: một lần mỗi trang/trạng thái (chữ không đổi theo khổ hay chế độ màu).
+  // Trạng thái sau thao tác cũng chấm, vì thông báo lỗi, hộp thoại mới hiện chữ ở đó.
+  if (at.first && at.widest && opts.copy) {
+    const c = await page.evaluate(probeCopy, opts.copy);
+    hits(r, "soft", "copy", c.copy, "", render, 20);
+    r.assumed.push(...c.assumed);
+  }
+  // Mở như pane của app Claude (data: URL, không máy chủ) rồi so với bản http vừa đo: một lần mỗi tệp.
+  if (at.first && at.widest && !at.actions && opts.standalone) {
+    // Phép đo phụ: hỏng (CDP, trang tự điều hướng) thì ghi chú, không làm hỏng cả lượt kiểm.
+    try {
+      const a = await page.evaluate(probeStandalone, STANDALONE_TOKENS);
+      const res = await runStandalone(browser, opts.standalone, a, vis.text > 0 || vis.media > 0, { width: vw, height: HEIGHT[vw] ?? 900 }, scheme as "light" | "dark");
+      for (const f of res.findings) add(r, "soft", "standalone", f.where, f.detail, render);
+      r.notes.push(...res.notes);
+    } catch (e) {
+      r.notes.push(`standalone: not measured (${(e as Error).message.split("\n")[0]})`);
+    }
+  }
+}
+
+/**
+ * Focus: bấm Tab tới `focusStops` lần. Chạy ở khổ rộng nhất VÀ khổ hẹp nhất có đo, chế độ màu đầu. Nút bị giấu ở
+ * khổ hẹp mà vẫn nhận Tab (focus lạc vào chỗ không thấy) chỉ lộ ra ở khổ hẹp: bảng dữ liệu từng bị đúng lỗi này
+ * (09/11/2026). Gọi trên trang chưa từng nhận Tab, vì Tab đi tiếp từ phần tử focus gần nhất.
+ */
+async function focusPass(page: Page, vw: number, scheme: string, focusStops: number, r: PageReport): Promise<void> {
+  const render = `${scheme}/${vw}`;
+  const seen = new Set<string>();
+  for (let i = 0; i < focusStops; i++) {
+    await page.keyboard.press("Tab");
+    await page.evaluate(settleAnimations, 600);
+    const f = await page.evaluate(probeFocus);
+    if (!f || seen.has(f.where)) continue;
+    seen.add(f.where);
+    if (!f.indicator) add(r, "soft", "focus", f.where, "no visible focus ring (outline ≥ 2px or box-shadow)", render);
+    else if (f.shadowOnly) {
+      // Vòng chỉ bằng box-shadow: đo thật trong chế độ màu ép buộc, ngay khi phần tử đang focus (focus và
+      // :focus-visible giữ nguyên). Tailwind v4 `outline-hidden` chỉ thêm viền trong @media (forced-colors), nên
+      // đọc CSS ở chế độ thường là báo nhầm.
+      await page.emulateMedia({ forcedColors: "active" });
+      const g = await page.evaluate(probeFocus);
+      await page.emulateMedia({ forcedColors: null });
+      if (g && g.where === f.where && !g.indicator) {
+        add(r, "soft", "focus", f.where, "focus ring disappears in forced-colors mode (Windows High Contrast removes box-shadow): add outline: 2px solid transparent (Tailwind v4: outline-hidden)", render);
+      }
+    }
+    if (f.obscured) add(r, "soft", "focus", f.where, f.hidden ? "focus lands on an element nobody can see (hidden or clipped)" : "focused element is covered by other content", render);
+  }
+  r.notes.push(`focus stops inspected at ${vw}px: ${seen.size}`);
+}
+
+/** Giảm chuyển động: nạp lại với prefers-reduced-motion: reduce, một lần mỗi trang/trạng thái. */
+async function motionPass(L: Loaded, vw: number, scheme: string, actions: StepAction[] | undefined, r: PageReport): Promise<void> {
+  const { page, net } = L;
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.reload({ waitUntil: "load" });
+  await settlePage(page, net);
+  await waitForContent(page, Date.now());
+  if (actions) {
+    // Không tới lại được trạng thái sau khi nạp lại: đo motion ở đó sẽ đo nhầm trạng thái, nên ghi chú thay vì đo.
+    const err = await runActions(page, actions, net);
+    if (err) {
+      r.notes.push(`motion: not measured, the steps failed after reloading with reduced motion (${err})`);
+      return;
+    }
+  }
+  // Chỉ hiệu ứng còn chạy sau MOTION_SETTLE_MS mới tính (vòng xoay, chữ chạy, chuyển cảnh dài); hiệu ứng vào
+  // trang ngắn hơn thì đã xong. Giữ đúng thời điểm đo cũ (khoảng 0,9 s sau khi nạp) để ngữ nghĩa phép đo không đổi.
+  await page.waitForTimeout(MOTION_SETTLE_MS);
+  const m = await page.evaluate(probeMotion);
+  if (m.running) add(r, "hard", "motion", m.samples.join(", "), `${m.running} animation(s) still run with prefers-reduced-motion: reduce`, `${scheme}/${vw}`);
+}
+
+/** Khổ được đo focus: rộng nhất và khổ hẹp nhất ngoài 320 (mặc định 390). */
+function focusWidths(widths: number[]): Set<number> {
+  const measured = widths.filter((w) => w !== 320);
+  return new Set([Math.max(...widths), ...(measured.length ? [Math.min(...measured)] : [])]);
+}
+
+/** Cách cũ (--fresh, và đường lùi của cách mới): mỗi khổ × chế độ màu một lần nạp mới. */
+async function checkFresh(browser: Browser, url: string, label: string, widths: number[], opts: PageOpts, r: PageReport): Promise<void> {
+  const actions = opts.state?.do;
+  const focusAt = focusWidths(widths);
+  const widestW = Math.max(...widths);
+  for (const scheme of opts.schemes) {
+    for (const vw of widths) {
+      const L = await openPage(browser, url, label, vw, scheme, r);
+      try {
+        if (actions) {
+          // Không tới được trạng thái ⇒ chưa đo được ⇒ cứng: sửa trang (nút bị giấu ở khổ hẹp?) hoặc sửa tệp steps.
+          const err = await runActions(L.page, actions, L.net);
+          if (err) {
+            add(r, "hard", "steps", opts.state!.name, err, `${scheme}/${vw}`);
+            continue;
+          }
+        }
+        const first = scheme === opts.schemes[0];
+        const widest = vw === widestW;
+        await measureRender(browser, L, vw, scheme, opts, r, { first, widest, actions: !!actions });
+        if (first && focusAt.has(vw)) await focusPass(L.page, vw, scheme, opts.focusStops, r);
+        if (first && widest) await motionPass(L, vw, scheme, actions, r);
+      } finally {
+        await L.ctx.close().catch(() => undefined);
+      }
+    }
+  }
+}
+
+/**
+ * Cách mới (P7): nạp một lần ở khổ rộng nhất, đổi khổ và chế độ màu ngay trên trang. Tự kiểm: một lần nạp mới ở khổ
+ * hẹp có đo focus phải cho đúng dấu vân bố cục và màu như trang đã đổi khổ; lệch (trang đọc khổ màn bằng script lúc
+ * nạp, nội dung đổi theo giờ) thì trả lý do và trang đó được đo lại theo cách cũ. Script đọc chế độ màu một lần lúc
+ * nạp thì mỗi chế độ màu nạp riêng. Số lần nạp mỗi trang từ 7 (2 chế độ màu × 3 khổ + giảm chuyển động) còn 3.
+ */
+async function checkReuse(browser: Browser, url: string, label: string, widths: number[], opts: PageOpts, r: PageReport): Promise<string | undefined> {
+  if (opts.state) return checkStateInPlace(browser, url, label, widths, opts.state.do, opts, r);
+  const desc = [...widths].sort((a, b) => b - a);
+  const widestW = desc[0]!;
+  const first = opts.schemes[0]!;
+  const focusAt = focusWidths(widths);
+  // Khổ tự kiểm: khổ hẹp có đo focus (lần nạp mới đó dùng luôn cho phép đo focus). Chỉ một khổ thì không đổi khổ.
+  const checkW = desc.length > 1 ? Math.min(...focusAt) : undefined;
+  const main = await openPage(browser, url, label, widestW, first, r);
+  try {
+    const perScheme = opts.schemes.length > 1 && (await main.page.evaluate(schemeReadOnce));
+    if (perScheme) r.notes.push("a script reads prefers-color-scheme once without listening for changes: each color scheme loaded fresh");
+    let fp: string | undefined;
+    for (const [si, scheme] of opts.schemes.entries()) {
+      let L = main;
+      if (si > 0 && perScheme) {
+        L = await openPage(browser, url, label, widestW, scheme, r);
+      }
+      try {
+        for (const [i, vw] of desc.entries()) {
+          // Trang vừa nạp đã đúng khổ rộng nhất và đúng chế độ màu; mọi lượt khác đổi tại chỗ.
+          if (!(i === 0 && (si === 0 || L !== main))) await switchTo(L, vw, scheme);
+          if (si === 0 && vw === checkW) {
+            await L.page.evaluate(settleAnimations, ENTRANCE_MS);
+            fp = (await L.page.evaluate(probeFingerprint)).hash;
+          }
+          await measureRender(browser, L, vw, scheme, opts, r, { first: si === 0, widest: i === 0, actions: false });
+        }
+      } finally {
+        if (L !== main) await L.ctx.close().catch(() => undefined);
+      }
+    }
+    if (checkW !== undefined) {
+      const F = await openPage(browser, url, label, checkW, first, r);
+      try {
+        await F.page.evaluate(settleAnimations, ENTRANCE_MS);
+        const fresh = await F.page.evaluate(probeFingerprint);
+        if (fresh.hash !== fp) return `layout at ${checkW}px after resizing differs from a fresh load`;
+        if (focusAt.has(checkW)) await focusPass(F.page, checkW, first, opts.focusStops, r);
+      } finally {
+        await F.ctx.close().catch(() => undefined);
+      }
+    }
+    // Khổ trung gian: chỉ tràn ngang, chế độ màu đầu, trên trang đang mở (đã qua tự kiểm ở trên).
+    for (const w of opts.sweep ?? []) {
+      await switchTo(main, w, first);
+      const o = await main.page.evaluate(() => ({ s: document.documentElement.scrollWidth, c: document.documentElement.clientWidth }));
+      if (o.s > o.c + 1) add(r, "hard", "overflow", `${w}px`, `page is ${o.s}px wide, viewport ${o.c}px`, `${first}/${w}`);
+    }
+    await switchTo(main, widestW, first);
+    if (focusAt.has(widestW)) await focusPass(main.page, widestW, first, opts.focusStops, r);
+    await motionPass(main, widestW, first, undefined, r);
+    return undefined;
+  } finally {
+    await main.ctx.close().catch(() => undefined);
+  }
+}
+
+/**
+ * Trạng thái sau thao tác: mỗi khổ một lần nạp và chạy lại thao tác, chỉ đổi chế độ màu tại chỗ. Không đổi khổ trên
+ * trang đã bấm: con trỏ chuột còn ở toạ độ của khổ cũ, đổi khổ thì nó rơi vào phần tử khác và `:hover` khác lần nạp mới
+ * (thong-bao #loi, thanh-ben #ngan-keo; 19/11/2026). 4 lần nạp thay cho 7. Script đọc chế độ màu một lần lúc nạp
+ * thì trả lý do để đo theo cách cũ.
+ */
+async function checkStateInPlace(browser: Browser, url: string, label: string, widths: number[], actions: StepAction[], opts: PageOpts, r: PageReport): Promise<string | undefined> {
+  const desc = [...widths].sort((a, b) => b - a);
+  const widestW = desc[0]!;
+  const first = opts.schemes[0]!;
+  const focusAt = focusWidths(widths);
+  for (const vw of desc) {
+    const L = await openPage(browser, url, label, vw, first, r);
+    try {
+      const err = await runActions(L.page, actions, L.net);
+      if (err) {
+        // Như cách cũ: mỗi lượt render của khổ này là một lần không tới được trạng thái.
+        for (const scheme of opts.schemes) add(r, "hard", "steps", opts.state!.name, err, `${scheme}/${vw}`);
+        continue;
+      }
+      if (opts.schemes.length > 1 && (await L.page.evaluate(schemeReadOnce))) return "a script reads prefers-color-scheme once without listening for changes";
+      for (const [si, scheme] of opts.schemes.entries()) {
+        if (si > 0) {
+          await L.page.emulateMedia({ colorScheme: scheme as "light" | "dark" });
+          await settleAfterChange(L.page, L.net);
+        }
+        await measureRender(browser, L, vw, scheme, opts, r, { first: si === 0, widest: vw === widestW, actions: true });
+      }
+      if (focusAt.has(vw)) {
+        if (opts.schemes.length > 1) {
+          await L.page.emulateMedia({ colorScheme: first as "light" | "dark" });
+          await settleAfterChange(L.page, L.net);
+        }
+        await focusPass(L.page, vw, first, opts.focusStops, r);
+      }
+      if (vw === widestW) await motionPass(L, vw, first, actions, r);
+    } finally {
+      await L.ctx.close().catch(() => undefined);
+    }
+  }
+  return undefined;
+}
+
+async function checkPage(browser: Browser, url: string, label: string, opts: PageOpts, r: PageReport): Promise<void> {
   const only = opts.state?.viewports;
   const widths = only ? opts.viewports.filter((v) => only.includes(v)) : opts.viewports;
   if (!widths.length) {
     r.notes.push(`state ${opts.state!.name}: none of its viewports (${only!.join(",")}) is rendered, so it was not measured`);
     return;
   }
-  // Focus: khổ rộng nhất và khổ điện thoại hẹp nhất ngoài 320 (mặc định 390), như trước.
-  const measured = widths.filter((w) => w !== 320);
-  const focusAt = new Set([Math.max(...widths), ...(measured.length ? [Math.min(...measured)] : [])]);
-  for (const scheme of opts.schemes) {
-    for (const vw of widths) {
-      const render = `${scheme}/${vw}`;
-      const ctx = await browser.newContext({
-        viewport: { width: vw, height: HEIGHT[vw] ?? 900 },
-        colorScheme: scheme as "light" | "dark",
-        reducedMotion: "no-preference",
-      });
-      const page = await ctx.newPage();
-      const net = watchNetwork(page);
-      await page.addInitScript(installVitals);
-      // Lỗi người dùng gặp ngay khi mở: script ném lỗi, script/stylesheet không tải được (thường là nguyên nhân
-      // của trang trắng). Bỏ ERR_ABORTED (yêu cầu bị huỷ khi trang tự điều hướng), bỏ console.error (favicon 404…).
-      const errs: string[] = [];
-      const short = (u: string) => u.replace(/^https?:\/\/127\.0\.0\.1:\d+/, "");
-      page.on("pageerror", (e) => errs.push(`uncaught ${e.name}: ${e.message.split("\n")[0]}`));
-      page.on("response", (s) => {
-        const t = s.request().resourceType();
-        if ((t === "script" || t === "stylesheet") && s.status() >= 400) errs.push(`${t} failed to load: ${short(s.url())} (HTTP ${s.status()})`);
-      });
-      page.on("requestfailed", (q) => {
-        const t = q.resourceType();
-        const why = q.failure()?.errorText ?? "";
-        if ((t === "script" || t === "stylesheet") && !/ERR_ABORTED/.test(why)) errs.push(`${t} failed to load: ${short(q.url())} (${why})`);
-      });
-      let resp;
-      try {
-        resp = await page.goto(url, { waitUntil: "load", timeout: 45_000 });
-      } catch (e) {
-        await ctx.close();
-        fail(`${label}: ${(e as Error).message.split("\n")[0]}`, "LOAD_FAILED", ["Check the URL or that the dev server is running"]);
-      }
-      if (resp && resp.status() >= 400) {
-        await ctx.close();
-        fail(`${label}: HTTP ${resp.status()}`, "LOAD_FAILED");
-      }
-      // Font xong, không còn yêu cầu mạng dở, hai khung hình: thay cho networkidle (im đủ 500 ms) + 300 ms cố định,
-      // vốn chiếm 0,8 s trong mỗi 1,05 s của một lượt render (đo 14/11/2026). Xem src/settle.ts.
-      if ((await settlePage(page, net)).capped && !r.notes.some((n) => n.startsWith("network still busy"))) {
-        r.notes.push(`network still busy ${QUIET_CAP_MS / 1000} s after load (a stream or long polling?): measured anyway`);
-      }
-      const idleAt = Date.now();
-      const late = await waitForContent(page, idleAt);
-      if (late > 0 && !r.notes.some((n) => n.startsWith("content appeared"))) {
-        r.notes.push(`content appeared ${late} ms after the network went idle: measured after it appeared`);
-      }
-      if (actions) {
-        // Không tới được trạng thái ⇒ chưa đo được ⇒ cứng: sửa trang (nút bị giấu ở khổ hẹp?) hoặc sửa tệp steps.
-        const err = await runActions(page, actions, net);
-        if (err) {
-          add(r, "hard", "steps", opts.state!.name, err, render);
-          await ctx.close();
-          continue;
-        }
-      }
-      // Cỡ chữ tính cả hệ số co của transform: đo giữa hiệu ứng mở scale(.95) → 1 sẽ báo nhầm chữ nhỏ.
-      // Chờ tới ENTRANCE_MS: trước kia 0,8 s chờ cố định cộng 600 ms ở đây cho hiệu ứng vào trang khoảng 1,4 s để
-      // xong; bỏ chờ cố định mà giữ 600 ms thì hiệu ứng mở 1,1 s bị đo giữa chừng (fixture co-gian.html, 15/11/2026).
-      // Trang không có hiệu ứng có hồi kết thì không mất thêm gì.
-      await page.evaluate(settleAnimations, ENTRANCE_MS);
-      const p = await page.evaluate(probePage);
-
-      // Trang trắng: không có gì để trượt nên mọi phép đo khác "đạt". Phải là lỗi cứng.
-      const vis = await page.evaluate(probeVisible);
-      const undef = vis.undefinedTags.join(", ");
-      const unreg = vis.unregisteredTags.join(", ");
-      if (!vis.text && !vis.media) {
-        const all = [...vis.undefinedTags, ...vis.unregisteredTags].join(", ");
-        add(r, "hard", "render", "page", `nothing visible: no text, image or graphic, also ${LATE_MS / 1000} s after the network went idle${all ? `; custom elements never defined: ${all}` : ""}`, render);
-      } else {
-        if (undef) add(r, "soft", "render", "page", `custom element never defined (its script failed or has not loaded): ${undef}`, render);
-        if (unreg && !r.notes.some((n) => n.startsWith("not registered"))) {
-          r.notes.push(`not registered as custom elements (fine for app roots and styling tags; a missing host-app component otherwise): ${unreg}`);
-        }
-      }
-      for (const e of new Set(errs)) add(r, "hard", "errors", "page", e.slice(0, 200), render);
-
-      if (p.scrollW > p.clientW + 1) add(r, "hard", "overflow", `${vw}px`, `page is ${p.scrollW}px wide, viewport ${p.clientW}px`, render);
-      // Mọi khổ đều đo đủ. Trước 15/11/2026 khổ 320 chỉ đo tràn ngang, nên khối hero hiện "Camer", "23/2" ở đó mà cổng
-      // vẫn đạt; khổ hẹp nhất là nơi bố cục gãy trước tiên.
-      {
-        if (p.shadowRoots && !r.notes.some((n) => n.startsWith("shadow"))) r.notes.push(`shadow roots measured: ${p.shadowRoots}`);
-        hits(r, "hard", "text-min", p.textMin, "font-size", render);
-        hits(r, "soft", "body-size", p.bodySmall, "body text", render);
-        hits(r, "soft", "body-lh", p.bodyTight, "line-height", render);
-        hits(r, "soft", "measure", p.measure, "line length", render, 3);
-        hits(r, "soft", "font", p.fontFallback, "web font not loaded:", render, 3);
-        hits(r, "soft", "inner-scroll", p.innerScroll, "horizontal scroll hides content:", render, 3);
-        hits(r, "soft", "text-clip", p.textClip, "text cut off", render);
-        hits(r, "soft", "text-covered", await page.evaluate(probeCovered), "text", render);
-        if (p.visibleFields > 12) add(r, "soft", "long-form", "page", `${p.visibleFields} fields on one screen: split into named steps or tuck advanced options away`, render);
-        // Ô gõ chữ có chữ nhỏ: chỉ điện thoại phóng to khi chạm (iOS), nên chỉ đo ở khổ ≤ 480.
-        if (vw <= 480) {
-          const zoom = p.typingFields.flatMap((f) => {
-            const msg = inputZoomFinding(f);
-            return msg ? [{ where: f.where, value: msg }] : [];
-          });
-          hits(r, "soft", "input-zoom", zoom, "", render);
-        }
-        hits(r, "soft", "guide", p.vagueNext, "button does not say where it goes, name the next step:", render, 3);
-        hits(r, "soft", "guide", p.emptyDeadEnd, "empty state with no next action:", render, 3);
-        // Tour mở bằng tay (bấm "Hướng dẫn") là được; chỉ tour tự bật lúc mở trang mới bị nhắc.
-        if (!actions) hits(r, "soft", "guide", p.tour, "up-front tour, teach in context instead:", render, 1);
-        if (p.vietnamese) {
-          hits(r, "hard", "heading-lh", p.headingTight, "line-height", render);
-          if (!/^vi\b/i.test(p.lang)) add(r, "hard", "lang", "<html>", `Vietnamese text but lang="${p.lang}"`, render);
-        }
-        // axe chạy ở mọi khổ ≠ 320 và mọi chế độ: tương phản bản tối hay hỏng nhất.
-        for (const v of await axeRun(page, opts.axeSource)) {
-          const gate: Gate = v.impact === "serious" || v.impact === "critical" ? "hard" : "soft";
-          for (const n of v.nodes) add(r, gate, "axe", `${v.id}`, n.slice(0, 220), render);
-        }
-        if (opts.shotsDir) {
-          await page.screenshot({ path: join(opts.shotsDir, `${scheme}-${vw}.png`), fullPage: true });
-          r.shots++;
-        }
-      }
-      const first = scheme === opts.schemes[0];
-      const widest = vw === Math.max(...widths);
-      // Vitals: một lần (chế độ đầu, khổ rộng nhất), trước khi bấm phím nào.
-      if (first && widest && !actions) {
-        const v = await page.evaluate(() => (window as unknown as { __dk: { lcp: number; cls: number } }).__dk);
-        if (v.lcp > 2500) add(r, "soft", "lcp", "page", `LCP ${Math.round(v.lcp)} ms > 2500`, render);
-        if (v.cls > 0.1) add(r, "soft", "cls", "page", `CLS ${v.cls.toFixed(3)} > 0.1`, render);
-        r.notes.push(`lab vitals: LCP ${Math.round(v.lcp)} ms, CLS ${v.cls.toFixed(3)} (local load; field p75 decides)`);
-      }
-      // Chữ trên trang và dữ kiện tự điền: một lần mỗi trang/trạng thái (chữ không đổi theo khổ hay chế độ màu).
-      // Trạng thái sau thao tác cũng chấm, vì thông báo lỗi, hộp thoại mới hiện chữ ở đó.
-      if (first && widest && opts.copy) {
-        const c = await page.evaluate(probeCopy, opts.copy);
-        hits(r, "soft", "copy", c.copy, "", render, 20);
-        r.assumed.push(...c.assumed);
-      }
-      // Mở như pane của app Claude (data: URL, không máy chủ) rồi so với bản http vừa đo: một lần mỗi tệp.
-      if (first && widest && !actions && opts.standalone) {
-        // Phép đo phụ: hỏng (CDP, trang tự điều hướng) thì ghi chú, không làm hỏng cả lượt kiểm.
-        try {
-          const a = await page.evaluate(probeStandalone, STANDALONE_TOKENS);
-          const res = await runStandalone(browser, opts.standalone, a, vis.text > 0 || vis.media > 0, { width: vw, height: HEIGHT[vw] ?? 900 }, scheme as "light" | "dark");
-          for (const f of res.findings) add(r, "soft", "standalone", f.where, f.detail, render);
-          r.notes.push(...res.notes);
-        } catch (e) {
-          r.notes.push(`standalone: not measured (${(e as Error).message.split("\n")[0]})`);
-        }
-      }
-      // Focus: khổ rộng nhất VÀ khổ hẹp nhất có đo. Nút bị giấu ở khổ hẹp mà vẫn nhận Tab (focus lạc vào chỗ
-      // không thấy) chỉ lộ ra ở khổ hẹp: bảng dữ liệu từng bị đúng lỗi này (09/11/2026).
-      if (first && focusAt.has(vw)) {
-        const seen = new Set<string>();
-        for (let i = 0; i < opts.focusStops; i++) {
-          await page.keyboard.press("Tab");
-          await page.evaluate(settleAnimations, 600);
-          const f = await page.evaluate(probeFocus);
-          if (!f || seen.has(f.where)) continue;
-          seen.add(f.where);
-          if (!f.indicator) add(r, "soft", "focus", f.where, "no visible focus ring (outline ≥ 2px or box-shadow)", render);
-          else if (f.shadowOnly) {
-            // Vòng chỉ bằng box-shadow: đo thật trong chế độ màu ép buộc, ngay khi phần tử đang focus (focus và
-            // :focus-visible giữ nguyên). Tailwind v4 `outline-hidden` chỉ thêm viền trong @media (forced-colors), nên
-            // đọc CSS ở chế độ thường là báo nhầm.
-            await page.emulateMedia({ forcedColors: "active" });
-            const g = await page.evaluate(probeFocus);
-            await page.emulateMedia({ forcedColors: null });
-            if (g && g.where === f.where && !g.indicator) {
-              add(r, "soft", "focus", f.where, "focus ring disappears in forced-colors mode (Windows High Contrast removes box-shadow): add outline: 2px solid transparent (Tailwind v4: outline-hidden)", render);
-            }
-          }
-          if (f.obscured) add(r, "soft", "focus", f.where, f.hidden ? "focus lands on an element nobody can see (hidden or clipped)" : "focused element is covered by other content", render);
-        }
-        r.notes.push(`focus stops inspected at ${vw}px: ${seen.size}`);
-      }
-      // Giảm chuyển động: một lần.
-      if (first && widest) {
-        await page.emulateMedia({ reducedMotion: "reduce" });
-        await page.reload({ waitUntil: "load" });
-        await settlePage(page, net);
-        await waitForContent(page, Date.now());
-        if (actions) await runActions(page, actions, net);
-        // Chỉ hiệu ứng còn chạy sau MOTION_SETTLE_MS mới tính (vòng xoay, chữ chạy, chuyển cảnh dài); hiệu ứng vào
-        // trang ngắn hơn thì đã xong. Giữ đúng thời điểm đo cũ (khoảng 0,9 s sau khi nạp) để ngữ nghĩa phép đo không đổi.
-        await page.waitForTimeout(MOTION_SETTLE_MS);
-        const m = await page.evaluate(probeMotion);
-        if (m.running) add(r, "hard", "motion", m.samples.join(", "), `${m.running} animation(s) still run with prefers-reduced-motion: reduce`, render);
-      }
-      await ctx.close();
+  if (!opts.fresh) {
+    // Đo vào bản nháp: tự kiểm lệch thì bỏ nháp, đo lại theo cách cũ.
+    const draft: PageReport = { target: r.target, findings: new Map(), checks: new Map(), notes: [], shots: 0, assumed: [] };
+    const why = await checkReuse(browser, url, label, widths, opts, draft);
+    if (why === undefined) {
+      for (const [k, f] of draft.findings) r.findings.set(k, f);
+      r.notes.push(...draft.notes);
+      r.shots += draft.shots;
+      r.assumed.push(...draft.assumed);
+      return;
     }
+    r.notes.push(`resize in place not used (${why}): every width loaded fresh${opts.sweep?.length ? ", --sweep skipped for this page" : ""}`);
   }
+  await checkFresh(browser, url, label, widths, opts, r);
 }
 
 export async function checkCommand(args: string[], rt: Runtime): Promise<Record<string, unknown>> {
@@ -465,7 +675,9 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   // Bước 1: danh sách việc (máy chủ tĩnh dựng tuần tự). Bước 2: chạy song song có giới hạn, giữ thứ tự kết quả.
   const jobs: Array<{ url: string; label: string; r: PageReport; shotsDir?: string; state?: StepState; standalone?: string; mobile?: boolean }> = [];
   // Khổ điện thoại để mở trang như máy thật (phép đo viewport): khổ lớn nhất ≤ 480 trong --viewports; không có thì bỏ.
-  const phones = viewports.filter((w) => w <= 480);
+  const phones = viewports.filter((w) => w <= PHONE_MAX);
+  const sweep = p.bool("sweep") ? SWEEP_WIDTHS.filter((w) => w > Math.min(...viewports) && w < Math.max(...viewports) && !viewports.includes(w)) : [];
+  if (p.bool("sweep") && p.bool("fresh")) fail("--sweep needs resize in place: drop --fresh", "VALIDATION_ERROR");
   const phoneWidth = phones.length ? Math.max(...phones) : undefined;
   try {
     for (const t of targets) {
@@ -504,11 +716,23 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
     const runJob = async ({ url, label, r, shotsDir, state, standalone, mobile }: (typeof jobs)[number]): Promise<void> => {
       // Impeccable tự mở trang theo URL, không phát lại được thao tác: chỉ chạy ở trạng thái đầu. Khổ rộng nhất, 390 và
       // 320 (khổ hẹp nhất là nơi bố cục gãy trước: ở 320 nó bắt được ô số tràn 39px của khối hero, 15/11/2026).
-      const impWidths = [`${Math.max(...viewports)}x800`, ...(viewports.includes(390) ? ["390x844"] : []), ...(viewports.includes(320) && Math.max(...viewports) !== 320 ? ["320x720"] : [])];
+      // Mỗi bề rộng một lần: khổ rộng nhất là 390 thì trước kia chạy cả 390x800 lẫn 390x844 (thừa một tiến trình).
+      const widestVp = Math.max(...viewports);
+      const impWidths = [`${widestVp}x800`, ...(viewports.includes(390) && widestVp !== 390 ? ["390x844"] : []), ...(viewports.includes(320) && widestVp !== 320 ? ["320x720"] : [])];
       const imp = impBin && !state
         ? Promise.all(impWidths.map(async (vp) => ({ vp, res: await runImpeccable(impBin, url, vp) })))
         : Promise.resolve([]);
-      await checkPage(browser, url, label, { viewports, schemes, focusStops, axeSource, ...(copy ? { copy } : {}), ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}) }, r);
+      try {
+        await checkPage(browser, url, label, { viewports, schemes, focusStops, axeSource, fresh: p.bool("fresh"), ...(sweep.length ? { sweep } : {}), ...(copy ? { copy } : {}), ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}) }, r);
+      } catch (e) {
+        // Một trang không mở được thì chỉ trang đó trượt; các trang khác vẫn đo. Chờ Impeccable xong để không còn
+        // tiến trình con chạy sau khi trình duyệt đã đóng.
+        if (!(e instanceof PageLoadError)) throw e;
+        loadFailed.push(e.message);
+        add(r, "hard", "render", "page", `page did not load: ${e.message.slice(label.length + 2, label.length + 202)}`, "load");
+        await imp;
+        return;
+      }
       if (mobile && phoneWidth) {
         try {
           await checkViewport(browser, url, phoneWidth, r);
@@ -526,12 +750,25 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
       if (impBin && state) r.notes.push("states (#name): every check except Impeccable and LCP/CLS, which run on the initial state");
       if (shotsDir) r.notes.push(`screenshots: ${relative(rt.cwd, shotsDir).replace(/\\/g, "/")} (${r.shots})`);
     };
+    const loadFailed: string[] = [];
     let next = 0;
+    // Lỗi bất ngờ ở một việc: các việc khác đang chạy dở vẫn được chạy xong (không đóng trình duyệt dưới chân chúng),
+    // không nhận việc mới, rồi mới ném lỗi đầu tiên.
+    let firstErr: { e: unknown } | undefined;
     await Promise.all(
       Array.from({ length: Math.min(jobsN, jobs.length) }, async () => {
-        while (next < jobs.length) await runJob(jobs[next++]!);
+        while (next < jobs.length && !firstErr) {
+          try {
+            await runJob(jobs[next++]!);
+          } catch (e) {
+            firstErr ??= { e };
+          }
+        }
       }),
     );
+    if (firstErr) throw firstErr.e;
+    // Không trang nào mở được (máy chủ dev chưa chạy, sai URL): lỗi của lệnh, không phải phán quyết về giao diện.
+    if (loadFailed.length === jobs.length) fail(loadFailed[0]!, "LOAD_FAILED", ["Check the URL or that the dev server is running"]);
   } finally {
     await browser.close();
     for (const s of servers.values()) s.close();
@@ -558,7 +795,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
     const of = (g: Gate) => reports.reduce((s, r) => s + [...r.findings.values()].filter((f) => f.check === id && f.gate === g).length, 0);
     const h = of("hard");
     const s = of("soft");
-    const skipped = (id === "impeccable" && !impBin) || (id === "standalone" && !jobs.some((j) => j.standalone)) || (id === "copy" && !copy) || (id === "viewport" && !phoneWidth) || (id === "input-zoom" && !viewports.some((w) => w !== 320 && w <= 480));
+    const skipped = (id === "impeccable" && !impBin) || (id === "standalone" && !jobs.some((j) => j.standalone)) || (id === "copy" && !copy) || (id === "viewport" && !phoneWidth) || (id === "input-zoom" && !viewports.some((w) => w <= PHONE_MAX));
     const unused = id === "steps" && !stateJobs;
     const result = skipped ? "skipped" : unused ? "none: no steps file" : h || s ? [h && `${h} hard`, s && `${s} soft`].filter(Boolean).join(", ") : "ok";
     return { check: id, gate, result };
@@ -577,13 +814,17 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   }));
   if (shown.length < all.length) out["count"] = `${shown.length} of ${all.length} total`;
   out["findings"] = shown.length ? shown : "0 findings found";
-  const notes = reports.length === 1 ? reports[0]!.notes : [...new Set(reports.flatMap((r) => r.notes.filter((n) => !n.startsWith("lab vitals") && !n.startsWith("focus stops") && !n.startsWith("screenshots"))))];
+  // Nhiều trang: ghi chú gộp lại, bỏ ghi chú riêng từng trang; ghi chú về một trang cụ thể thì kèm tên trang.
+  const perPage = (n: string) => n.startsWith("resize in place not used") || n.startsWith("motion: not measured");
+  const notes = reports.length === 1
+    ? reports[0]!.notes
+    : [...new Set(reports.flatMap((r) => r.notes.filter((n) => !n.startsWith("lab vitals") && !n.startsWith("focus stops") && !n.startsWith("screenshots")).map((n) => (perPage(n) ? `${r.target}: ${n}` : n))))];
   if (notes.length) out["notes"] = notes;
   // Dữ kiện agent tự điền (data-assumed): không phải lỗi, nhưng chủ phải duyệt từng mục trước khi trang ra ngoài.
-  // Một mục xuất hiện ở nhiều trạng thái của cùng trang chỉ ghi một lần.
+  // Một mục xuất hiện ở nhiều trạng thái, hay nhiều --query, của cùng trang chỉ ghi một lần.
   const seenAssumed = new Set<string>();
   const assumed = reports.flatMap((r) => {
-    const pageOf = r.target.replace(/ #[^#]*$/, "");
+    const pageOf = r.target.replace(/ #[^#]*$/, "").replace(/\?[^ ]*$/, "");
     return r.assumed.flatMap((a) => {
       const k = `${pageOf}|${a.where}|${a.text}`;
       if (seenAssumed.has(k)) return [];

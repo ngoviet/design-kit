@@ -261,7 +261,7 @@ Flags of `check`:
 | --- | --- |
 | `--query <q,q>` | Run each page once per query string, e.g. `dk=dem,dk=giay,dk=dam` |
 | `--steps <file.json\|json>` / `--no-steps` | States to reach by clicking and typing (overrides `<page>.steps.json`) / ignore steps files |
-| `--viewports <w,w>` | Widths in px (default `320,390,1280`; 320 is used for overflow only) |
+| `--viewports <w,w>` | Widths in px (default `320,390,1280`; every width gets every check) |
 | `--schemes <light,dark>` | Color schemes to render (default both) |
 | `--shots <dir>` / `--no-shots` | Screenshot folder (default `.design-kit/shots`) / no screenshots |
 | `--no-impeccable` | Skip the Impeccable detector (faster) |
@@ -269,6 +269,8 @@ Flags of `check`:
 | `--focus <n>` | Tab stops to inspect (default 15) |
 | `--strict` | Exit 1 when any page has a hard failure |
 | `--jobs <n>` | Pages checked at once (default 3, max 8) |
+| `--sweep` | Also check horizontal overflow at in-between widths (360, 414, 480, 600, 768, 900, 1024, 1180 inside the `--viewports` range), about 0.1 s per width |
+| `--fresh` | Load the page again for every width and color scheme. By default a page is loaded once, then resized and switched to dark in place; one fresh load per page must give the same layout, and a page that differs is redone fresh |
 | `--limit <n>` / `--full` | Findings to show (default 25) / every finding |
 
 A steps file is a list of states. Each state starts from a fresh load and runs its own actions: `click`, `fill`,

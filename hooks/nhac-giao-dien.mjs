@@ -137,17 +137,28 @@ const norm = (p) => p.replace(/\\/g, "/").toLowerCase();
 const GATE = /design-kit(\.js)?\s+check(?![\w-])/;
 const IMG_GATE = /design-kit(\.js)?\s+check-image\b/;
 const PLUGIN_TEST = /claude(?:\.exe)?\s+plugin\s+test\b([^;&|\r\n]*)/g;
+// Cổng mod của chính design-kit cũng chạy `claude plugin test` trên mod (kèm phép đo), nên tính như lệnh đó.
+const MOD_GATE = /design-kit(?:\.js)?\s+check-mod\b([^;&|\r\n]*)/g;
 const REPO_CHECK = /(?:^|[\s;&|(])(?:bash\s+|sh\s+|\.\/)[^\s;&|]*tools[\\/]check\.sh\b/;
 /** Lệnh có thể là một lần kiểm: cổng design-kit, chấm hình, `claude plugin test`, hoặc `tools/check.sh` của repo chứa mod. */
-const isCheck = (cmd) => GATE.test(cmd) || IMG_GATE.test(cmd) || /claude(?:\.exe)?\s+plugin\s+test\b/.test(cmd) || REPO_CHECK.test(cmd);
+const isCheck = (cmd) => GATE.test(cmd) || IMG_GATE.test(cmd) || /claude(?:\.exe)?\s+plugin\s+test\b/.test(cmd) || /design-kit(?:\.js)?\s+check-mod\b/.test(cmd) || REPO_CHECK.test(cmd);
 
-/** Lệnh nêu tệp này: tên tệp, hay thư mục chứa nó (tuyệt đối hoặc tương đối với cwd; cwd là "." hay "./"). */
+/**
+ * Lệnh nêu tệp này: một đối số trỏ đúng tệp hay thư mục chứa nó (tuyệt đối, hoặc tương đối với cwd), hoặc đúng tên tệp
+ * đứng trơn (lệnh chạy sau `cd` vào thư mục đó). Trước 19/11/2026 hàm so chuỗi con, nên kiểm `old/footer-logo.svg` được
+ * tính là đã kiểm `brand/logo.svg`, và `check khac/index.html` phủ cả `app/index.html`.
+ */
 function names(cmd, file, cwd) {
-  const c = ` ${norm(cmd)} `.replace(/["']/g, " ");
-  if (c.includes(norm(basename(file)))) return true;
-  const dirs = [norm(dirname(file)), norm(relative(cwd, dirname(file)))];
-  if (dirs[1] === "") dirs.push(".", "./");
-  return dirs.some((d) => d && (c.includes(` ${d} `) || c.includes(` ${d}/ `)));
+  const f = norm(file);
+  const d = norm(dirname(file));
+  const base = norm(basename(file));
+  return cmd.split(/[\s;&|()]+/).some((raw) => {
+    const t = unshell(raw);
+    if (!t || t.startsWith("-")) return false;
+    if (!/[\\/]/.test(t) && norm(t) === base) return true;
+    const abs = norm(resolve(cwd, t)).replace(/\/+$/, "");
+    return abs === f || abs === d;
+  });
 }
 
 /** Bỏ dấu nháy; trên Windows đổi đường dẫn Git Bash `/d/code/…` thành `d:/code/…`. */
@@ -165,7 +176,7 @@ function unshell(t) {
 function coversMod(cmd, mod, cwd) {
   if (mod.check && REPO_CHECK.test(cmd)) return true;
   const root = norm(mod.root);
-  for (const m of cmd.matchAll(PLUGIN_TEST)) {
+  for (const m of [...cmd.matchAll(PLUGIN_TEST), ...cmd.matchAll(MOD_GATE)]) {
     if (/(^|\s)(-h|--help)(?=\s|$)/.test(m[1])) continue; // chỉ in trợ giúp, không chạy test
     let base = cwd;
     for (const cd of cmd.slice(0, m.index).matchAll(/(?:^|[;&|(\n]\s*)(?:cd|pushd|Set-Location|Push-Location)\s+(?:-\w+\s+)*("[^"]*"|'[^']*'|[^\s;&|)]+)/gi)) {

@@ -119,26 +119,39 @@ export function parseTestOutput(out: string): Omit<RunResult, "run" | "ms"> & { 
   return { pass, fail: failN, failures, drawings };
 }
 
-function runAsync(bin: string, args: string[], timeoutMs: number): Promise<{ out: string; code: number | null; missing: boolean }> {
+export function runAsync(bin: string, args: string[], timeoutMs: number): Promise<{ out: string; code: number | null; missing: boolean }> {
   return new Promise((done) => {
     const go = (shell: boolean) => {
       const chunks: Buffer[] = [];
+      // Lần chạy đầu hỏng (ENOENT với claude.cmd trên Windows) vẫn phát "close" một nhịp sau "error". Không chặn thì
+      // "close" đó trả kết quả rỗng trước khi lần chạy qua shell xong: cổng báo "pass" mà không test nào chạy.
+      let settled = false;
       const p = shell ? spawn(shellLine(bin, args), { shell: true, windowsHide: true }) : spawn(bin, args, { windowsHide: true });
-      const timer = setTimeout(() => p.kill(), timeoutMs);
+      const timer = setTimeout(() => killTree(p), timeoutMs);
       p.stdout.on("data", (d: Buffer) => chunks.push(d));
       p.stderr.on("data", (d: Buffer) => chunks.push(d));
       p.on("error", (e: NodeJS.ErrnoException) => {
+        if (settled) return;
+        settled = true;
         clearTimeout(timer);
         if (e.code === "ENOENT" && !shell && process.platform === "win32") go(true);
         else done({ out: String(e.message), code: null, missing: e.code === "ENOENT" });
       });
       p.on("close", (code) => {
+        if (settled) return;
+        settled = true;
         clearTimeout(timer);
         done({ out: Buffer.concat(chunks).toString("utf8"), code, missing: false });
       });
     };
     go(false);
   });
+}
+
+/** Dừng cả cây tiến trình: chạy qua shell thì `kill()` chỉ dừng cmd.exe, claude con vẫn chạy mồ côi. */
+function killTree(p: ReturnType<typeof spawn>): void {
+  if (process.platform === "win32" && p.pid) spawnSync("taskkill", ["/pid", String(p.pid), "/T", "/F"], { windowsHide: true });
+  else p.kill();
 }
 
 export interface CollectOptions {
@@ -208,7 +221,7 @@ export async function collectDrawings(info: ModInfo, o: CollectOptions): Promise
       if (r.missing) fail(`check-mod: \`${bin}\` not found`, "VALIDATION_ERROR", ["Install Claude Code, or set CLAUDE_BIN"]);
       const parsed = parseTestOutput(r.out);
       const res: RunResult = { run: p.run, pass: parsed.pass, fail: parsed.fail, failures: parsed.failures, ms };
-      if (!parsed.drawings.length && !parsed.pass && !parsed.fail) res.broken = r.out.split(/\r?\n/).filter(Boolean).slice(-3).join(" | ").slice(0, 300);
+      if (!parsed.drawings.length && !parsed.pass && !parsed.fail) res.broken = r.out.split(/\r?\n/).filter(Boolean).slice(-3).join(" | ").slice(0, 300) || `no output, exit code ${r.code}`;
       return { res, drawings: parsed.drawings };
     }),
   );

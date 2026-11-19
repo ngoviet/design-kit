@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chế độ màu đọc một lần</title>
+<style>
+  body { margin: 0; font: 400 16px/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+  main { max-width: 36rem; margin: 0 auto; padding: 32px 16px; }
+  /* Bản tối do script gắn lúc nạp, chữ xám trên nền xám: tương phản hỏng chỉ ở bản tối. */
+  body.toi { background: #3a3a3a; color: #5a5a5a; }
+</style>
+<script>
+  // Đọc chế độ màu một lần, không nghe "change": đổi chế độ tại chỗ thì trang không đổi màu.
+  if (window.matchMedia("(prefers-color-scheme: dark)").matches) document.documentElement.dataset.toi = "1";
+  addEventListener("DOMContentLoaded", () => { if (document.documentElement.dataset.toi) document.body.classList.add("toi"); });
+</script>
+</head>
+<body>
+  <main>
+    <h1>Cài đặt hiển thị</h1>
+    <p>Trang này chọn bản tối bằng script lúc nạp. Ở bản tối, chữ xám trên nền xám không đủ tương phản.</p>
+  </main>
+</body>
+</html>

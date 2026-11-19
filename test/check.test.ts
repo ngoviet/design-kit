@@ -119,6 +119,19 @@ describe("inline", () => {
     expect(again.out).toContain("nothing written: no change");
   });
 
+  it("rewrites url() in a nested @import once, relative to the page", async () => {
+    const d = join(tmp, "long-nhau");
+    mkdirSync(join(d, "css", "sub"), { recursive: true });
+    writeFileSync(join(d, "page.html"), '<!doctype html><html lang="vi"><head><link rel="stylesheet" href="css/main.css"></head><body><p>x</p></body></html>');
+    writeFileSync(join(d, "css", "main.css"), '@import "sub/a.css";\nbody { background: url(nen.png); }');
+    writeFileSync(join(d, "css", "sub", "a.css"), "p { background: url(img.png); }");
+    await run(["inline", ".design-kit/test/long-nhau/page.html"]);
+    const html = readFileSync(join(d, "page.html"), "utf8");
+    expect(html).toContain('url("css/sub/img.png")');
+    expect(html).toContain('url("css/nen.png")');
+    expect(html).not.toContain("css/css/");
+  });
+
   it("refuses a file that is not a page", async () => {
     const { out, code } = await run(["inline", "tokens/core.css", "--dry-run"]);
     expect(out).toContain("not an .html file");
@@ -330,6 +343,59 @@ describe("check on real pages", () => {
     expect(out).toMatch(/text-min,.*span#co-transform.*light\/320/);
   }, 120_000);
 
+  it("resize in place: a page that reads the color scheme once at load gets one load per scheme, so dark is really dark", async () => {
+    const { out } = await run(["check", "test/fixtures/doc-mau.html", "--no-impeccable", "--no-shots", "--no-standalone", "--viewports", "390,1280", "--full"]);
+    expect(out).toContain("each color scheme loaded fresh");
+    expect(out).toMatch(/hard,axe,color-contrast,.*dark\/1280 dark\/390/);
+    expect(out).not.toMatch(/color-contrast.*light\//);
+  }, 120_000);
+
+  it("resize in place: a page laid out by a script that reads the width once is caught by the self-check and measured fresh", async () => {
+    const { out } = await run(["check", "test/fixtures/doc-kho.html", "--no-impeccable", "--no-shots", "--no-standalone", "--viewports", "390,1280", "--schemes", "light", "--full"]);
+    expect(out).toContain("resize in place not used (layout at 390px after resizing differs from a fresh load)");
+    // Nạp mới ở 390 thì bảng 100%: không tràn. Đo trên trang đã đổi khổ sẽ báo tràn nhầm.
+    expect(out).toContain("overflow,hard,ok");
+  }, 120_000);
+
+  it("--fresh and resize in place give the same findings on a kit block", async () => {
+    const args = ["check", "blocks/html/form-dang-nhap.html", "--query", "dk=giay", "--no-impeccable", "--no-shots", "--no-standalone", "--full"];
+    const findings = (o: string) => o.slice(o.indexOf("findings"), o.indexOf("notes"));
+    const [a, b] = [await run(args), await run([...args, "--fresh"])];
+    expect(a.out).not.toContain("resize in place not used");
+    expect(findings(a.out)).toBe(findings(b.out));
+  }, 120_000);
+
+  it("a .htm page with a strict CSP is checked (axe loads), and line-height exactly 1.2 passes", async () => {
+    const { out } = await run(["check", "test/fixtures/csp.htm", "--no-impeccable", "--no-shots", "--no-standalone", "--schemes", "light", "--full"]);
+    expect(out).toMatch(/csp\.htm,pass/);
+    expect(out).toContain("axe,hard,ok");
+    expect(out).toContain("heading-lh,hard,ok");
+  }, 120_000);
+
+  it("an infinite animation inside a shadow root that ignores reduced motion is a hard motion failure", async () => {
+    const { out } = await run(["check", "test/fixtures/bong-xoay.html", ...FAST, "--full"]);
+    expect(out).toMatch(/hard,motion,.*xoay.*prefers-reduced-motion/);
+  }, 120_000);
+
+  it("--sweep finds overflow that only happens between the default widths", async () => {
+    const base = ["check", "test/fixtures/tran-giua.html", "--no-impeccable", "--no-shots", "--no-standalone", "--schemes", "light"];
+    expect((await run(base)).out).toContain("overflow,hard,ok");
+    const { out } = await run([...base, "--sweep", "--full"]);
+    expect(out).toMatch(/hard,overflow,768px,"page is \d+px wide, viewport 768px",light\/768/);
+    expect(out).not.toMatch(/overflow,(600|900|1024)px/);
+    const both = await run([...base, "--sweep", "--fresh"]);
+    expect(both.out).toContain("--sweep needs resize in place");
+  }, 120_000);
+
+  it("a page that does not load fails alone; the other pages are still checked", async () => {
+    const { out, code } = await run(["check", "test/fixtures/tot.html", "http://127.0.0.1:9/", ...FAST]);
+    expect(out).toMatch(/tot\.html,pass/);
+    expect(out).toMatch(/hard,.*render,page,"?page did not load/);
+    expect(code).toBeUndefined();
+    const only = await run(["check", "http://127.0.0.1:9/", ...FAST]);
+    expect(only.out).toContain("LOAD_FAILED");
+  }, 120_000);
+
   it("input-zoom: typing fields with small text at phone width are reported, other controls are not", async () => {
     const { out } = await run(["check", "test/fixtures/o-nho.html", ...FAST, "--full"]);
     // Ca rõ ràng ở mọi cách đặt ngưỡng: 13px và 14px bị phóng to, 16px thì không, ô tích không mở bàn phím.
@@ -343,6 +409,10 @@ describe("check on real pages", () => {
     expect(out).not.toMatch(/input-zoom,.*input#khoa/);
     const wide = await run(["check", "test/fixtures/o-nho.html", "--no-impeccable", "--no-shots", "--viewports", "1280", "--schemes", "light"]);
     expect(wide.out).toContain("input-zoom,soft,skipped");
+    // 320 cũng là khổ điện thoại: phép đo chạy ở đó, nên bảng không được ghi "skipped" khi đang có phát hiện.
+    const narrow = await run(["check", "test/fixtures/o-nho.html", "--no-impeccable", "--no-shots", "--viewports", "320", "--schemes", "light"]);
+    expect(narrow.out).toMatch(/soft,input-zoom,.*input#nho/);
+    expect(narrow.out).not.toContain("input-zoom,soft,skipped");
   }, 120_000);
 
   it("a page without a viewport meta fails: a phone lays it out 980px wide and shrinks it", async () => {

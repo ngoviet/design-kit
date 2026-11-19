@@ -5,6 +5,27 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- `check` loads each page once and resizes it and switches it to dark in place, instead of a fresh load for every
+  width and color scheme (7 loads per page become 3). Each page is verified: one fresh load at the narrow focus width
+  must give the same layout and color fingerprint as the resized page, otherwise the page is measured again with
+  fresh loads and a note says why. A page whose script reads `prefers-color-scheme` once without listening for
+  changes gets one load per color scheme. `--fresh` keeps the old way.
+- A page that does not load (wrong URL, dev server down, HTTP ≥ 400) is a hard `render` finding for that page only;
+  the other pages are still checked. The command fails with `LOAD_FAILED` only when no page loads.
+
+### Added
+
+- `check --sweep`: horizontal overflow at in-between widths (360, 414, 480, 600, 768, 900, 1024, 1180 inside the
+  `--viewports` range), measured on the open page.
+
+### Fixed
+
+- The `input-zoom` row said `skipped` when 320 was the only phone width, while the check ran there and reported
+  findings.
+- An unexpected error in one page no longer closes the browser under the pages still being checked.
+
 ## [0.3.0] - 2026-11-18
 
 ### Added

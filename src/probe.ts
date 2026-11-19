@@ -161,7 +161,9 @@ export function probePage(): ProbeResult {
     const fs = parseFloat(cs.fontSize);
     const k = shrink(el);
     const lhRaw = cs.lineHeight === "normal" ? fs * 1.2 : parseFloat(cs.lineHeight);
-    const ratio = lhRaw / fs;
+    // Làm tròn 2 chữ số như khi in: line-height 1.2 tính ra px rồi chia lại thành 1,19999… và bị báo trượt đúng ở ngưỡng
+    // (h2 1.4142rem, cỡ chữ clamp() co giãn; 19/11/2026).
+    const ratio = Math.round((lhRaw / fs) * 100) / 100;
     const tag = el.tagName;
     if (fs * k < 12) out.textMin.push({ where: label(el), value: px(fs, k) });
     const isBody = tag === "P" || tag === "LI" || tag === "DD" || tag === "BLOCKQUOTE";
@@ -642,7 +644,19 @@ export function probeFocus(): { where: string; indicator: boolean; shadowOnly: b
  * lặp vô hạn. Đo giữa chừng một hiệu ứng mở (opacity 0 → 1) sẽ tưởng phần tử vô hình (gặp ở mẹo của khối bat-dau).
  */
 export function settleAnimations(maxMs = 600): Promise<void> {
-  const finite = document.getAnimations().filter((a) => {
+  // document.getAnimations() của Chromium không trả hoạt ảnh trong shadow root: gom thêm từ từng open shadow root
+  // (thẻ Lit, card HA). Thiếu bước này thì chữ trong card bị đo giữa hiệu ứng mở.
+  const all: Animation[] = [...document.getAnimations()];
+  const walk = (root: Document | ShadowRoot): void => {
+    for (const el of Array.from(root.querySelectorAll("*"))) {
+      if (el.shadowRoot) {
+        all.push(...el.shadowRoot.getAnimations());
+        walk(el.shadowRoot);
+      }
+    }
+  };
+  walk(document);
+  const finite = [...new Set(all)].filter((a) => {
     const t = a.effect?.getComputedTiming();
     return a.playState === "running" && t !== undefined && Number.isFinite(Number(t.endTime));
   });
@@ -791,7 +805,19 @@ export function markVietnameseText(max: number): string[] {
 
 /** Animation còn chạy (dùng sau khi giả lập prefers-reduced-motion: reduce). */
 export function probeMotion(): { running: number; samples: string[] } {
-  const anims = document.getAnimations().filter((a) => {
+  // Gom cả hoạt ảnh trong open shadow root (document.getAnimations() bỏ sót, xem settleAnimations): thẻ web component
+  // bỏ qua prefers-reduced-motion từng qua được phép đo cứng này (19/11/2026).
+  const all: Animation[] = [...document.getAnimations()];
+  const walk = (root: Document | ShadowRoot): void => {
+    for (const el of Array.from(root.querySelectorAll("*"))) {
+      if (el.shadowRoot) {
+        all.push(...el.shadowRoot.getAnimations());
+        walk(el.shadowRoot);
+      }
+    }
+  };
+  walk(document);
+  const anims = [...new Set(all)].filter((a) => {
     if (a.playState !== "running") return false;
     const t = a.effect?.getComputedTiming();
     const dur = typeof t?.duration === "number" ? t.duration : 0;
@@ -828,4 +854,103 @@ export function installVitals(): void {
   } catch {
     /* trình duyệt không hỗ trợ ⇒ để 0 */
   }
+}
+
+/**
+ * Ghi lại script đọc chế độ màu bằng `matchMedia("(prefers-color-scheme…)")` (addInitScript). Trang đọc một lần lúc
+ * nạp mà không nghe sự kiện `change` sẽ không đổi màu khi cổng đổi chế độ tại chỗ (`emulateMedia`), nên lượt tối đo
+ * nhầm màu sáng. Cổng hỏi `schemeReadOnce` sau lần nạp đầu: có thì mỗi chế độ màu nạp riêng một lần.
+ */
+export function installSchemeWatch(): void {
+  const w = window as unknown as { __dkScheme: Array<{ read: boolean; listening: boolean }> };
+  w.__dkScheme = [];
+  const orig = window.matchMedia.bind(window);
+  window.matchMedia = (q: string): MediaQueryList => {
+    const mql = orig(q);
+    if (!/prefers-color-scheme/i.test(q)) return mql;
+    const rec = { read: false, listening: false };
+    w.__dkScheme.push(rec);
+    const add = mql.addEventListener.bind(mql);
+    mql.addEventListener = ((type: string, ...rest: [EventListenerOrEventListenerObject, (boolean | AddEventListenerOptions)?]) => {
+      if (type === "change") rec.listening = true;
+      add(type, ...rest);
+    }) as typeof mql.addEventListener;
+    const addL = mql.addListener.bind(mql);
+    mql.addListener = (cb) => {
+      rec.listening = true;
+      addL(cb);
+    };
+    const desc = Object.getOwnPropertyDescriptor(MediaQueryList.prototype, "matches");
+    Object.defineProperty(mql, "matches", {
+      get() {
+        rec.read = true;
+        return desc?.get?.call(mql) as boolean;
+      },
+    });
+    const onchange = Object.getOwnPropertyDescriptor(MediaQueryList.prototype, "onchange");
+    Object.defineProperty(mql, "onchange", {
+      set(v: unknown) {
+        rec.listening = true;
+        onchange?.set?.call(mql, v);
+      },
+      get: () => onchange?.get?.call(mql) as unknown,
+    });
+    return mql;
+  };
+}
+
+/** Có script đọc chế độ màu (`.matches`) mà không nghe `change` không (xem installSchemeWatch). */
+export function schemeReadOnce(): boolean {
+  const list = (window as unknown as { __dkScheme?: Array<{ read: boolean; listening: boolean }> }).__dkScheme ?? [];
+  return list.some((m) => m.read && !m.listening);
+}
+
+/**
+ * Dấu vân bố cục và màu của trang ở khổ và chế độ hiện tại: vị trí, cỡ (làm tròn 1px), màu chữ, màu nền, cỡ chữ của
+ * mọi phần tử hiện ra (đi xuyên open shadow root), băm thành một chuỗi ngắn. Cổng dùng nó để tự kiểm cách đổi khổ tại
+ * chỗ (P7): dấu vân của trang đã đổi khổ phải trùng hệt dấu vân của một lần nạp mới ở cùng khổ.
+ * Trả kèm `count` (số phần tử đã tính) và `sample` (vài dòng đầu) để ghi chú khi lệch.
+ */
+export function probeFingerprint(): { hash: string; count: number; lines: string[] } {
+  const lines: string[] = [];
+  const sx = window.scrollX;
+  const sy = window.scrollY;
+  // Phần tử đang chạy hiệu ứng (khung xương nhấp nháy, vòng xoay) và con của nó đổi độ mờ, màu, vị trí theo thời gian,
+  // không theo cách nạp: bỏ khỏi dấu vân, không thì hai lần đo ở hai thời điểm luôn lệch (trang-thai React, 19/11/2026).
+  const animated = new Set<Element>();
+  const collect = (root: Document | ShadowRoot): void => {
+    for (const a of root.getAnimations()) {
+      const t = (a.effect as KeyframeEffect | null)?.target;
+      if (a.playState === "running" && t) animated.add(t);
+    }
+    for (const el of Array.from(root.querySelectorAll("*"))) if (el.shadowRoot) collect(el.shadowRoot);
+  };
+  collect(document);
+  const moving = (el: Element): boolean => {
+    for (let e: Element | null = el; e; e = e.parentElement ?? (e.parentNode instanceof ShadowRoot ? e.parentNode.host : null)) {
+      if (animated.has(e)) return true;
+    }
+    return false;
+  };
+  const walk = (root: Document | ShadowRoot): void => {
+    for (const el of Array.from(root.querySelectorAll("*"))) {
+      if (el.shadowRoot) walk(el.shadowRoot);
+      if (animated.size && moving(el)) continue;
+      const r = el.getBoundingClientRect();
+      if (!r.width && !r.height) continue;
+      const cs = getComputedStyle(el);
+      if (cs.display === "none" || cs.visibility === "hidden") continue;
+      const tag = el.tagName.toLowerCase() + (el.id ? `#${el.id}` : "");
+      lines.push(`${tag} ${Math.round(r.left + sx)},${Math.round(r.top + sy)} ${Math.round(r.width)}x${Math.round(r.height)} ${cs.color} ${cs.backgroundColor} ${cs.fontSize} ${cs.opacity}`);
+    }
+  };
+  walk(document);
+  // FNV-1a 32 bit: đủ để so trùng/lệch, không cần chống va chạm.
+  let h = 0x811c9dc5;
+  const all = lines.join("\n");
+  for (let i = 0; i < all.length; i++) {
+    h ^= all.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return { hash: h.toString(16), count: lines.length, lines };
 }

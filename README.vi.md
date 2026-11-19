@@ -256,7 +256,7 @@ Cờ của `check`:
 | --- | --- |
 | `--query <q,q>` | Chạy mỗi trang một lần cho mỗi chuỗi truy vấn, ví dụ `dk=dem,dk=giay,dk=dam` |
 | `--steps <tệp.json\|json>` / `--no-steps` | Các trạng thái cần bấm hay gõ để tới (thay cho `<trang>.steps.json`) / bỏ qua tệp steps |
-| `--viewports <w,w>` | Bề rộng tính bằng px (mặc định `320,390,1280`; 320 chỉ dùng để đo tràn ngang) |
+| `--viewports <w,w>` | Bề rộng tính bằng px (mặc định `320,390,1280`; mọi khổ được đo đủ) |
 | `--schemes <light,dark>` | Chế độ màu cần render (mặc định cả hai) |
 | `--shots <thư mục>` / `--no-shots` | Thư mục ảnh chụp (mặc định `.design-kit/shots`) / không chụp |
 | `--no-impeccable` | Bỏ qua Impeccable (nhanh hơn) |
@@ -264,6 +264,8 @@ Cờ của `check`:
 | `--focus <n>` | Số điểm dừng Tab cần xem (mặc định 15) |
 | `--strict` | Thoát 1 khi có trang bị lỗi cứng |
 | `--jobs <n>` | Số trang kiểm cùng lúc (mặc định 3, tối đa 8) |
+| `--sweep` | Đo thêm tràn ngang ở các khổ trung gian (360, 414, 480, 600, 768, 900, 1024, 1180 trong dải `--viewports`), khoảng 0,1 giây mỗi khổ |
+| `--fresh` | Nạp lại trang cho mỗi khổ và mỗi chế độ màu. Mặc định trang được nạp một lần rồi đổi khổ, đổi sang tối ngay tại chỗ; một lần nạp mới mỗi trang phải cho cùng bố cục, trang nào lệch thì đo lại bằng cách nạp mới |
 | `--limit <n>` / `--full` | Số phát hiện hiển thị (mặc định 25) / hiện hết |
 
 Tệp steps là danh sách trạng thái. Mỗi trạng thái bắt đầu từ một lần nạp trang mới và chạy thao tác của riêng nó:

@@ -89,10 +89,10 @@ export function runImpeccable(bin: string, url: string, viewport: string): Promi
     child.on("close", (code) => {
       try {
         const parsed = JSON.parse(out) as ImpFinding[];
-        if (code === 1 && parsed.length === 0) return done({ error: (err.trim().split("\n").pop() ?? "scan failed").slice(0, 200) });
+        if (code === 1 && parsed.length === 0) return done({ error: (err.trim().split("\n").pop() || "scan failed").slice(0, 200) });
         done({ findings: parsed });
       } catch {
-        done({ error: `exit ${code}: ${(err.trim().split("\n").pop() ?? "no JSON").slice(0, 200)}` });
+        done({ error: `exit ${code}: ${(err.trim().split("\n").pop() || "no JSON").slice(0, 200)}` });
       }
     });
   });
