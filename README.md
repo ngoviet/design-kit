@@ -92,9 +92,9 @@ Requirements:
 - **Node.js ≥ 20**
 - **Microsoft Edge or Google Chrome.** Without either, the gate falls back to Playwright's Chromium:
   `npx playwright install chromium`.
-- **The Impeccable detector engine** (on by default, skip with `--no-impeccable`). `design-kit setup` uses the engine
-  bundled with the Impeccable skill if you have it, otherwise downloads the pinned version (0.1.19) and verifies
-  its sha256.
+- **The Impeccable detector engine** (on by default, skip with `--no-impeccable`). `design-kit setup` downloads the
+  pinned version (0.1.27) and verifies its sha256; the gate uses the pinned engine first and falls back to the one
+  bundled with the Impeccable skill.
 
 From the latest release (no clone needed):
 

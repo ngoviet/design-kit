@@ -90,8 +90,8 @@ Yêu cầu:
 - **Node.js ≥ 20**
 - **Microsoft Edge hoặc Google Chrome.** Không có cả hai thì cổng dùng Chromium của Playwright:
   `npx playwright install chromium`.
-- **Engine Impeccable** (bật mặc định, bỏ qua bằng `--no-impeccable`). `design-kit setup` dùng engine đi kèm skill
-  Impeccable nếu máy đã có, nếu không thì tải bản ghim (0.1.19) và kiểm sha256.
+- **Engine Impeccable** (bật mặc định, bỏ qua bằng `--no-impeccable`). `design-kit setup` tải bản ghim (0.1.27) và
+  kiểm sha256; cổng dùng engine đã ghim trước, không có thì dùng engine đi kèm skill Impeccable.
 
 Từ bản phát hành mới nhất (không cần clone):
 

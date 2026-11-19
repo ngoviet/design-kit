@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Impeccable engine pinned to 0.1.27 (was 0.1.19), and the gate now prefers the pinned engine
+  (`~/.impeccable/bin/<version>`, then `~/.design-kit`) over the one bundled with the Impeccable skill: before, a
+  machine with the skill installed kept running the skill's older engine whatever the pin said. Its new `side-tab`
+  rule caught the `dau-trang` block's left stripe on the current item of the folded menu; the item is now marked by
+  background, weight and accent color. The shadow DOM issue (pbakaus/impeccable#1360) is still open upstream.
 - axe-core 4.14.1 (fewer false `target-size` and contrast results on absolutely positioned elements). The full gate
   gives the same findings as with 4.14.0.
 - `check` loads each page once and resizes it and switches it to dark in place, instead of a fresh load for every

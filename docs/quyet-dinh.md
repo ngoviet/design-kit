@@ -93,7 +93,7 @@ Chủ hỏi có nên đóng gói và gộp các phụ thuộc vào dự án đ�
 | Bằng chứng | `docs/nguon.md` xuất từ kho tri thức: 28 nguồn, 36 luận điểm. |
 | Lint DESIGN.md | `@google/design.md` thành devDependency, chạy bằng `npm run lint:design`. |
 | Trình duyệt | Không gộp. Thêm đường lùi: Chromium của Playwright. |
-| Engine Impeccable | Không gộp. Ghim bản 0.1.19 và sha256; `design-kit setup` tải khi thiếu. Đã thử tải thật, sha256 khớp. |
+| Engine Impeccable | Không gộp. Ghim bản và sha256 (0.1.19, từ 19/11/2026 là 0.1.27); `design-kit setup` tải khi thiếu. Đã thử tải thật, sha256 khớp. |
 | Skill khác | Không gộp. |
 | Plugin | `.claude-plugin/` gồm plugin và marketplace. Có `skills/design-kit/` và hook `hooks/nhac-giao-dien.mjs`: nhắc khi sửa tệp giao diện, chặn "báo xong" một lần nếu chưa chạy cổng. `claude plugin validate` đạt. |
 | Gói npm | Thêm trường `files`, vì `.gitignore` sẽ làm rơi `dist/`. Đã thử cài từ gói ra một thư mục tạm: `design-kit`, `doi-mau` và `check` đều chạy. |

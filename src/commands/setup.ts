@@ -11,7 +11,7 @@ flags[2]:
   --download: download the pinned engine even when one is already found (into the design-kit cache)
   --no-browser: skip the browser check
 notes[2]:
-  Engine search order: IMPECCABLE_BIN, the impeccable skill's bundled binary, ~/.impeccable/bin/<version>, ~/.design-kit/impeccable/<version>
+  Engine search order: IMPECCABLE_BIN, ~/.impeccable/bin/<version>, ~/.design-kit/impeccable/<version> (the pinned version, sha256 checked), then the impeccable skill's bundled binary (whatever version the skill ships)
   Browser order: DK_BROWSER, Edge, Chrome, Playwright's Chromium (\`npx playwright install chromium\`)
 `;
 
