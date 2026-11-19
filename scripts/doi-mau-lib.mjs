@@ -17,7 +17,9 @@ export const HUONG = ["dem", "giay", "dam"];
 export function doiMau({ huong, nhan: H, trungTinh: N }) {
   let css = readFileSync(join(root, "tokens", `${huong}.css`), "utf8");
   const orig = blocks(css, huong);
-  const clampC = (L, C, h) => Math.min(C, maxChroma(L, h) * 0.98);
+  // Làm tròn XUỐNG 3 chữ số như lúc ghi ra (ok()): làm tròn thường đẩy chroma sát biên ra ngoài gam sRGB
+  // (hướng dem, sắc 10–35 và 250–285: 0,00474 ghi thành 0,005; 19/11/2026).
+  const clampC = (L, C, h) => Math.min(C, Math.floor(maxChroma(L, h) * 0.98 * 1000) / 1000);
 
   function solve(v, mode) {
     const out = { ...v };

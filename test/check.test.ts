@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "../src/cli.js";
@@ -7,6 +7,7 @@ import { inputZoomFinding } from "../src/zoom.js";
 import { isFontSheet, tagAttrs } from "../src/commands/inline.js";
 import { pageWeight, paneUrl, weightDetail } from "../src/standalone.js";
 import { parseSteps } from "../src/steps.js";
+import { applyWaivers, parseWaivers } from "../src/waivers.js";
 
 const root = join(__dirname, "..");
 
@@ -29,6 +30,115 @@ describe("impGate", () => {
     // Khẩu vị bảng màu, không phải công năng (A/B đợt 2)
     expect(impGate({ antipattern: "cream-palette", category: "slop" })).toBe("soft");
   });
+});
+
+describe("waivers (N8)", () => {
+  const f = (gate: "hard" | "soft", check: string, where: string) => ({ gate, check, where });
+  const reports = () => [
+    { target: "a.html?dk=dem", findings: new Map([["1", f("soft", "standalone", "data: URL")], ["2", f("hard", "axe", "color-contrast")], ["3", f("soft", "guide", "button")]]) },
+    { target: "a.html?dk=giay #loi", findings: new Map([["1", f("soft", "standalone", "data: URL")]]) },
+  ];
+  const w = (check: string, where: string, page = "a.html") => ({ page, check, where, reason: "khối liên kết token theo đường dẫn" });
+  it("removes matching soft findings on every query and state of the page, refuses hard ones, reports unused", () => {
+    const rs = reports();
+    const res = applyWaivers(rs, [w("standalone", "data: URL"), w("axe", "color-contrast"), w("copy", "p", "b.html")]);
+    expect(rs[0]!.findings.size).toBe(2);
+    expect(rs[1]!.findings.size).toBe(0);
+    expect(res.used).toEqual([expect.objectContaining({ check: "standalone", count: 2 })]);
+    expect(res.refused.map((x) => x.check)).toEqual(["axe"]);
+    // b.html không có trong lượt chạy: không nhắc gỡ. Mục của a.html không khớp gì thì nhắc.
+    expect(res.unused).toEqual([]);
+    expect(applyWaivers(reports(), [w("copy", "p")]).unused.map((x) => x.where)).toEqual(["p"]);
+  });
+  it("uses only the first 5 waivers of a page and rejects a reason that says nothing", () => {
+    const many = Array.from({ length: 6 }, (_, i) => w("guide", `x${i}`));
+    expect(applyWaivers(reports(), many).tooMany).toEqual(["a.html"]);
+    expect(() => parseWaivers('[{"page":"a.html","check":"guide","where":"b","reason":"ok"}]', "w.json")).toThrow(/shorter than 12/);
+    expect(() => parseWaivers('{"page":"a.html"}', "w.json")).toThrow(/JSON array/);
+  });
+  it("check lists waived findings and drops them from the counts", async () => {
+    const file = join(root, ".design-kit", "test", "mien-tru.json");
+    mkdirSync(join(root, ".design-kit", "test"), { recursive: true });
+    writeFileSync(file, JSON.stringify([{ page: "test/fixtures/tot.html", check: "standalone", where: "data: URL", reason: "trang mẫu liên kết token theo đường dẫn, chỉ chạy qua http" }]));
+    const { out } = await run(["check", "test/fixtures/tot.html", ...FAST, "--waivers", ".design-kit/test/mien-tru.json", "--full"]);
+    expect(out).toMatch(/waived\[1\]\{page,check,where,findings,reason\}:\n {2}test\/fixtures\/tot\.html,standalone,"data: URL",1,/);
+    expect(out).toContain("standalone,soft,ok");
+    const missing = await run(["check", "test/fixtures/tot.html", ...FAST, "--waivers", "khong-co.json"]);
+    expect(missing.out).toContain("--waivers: not found");
+  }, 120_000);
+});
+
+describe("cache (N7)", () => {
+  it("reuses the result of an unchanged page and measures again when a file it loads changes", async () => {
+    const d = join(root, ".design-kit", "test", "dem-test");
+    mkdirSync(d, { recursive: true });
+    writeFileSync(join(d, "a.html"), '<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Đệm</title><link rel="stylesheet" href="kieu.css"></head><body><main><h1>Trang đệm</h1><p>Đoạn chữ thử bộ đệm của cổng.</p></main></body></html>');
+    writeFileSync(join(d, "kieu.css"), `body{font:16px/1.6 system-ui;color:#111;background:#fff} /* ${Date.now()} */`);
+    const args = ["check", ".design-kit/test/dem-test/a.html", ...FAST, "--full"];
+    expect((await run(args)).out).not.toContain("cache:");
+    const again = await run(args);
+    expect(again.out).toContain("1 of 1 pages unchanged since their last check");
+    expect(again.out).toContain("pass: 1 pages");
+    // Một tệp trang nạp đổi (CSS, không phải HTML): đo lại.
+    writeFileSync(join(d, "kieu.css"), "body{font:11px/1.6 system-ui;color:#111;background:#fff}");
+    const changed = await run(args);
+    expect(changed.out).not.toContain("cache:");
+    expect(changed.out).toMatch(/hard,text-min,.*11\.0px/);
+    // Cờ khác là khoá khác; --no-cache luôn đo.
+    expect((await run([...args, "--no-cache"])).out).not.toContain("cache:");
+  }, 120_000);
+
+  // Ba ca reviewer độc lập dựng ra (19/11/2026), mỗi ca từng cho kết quả cũ từ bộ đệm.
+  const page = (dir: string, body: string) => {
+    const d = join(root, ".design-kit", "test", dir);
+    rmSync(d, { recursive: true, force: true });
+    mkdirSync(d, { recursive: true });
+    writeFileSync(join(d, "a.html"), `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Đệm</title>${body}`);
+    return { d, args: ["check", `.design-kit/test/${dir}/a.html`, ...FAST, "--no-standalone", "--full"] };
+  };
+  it("a file that was missing (404) and appears later is measured again", async () => {
+    const { d, args } = page("dem-thieu", '<style>body{margin:0;font:16px/1.6 system-ui}</style></head><body><main><h1>Ảnh</h1><p>Ảnh chưa có.</p><img src="anh.svg" alt="Sơ đồ"></main></body></html>');
+    expect((await run(args)).out).toContain("overflow,hard,ok");
+    writeFileSync(join(d, "anh.svg"), '<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="20"><rect width="2000" height="20"/></svg>');
+    const after = await run(args);
+    // Có thể trúng một mục đệm đúng của lượt chạy trước với cùng tệp; điều cần là kết quả mới, không phải kết quả cũ.
+    expect(after.out).toMatch(/hard,overflow,390px/);
+  }, 120_000);
+  it("a page with a hard load error is not cached: fixing the missing stylesheet is seen", async () => {
+    const { d, args } = page("dem-loi", '<link rel="stylesheet" href="kieu.css"></head><body><main><h1>Kiểu</h1><p>Thiếu tệp kiểu.</p></main></body></html>');
+    expect((await run(args)).out).toMatch(/hard,errors,.*kieu\.css/);
+    writeFileSync(join(d, "kieu.css"), "body{margin:0;font:16px/1.6 system-ui;color:#111;background:#fff}");
+    const after = await run(args);
+    // Tương tự: trúng đệm của cùng nội dung là đúng; không được là lỗi 404 cũ.
+    expect(after.out).toContain("errors,hard,ok");
+  }, 120_000);
+});
+
+describe("pause and reveal: cases from the independent review", () => {
+  const page = (name: string, html: string) => {
+    const d = join(root, ".design-kit", "test", "pr");
+    mkdirSync(d, { recursive: true });
+    writeFileSync(join(d, `${name}.html`), `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${name}</title>${html}`);
+    return `.design-kit/test/pr/${name}.html`;
+  };
+  const O = ["--no-impeccable", "--no-shots", "--no-standalone", "--no-cache", "--viewports", "1280", "--schemes", "light", "--full"];
+  const css = "<style>body{margin:0;font:16px/1.6 system-ui;color:#111;background:#fff} main{padding:16px}";
+  it("pause: a button whose name only contains 'ẩn' inside a word does not count as a pause control; a delay is not motion", async () => {
+    const a = page("chuan-bi", `${css} .bang span{display:inline-block;animation:chay 12s linear infinite} @keyframes chay{to{transform:translateX(-100%)}} @media (prefers-reduced-motion:reduce){.bang span{animation:none}}</style></head><body><main><h1>Tin</h1><button type="button">Chuẩn bị đơn hàng</button><div class="bang"><span>Giảm giá 30% cho mọi đơn hàng trong tuần này</span></div></main></body></html>`);
+    expect((await run(["check", a, ...O])).out).toMatch(/soft,pause,span/);
+    const b = page("tre", `${css} .hop{width:200px;height:100px;background:#eef;animation:lac .8s ease 5.5s both} @keyframes lac{from{opacity:.5}to{opacity:1}} @media (prefers-reduced-motion:reduce){.hop{animation:none}}</style></head><body><main><h1>Hộp</h1><div class="hop">Hộp hiện sau một lúc</div></main></body></html>`);
+    expect((await run(["check", b, ...O])).out).toContain("pause,soft,ok");
+  }, 120_000);
+  it("reveal: a working reveal in an inner scroll box, a collapsed hidden panel and a delayed transition are fine", async () => {
+    const script = '<script>const io=new IntersectionObserver((es)=>es.forEach((e)=>e.isIntersecting&&e.target.classList.add("in")));document.querySelectorAll(".reveal").forEach((el)=>io.observe(el));</script>';
+    const sections = '<section><h2 class="reveal" id="p1">Phần một của câu chuyện</h2></section><section><h2 class="reveal" id="p2">Phần hai của câu chuyện</h2></section>';
+    const box = page("khung-cuon", `${css} main{height:100vh;overflow:auto} section{min-height:90vh} .reveal{opacity:0;transition:opacity .3s} .reveal.in{opacity:1}</style></head><body><main><h1>Chuyện</h1>${sections}</main>${script}</body></html>`);
+    expect((await run(["check", box, ...O])).out).toContain("reveal,soft,ok");
+    const panel = page("thu-gon", `${css} .tam{max-height:0;overflow:hidden;opacity:0;visibility:hidden}</style></head><body><main><h1>Câu hỏi</h1><div class="tam" id="t1">Câu trả lời đang thu gọn</div></main></body></html>`);
+    expect((await run(["check", panel, ...O])).out).toContain("reveal,soft,ok");
+    const late = page("tre-hien", `${css} section{min-height:90vh} .reveal{opacity:0;transition:opacity .6s ease .5s} .reveal.in{opacity:1}</style></head><body><main><h1>Chuyện</h1>${sections}</main>${script}</body></html>`);
+    expect((await run(["check", late, ...O])).out).toContain("reveal,soft,ok");
+  }, 120_000);
 });
 
 describe("inputZoomFinding: when tapping a field makes iOS zoom the page", () => {
@@ -117,6 +227,19 @@ describe("inline", () => {
     const again = await run(["inline", ".design-kit/test/tot-gop.html"]);
     expect(again.out).toContain("nothing to inline");
     expect(again.out).toContain("nothing written: no change");
+  });
+
+  it("rewrites url() in a nested @import once, relative to the page", async () => {
+    const d = join(tmp, "long-nhau");
+    mkdirSync(join(d, "css", "sub"), { recursive: true });
+    writeFileSync(join(d, "page.html"), '<!doctype html><html lang="vi"><head><link rel="stylesheet" href="css/main.css"></head><body><p>x</p></body></html>');
+    writeFileSync(join(d, "css", "main.css"), '@import "sub/a.css";\nbody { background: url(nen.png); }');
+    writeFileSync(join(d, "css", "sub", "a.css"), "p { background: url(img.png); }");
+    await run(["inline", ".design-kit/test/long-nhau/page.html"]);
+    const html = readFileSync(join(d, "page.html"), "utf8");
+    expect(html).toContain('url("css/sub/img.png")');
+    expect(html).toContain('url("css/nen.png")');
+    expect(html).not.toContain("css/css/");
   });
 
   it("refuses a file that is not a page", async () => {
@@ -281,6 +404,8 @@ describe("check on real pages", () => {
     expect(out).toMatch(/text-min,.*p#nho.*10\.0px/);
     expect(out).not.toContain("nothing visible");
     expect(out).toMatch(/content appeared \d+ ms after the network went idle/);
+    // Bản data: URL cũng đợi nội dung đến muộn: không báo nhầm "shows nothing" (19/11/2026).
+    expect(out).not.toMatch(/standalone,.*shows nothing/);
   }, 120_000);
 
   it("standalone: a page that links its CSS by path loses it when opened as a file", async () => {
@@ -330,6 +455,113 @@ describe("check on real pages", () => {
     expect(out).toMatch(/text-min,.*span#co-transform.*light\/320/);
   }, 120_000);
 
+  it("resize in place: a page that reads the color scheme once at load gets one load per scheme, so dark is really dark", async () => {
+    const { out } = await run(["check", "test/fixtures/doc-mau.html", "--no-impeccable", "--no-shots", "--no-standalone", "--viewports", "390,1280", "--full"]);
+    expect(out).toContain("each color scheme loaded fresh");
+    expect(out).toMatch(/hard,axe,color-contrast,.*dark\/1280 dark\/390/);
+    expect(out).not.toMatch(/color-contrast.*light\//);
+  }, 120_000);
+
+  it("resize in place: a page laid out by a script that reads the width once is caught by the self-check and measured fresh", async () => {
+    const { out } = await run(["check", "test/fixtures/doc-kho.html", "--no-impeccable", "--no-shots", "--no-standalone", "--viewports", "390,1280", "--schemes", "light", "--full"]);
+    expect(out).toContain("resize in place not used (layout at 390px after resizing differs from a fresh load)");
+    // Nạp mới ở 390 thì bảng 100%: không tràn. Đo trên trang đã đổi khổ sẽ báo tràn nhầm.
+    expect(out).toContain("overflow,hard,ok");
+  }, 120_000);
+
+  it("--fresh and resize in place give the same findings on a kit block", async () => {
+    const args = ["check", "blocks/html/form-dang-nhap.html", "--query", "dk=giay", "--no-impeccable", "--no-shots", "--no-standalone", "--full"];
+    const findings = (o: string) => o.slice(o.indexOf("findings"), o.indexOf("notes"));
+    const [a, b] = [await run(args), await run([...args, "--fresh"])];
+    expect(a.out).not.toContain("resize in place not used");
+    expect(findings(a.out)).toBe(findings(b.out));
+  }, 120_000);
+
+  it("a .htm page with a strict CSP is checked (axe loads), and line-height exactly 1.2 passes", async () => {
+    const { out } = await run(["check", "test/fixtures/csp.htm", "--no-impeccable", "--no-shots", "--no-standalone", "--schemes", "light", "--full"]);
+    expect(out).toMatch(/csp\.htm,pass/);
+    expect(out).toContain("axe,hard,ok");
+    expect(out).toContain("heading-lh,hard,ok");
+  }, 120_000);
+
+  it("an infinite animation inside a shadow root that ignores reduced motion is a hard motion failure", async () => {
+    const { out } = await run(["check", "test/fixtures/bong-xoay.html", ...FAST, "--full"]);
+    expect(out).toMatch(/hard,motion,.*xoay.*prefers-reduced-motion/);
+  }, 120_000);
+
+  // Bốn ca reviewer độc lập dựng ra (19/11/2026), mỗi ca từng làm cách đổi khổ tại chỗ cho "pass" trong khi --fresh trượt.
+  describe("resize in place: the self-check is not fooled", () => {
+    const O = ["--no-impeccable", "--no-shots", "--no-standalone", "--no-copy", "--full"];
+    const verdict = (out: string, f: string) => new RegExp(`${f}\\.html,(pass|fail)`).exec(out)?.[1];
+    it("a script error that only happens when loaded narrow is reported", async () => {
+      const { out } = await run(["check", "test/fixtures/loi-hep.html", "--viewports", "390,1280", ...O]);
+      expect(out).toMatch(/hard,errors,page,"uncaught ReferenceError: khoiTaoMenuDiDong/);
+    }, 120_000);
+    it("an animated body background does not blind the fingerprint", async () => {
+      const { out } = await run(["check", "test/fixtures/nen-chay.html", "--viewports", "390,1280", ...O]);
+      expect(out).toMatch(/hard,overflow,390px/);
+    }, 120_000);
+    it("a page that keeps state from a narrow width is redone fresh, so dark at 1280 is measured right", async () => {
+      const a = await run(["check", "test/fixtures/an-menu.html", "--viewports", "390,1280", ...O]);
+      const b = await run(["check", "test/fixtures/an-menu.html", "--viewports", "390,1280", ...O, "--fresh"]);
+      expect(a.out).toContain("after visiting narrower widths differs from the first load");
+      expect(verdict(a.out, "an-menu")).toBe(verdict(b.out, "an-menu"));
+      expect(a.out).toMatch(/hard,axe,color-contrast,.*dark\/1280/);
+    }, 120_000);
+    it("with 320 and one wide width the resize is still verified (at the narrowest width)", async () => {
+      const { out } = await run(["check", "test/fixtures/doc-kho.html", "--viewports", "320,1280", "--schemes", "light", ...O]);
+      expect(out).toContain("layout at 320px after resizing differs from a fresh load");
+      expect(out).toContain("overflow,hard,ok");
+      expect(out.match(/focus stops inspected at 1280px/g)?.length).toBe(1);
+    }, 120_000);
+    it("--sweep waits for a width transition before reading overflow", async () => {
+      const { out } = await run(["check", "test/fixtures/tran-chuyen.html", "--schemes", "light", "--sweep", ...O]);
+      expect(out).toMatch(/hard,overflow,768px/);
+    }, 120_000);
+  });
+
+  it("pause (WCAG 2.2.2): a marquee that runs forever with no pause control is soft; a spinner or a pause button is fine", async () => {
+    const a = await run(["check", "test/fixtures/chay-mai.html", ...FAST, "--full"]);
+    expect(a.out).toMatch(/soft,pause,span,"?chay runs forever with no pause or stop control/);
+    expect(a.out).not.toMatch(/pause,div\.xoay/);
+    const b = await run(["check", "test/fixtures/chay-co-dung.html", ...FAST, "--full"]);
+    expect(b.out).toContain("pause,soft,ok");
+  }, 120_000);
+
+  it("reveal: text that a scroll reveal never shows with reduced motion is soft; a hover tip and a working reveal are fine", async () => {
+    const a = await run(["check", "test/fixtures/hien-dan.html", ...FAST, "--full"]);
+    expect(a.out).toMatch(/soft,reveal,h2#phan-1,.*stays invisible/);
+    expect(a.out).toMatch(/soft,reveal,h2#phan-2/);
+    expect(a.out).not.toMatch(/reveal,span\.meo/);
+    const b = await run(["check", "test/fixtures/hien-dan-dung.html", ...FAST, "--full"]);
+    expect(b.out).toContain("reveal,soft,ok");
+  }, 120_000);
+
+  it("axe-bp: best-practice rules are soft findings of their own, WCAG rules keep their gate", async () => {
+    const { out } = await run(["check", "test/fixtures/chay-mai.html", ...FAST, "--full"]);
+    expect(out).toMatch(/axe-bp,soft,/);
+    expect(out).not.toMatch(/hard,axe-bp/);
+  }, 120_000);
+
+  it("--sweep finds overflow that only happens between the default widths", async () => {
+    const base = ["check", "test/fixtures/tran-giua.html", "--no-impeccable", "--no-shots", "--no-standalone", "--schemes", "light"];
+    expect((await run(base)).out).toContain("overflow,hard,ok");
+    const { out } = await run([...base, "--sweep", "--full"]);
+    expect(out).toMatch(/hard,overflow,768px,"page is \d+px wide, viewport 768px",light\/768/);
+    expect(out).not.toMatch(/overflow,(600|900|1024)px/);
+    const both = await run([...base, "--sweep", "--fresh"]);
+    expect(both.out).toContain("--sweep needs resize in place");
+  }, 120_000);
+
+  it("a page that does not load fails alone; the other pages are still checked", async () => {
+    const { out, code } = await run(["check", "test/fixtures/tot.html", "http://127.0.0.1:9/", ...FAST]);
+    expect(out).toMatch(/tot\.html,pass/);
+    expect(out).toMatch(/hard,.*render,page,"?page did not load/);
+    expect(code).toBeUndefined();
+    const only = await run(["check", "http://127.0.0.1:9/", ...FAST]);
+    expect(only.out).toContain("LOAD_FAILED");
+  }, 120_000);
+
   it("input-zoom: typing fields with small text at phone width are reported, other controls are not", async () => {
     const { out } = await run(["check", "test/fixtures/o-nho.html", ...FAST, "--full"]);
     // Ca rõ ràng ở mọi cách đặt ngưỡng: 13px và 14px bị phóng to, 16px thì không, ô tích không mở bàn phím.
@@ -343,6 +575,10 @@ describe("check on real pages", () => {
     expect(out).not.toMatch(/input-zoom,.*input#khoa/);
     const wide = await run(["check", "test/fixtures/o-nho.html", "--no-impeccable", "--no-shots", "--viewports", "1280", "--schemes", "light"]);
     expect(wide.out).toContain("input-zoom,soft,skipped");
+    // 320 cũng là khổ điện thoại: phép đo chạy ở đó, nên bảng không được ghi "skipped" khi đang có phát hiện.
+    const narrow = await run(["check", "test/fixtures/o-nho.html", "--no-impeccable", "--no-shots", "--viewports", "320", "--schemes", "light"]);
+    expect(narrow.out).toMatch(/soft,input-zoom,.*input#nho/);
+    expect(narrow.out).not.toContain("input-zoom,soft,skipped");
   }, 120_000);
 
   it("a page without a viewport meta fails: a phone lays it out 980px wide and shrinks it", async () => {

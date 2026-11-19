@@ -79,7 +79,8 @@ function expand(inputs: string[], cwd: string): string[] {
     const p = resolve(cwd, t);
     if (!existsSync(p)) fail(`not found: ${t}`, "VALIDATION_ERROR", ["Pass image files (svg, png, jpg, webp, avif, gif, ico, bmp) or a folder of them"]);
     if (statSync(p).isDirectory()) {
-      const files = readdirSync(p).filter((f) => FORMATS[extname(f).toLowerCase()]).sort();
+      // Chỉ tệp: thư mục tên "x.svg" từng lọt qua bộ lọc đuôi rồi làm readFileSync ném EISDIR, hỏng cả lượt.
+      const files = readdirSync(p).filter((f) => FORMATS[extname(f).toLowerCase()] && statSync(join(p, f)).isFile()).sort();
       if (!files.length) fail(`no images in ${t}`, "VALIDATION_ERROR", [`Formats: ${Object.keys(FORMATS).join(" ")}`]);
       out.push(...files.map((f) => join(p, f)));
     } else {
@@ -118,6 +119,10 @@ async function measure(page: Page, file: string, label: string, opts: { kind?: K
   const src = `data:${mime};base64,${bytes.toString("base64")}`;
   const svg = vector ? await svgFacts(page, bytes.toString("utf8")) : undefined;
   const nat = await naturalSize(page, src);
+  // SVG chỉ có viewBox: Chrome cho cỡ tự nhiên 300 × (300 / tỉ lệ), làm tròn về 0 khi hình dẹt hơn khoảng 600:1
+  // (viewBox "0 0 2000 1"), dù vẽ theo viewBox vẫn được. Lấy cỡ của viewBox.
+  const vb = viewSize(svg);
+  if (!nat.error && vb && (!nat.nw || !nat.nh)) [nat.nw, nat.nh] = vb;
   const base: Measures = {
     kind: opts.kind ?? "logo", format, bytes: bytes.length, nw: nat.nw, nh: nat.nh, vector, ...(svg ? { svg } : {}),
     inkMode: "alpha", visible: false, loss: [], compression: 0, colors: 0, swatches: [], blend: 0, mono: { pairs: [] }, colorfulness: 0,
@@ -277,7 +282,18 @@ export async function checkImageCommand(args: string[], rt: Runtime): Promise<Re
     const page = await ctx.newPage();
     await page.setContent("<!doctype html><title>design-kit</title>");
     for (const f of files) {
-      items.push(await measure(page, f, rel(f), { ...(kindArg !== "auto" ? { kind: kindArg as Kind } : {}), ...(display ? { display } : {}), bg }));
+      const kind = kindArg !== "auto" ? (kindArg as Kind) : undefined;
+      try {
+        items.push(await measure(page, f, rel(f), { ...(kind ? { kind } : {}), ...(display ? { display } : {}), bg }));
+      } catch (e) {
+        // Một ảnh hỏng (không đọc được, trình duyệt ném lỗi khi vẽ) chỉ hỏng ảnh đó, như ảnh không giải mã được.
+        const { format } = FORMATS[extname(f).toLowerCase()]!;
+        const m: Measures = {
+          kind: kind ?? "logo", format, bytes: 0, nw: 0, nh: 0, vector: format === "svg", inkMode: "alpha", visible: false, loss: [], compression: 0,
+          colors: 0, swatches: [], blend: 0, mono: { pairs: [] }, colorfulness: 0, decodeError: (e as Error).message.split("\n")[0]!.slice(0, 160),
+        };
+        items.push({ file: f, label: rel(f), src: "", m, kindWhy: kind ? "--kind" : "unknown", seeThrough: false });
+      }
     }
     // ---- Chấm, rồi so từng bộ icon: các icon cùng thư mục là một bộ (từ 3 icon) ----
     reports = items.map((it) => ({ it, s: scoreImage(it.m) }));
@@ -374,8 +390,9 @@ export async function checkImageCommand(args: string[], rt: Runtime): Promise<Re
  * Tên tệp tờ soát theo đường dẫn tương đối, giữ đuôi tệp: icons/a.svg và logos/a.svg, icon.svg và icon.png cùng thư
  * mục không ghi đè nhau. Chỉ bỏ đuôi ở tên tệp cuối, không ở "../" đầu đường dẫn.
  */
-const slugOf = (label: string): string => {
+export const slugOf = (label: string): string => {
   const ext = extname(label);
-  const stem = ext ? `${label.slice(0, -ext.length)}-${ext.slice(1).toLowerCase()}` : label;
+  // "../" đầu đường dẫn thành "up~": trước kia bị cắt đi, nên ../logo.svg và logo.svg ghi đè cùng một tờ.
+  const stem = (ext ? `${label.slice(0, -ext.length)}-${ext.slice(1).toLowerCase()}` : label).replace(/^(\.\.[\\/]?)+/, (m) => "up~".repeat(m.split("..").length - 1));
   return stem.replace(/[\\/]+/g, "~").replace(/[^\w.~-]+/g, "_").replace(/^[._~]+/, "") || "image";
 };

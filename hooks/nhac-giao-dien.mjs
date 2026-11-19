@@ -40,8 +40,25 @@ const stateDir = join(tmpdir(), "design-kit-hook");
 const stateFile = join(stateDir, `${session}.json`);
 const load = () => { try { return JSON.parse(readFileSync(stateFile, "utf8")); } catch { return {}; } };
 const save = (s) => { try { mkdirSync(stateDir, { recursive: true }); writeFileSync(stateFile, JSON.stringify(s)); } catch { /* bỏ qua */ } };
-const isUi = (f) => typeof f === "string" && UI.test(f) && !SKIP.test(f);
-const isImg = (f) => typeof f === "string" && IMG.test(f) && !SKIP.test(f) && (IMG_HINT.test(basename(f)) || IMG_HINT.test(basename(dirname(f))));
+/**
+ * Tệp nằm trong phần bỏ qua (node_modules, dist, fixtures…). Tệp trong thư mục của phiên: xét đường dẫn tương đối,
+ * để dự án nằm trong thư mục tên `build` hay `dist` (D:\build\shop\index.html) không bị bỏ qua cả dự án như trước
+ * 19/11/2026. Tệp ngoài thư mục đó (scratchpad của phiên): xét cả đường dẫn.
+ */
+const skipped = (f) => {
+  const cwd = typeof input.cwd === "string" && input.cwd ? input.cwd : process.cwd();
+  const abs = resolve(cwd, f);
+  // Gốc so: repo git gần nhất chứa tệp (cwd của phiên có thể nằm sâu trong test/fixtures), không có thì cwd.
+  let base = cwd;
+  for (let d = dirname(abs); ; d = dirname(d)) {
+    if (existsSync(join(d, ".git"))) { base = d; break; }
+    if (dirname(d) === d) break;
+  }
+  const rel = relative(base, abs);
+  return SKIP.test(rel && !rel.startsWith("..") && !isAbsolute(rel) ? rel : abs);
+};
+const isUi = (f) => typeof f === "string" && UI.test(f) && !skipped(f);
+const isImg = (f) => typeof f === "string" && IMG.test(f) && !skipped(f) && (IMG_HINT.test(basename(f)) || IMG_HINT.test(basename(dirname(f))));
 
 /** Đường dẫn để hiện cho AI: tương đối với cwd nếu nằm trong (cwd chính nó là "."), không thì tuyệt đối; gạch xuôi. */
 function show(p, cwd) {
@@ -134,20 +151,61 @@ const norm = (p) => p.replace(/\\/g, "/").toLowerCase();
 
 // `check` đứng riêng: `\b` sau "check" cũng khớp "check-image" và "check-mod" (dấu gạch không phải chữ), nên một lần
 // chấm hình từng được tính như đã chạy cổng trang.
-const GATE = /design-kit(\.js)?\s+check(?![\w-])/;
-const IMG_GATE = /design-kit(\.js)?\s+check-image\b/;
+// Lệnh phải ĐƯỢC CHẠY: đứng đầu một đoạn lệnh (đầu dòng, sau ; & | ( hay `time`), có thể qua npx hay node <đường dẫn>.
+// Trước 19/11/2026 chỉ cần chuỗi xuất hiện, nên `grep "design-kit check" README.md` hay một lời commit nhắc lệnh cũng
+// được tính là đã chạy cổng.
+// Đầu đoạn lệnh có thể kèm: biến môi trường (FORCE_COLOR=0), timeout/nice, cmd /c, npx/npm exec/pnpm exec/yarn/bunx
+// (kèm cờ, `--`, `@phiên-bản`), node (kèm cờ), đường dẫn tới design-kit(.js/.cmd), kể cả trong nháy có dấu cách.
+const RUN_AT = String.raw`(?:^|[;&|({\n]|\b(?:do|then|else|time|if|elif|while|until)\b)\s*(?:\w+=\S*\s+)*(?:(?:timeout|nice)\s+\S+\s+)?(?:cmd(?:\.exe)?\s+\/c\s+)?(?:(?:npx|bunx|yarn|pnpm\s+exec|npm\s+exec)\s+(?:-\S+\s+)*(?:--\s+)?)?(?:node(?:\.exe)?\s+(?:-\S+\s+)*)?(?:"[^"]*[\\/]|'[^']*[\\/]|[^\s"';&|]*[\\/])?design-kit(?:@[^\s"']+)?(?:\.js|\.mjs|\.cmd)?["']?\s+`;
+const GATE = new RegExp(`${RUN_AT}check(?![\\w-])`);
+const IMG_GATE = new RegExp(`${RUN_AT}check-image\\b`);
+/**
+ * Phần lệnh thật sự chạy: bỏ thân heredoc và chuỗi trong nháy (trừ chuỗi là đường dẫn tới design-kit), để lời commit
+ * hay `echo "…; design-kit check a.html"` không được tính là đã chạy cổng (reviewer 19/11/2026).
+ */
+const runText = (cmd) => cmd
+  .replace(/<<-?\s*(['"]?)(\w+)\1[\s\S]*?\n\s*\2\b/g, "<<H")
+  .replace(/"[^"]*"|'[^']*'/g, (m) => (/design-kit(?:\.js|\.mjs|\.cmd)?["']$/.test(m) ? m : "Q"));
+const ran = (re, cmd) => re.test(runText(cmd));
 const PLUGIN_TEST = /claude(?:\.exe)?\s+plugin\s+test\b([^;&|\r\n]*)/g;
+// Cổng mod của chính design-kit cũng chạy `claude plugin test` trên mod (kèm phép đo), nên tính như lệnh đó.
+const MOD_GATE = new RegExp(`${RUN_AT}check-mod\\b([^;&|\\r\\n]*)`, "g");
 const REPO_CHECK = /(?:^|[\s;&|(])(?:bash\s+|sh\s+|\.\/)[^\s;&|]*tools[\\/]check\.sh\b/;
 /** Lệnh có thể là một lần kiểm: cổng design-kit, chấm hình, `claude plugin test`, hoặc `tools/check.sh` của repo chứa mod. */
-const isCheck = (cmd) => GATE.test(cmd) || IMG_GATE.test(cmd) || /claude(?:\.exe)?\s+plugin\s+test\b/.test(cmd) || REPO_CHECK.test(cmd);
+const isCheck = (cmd) => ran(GATE, cmd) || ran(IMG_GATE, cmd) || /claude(?:\.exe)?\s+plugin\s+test\b/.test(cmd) || ran(new RegExp(`${RUN_AT}check-mod\\b`), cmd) || REPO_CHECK.test(cmd);
 
-/** Lệnh nêu tệp này: tên tệp, hay thư mục chứa nó (tuyệt đối hoặc tương đối với cwd; cwd là "." hay "./"). */
+/**
+ * Lệnh nêu tệp này: một đối số trỏ đúng tệp hay thư mục chứa nó (tuyệt đối, hoặc tương đối với cwd), hoặc đúng tên tệp
+ * đứng trơn (lệnh chạy sau `cd` vào thư mục đó). Trước 19/11/2026 hàm so chuỗi con, nên kiểm `old/footer-logo.svg` được
+ * tính là đã kiểm `brand/logo.svg`, và `check khac/index.html` phủ cả `app/index.html`.
+ */
 function names(cmd, file, cwd) {
-  const c = ` ${norm(cmd)} `.replace(/["']/g, " ");
-  if (c.includes(norm(basename(file)))) return true;
-  const dirs = [norm(dirname(file)), norm(relative(cwd, dirname(file)))];
-  if (dirs[1] === "") dirs.push(".", "./");
-  return dirs.some((d) => d && (c.includes(` ${d} `) || c.includes(` ${d}/ `)));
+  const f = norm(file);
+  const d = norm(dirname(file));
+  const base = norm(basename(file));
+  // Đường dẫn tương đối tính từ cwd hoặc từ thư mục `cd` gần nhất trong cùng lệnh; giữ nguyên đường dẫn trong nháy
+  // (có dấu cách).
+  const bases = [cwd, ...cdDirs(cmd, cwd)];
+  return [...cmd.matchAll(/"([^"]*)"|'([^']*)'|([^\s;&|()]+)/g)].some((m) => {
+    const t = unshell(m[1] ?? m[2] ?? m[3] ?? "");
+    if (!t || t.startsWith("-")) return false;
+    if (!/[\\/]/.test(t) && norm(t) === base) return true;
+    return bases.some((b) => {
+      const abs = norm(resolve(b, t)).replace(/\/+$/, "");
+      return abs === f || abs === d;
+    });
+  });
+}
+
+/** Các thư mục mà lệnh `cd` (hay Set-Location…) trong lệnh chuyển tới, nối tiếp nhau từ cwd. */
+function cdDirs(cmd, cwd) {
+  const out = [];
+  let base = cwd;
+  for (const cd of cmd.matchAll(/(?:^|[;&|(\n]\s*)(?:cd|pushd|Set-Location|Push-Location)\s+(?:-\w+\s+)*("[^"]*"|'[^']*'|[^\s;&|)]+)/gi)) {
+    base = resolve(base, unshell(cd[1]));
+    out.push(base);
+  }
+  return out;
 }
 
 /** Bỏ dấu nháy; trên Windows đổi đường dẫn Git Bash `/d/code/…` thành `d:/code/…`. */
@@ -165,16 +223,21 @@ function unshell(t) {
 function coversMod(cmd, mod, cwd) {
   if (mod.check && REPO_CHECK.test(cmd)) return true;
   const root = norm(mod.root);
-  for (const m of cmd.matchAll(PLUGIN_TEST)) {
+  for (const m of [...cmd.matchAll(PLUGIN_TEST), ...cmd.matchAll(MOD_GATE)]) {
     if (/(^|\s)(-h|--help)(?=\s|$)/.test(m[1])) continue; // chỉ in trợ giúp, không chạy test
     let base = cwd;
     for (const cd of cmd.slice(0, m.index).matchAll(/(?:^|[;&|(\n]\s*)(?:cd|pushd|Set-Location|Push-Location)\s+(?:-\w+\s+)*("[^"]*"|'[^']*'|[^\s;&|)]+)/gi)) {
       base = resolve(base, unshell(cd[1]));
     }
-    const arg = m[1].trim().split(/\s+/).find((t) => t && !t.startsWith("-") && !/^\d*[<>]/.test(t));
-    if (arg && /[$%]/.test(arg)) return true;
-    const dir = norm(resolve(base, arg ? unshell(arg) : "."));
-    if (root === dir || root.startsWith(dir.endsWith("/") ? dir : `${dir}/`)) return true;
+    // Mọi đối số không phải cờ, bỏ giá trị của cờ có giá trị đứng trước (`check-mod --shots out <mod>`): trước kia chỉ
+    // lấy đối số đầu, nên "out" bị coi là thư mục mod.
+    const toks = m[1].trim().split(/\s+/);
+    const args = toks.filter((t, i) => t && !t.startsWith("-") && !/^\d*[<>]/.test(t) && !/^--(shots|widths|surfaces|languages|pane-id|term-bg|limit|fields)$/.test(toks[i - 1] ?? ""));
+    if (args.some((a) => /[$%]/.test(a))) return true;
+    for (const a of args.length ? args : ["."]) {
+      const dir = norm(resolve(base, unshell(a)));
+      if (root === dir || root.startsWith(dir.endsWith("/") ? dir : `${dir}/`)) return true;
+    }
   }
   return false;
 }
@@ -188,8 +251,8 @@ function coversMod(cmd, mod, cwd) {
 function covers(cmd, file, cwd, mod, img) {
   if (mod) return coversMod(cmd, mod, cwd);
   // Hình: `check-image` nêu đúng tệp hay thư mục chứa nó (lệnh chỉ đọc ảnh nằm ngay trong thư mục được nêu).
-  if (img) return IMG_GATE.test(cmd) && names(cmd, file, cwd);
-  if (!GATE.test(cmd)) return false;
+  if (img) return ran(IMG_GATE, cmd) && names(cmd, file, cwd);
+  if (!ran(GATE, cmd)) return false;
   if (!/\.html?$/i.test(file)) return true;
   return /https?:\/\//.test(cmd) || names(cmd, file, cwd);
 }

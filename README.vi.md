@@ -90,8 +90,8 @@ Yêu cầu:
 - **Node.js ≥ 20**
 - **Microsoft Edge hoặc Google Chrome.** Không có cả hai thì cổng dùng Chromium của Playwright:
   `npx playwright install chromium`.
-- **Engine Impeccable** (bật mặc định, bỏ qua bằng `--no-impeccable`). `design-kit setup` dùng engine đi kèm skill
-  Impeccable nếu máy đã có, nếu không thì tải bản ghim (0.1.19) và kiểm sha256.
+- **Engine Impeccable** (bật mặc định, bỏ qua bằng `--no-impeccable`). `design-kit setup` tải bản ghim (0.1.27) và
+  kiểm sha256; cổng dùng engine đã ghim trước, không có thì dùng engine đi kèm skill Impeccable.
 
 Từ bản phát hành mới nhất (không cần clone):
 
@@ -256,7 +256,7 @@ Cờ của `check`:
 | --- | --- |
 | `--query <q,q>` | Chạy mỗi trang một lần cho mỗi chuỗi truy vấn, ví dụ `dk=dem,dk=giay,dk=dam` |
 | `--steps <tệp.json\|json>` / `--no-steps` | Các trạng thái cần bấm hay gõ để tới (thay cho `<trang>.steps.json`) / bỏ qua tệp steps |
-| `--viewports <w,w>` | Bề rộng tính bằng px (mặc định `320,390,1280`; 320 chỉ dùng để đo tràn ngang) |
+| `--viewports <w,w>` | Bề rộng tính bằng px (mặc định `320,390,1280`; mọi khổ được đo đủ) |
 | `--schemes <light,dark>` | Chế độ màu cần render (mặc định cả hai) |
 | `--shots <thư mục>` / `--no-shots` | Thư mục ảnh chụp (mặc định `.design-kit/shots`) / không chụp |
 | `--no-impeccable` | Bỏ qua Impeccable (nhanh hơn) |
@@ -264,6 +264,10 @@ Cờ của `check`:
 | `--focus <n>` | Số điểm dừng Tab cần xem (mặc định 15) |
 | `--strict` | Thoát 1 khi có trang bị lỗi cứng |
 | `--jobs <n>` | Số trang kiểm cùng lúc (mặc định 3, tối đa 8) |
+| `--sweep` | Đo thêm tràn ngang ở các khổ trung gian (360, 414, 480, 600, 768, 900, 1024, 1180 trong dải `--viewports`), khoảng 0,1 giây mỗi khổ |
+| `--waivers <tệp>` / `--no-waivers` | Phát hiện mềm đã xét là ổn, mỗi mục kèm lý do (mặc định `.design-kit/waivers.json`, tối đa 5 mục mỗi trang; liệt kê ở mục `waived`) / hiện mọi phát hiện |
+| `--no-cache` | Đo lại mọi trang. Mặc định trang cục bộ mà mọi tệp nó nạp chưa đổi kể từ lần kiểm trước (cùng cờ) dùng lại kết quả cũ |
+| `--fresh` | Nạp lại trang cho mỗi khổ và mỗi chế độ màu. Mặc định trang được nạp một lần rồi đổi khổ, đổi sang tối ngay tại chỗ; một lần nạp mới mỗi trang phải cho cùng bố cục, trang nào lệch thì đo lại bằng cách nạp mới |
 | `--limit <n>` / `--full` | Số phát hiện hiển thị (mặc định 25) / hiện hết |
 
 Tệp steps là danh sách trạng thái. Mỗi trạng thái bắt đầu từ một lần nạp trang mới và chạy thao tác của riêng nó:
@@ -422,7 +426,7 @@ node scripts/tao-design-md.mjs   # sinh lại design/*/DESIGN.md sau khi đổi 
 npm run lint:design              # lint các tệp DESIGN.md
 node scripts/claude-themes.mjs   # sinh lại data/claude-themes.json từ Claude Code đã cài
 cd blocks/react && npm ci && npm run build && cd ../..
-design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6   # cổng đầy đủ, ~10 phút
+design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6   # cổng đầy đủ, ~2 phút
 ```
 
 Test `check-mod` trên `test/fixtures/mods/xau` chỉ chạy ở máy có Claude Code; nơi khác tự bỏ qua, trừ khi đặt

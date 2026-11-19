@@ -43,7 +43,22 @@ export interface Resolved {
   value?: string;
 }
 
-const RAW = /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\(.*\))$/i;
+const RAW_SHAPE = /^(#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})|(rgb|hsl)a?\(.*\))$/i;
+/**
+ * Màu viết thẳng mà colorjs đọc được. Chỉ khớp hình dạng thì `#12345` hay `rgb(nope)` lọt qua, rồi `new Color` ném lỗi
+ * ở phép đo tương phản và làm hỏng cả lượt check-mod (19/11/2026). Màu không đọc được thành "unknown": không đo.
+ */
+const RAW = {
+  test(v: string): boolean {
+    if (!RAW_SHAPE.test(v)) return false;
+    try {
+      new Color(v);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+};
 
 export function resolveColor(v: unknown, scheme: Scheme): Resolved {
   if (typeof v !== "string" || !v.trim() || v === "transparent") return { kind: "none" };

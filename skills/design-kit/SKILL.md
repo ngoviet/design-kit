@@ -16,8 +16,9 @@ design-kit gives the numbers, the tokens, the gated blocks and the gate.
 1. Before markup: pick a direction (§1) and write a task map (§2b).
 2. Build from the closest gated block (§2). Tokens only: no raw hex, no font outside DESIGN.md.
 3. Every fact you filled in yourself gets `data-assumed` (§2c).
-4. Run `design-kit check <page|folder|url> --strict` (§3). **hard** = not done. **soft** = fix, or write the reason.
-   At most 3 fix rounds; fix the finding, not the layout.
+4. Run `design-kit check <page|folder|url> --strict` (§3). **hard** = not done. **soft** = fix, or write the reason
+   (a recurring one as a waiver in `.design-kit/waivers.json`, max 5 per page). At most 3 fix rounds; fix the
+   finding, not the layout.
 5. Open the screenshots yourself (`.design-kit/shots/<page>/`, 320/390/1280 × light/dark) and judge hierarchy before
    showing the user. Never call a UI task done on "it renders".
 6. Your report gives the verdict line, the task map with the pattern for each hesitation point, the `assumed` list for

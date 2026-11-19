@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="script-src 'self'">
+<title>Trang có CSP, đuôi .htm</title>
+<style>
+  body { margin: 0; font: 400 16px/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+  main { max-width: 36rem; margin: 0 auto; padding: 32px 16px; }
+  /* Đúng ngưỡng 1.2: tính ra px rồi chia lại thành 1,1999…, trước kia bị báo trượt. */
+  h1 { font-size: clamp(1.6rem, 1.2rem + 1.3vw, 2.4rem); line-height: 1.2; }
+  h2 { font-size: 1.4142rem; line-height: 1.2; }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Tiêu đề lớn giãn dòng một phẩy hai</h1>
+    <h2>Tiêu đề phụ cũng giãn dòng một phẩy hai</h2>
+    <p>Trang chặn script chèn vào bằng chính sách bảo mật nội dung, nên axe phải được nạp theo cách khác.</p>
+  </main>
+</body>
+</html>

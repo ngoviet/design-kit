@@ -19,8 +19,10 @@ export const PAIRS = [
 
 /** Khối sáng và tối của một hướng: { light: {tên: "oklch(...)"}, dark: {...} }. */
 export function blocks(css, huong) {
-  const light = css.match(new RegExp(`\\[data-dk="${huong}"\\]\\s*\\{([^}]*)\\}`))[1];
-  const dark = css.match(new RegExp(`\\[data-dk="${huong}"\\]\\[data-theme="dark"\\]\\s*\\{([^}]*)\\}`))[1];
+  const light = css.match(new RegExp(`\\[data-dk="${huong}"\\]\\s*\\{([^}]*)\\}`))?.[1];
+  const dark = css.match(new RegExp(`\\[data-dk="${huong}"\\]\\[data-theme="dark"\\]\\s*\\{([^}]*)\\}`))?.[1];
+  // Sai --huong (tệp của hướng khác) từng đổ vỡ với "Cannot read properties of null" (19/11/2026).
+  if (light === undefined || dark === undefined) throw new Error(`no [data-dk="${huong}"]${light === undefined ? "" : '[data-theme="dark"]'} block in the file: wrong --huong?`);
   const vars = (s) => Object.fromEntries([...s.matchAll(/--([\w-]+):\s*(oklch\([^)]*\))/g)].map((m) => [m[1], m[2]]));
   return { light: vars(light), dark: vars(dark) };
 }
@@ -52,7 +54,8 @@ export function checkPairs(sets) {
       total++;
       if (!v[fg] || !v[bg]) { fails.push({ mode, pair: `${fg}/${bg}`, wcag: "thiếu token" }); continue; }
       const w = wcag(v[fg], v[bg]);
-      if (w < min || !inGamut(v[fg]) || !inGamut(v[bg])) fails.push({ mode, pair: `${fg}/${bg}`, wcag: w.toFixed(2) });
+      const out = !inGamut(v[fg]) || !inGamut(v[bg]);
+      if (w < min || out) fails.push({ mode, pair: `${fg}/${bg}`, wcag: `${w.toFixed(2)}${out ? " (out of sRGB gamut)" : ""}` });
     }
   }
   return { fails, total };

@@ -39,7 +39,8 @@ const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8",
   ".mjs": "text/javascript; charset=utf-8", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png",
   ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".avif": "image/avif", ".woff2": "font/woff2",
-  ".woff": "font/woff", ".ico": "image/x-icon",
+  ".woff": "font/woff", ".ico": "image/x-icon", ".htm": "text/html; charset=utf-8", ".gif": "image/gif", ".ttf": "font/ttf",
+  ".otf": "font/otf", ".wasm": "application/wasm", ".mp4": "video/mp4", ".webm": "video/webm", ".txt": "text/plain; charset=utf-8",
 };
 
 /** Gốc phục vụ tệp cục bộ: thư mục cha gần nhất có .git / package.json, để `../../tokens/x.css` vẫn tải được. */
@@ -59,7 +60,8 @@ export async function startServer(root: string): Promise<{ server: Server; origi
     try {
       const path = decodeURIComponent(new URL(req.url ?? "/", "http://x").pathname);
       let full = resolve(root, `.${path}`);
-      if (full !== root && !full.startsWith(root + sep)) {
+      // Gốc là gốc ổ đĩa ("D:\", "/") đã có dấu phân cách ở cuối: cộng thêm một dấu nữa thì mọi tệp bị chặn 403.
+      if (full !== root && !full.startsWith(root.endsWith(sep) ? root : root + sep)) {
         res.writeHead(403).end();
         return;
       }

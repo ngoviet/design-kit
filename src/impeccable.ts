@@ -5,16 +5,16 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 /**
- * Engine ghim: phiên bản và sha256 chép từ engine-checksums.txt của Impeccable (skill 4.8.1).
- * Nâng phiên bản: sửa ENGINE_VERSION và bảng dưới theo engine-checksums.txt của bản mới.
+ * Engine ghim: phiên bản và sha256 chép từ các tệp <tên>.sha256 của bản phát hành engine-v<phiên bản> (19/11/2026:
+ * 0.1.27, ra 18/11/2026; trước đó 0.1.19). Nâng phiên bản: sửa ENGINE_VERSION và bảng dưới theo bản mới.
  */
-export const ENGINE_VERSION = "0.1.19";
+export const ENGINE_VERSION = "0.1.27";
 const ENGINE_SHA256: Record<string, string> = {
-  "impeccable-darwin-arm64": "c35d0b0b250afceb5ab6ee7edfe190a04d76d25c56bac01935a7a1b06d0df818",
-  "impeccable-darwin-x64": "df7c2b9cec89df54d1d9722a35aecc48b965dfad190c4ec2e766ce3f7743a544",
-  "impeccable-linux-x64": "07b763dc00012e9acf219fe2d2e8980f0810fb8af2e4a41c090107a8351d412f",
-  "impeccable-linux-arm64": "73b5662e42f060aba716016c34a7274cc49a998cd0d5da8b84a95d9e4edea729",
-  "impeccable-windows-x64.exe": "30427e0cfea383a0adbc5cc554481c3f18337eeabcc4eaf7d9bb48ad2e8b5676",
+  "impeccable-darwin-arm64": "e33578341212fe6ebeed273850b3af0a7f54bbdc5e9fdf03e760aae23482975b",
+  "impeccable-darwin-x64": "3ecf11185ad7ea05cfc693ef969eb75ee7aef63f45472bf884e9b9f896a8d052",
+  "impeccable-linux-x64": "41d66e945bcdfc560005b61ad0b6b2312b124890039262f2e63322ef2709ccfd",
+  "impeccable-linux-arm64": "6ceb6188c80adb4b4fcc0721e677e2124d795b8e243599ad0d7bea33369b2c9c",
+  "impeccable-windows-x64.exe": "ba9627d4552bca5666020624d8e994aea8b8b44c46b995e18b5babad0f431fc8",
 };
 const RELEASES = "https://github.com/pbakaus/impeccable/releases/download";
 
@@ -40,17 +40,19 @@ export interface ImpFinding {
 }
 
 /**
- * Engine Impeccable, theo thứ tự: IMPECCABLE_BIN; bản đi kèm skill impeccable; bộ nhớ đệm của chính Impeccable
- * (~/.impeccable/bin/<ver>); bộ nhớ đệm của design-kit (`design-kit setup` tải về). Không có ⇒ cổng bỏ qua Impeccable.
+ * Engine Impeccable, theo thứ tự: IMPECCABLE_BIN; bản đã ghim (bộ nhớ đệm của chính Impeccable ~/.impeccable/bin/<ver>,
+ * rồi của design-kit, `design-kit setup` tải về và kiểm sha256); cuối cùng bản đi kèm skill impeccable. Trước 19/11/2026
+ * bản của skill đứng trước, nên nâng ghim không có tác dụng trên máy đã cài skill (PC1 chạy engine của skill 4.8.1).
+ * Không có ⇒ cổng bỏ qua Impeccable.
  */
 export function findImpeccable(env: Record<string, string | undefined>): string | undefined {
   const fromEnv = env["IMPECCABLE_BIN"];
   if (fromEnv && existsSync(fromEnv)) return fromEnv;
   const arch = plat() === "windows" ? "x64" : process.arch;
   const candidates = [
-    join(homedir(), ".claude", "skills", "impeccable", "scripts", "bin", `${plat()}-${arch}`, exeName()),
     join(env["IMPECCABLE_HOME"] ?? join(homedir(), ".impeccable"), "bin", ENGINE_VERSION, exeName()),
     dkCache(env),
+    join(homedir(), ".claude", "skills", "impeccable", "scripts", "bin", `${plat()}-${arch}`, exeName()),
   ];
   return candidates.find((p) => existsSync(p));
 }
@@ -89,10 +91,10 @@ export function runImpeccable(bin: string, url: string, viewport: string): Promi
     child.on("close", (code) => {
       try {
         const parsed = JSON.parse(out) as ImpFinding[];
-        if (code === 1 && parsed.length === 0) return done({ error: (err.trim().split("\n").pop() ?? "scan failed").slice(0, 200) });
+        if (code === 1 && parsed.length === 0) return done({ error: (err.trim().split("\n").pop() || "scan failed").slice(0, 200) });
         done({ findings: parsed });
       } catch {
-        done({ error: `exit ${code}: ${(err.trim().split("\n").pop() ?? "no JSON").slice(0, 200)}` });
+        done({ error: `exit ${code}: ${(err.trim().split("\n").pop() || "no JSON").slice(0, 200)}` });
       }
     });
   });

@@ -91,6 +91,9 @@ interface CssCtx {
  */
 function inlineCss(css: string, fromDir: string, ctx: CssCtx, chain: string[]): string {
   const hoisted: string[] = [];
+  // Nội dung gộp từ @import đã được viết lại url() theo vị trí trang; chèn thẳng vào rồi mới viết lại url() của tệp
+  // này thì nó bị viết lại lần hai theo thư mục tệp ngoài ("css/css/sub/img.png", 19/11/2026). Giữ chỗ trước, chèn sau.
+  const imported: string[] = [];
   let body = css.replace(/@charset[^;]*;/gi, "");
   body = body.replace(IMPORT, (stmt, d: string | undefined, s: string | undefined, u: string | undefined, d2: string | undefined, s2: string | undefined, cond: string) => {
     const ref = (d ?? s ?? u ?? d2 ?? s2 ?? "").trim();
@@ -105,13 +108,16 @@ function inlineCss(css: string, fromDir: string, ctx: CssCtx, chain: string[]): 
       hoisted.push(stmt.replace(ref, rebase(ref, fromDir, ctx.outDir, ctx.root)));
       return "";
     }
-    return `/* ---- @import ${ref} ---- */\n${inlineCss(readFileSync(file, "utf8"), dirname(file), ctx, [...chain, file])}\n`;
+    imported.push(`/* ---- @import ${ref} ---- */\n${inlineCss(readFileSync(file, "utf8"), dirname(file), ctx, [...chain, file])}\n`);
+    return `dk-import-${imported.length - 1}`;
   });
   body = body.replace(URL_FN, (whole, d: string | undefined, s: string | undefined, u: string | undefined) => {
     const ref = (d ?? s ?? u ?? "").trim();
     if (!ref || NOT_PATH.test(ref)) return whole;
     return `url("${rebase(ref, fromDir, ctx.outDir, ctx.root)}")`;
   });
+  // Ký tự vùng dùng riêng U+E000 (không phải ký tự điều khiển: eslint no-control-regex) làm dấu giữ chỗ.
+  body = body.replace(/dk-import-(\d+)/g, (_, i: string) => imported[Number(i)]!);
   return [...hoisted, body.trim()].join("\n");
 }
 

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nền chuyển động và bố cục đọc khổ màn một lần</title>
+<style>body { margin: 0; font: 400 16px/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; } main { padding: 32px 16px; }
+  /* Nền chạy vô hạn trên body: bản đầu của dấu vân bỏ cả cây con của body và tự kiểm qua mù. */
+  body { background: linear-gradient(90deg, #fff, #eef, #fff) 0 0 / 200% 100%; animation: nen 12s linear infinite; }
+  @keyframes nen { to { background-position: 200% 0; } }
+  #khung { height: 120px; background: #dde; }
+</style>
+</head>
+<body>
+  <main><h1>Bảng tổng quan</h1><div id="khung">Khung đặt bề rộng theo khổ màn lúc nạp.</div></main>
+  <script>document.getElementById("khung").style.width = innerWidth < 600 ? "700px" : "100%";</script>
+</body>
+</html>

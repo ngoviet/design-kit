@@ -161,7 +161,9 @@ export function probePage(): ProbeResult {
     const fs = parseFloat(cs.fontSize);
     const k = shrink(el);
     const lhRaw = cs.lineHeight === "normal" ? fs * 1.2 : parseFloat(cs.lineHeight);
-    const ratio = lhRaw / fs;
+    // Làm tròn 2 chữ số như khi in: line-height 1.2 tính ra px rồi chia lại thành 1,19999… và bị báo trượt đúng ở ngưỡng
+    // (h2 1.4142rem, cỡ chữ clamp() co giãn; 19/11/2026).
+    const ratio = Math.round((lhRaw / fs) * 100) / 100;
     const tag = el.tagName;
     if (fs * k < 12) out.textMin.push({ where: label(el), value: px(fs, k) });
     const isBody = tag === "P" || tag === "LI" || tag === "DD" || tag === "BLOCKQUOTE";
@@ -642,7 +644,19 @@ export function probeFocus(): { where: string; indicator: boolean; shadowOnly: b
  * lặp vô hạn. Đo giữa chừng một hiệu ứng mở (opacity 0 → 1) sẽ tưởng phần tử vô hình (gặp ở mẹo của khối bat-dau).
  */
 export function settleAnimations(maxMs = 600): Promise<void> {
-  const finite = document.getAnimations().filter((a) => {
+  // document.getAnimations() của Chromium không trả hoạt ảnh trong shadow root: gom thêm từ từng open shadow root
+  // (thẻ Lit, card HA). Thiếu bước này thì chữ trong card bị đo giữa hiệu ứng mở.
+  const all: Animation[] = [...document.getAnimations()];
+  const walk = (root: Document | ShadowRoot): void => {
+    for (const el of Array.from(root.querySelectorAll("*"))) {
+      if (el.shadowRoot) {
+        all.push(...el.shadowRoot.getAnimations());
+        walk(el.shadowRoot);
+      }
+    }
+  };
+  walk(document);
+  const finite = [...new Set(all)].filter((a) => {
     const t = a.effect?.getComputedTiming();
     return a.playState === "running" && t !== undefined && Number.isFinite(Number(t.endTime));
   });
@@ -791,7 +805,19 @@ export function markVietnameseText(max: number): string[] {
 
 /** Animation còn chạy (dùng sau khi giả lập prefers-reduced-motion: reduce). */
 export function probeMotion(): { running: number; samples: string[] } {
-  const anims = document.getAnimations().filter((a) => {
+  // Gom cả hoạt ảnh trong open shadow root (document.getAnimations() bỏ sót, xem settleAnimations): thẻ web component
+  // bỏ qua prefers-reduced-motion từng qua được phép đo cứng này (19/11/2026).
+  const all: Animation[] = [...document.getAnimations()];
+  const walk = (root: Document | ShadowRoot): void => {
+    for (const el of Array.from(root.querySelectorAll("*"))) {
+      if (el.shadowRoot) {
+        all.push(...el.shadowRoot.getAnimations());
+        walk(el.shadowRoot);
+      }
+    }
+  };
+  walk(document);
+  const anims = [...new Set(all)].filter((a) => {
     if (a.playState !== "running") return false;
     const t = a.effect?.getComputedTiming();
     const dur = typeof t?.duration === "number" ? t.duration : 0;
@@ -828,4 +854,238 @@ export function installVitals(): void {
   } catch {
     /* trình duyệt không hỗ trợ ⇒ để 0 */
   }
+}
+
+/**
+ * Ghi lại script đọc chế độ màu bằng `matchMedia("(prefers-color-scheme…)")` (addInitScript). Trang đọc một lần lúc
+ * nạp mà không nghe sự kiện `change` sẽ không đổi màu khi cổng đổi chế độ tại chỗ (`emulateMedia`), nên lượt tối đo
+ * nhầm màu sáng. Cổng hỏi `schemeReadOnce` sau lần nạp đầu: có thì mỗi chế độ màu nạp riêng một lần.
+ */
+export function installSchemeWatch(): void {
+  const w = window as unknown as { __dkScheme: Array<{ read: boolean; listening: boolean }> };
+  w.__dkScheme = [];
+  const orig = window.matchMedia.bind(window);
+  window.matchMedia = (q: string): MediaQueryList => {
+    const mql = orig(q);
+    if (!/prefers-color-scheme/i.test(q)) return mql;
+    const rec = { read: false, listening: false };
+    w.__dkScheme.push(rec);
+    const add = mql.addEventListener.bind(mql);
+    mql.addEventListener = ((type: string, ...rest: [EventListenerOrEventListenerObject, (boolean | AddEventListenerOptions)?]) => {
+      if (type === "change") rec.listening = true;
+      add(type, ...rest);
+    }) as typeof mql.addEventListener;
+    const addL = mql.addListener.bind(mql);
+    mql.addListener = (cb) => {
+      rec.listening = true;
+      addL(cb);
+    };
+    const desc = Object.getOwnPropertyDescriptor(MediaQueryList.prototype, "matches");
+    Object.defineProperty(mql, "matches", {
+      get() {
+        rec.read = true;
+        return desc?.get?.call(mql) as boolean;
+      },
+    });
+    const onchange = Object.getOwnPropertyDescriptor(MediaQueryList.prototype, "onchange");
+    Object.defineProperty(mql, "onchange", {
+      set(v: unknown) {
+        rec.listening = true;
+        onchange?.set?.call(mql, v);
+      },
+      get: () => onchange?.get?.call(mql) as unknown,
+    });
+    return mql;
+  };
+}
+
+/** Có script đọc chế độ màu (`.matches`) mà không nghe `change` không (xem installSchemeWatch). */
+export function schemeReadOnce(): boolean {
+  const list = (window as unknown as { __dkScheme?: Array<{ read: boolean; listening: boolean }> }).__dkScheme ?? [];
+  return list.some((m) => m.read && !m.listening);
+}
+
+/**
+ * Dấu vân bố cục và màu của trang ở khổ và chế độ hiện tại: vị trí, cỡ (làm tròn 1px), màu chữ, màu nền, cỡ chữ của
+ * mọi phần tử hiện ra (đi xuyên open shadow root), băm thành một chuỗi ngắn. Cổng dùng nó để tự kiểm cách đổi khổ tại
+ * chỗ (P7): dấu vân của trang đã đổi khổ phải trùng hệt dấu vân của một lần nạp mới ở cùng khổ.
+ * Trả kèm `count` (số phần tử đã tính) và `sample` (vài dòng đầu) để ghi chú khi lệch.
+ */
+export function probeFingerprint(): { hash: string; count: number; skipped: number; lines: string[] } {
+  const lines: string[] = [];
+  const sx = window.scrollX;
+  const sy = window.scrollY;
+  // Hiệu ứng đang chạy (khung xương nhấp nháy, vòng xoay, nền chuyển màu) đổi giá trị theo thời gian, không theo cách
+  // nạp: hai lần đo ở hai thời điểm luôn lệch (trang-thai React, 19/11/2026). Hiệu ứng không đụng hình học: bỏ màu và
+  // độ mờ của phần tử đó và cây con (màu kế thừa), giữ vị trí và cỡ. Hiệu ứng transform (vòng xoay, trượt): bỏ cả cây
+  // con. Bản đầu bỏ cả cây con với mọi hiệu ứng, nên nền body chuyển màu làm dấu vân gần rỗng và tự kiểm qua mù.
+  const paint = new Set<Element>();
+  const geometry = new Set<Element>();
+  const GEO = /^(transform|translate|rotate|scale|offset|left|top|right|bottom|width|height|margin|padding|inset)/i;
+  const collect = (root: Document | ShadowRoot): void => {
+    for (const a of root.getAnimations()) {
+      const eff = a.effect as KeyframeEffect | null;
+      const t = eff?.target;
+      if (a.playState !== "running" || !t) continue;
+      const props = (eff!.getKeyframes() as Array<Record<string, unknown>>).flatMap((k) => Object.keys(k)).filter((p) => !["offset", "easing", "composite", "computedOffset"].includes(p));
+      const transition = (a as CSSTransition).transitionProperty;
+      if ([...props, ...(transition ? [transition] : [])].some((p) => GEO.test(p.replace(/-/g, "")))) geometry.add(t);
+      else paint.add(t);
+    }
+    for (const el of Array.from(root.querySelectorAll("*"))) if (el.shadowRoot) collect(el.shadowRoot);
+  };
+  collect(document);
+  const under = (el: Element, set: Set<Element>): boolean => {
+    if (!set.size) return false;
+    for (let e: Element | null = el; e; e = e.parentElement ?? (e.parentNode instanceof ShadowRoot ? e.parentNode.host : null)) {
+      if (set.has(e)) return true;
+    }
+    return false;
+  };
+  let skipped = 0;
+  const walk = (root: Document | ShadowRoot): void => {
+    for (const el of Array.from(root.querySelectorAll("*"))) {
+      if (el.shadowRoot) walk(el.shadowRoot);
+      const r = el.getBoundingClientRect();
+      if (!r.width && !r.height) continue;
+      const cs = getComputedStyle(el);
+      if (cs.display === "none" || cs.visibility === "hidden") continue;
+      if (under(el, geometry)) {
+        skipped++;
+        continue;
+      }
+      const tag = el.tagName.toLowerCase() + (el.id ? `#${el.id}` : "");
+      const box = `${Math.round(r.left + sx)},${Math.round(r.top + sy)} ${Math.round(r.width)}x${Math.round(r.height)} ${cs.fontSize}`;
+      lines.push(under(el, paint) ? `${tag} ${box}` : `${tag} ${box} ${cs.color} ${cs.backgroundColor} ${cs.opacity}`);
+    }
+  };
+  walk(document);
+  // FNV-1a 32 bit: đủ để so trùng/lệch, không cần chống va chạm.
+  let h = 0x811c9dc5;
+  const all = lines.join("\n");
+  for (let i = 0; i < all.length; i++) {
+    h ^= all.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return { hash: h.toString(16), count: lines.length, skipped, lines };
+}
+
+/**
+ * WCAG 2.2.2 (mức A, Pause, Stop, Hide): nội dung chuyển động tự chạy quá 5 giây, đứng cạnh nội dung khác, phải có
+ * cách dừng. Báo hiệu ứng vô hạn hoặc dài hơn 5 giây (CSS/Web Animations, cả trong open shadow root) và video tự phát
+ * lặp hay dài hơn 5 giây không có điều khiển, khi trang không có nút dừng nào (tên chứa dừng/tạm dừng/pause/stop/ẩn).
+ * Bỏ qua chỉ báo đang tải (trong [aria-busy=true], role status/progressbar/alert, hay nhỏ hơn 64×64px: vòng xoay)
+ * và hiệu ứng ẩn khỏi trình đọc (aria-hidden) mà không có chữ.
+ */
+export function probePause(): Array<{ where: string; value: string }> {
+  const out: Array<{ where: string; value: string }> = [];
+  const label = (el: Element): string => el.tagName.toLowerCase() + (el.id ? `#${el.id}` : typeof el.className === "string" && el.className.trim() ? `.${el.className.trim().split(/\s+/)[0]}` : "");
+  const up = (e: Element): Element | null => e.parentElement ?? (e.parentNode instanceof ShadowRoot ? e.parentNode.host : null);
+  const exempt = (el: Element): boolean => {
+    const r = el.getBoundingClientRect();
+    if (r.width <= 64 && r.height <= 64) return true;
+    for (let e: Element | null = el; e; e = up(e)) {
+      if (e.getAttribute("aria-busy") === "true" || /^(status|progressbar|alert)$/.test(e.getAttribute("role") ?? "")) return true;
+    }
+    return !(el.textContent ?? "").trim() && el.closest("[aria-hidden=true]") !== null;
+  };
+  // Nguyên từ: so chuỗi con thì "Chuẩn bị", "khẩn", "nonstop" cũng thành nút dừng và tắt phép đo cho cả trang.
+  const NAME = /(?<!\p{L})(tạm\s*dừng|dừng|pause|stop|ẩn|hide)(?!\p{L})/iu;
+  const controls: Element[] = [];
+  const anims: Animation[] = [];
+  const walk = (root: Document | ShadowRoot): void => {
+    anims.push(...root.getAnimations());
+    for (const el of Array.from(root.querySelectorAll("*"))) {
+      if (el.matches("button, [role=button], input[type=button], input[type=checkbox], [role=switch]")) controls.push(el);
+      if (el.shadowRoot) walk(el.shadowRoot);
+    }
+  };
+  walk(document);
+  const named = (el: Element): string => [el.getAttribute("aria-label"), el.getAttribute("title"), (el as HTMLInputElement).value, el.textContent, ...Array.from((el as HTMLInputElement).labels ?? []).map((l) => l.textContent)].filter(Boolean).join(" ");
+  if (controls.some((c) => NAME.test(named(c)))) return out;
+  const seen = new Set<Element>();
+  for (const a of anims) {
+    if (a.playState !== "running") continue;
+    const t = a.effect?.getComputedTiming();
+    // Thời gian chuyển động thật (activeDuration), không tính trễ trước khi chạy: hiệu ứng 0,8 s trễ 5,5 s không phải
+    // chuyển động 6 s.
+    const total = Number(t?.activeDuration);
+    if (!(t?.iterations === Infinity || total > 5000)) continue;
+    const el = (a.effect as KeyframeEffect | null)?.target;
+    if (!el || seen.has(el) || exempt(el)) continue;
+    seen.add(el);
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) continue;
+    out.push({ where: label(el), value: `${(a as CSSAnimation).animationName || "animation"} runs ${t?.iterations === Infinity ? "forever" : `${Math.round(total / 1000)} s`} with no pause or stop control on the page` });
+  }
+  for (const v of Array.from(document.querySelectorAll("video"))) {
+    if (v.paused || v.controls || exempt(v)) continue;
+    if (v.loop || v.duration > 5) out.push({ where: label(v), value: `video plays by itself${v.loop ? " in a loop" : ` for ${Math.round(v.duration)} s`} with no controls or pause button` });
+  }
+  return out;
+}
+
+/**
+ * Chữ "hiện dần khi cuộn" không bao giờ hiện: sau khi cuộn hết trang (nhịp 150 ms mỗi màn) mà chữ vẫn trong suốt
+ * (opacity < 0,05 ở chính nó hay tổ tiên). Gọi ở lượt giảm chuyển động: script chỉ gắn lớp "hiện" khi không bật giảm
+ * chuyển động là lỗi hay gặp, người dùng đó thấy những dải trống. Bỏ qua phần tử định vị absolute/fixed (mẹo, menu
+ * chờ hover), aria-hidden, [hidden], details đóng, dialog đóng.
+ */
+export async function probeReveal(): Promise<Array<{ where: string; value: string }>> {
+  const de = document.documentElement;
+  const step = Math.max(200, Math.round(innerHeight * 0.8));
+  for (let y = 0, i = 0; y < de.scrollHeight && i < 30; y += step, i++) {
+    window.scrollTo({ top: y, left: 0, behavior: "instant" });
+    await new Promise((ok) => setTimeout(ok, 150));
+  }
+  window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  await new Promise((ok) => setTimeout(ok, 50));
+  const up = (e: Element): Element | null => e.parentElement ?? (e.parentNode instanceof ShadowRoot ? e.parentNode.host : null);
+  /** Tổ tiên (hay chính nó) trong suốt; null nếu không; "skip" nếu nằm trong phần tử absolute/fixed. */
+  const fadedOf = (el: Element): Element | null | "skip" => {
+    let faded: Element | null = null;
+    for (let e: Element | null = el; e && e !== de; e = up(e)) {
+      const cs = getComputedStyle(e);
+      if (cs.position === "absolute" || cs.position === "fixed") return "skip";
+      if (!faded && Number(cs.opacity) < 0.05) faded = e;
+    }
+    return faded;
+  };
+  const candidates: Array<{ faded: Element; own: string }> = [];
+  const hit = new Set<Element>();
+  const walk = (root: Document | ShadowRoot): void => {
+    for (const el of Array.from(root.querySelectorAll("*"))) {
+      if (el.shadowRoot) walk(el.shadowRoot);
+      if (["SCRIPT", "STYLE", "TEMPLATE", "NOSCRIPT"].includes(el.tagName)) continue;
+      let own = "";
+      for (const n of Array.from(el.childNodes)) if (n.nodeType === 3) own += n.textContent ?? "";
+      if (own.trim().length < 2) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) continue;
+      // Ẩn có chủ ý (visibility hidden: khung thu gọn, ngăn kéo đóng) không phải hiện dần hỏng.
+      if (getComputedStyle(el).visibility === "hidden") continue;
+      if (el.closest("[aria-hidden=true], [hidden], details:not([open]) > :not(summary), dialog:not([open])")) continue;
+      const faded = fadedOf(el);
+      if (!faded || faded === "skip" || hit.has(faded)) continue;
+      hit.add(faded);
+      candidates.push({ faded, own: own.trim() });
+    }
+  };
+  walk(document);
+  // Cho từng ứng viên một cơ hội nữa: cuộn nó vào giữa màn (cuộn cả khung cuộn bên trong, không chỉ cửa sổ), đợi hiệu
+  // ứng của nó xong (cả độ trễ), rồi mới kết luận. Bản đầu chỉ cuộn cửa sổ và đọc sau 150 ms, nên báo nhầm hiện dần
+  // đúng nằm trong khung cuộn riêng hay có transition-delay.
+  const out: Array<{ where: string; value: string }> = [];
+  for (const { faded, own } of candidates.slice(0, 12)) {
+    faded.scrollIntoView({ block: "center", behavior: "instant" });
+    await new Promise((ok) => setTimeout(ok, 200));
+    const anims = faded.getAnimations({ subtree: true }).filter((a) => a.playState === "running" || a.pending);
+    await Promise.race([Promise.all(anims.map((a) => a.finished.catch(() => undefined))), new Promise((ok) => setTimeout(ok, 1500))]);
+    const still = fadedOf(faded);
+    if (!still || still === "skip") continue;
+    const id = still.tagName.toLowerCase() + (still.id ? `#${still.id}` : typeof still.className === "string" && still.className.trim() ? `.${still.className.trim().split(/\s+/)[0]}` : "");
+    out.push({ where: id, value: `"${own.slice(0, 40)}" stays invisible after scrolling the whole page with reduced motion (a scroll reveal that never runs)` });
+  }
+  window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  return out;
 }

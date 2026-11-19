@@ -79,3 +79,17 @@ export async function settlePage(page: Page, net: NetWatch): Promise<{ capped: b
   if (net.inflight() === 0 && net.lastActivity() < mark) return { capped: false };
   return { capped: (await net.quiet()).capped };
 }
+
+/**
+ * Sau khi đổi khổ hay chế độ màu ngay trên trang đang mở (không nạp lại): hai khung hình cho bố cục mới; trang có gọi
+ * mạng vì thay đổi đó (ảnh `srcset`, ảnh lười tải vừa lọt vào màn) thì đợi như sau một lần nạp.
+ */
+export async function settleAfterChange(page: Page, net: NetWatch): Promise<{ capped: boolean }> {
+  const mark = Date.now();
+  await twoFrames(page);
+  if (net.inflight() === 0 && net.lastActivity() < mark) return { capped: false };
+  return settlePage(page, net);
+}
+
+/** Nội dung có thể đến sau khi mạng đã rảnh (card đợi thư viện rồi mới vẽ): đợi tối đa ngần này trước khi coi là trắng. */
+export const LATE_MS = 5_000;

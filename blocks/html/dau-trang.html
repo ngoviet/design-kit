@@ -37,7 +37,8 @@
     .nav.open { display: block; padding-bottom: var(--sp-2); }
     .nav ul { flex-direction: column; }
     .nav a { width: 100%; min-height: var(--hit-lg); }
-    .nav a[aria-current="page"] { box-shadow: inset 2px 0 0 var(--accent); }
+    /* Menu dọc: nền, chữ đậm và màu nhấn thay cho vạch bên trái (luật side-tab của Impeccable 0.1.27). */
+    .nav a[aria-current="page"] { box-shadow: none; color: var(--accent-text); font-weight: 600; }
   }
   .page { max-width: 72rem; margin: 0 auto; padding: var(--sp-7) var(--sp-4); }
   .page h1 { margin-bottom: var(--sp-3); }

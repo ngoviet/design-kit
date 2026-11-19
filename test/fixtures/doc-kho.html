@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khổ màn đọc một lần</title>
+<style>
+  body { margin: 0; font: 400 16px/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+  main { padding: 32px 16px; }
+  .bang { box-sizing: border-box; background: #eef; padding: 16px; }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Bảng số liệu</h1>
+    <div class="bang" id="bang">Bề rộng bảng do script đặt theo khổ màn lúc nạp, không cập nhật khi đổi khổ.</div>
+  </main>
+  <script>
+    // Đọc khổ màn một lần lúc nạp: màn rộng thì bảng rộng cố định 900px. Đổi khổ tại chỗ từ 1280 xuống 390 sẽ tràn,
+    // còn nạp mới ở 390 thì không: cổng phải nhận ra và đo lại trang này theo cách nạp mới.
+    document.getElementById("bang").style.width = innerWidth > 800 ? "900px" : "100%";
+  </script>
+</body>
+</html>

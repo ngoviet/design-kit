@@ -99,3 +99,22 @@ describe("check-image on the fixtures", () => {
     expect(code).toBe(1);
   });
 });
+
+describe("check-image robustness (rà soát 19/11/2026)", () => {
+  it("a very thin SVG with only a viewBox is measured, a folder named like an image is skipped, ../ sheets do not collide", async () => {
+    const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const d = mkdtempSync(join(tmpdir(), "dk-hinh-"));
+    // 2000:1: Chrome cho cỡ tự nhiên 300×0, trước kia thành "cannot draw".
+    writeFileSync(join(d, "vach.svg"), "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2000 1'><rect width='1000' height='1' fill='#222'/></svg>");
+    mkdirSync(join(d, "thu-muc.svg"));
+    const { out } = await run(["check-image", d, "--kind", "illustration", "--no-shots"]);
+    expect(out).not.toMatch(/vach\.svg.*(decode|zero size|cannot)/);
+    expect(out).toMatch(/vach\.svg\\?"?,illustration,[1-9]\d*/);
+    expect(out).not.toContain("thu-muc.svg");
+    expect(out).not.toContain("EISDIR");
+    const { slugOf } = await import("../src/commands/check-image.js");
+    expect(slugOf("../logo.svg")).not.toBe(slugOf("logo.svg"));
+    expect(slugOf("../../a/b.png")).toBe("up~up~a~b-png");
+  }, 60_000);
+});

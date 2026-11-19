@@ -59,6 +59,54 @@ describe("plugin hook", () => {
     const tr2 = join(tmp, "t2.jsonl");
     writeFileSync(tr2, [edit("e2", page), bash("node dist/bin/design-kit.js check a.html --strict")].join("\n"));
     expect(runHook({ hook_event_name: "Stop", session_id: sid(), transcript_path: tr2 })).toBe("");
+    // Chỉ nhắc tới lệnh (grep, lời commit) không phải đã chạy cổng (19/11/2026).
+    const tr3 = join(tmp, "t3.jsonl");
+    writeFileSync(tr3, [edit("e3", page), bash('grep -n "design-kit check a.html" README.md'), bash("echo nho chay design-kit check a.html")].join("\n"));
+    expect(JSON.parse(runHook({ hook_event_name: "Stop", session_id: sid(), transcript_path: tr3 })).decision).toBe("block");
+    const tr4 = join(tmp, "t4.jsonl");
+    writeFileSync(tr4, [edit("e4", page), bash(`cd x && npx design-kit check a.html; node "${root.replace(/\\/g, "/")}/dist/bin/design-kit.js" check a.html`)].join("\n"));
+    expect(runHook({ hook_event_name: "Stop", session_id: sid(), transcript_path: tr4 })).toBe("");
+  });
+
+  it("counts every real way of running the gate, and no mention inside quotes or a heredoc", () => {
+    // Bảng lệnh của reviewer độc lập (19/11/2026). Sửa .css (không phải .html) để chỉ còn phép dò "đã chạy cổng".
+    const line = (content: unknown[]) => JSON.stringify({ type: "assistant", message: { content } });
+    const edit = (id: string, file: string) => line([{ type: "tool_use", id, name: "Edit", input: { file_path: file } }]);
+    const bash = (cmd: string) => line([{ type: "tool_use", id: "b", name: "Bash", input: { command: cmd } }]);
+    const css = join(tmp, "kieu-hook.css");
+    writeFileSync(css, "p{color:#111}");
+    const stopAfter = (cmd: string) => {
+      const tr = join(tmp, `${sid()}.jsonl`);
+      writeFileSync(tr, [edit("e", css), bash(cmd)].join("\n"));
+      const out = runHook({ hook_event_name: "Stop", session_id: sid(), transcript_path: tr });
+      return out ? (JSON.parse(out) as { decision: string }).decision : "allow";
+    };
+    const runs = [
+      "npm exec design-kit check a.html", "npm exec -- design-kit check a.html", "pnpm exec design-kit check a.html",
+      "npx -y design-kit@latest check a.html", "FORCE_COLOR=0 design-kit check a.html", "timeout 600 design-kit check a.html",
+      " design-kit check a.html", "if design-kit check a.html; then echo ok; fi", "for f in *.html; do design-kit check $f; done",
+      "foreach ($f in $x) { design-kit check $f }", "cmd /c design-kit check a.html", "design-kit.cmd check a.html",
+      "node --no-warnings dist/bin/design-kit.js check a.html", 'node "D:/my code/dist/bin/design-kit.js" check a.html',
+      "& design-kit check a.html", "npx --yes design-kit check a.html", "node .\\dist\\bin\\design-kit.js check a.html",
+    ];
+    for (const c of runs) expect([c, stopAfter(c)]).toEqual([c, "allow"]);
+    const mentions = [
+      'git commit -m "fix: a.html; design-kit check a.html passes"', 'rg "check-image|design-kit check a.html" docs',
+      'echo "(design-kit check a.html)"', "git commit -F - <<EOF\nsửa\ndesign-kit check a.html --strict: pass\nEOF",
+      "echo nho chay design-kit check a.html",
+    ];
+    for (const c of mentions) expect([c, stopAfter(c)]).toEqual([c, "block"]);
+  });
+
+  it("a project inside a folder named build or dist is still a UI project", () => {
+    const proj = join(tmp, "build", "shop");
+    const ctx = runHook({ hook_event_name: "PostToolUse", session_id: sid(), cwd: proj, tool_input: { file_path: join(proj, "index.html") } });
+    expect(ctx).toContain("design-kit check index.html --strict");
+    // Còn trong dự án thì dist/ vẫn bị bỏ qua.
+    expect(runHook({ hook_event_name: "PostToolUse", session_id: sid(), cwd: proj, tool_input: { file_path: join(proj, "dist", "index.html") } })).toBe("");
+    // cwd của phiên nằm ngay trong test/fixtures của repo: fixture vẫn bị bỏ qua (xét theo gốc repo git).
+    const fx = join(root, "test", "fixtures");
+    expect(runHook({ hook_event_name: "PostToolUse", session_id: sid(), cwd: fx, tool_input: { file_path: join(fx, "tot.html") } })).toBe("");
   });
 });
 
@@ -100,6 +148,18 @@ describe("plugin hook: logos, icons and illustrations", () => {
     expect(stop([edit("e1", icon), bash("b1", "node dist/bin/design-kit.js check-image icons --strict")])).toBeUndefined();
     // `check-image` không còn khớp nhầm cổng trang (`check\b` khớp cả "check-image").
     expect(stop([edit("e2", page), bash("b2", "design-kit check-image icons")])?.reason).toContain("b.tsx");
+    // Tên gần giống ở thư mục khác không phủ tệp này (trước 19/11/2026 so chuỗi con: "footer-icon-nha.svg" chứa "icon-nha.svg").
+    expect(stop([edit("e3", icon), bash("b3", "design-kit check-image old/footer-icon-nha.svg")])?.decision).toBe("block");
+    expect(stop([edit("e3", icon), bash("b3", "design-kit check-image khac/icons")])?.decision).toBe("block");
+    // Tên trơn (chạy sau khi cd vào thư mục) vẫn tính.
+    expect(stop([edit("e4", icon), bash("b4", "cd icons && design-kit check-image icon-nha.svg")])).toBeUndefined();
+    // Đường dẫn tương đối sau cd, và đường dẫn có dấu cách trong nháy.
+    const sau = join(tmp, "nhom anh", "logos");
+    mkdirSync(sau, { recursive: true });
+    const logo = join(sau, "logo-moi.svg");
+    writeFileSync(logo, "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'/>");
+    expect(stop([edit("e5", logo), bash("b5", 'cd "nhom anh" && design-kit check-image logos/logo-moi.svg')])).toBeUndefined();
+    expect(stop([edit("e6", logo), bash("b6", 'design-kit check-image "nhom anh/logos" --strict')])).toBeUndefined();
   });
 });
 
@@ -225,6 +285,12 @@ describe("plugin hook: Claude Code mods", () => {
     expect(stop(after("cd plugins/khung-mod && claude plugin test"))).toBeUndefined();
     expect(stop(after('for m in khung-mod; do claude plugin test "plugins/$m"; done'))).toBeUndefined();
     expect(stop(after("bash tools/check.sh"))).toBeUndefined();
+    // Cổng mod của chính design-kit chạy plugin test trên mod: cũng đủ (trước 19/11/2026 bị chặn nhầm).
+    expect(stop(after("design-kit check-mod plugins/khung-mod --strict"))).toBeUndefined();
+    expect(stop(after("design-kit check-mod plugins/mod-khac"))?.decision).toBe("block");
+    // Cờ có giá trị đứng trước thư mục mod: giá trị đó không phải thư mục mod.
+    expect(stop(after("design-kit check-mod --shots out plugins/khung-mod --strict"))).toBeUndefined();
+    expect(stop(after("design-kit check-mod --widths 60,100 plugins/khung-mod"))).toBeUndefined();
     if (process.platform === "win32") {
       // Git Bash viết C:\x thành /c/x.
       const gitBash = mod.replace(/\\/g, "/").replace(/^([A-Za-z]):/, (_, d: string) => `/${d.toLowerCase()}`);
@@ -280,6 +346,18 @@ describe("color commands", () => {
     expect(readFileSync(join(tmp, "dem.css"), "utf8")).toContain("--trung-tinh 60");
     const b = await run(["kiem-mau", "dem.css", "--huong", "dem"]);
     expect(b.out).toContain("pass: 42 pairs");
+  });
+  it("doi-mau stays inside sRGB at hues where rounding used to push chroma out (dem 20, 250)", async () => {
+    for (const h of ["20", "250"]) {
+      const a = await run(["doi-mau", "--huong", "dem", "--nhan", h, "--ra", `dem-${h}.css`]);
+      expect(a.out).toContain("pass: 42 pairs");
+    }
+  });
+  it("kiem-mau with the wrong --huong says which block is missing", async () => {
+    const { out, code } = await run(["kiem-mau", join(root, "tokens", "dem.css"), "--huong", "giay"]);
+    expect(out).toContain('no [data-dk=\\"giay\\"] block in the file');
+    expect(out).toContain("VALIDATION_ERROR");
+    expect(code).toBe(2);
   });
   it("doi-mau without --ra is a usage error", async () => {
     const { out, code } = await run(["doi-mau", "--huong", "dem", "--nhan", "45"]);
