@@ -59,8 +59,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
-- `motion` counts only animations that move, scale, rotate or resize things; a fade or a color change that keeps running with reduced
-  motion is no longer a hard failure (WCAG 2.3.3 is about motion, and is AAA).
+- `motion` lets through animations of opacity and colors only: a fade that keeps running with reduced motion is no longer a hard failure
+  (WCAG 2.3.3 is about motion, and is AAA). Everything else stays hard, also when it does not use `transform`.
 - `focus` accepts the browser's own focus ring, and says "thinner than 2px" apart from "no visible focus ring".
 - The `input-zoom` row said `skipped` when 320 was the only phone width, while the check ran there and reported
   findings.

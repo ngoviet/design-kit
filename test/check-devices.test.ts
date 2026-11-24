@@ -133,7 +133,7 @@ describe("text-zoom, text-spacing, font-unit", () => {
     expect(rows(out, "text-spacing").join("\n")).toMatch(/div#hop-hai-dong .*at 1280px/);
     expect(rows(out, "font-unit").join("\n")).toMatch(/h1,.*4vw/);
     // Luật nằm trong tệp @import cũng thấy.
-    expect(rows(out, "font-unit").join("\n")).toMatch(/\.nhap,.*3vw/);
+    expect(rows(out, "font-unit").join("\n")).toMatch(/\.nhap,.*4\.2vw/);
     expect(out).toContain("pass: 1 pages");
   }, 120_000);
   it("leaves rem text, a clamp() with a rem part behind a variable, a smaller step on narrow layouts, transition: all, and data-zoom-ok", async () => {

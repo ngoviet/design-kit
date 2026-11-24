@@ -249,7 +249,13 @@ Chủ hỏi "các tri thức từ nghiên cứu có được cập nhật vào d
   phát hiện cũ trùng hệt, 138,7 s và 138,5 s; `--profile devices` 178,8 s.
 - **Ba báo oan tìm thấy khi chạy trên khối mẫu, đã sửa trong phép đo:** `text-zoom` đo giữa `transition: all` (11 phát hiện giả), `sticky`
   đo menu vừa mở (6), `touch` bỏ sót nhãn của nút `role="checkbox"`. Thêm một lỗi do test cũ bắt: vòng `auto` của ô tích trong suốt.
-- **`motion` nới theo chuẩn:** chỉ cứng với chuyển động; mờ dần, đổi màu được phép (2.3.3 là AAA, cơ sở AA là 2.2.2).
+- **Người soát độc lập** (phiên sạch): 13 phát hiện, 0 cứng, sửa hết; 36 đột biến thì 17 còn xanh. Sau khi thêm test, chạy lại 21 đột biến: 20 đỏ,
+  1 xanh là đột biến tương đương (bỏ trả cỡ chữ: `cdp.detach()` tự trả). Một trang nhỏ chạy chậm hơn khoảng một phần ba (33,6 → 45,1 s cho 26
+  trang); cổng toàn bộ chạy 6 việc song song thì không đổi.
+- **Trùng một phần với công cụ có sẵn** (thấy khi khảo sát, sau khi đã viết): axe `no-autoplay-audio`, `css-orientation-lock`; Lighthouse
+  `geolocation-on-start`, `notification-on-start`. Phần thêm của kit: `play()` từ script, Web Audio, đọc máy, micro, push, manifest.
+- **`motion` nới theo chuẩn:** chỉ cho qua độ mờ và màu; mọi thứ khác vẫn cứng (2.3.3 là AAA, cơ sở AA là 2.2.2). Bản đầu dùng danh sách cấm
+  và sót background-size, stroke-dashoffset: hai trang có chuyển động thật từ trượt thành đạt, người soát bắt được.
 - **Focus mất hẳn vẫn mềm**, dù là trượt 2.4.7 AA: phép đo chỉ đọc outline và box-shadow. Muốn lên cứng phải so kiểu trước và sau khi focus.
 - **CLS "cộng dồn qua các khổ" không tái hiện** trên bản này (đọc ở lượt render đầu, trước khi đổi khổ): giữ phép đo, ghi rõ cách đo.
 - **Bộ màu:** chủ muốn tích hợp vào kit vì mọi app có nhiều bộ cho người dùng chọn. Chín bộ sinh từ hạt giống; bản Node cho đúng 391/391 mã màu
