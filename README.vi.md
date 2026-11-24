@@ -80,7 +80,9 @@ chế độ giảm chuyển động, nút "Tiếp" không nói đi đâu. Làm c
   chữ/nền đạt cả WCAG 2 lẫn APCA; khối `chon-mau` là màn chọn (Theo máy/Sáng/Tối, xem trước, Hoàn tác, áp trước lần
   vẽ đầu). `scripts/sinh-themes.mjs` giải bảng màu của bạn theo cùng cách.
 - **Khổ màn thật.** `--profile devices` đo từ 320×568 tới 1920×1080 kèm chiều cao và quét tới 2560 px, có cả điện
-  thoại xoay ngang và màn phóng 200%.
+  thoại xoay ngang, màn phóng 200% và các bề rộng sát điểm gãy của chính trang.
+- **Sửa nhanh.** Mỗi phát hiện có mã ổn định, lượt sau nói cái gì đã sửa, cái gì mới; `--recheck` chỉ đo lại chỗ vừa động
+  vào; ảnh chụp đánh số chỉ đúng chỗ của từng phát hiện.
 - **Khối mẫu đã qua cổng.** 14 khối HTML/CSS và 4 khối React + shadcn/ui, mỗi khối đã qua cổng ở 3 hướng × sáng/tối,
   và đã được xem ảnh chụp.
 - **Plugin cho Claude Code.** Một skill, cùng hook nhắc agent khi sửa tệp giao diện và chặn một lần nếu agent định
@@ -161,8 +163,8 @@ count: 4 of 21 total
 findings[4]{gate,check,where,detail,renders}:
   hard,overflow,320px,"page is 480px wide, viewport 320px",light/320 dark/320
   hard,text-min,"topo-card::shadow span.lbl \"Cổng 1 ↓ 12 Mb/s\"",font-size 9.9px,light/320 light/390 light/1280 dark/320 dark/390 dark/1280
-  soft,heading-lh,"h1 \"Bảng điều khiển mạng\"",line-height 1.00,light/320 light/390 light/1280 dark/320 dark/390 dark/1280
   hard,lang,<html>,"Vietnamese text but lang=\"en\"",light/320 light/390 light/1280 dark/320 dark/390 dark/1280
+  soft,heading-lh,"h1 \"Bảng điều khiển mạng\"",line-height 1.00,light/320 light/390 light/1280 dark/320 dark/390 dark/1280
 help[4]: "17 more findings: add --full","Fix hard failures, then rerun the same command; soft ones need a fix or a written reason",…
 ```
 
@@ -264,6 +266,7 @@ Cờ của `check`:
 | `--viewports <w,w\|RxC>` | Bề rộng tính bằng px, hoặc rộng x cao (mặc định `320,390,1280`; mọi khổ được đo đủ) |
 | `--profile devices` | Khổ của thiết bị thật thay cho `--viewports` (320x568, 390x844, 768x1024, 1280x720, 1920x1080) kèm `--sweep`; chậm hơn mặc định khoảng 1,3 lần trên khối mẫu |
 | `--touch <px>` | Đích chạm nhỏ nhất trên màn chạm (mặc định 44, 0 là bỏ qua) |
+| `--engine <chromium\|webkit>` | Engine trình duyệt (mặc định chromium). `webkit` là WebKit của Playwright, gần Safari hơn nhưng không phải Safari iOS; cài một lần bằng `npx playwright install webkit`. Ở đó chỉ `render` và `errors` còn cứng |
 | `--schemes <light,dark>` | Chế độ màu cần render (mặc định cả hai) |
 | `--shots <thư mục>` / `--no-shots` | Thư mục ảnh chụp (mặc định `.design-kit/shots`) / không chụp |
 | `--no-impeccable` | Bỏ qua Impeccable (nhanh hơn) |
@@ -275,6 +278,7 @@ Cờ của `check`:
 | `--waivers <tệp>` / `--no-waivers` | Phát hiện mềm đã xét là ổn, mỗi mục kèm lý do (mặc định `.design-kit/waivers.json`, tối đa 5 mục mỗi trang; liệt kê ở mục `waived`) / hiện mọi phát hiện |
 | `--no-cache` | Đo lại mọi trang. Mặc định trang cục bộ mà mọi tệp nó nạp chưa đổi kể từ lần kiểm trước (cùng cờ) dùng lại kết quả cũ |
 | `--fresh` | Nạp lại trang cho mỗi khổ và mỗi chế độ màu. Mặc định trang được nạp một lần rồi đổi khổ, đổi sang tối ngay tại chỗ; một lần nạp mới mỗi trang phải cho cùng bố cục, trang nào lệch thì đo lại bằng cách nạp mới |
+| `--recheck <mã,mã>` | Chỉ đo lại trang, trạng thái và khổ của các phát hiện này (mã lấy từ lượt trước của đúng các trang ấy) và nói cái nào đã sửa |
 | `--limit <n>` / `--full` | Số phát hiện hiển thị (mặc định 25) / hiện hết |
 
 Tệp steps là danh sách trạng thái. Mỗi trạng thái bắt đầu từ một lần nạp trang mới và chạy thao tác của riêng nó:

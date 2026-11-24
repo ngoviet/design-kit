@@ -145,7 +145,10 @@ design-kit check <file.html|folder|http://localhost:port> --strict
   LCP/CLS, `guide`, `copy`, typing fields under 16px on phones (`input-zoom`), and Impeccable; then every state in
   `<page>.steps.json`. Soft since 24/11/2026: stuck bars (`sticky`), sound or permission before a tap (`autoplay`,
   `permission`), 44 px touch targets (`touch`), the reader's 200% text and spacing (`text-zoom`, `text-spacing`),
-  `font-unit`, `nfc`, `lang-part`, `orientation`.
+  `font-unit`, `nfc`, `lang-part`, `orientation`, `stress` (longer content), `contrast-px` (text on images), `keyboard`,
+  `tab-trap`, `skip-link`, `dialog-focus`, `forced-colors`, `contrast-more`, `offline`, `aria-state`, `css`.
+- Every finding has an id: after a fix run the same command with `--recheck <id,id>`; `since_last` lists fixed and new,
+  `marked-*.png` numbers them on the page.
 - `--profile devices` before you say it works everywhere: 320×568 to 1920×1080 with heights, swept to 2560.
 - Each page is also opened once as a real phone (`isMobile`): no `width=device-width` viewport meta is **hard**.
 - A blank page fails (`render`), and so do uncaught script errors and scripts/stylesheets that fail to load (`errors`).
@@ -169,7 +172,7 @@ design-kit check <file.html|folder|http://localhost:port> --strict
 Text contrast ≥ 4.5:1 (large 3:1), non-text ≥ 3:1, every theme · targets ≥ 24×24 px, 44 on touch · viewport
 meta `width=device-width` · no horizontal scroll at 320 px · body ≥ 16 px, nothing under 12 px at rendered size (SVG
 viewBox, `transform`/`scale`/`zoom` count), typing fields 16 px on phones · body line-height ≥ 1.5, Vietnamese headings
-≥ 1.2 · lines ≤ 75 chars (`--measure` = 32em) · no text clipped or painted over · `lang="vi"` · no movement with
+≥ 1.2 (soft) · lines ≤ 75 chars (`--measure` = 32em) · no text clipped or painted over · `lang="vi"` · no movement with
 reduced motion (fades are fine) · visible focus ≥ 2 px, not covered, still there in forced-colors mode · LCP ≤ 2.5 s, INP ≤
 200 ms, CLS ≤ 0.1 · 0 Impeccable slop findings · a page for the app's browser pane keeps its CSS in the page and stays
 ≤ 400 KB.

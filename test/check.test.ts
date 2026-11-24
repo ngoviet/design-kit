@@ -471,7 +471,7 @@ describe("check on real pages", () => {
 
   it("--fresh and resize in place give the same findings on a kit block", async () => {
     const args = ["check", "blocks/html/form-dang-nhap.html", "--query", "dk=giay", "--no-impeccable", "--no-shots", "--no-standalone", "--full"];
-    const findings = (o: string) => o.slice(o.indexOf("findings"), o.indexOf("notes"));
+    const findings = (o: string) => o.slice(o.indexOf("findings"), o.indexOf("notes")).replace(/(since_last|new_since_last|fixed_since_last)[\s\S]*$/, "");
     const [a, b] = [await run(args), await run([...args, "--fresh"])];
     expect(a.out).not.toContain("resize in place not used");
     expect(findings(a.out)).toBe(findings(b.out));
@@ -547,7 +547,7 @@ describe("check on real pages", () => {
     const base = ["check", "test/fixtures/tran-giua.html", "--no-impeccable", "--no-shots", "--no-standalone", "--schemes", "light"];
     expect((await run(base)).out).toContain("overflow,hard,ok");
     const { out } = await run([...base, "--sweep", "--full"]);
-    expect(out).toMatch(/hard,overflow,768px,"page is \d+px wide, viewport 768px",light\/768/);
+    expect(out).toMatch(/hard,overflow,768px,"page is \d+px wide, viewport 768px",[0-9a-z]{6},light\/768/);
     expect(out).not.toMatch(/overflow,(600|900|1024)px/);
     const both = await run([...base, "--sweep", "--fresh"]);
     expect(both.out).toContain("--sweep needs resize in place");

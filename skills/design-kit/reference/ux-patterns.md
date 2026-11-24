@@ -85,7 +85,7 @@ next item, pleading characters or random rewards for children · consent by defa
 - **M17 Wait over 1 s** (M) which step, how long; disable the pressed button; Stop; let people do something else. Under 1 s: silence. `trang-thai`
 - **M18 Offline, stale data** (W) keep the content, show its age, lock only what needs the network, unsent items get Retry. `trang-thai`
 - **M19 Did the device get it** (W) locks, gates, pumps: never "done" before the device confirms; mute devices get On and Off buttons, not a switch.
-- **M20 Slip of the hand** (M) easy to redo: do it, keep Undo; costly: ask and name it; chain reaction: type the name. `thong-bao`, `hop-thoai` (where Undo sits, toast or beside the change, is an open decision of the owner)
+- **M20 Slip of the hand** (M) easy to redo: do it, keep Undo; costly: ask and name it; chain reaction: type the name. Undo sits beside the change (a toast is gone before some people reach it); the kit's `thong-bao` keeps it in the toast for deletions. `thong-bao`, `hop-thoai`, `chon-mau`
 - **M21 Too many alerts** (M) three levels; thresholds with hysteresis; repeat less, stop when someone takes it; "mute until". Never batch smoke, gas, water, intrusion. `thong-bao`
 - **M22 One glance** (M) quiet when normal, the odd one speaks in words; find by room or dependency; show data age. `chi-so`
 - **M23 Keep a rhythm without pressure** (M) weekly goal with days off; a part counts; after a long break an ordinary session, debt paid silently; one shared bar, no ranking.

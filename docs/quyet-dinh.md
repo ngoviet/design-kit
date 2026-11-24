@@ -265,5 +265,22 @@ Chủ hỏi "các tri thức từ nghiên cứu có được cập nhật vào d
 - **Công cụ có sẵn:** chủ muốn khảo sát trước khi viết thêm phép đo, và chốt học để bổ sung chứ không thay design-kit. Năm nhóm phép đo này viết
   xong trước lời dặn đó; từ đây dừng viết phép đo mới tới khi có bảng khảo sát.
 
-Chờ chủ quyết: giãn dòng tiêu đề 1,2 xuống mềm; engine WebKit trong cổng; chỗ đặt Hoàn tác (toast hay cạnh chỗ đổi); nâng nút phụ của kit
-từ 40 lên 44 px trên màn chạm; focus mất hẳn lên cứng.
+Chủ quyết cùng ngày (trang khảo sát 56 công cụ, và trong phiên): giãn dòng tiêu đề xuống mềm; WebKit là cờ tuỳ chọn; Hoàn tác đặt cạnh chỗ vừa đổi,
+khối `thong-bao` giữ cho việc xoá; nâng đích chạm khối mẫu lên 44 px khi máy có chạm; so kiểu trước và sau focus rồi mới xét lên cứng; giữ `motion`
+đã sửa; lấy mười mục K1–K6, K8, K9, K14, K16.
+
+### Đợt hai cùng ngày: học từ công cụ khác để bổ sung
+
+Chủ chốt: học để bổ sung, không thay design-kit. Nguồn học chính là renderlint (MIT): nội dung kéo dài, tương phản từ điểm ảnh, lái bàn phím, cách báo.
+
+- **Bốn agent dựng song song, mỗi agent một bộ tệp; một người nối vào `check.ts`.** Mỗi mô-đun có trang sai, trang đúng và đột biến riêng.
+- **Phép đo mới tìm ra năm lỗi thật trong chính khối mẫu**, đã sửa: `thanh-ben` thiếu liên kết bỏ qua; mục đang chọn mất dấu trong màu ép buộc ở
+  `dau-trang`, `thanh-ben`, `bo-loc`; tên dài bị cắt ở `bang-du-lieu` (390 px); nút React dùng `transition: all`. Đó cũng là một nguồn của 11 báo oan
+  `text-zoom` hồi chiều.
+- **Một báo oan của phép đo mới, đã sửa:** `contrast-more` coi khối `@media` của bộ màu không được chọn là lời hứa của trang.
+- **Kết quả trên khối mẫu:** 117 trang và trạng thái, mọi phép đo mới 0 phát hiện (mặc định và `--profile devices`). Thời gian đo xen kẽ: bản cũ 146
+  và 159 s, bản mới 165 và 170 s (chậm hơn khoảng 10%).
+- **Bộ màu:** màu nhấn sáng (vàng, chanh, bạc hà) giữ nguyên với chữ đậm thay vì bị kéo tối; cam vẫn chữ trắng vì chữ đậm chỉ đạt Lc 50. Bản tương phản
+  cao cho chín bộ; ba hướng chưa có vì token của hướng giữ nguyên.
+- **Mã phát hiện bỏ số trước khi băm**, nên "14,2px" thành "14,4px" vẫn là một lỗi; lượt so chỉ tính trang có ở cả hai lượt và cùng bộ khổ, chế độ màu.
+- **Chưa làm:** logo quá to trong ngăn kéo của `thanh-ben` (lỗi có sẵn, đổi giao diện máy chuột nên để riêng); WebKit chưa cài trên PC1 nên chưa chạy thật.

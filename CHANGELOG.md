@@ -54,11 +54,26 @@ All notable changes to this project are documented here. The format follows
 - Nine color themes for people to pick (`tokens/themes.css`, seeds in `data/themes.json`, MIT notices in `tokens/NOTICE-themes.txt`),
   the solver `scripts/sinh-themes.mjs` (OKLCH; 774 pairs against WCAG 2 and APCA, plus karaoke text distances) and the picker block
   `chon-mau`.
+- `check` soft checks learned from other tools (ideas and lists from MIT projects, `data/NOTICE-third-party.md`): `stress` (text 50% longer, a
+  37-letter word, three more digits), `contrast-px` (text over images, gradients and patterns, which axe leaves incomplete), `keyboard`,
+  `tab-trap`, `skip-link`, `dialog-focus`, `contrast-more`, `forced-colors`, `offline`, `aria-state` and `css` (100vh, `transition: all`,
+  Vietnamese hyphenation, `color-scheme`, safe area, image size, `theme-color`, blocked paste). `copy` also flags leaked values (`undefined`,
+  `NaN`, `[object Object]`) and invented social proof. Axe's `css-orientation-lock` is on, under `orientation`.
+- `check` gives every finding an `id`, says what was fixed and what is new since the last run of the same pages, measures chosen findings again
+  with `--recheck <id,id>`, and saves a screenshot with the findings numbered (`marked-*.png`).
+- `check --sweep` adds the two widths beside each of the page's own `@media` breakpoints. `check --engine webkit` (optional; only `render` and
+  `errors` stay hard there).
+- Themes: dark text on bright accents instead of darkening them (with `--accent-border` for 3:1 shapes), a `prefers-contrast: more` version of
+  each theme, and a check that every theme has every role.
 - Skill references: `ux-patterns.md`, `multi-screen.md`, `themes.md`, `language-apps.md`. `docs/tieu-chi.md` has the rules with a
   checked source that the gate does not measure yet, and eleven corrected rows; `docs/nguon.md` lists their 104 sources.
 
 ### Fixed
 
+- Blocks: touch targets of 44 px on devices with touch (mouse layouts unchanged); the current item keeps a mark in forced-colors mode; `thanh-ben`
+  has a skip link; a long name wraps in `bang-du-lieu`; the React button no longer uses `transition: all`.
+- `heading-lh` is soft (owner's decision): what has to be stopped is a cut accent, which `text-clip` measures.
+- `focus` sees an indicator drawn with border, background or underline, by comparing the style before and during focus.
 - `motion` lets through animations of opacity and colors only: a fade that keeps running with reduced motion is no longer a hard failure
   (WCAG 2.3.3 is about motion, and is AAA). Everything else stays hard, also when it does not use `transform`.
 - `focus` accepts the browser's own focus ring, and says "thinner than 2px" apart from "no visible focus ring".

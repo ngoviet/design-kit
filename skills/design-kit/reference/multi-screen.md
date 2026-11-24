@@ -19,6 +19,9 @@ design-kit check <page> --profile devices --strict     # 320x568 390x844 768x102
 design-kit check <page> --viewports 375x553,393x659 --strict   # your own sizes
 ```
 
+After a fix, `design-kit check <same pages> --recheck <id,id>` measures only those findings (ids are in the output) and `since_last` says what
+was fixed and what is new; `marked-*.png` numbers the findings on the page. `--engine webkit` runs Playwright's WebKit when it is installed.
+
 The profile adds: overflow, text painted over and stuck bars at every swept size (with 640×360 = 1280×720 zoomed to 200% and
 844×390 = a phone on its side), line length from 1536 px, touch targets on a tablet. The default 320/390/1280 stays for the
 quick loop.
@@ -65,7 +68,8 @@ into the report.
 ## 6. Independent check
 
 Give a fresh session the old and the new code, not your conclusion. Ask it to break the new code on purpose and see which tests
-stay green: in one run 8 of 20 deliberate bugs went unnoticed, and it found an Undo that returned to a middle state.
+stay green: in one run 8 of 20 deliberate bugs went unnoticed, and it found an Undo that returned to a middle state. Tests that search the source
+for a string caught 3 of 14; cutting the whole function out and running it in node with fakes caught 18 of 18.
 
 ## Checklist
 

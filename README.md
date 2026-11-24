@@ -82,7 +82,9 @@ ring, motion that ignores reduced-motion, a "Next" button that does not say wher
   text and background pair passes WCAG 2 and APCA; the `chon-mau` block is the picker (Theo máy/Sáng/Tối, preview,
   Undo, applied before first paint). `scripts/sinh-themes.mjs` solves your own palette the same way.
 - **Real screen sizes.** `--profile devices` checks 320×568 to 1920×1080 with their heights and sweeps up to 2560 px,
-  with a phone on its side and a screen zoomed to 200%.
+  with a phone on its side, a screen zoomed to 200% and the widths beside the page's own breakpoints.
+- **Fixing is quick.** Every finding has a stable id, the next run says what was fixed and what is new, `--recheck` measures
+  only what you touched, and a numbered screenshot shows where each finding is.
 - **Blocks that already passed.** 14 HTML/CSS blocks and 4 React + shadcn/ui blocks, each gated in 3 directions ×
   light/dark, with the screenshots reviewed.
 - **Claude Code plugin.** A skill, plus hooks that remind the agent when it edits a UI file and stop it once if it
@@ -165,8 +167,8 @@ count: 4 of 21 total
 findings[4]{gate,check,where,detail,renders}:
   hard,overflow,320px,"page is 480px wide, viewport 320px",light/320 dark/320
   hard,text-min,"topo-card::shadow span.lbl \"Cổng 1 ↓ 12 Mb/s\"",font-size 9.9px,light/320 light/390 light/1280 dark/320 dark/390 dark/1280
-  soft,heading-lh,"h1 \"Bảng điều khiển mạng\"",line-height 1.00,light/320 light/390 light/1280 dark/320 dark/390 dark/1280
   hard,lang,<html>,"Vietnamese text but lang=\"en\"",light/320 light/390 light/1280 dark/320 dark/390 dark/1280
+  soft,heading-lh,"h1 \"Bảng điều khiển mạng\"",line-height 1.00,light/320 light/390 light/1280 dark/320 dark/390 dark/1280
 help[4]: "17 more findings: add --full","Fix hard failures, then rerun the same command; soft ones need a fix or a written reason",…
 ```
 
@@ -269,6 +271,7 @@ Flags of `check`:
 | `--viewports <w,w\|WxH>` | Widths in px, or width x height (default `320,390,1280`; every size gets every check) |
 | `--profile devices` | Real device sizes instead of `--viewports` (320x568, 390x844, 768x1024, 1280x720, 1920x1080) plus `--sweep`; about 1.3 times the default time on the kit's blocks |
 | `--touch <px>` | Smallest touch target wanted on a touch screen (default 44, 0 to skip) |
+| `--engine <chromium\|webkit>` | Browser engine (default chromium). `webkit` is Playwright's WebKit, closer to Safari but not iOS Safari; install it once with `npx playwright install webkit`. Only `render` and `errors` stay hard there |
 | `--schemes <light,dark>` | Color schemes to render (default both) |
 | `--shots <dir>` / `--no-shots` | Screenshot folder (default `.design-kit/shots`) / no screenshots |
 | `--no-impeccable` | Skip the Impeccable detector (faster) |
@@ -280,6 +283,7 @@ Flags of `check`:
 | `--waivers <file>` / `--no-waivers` | Soft findings reviewed as fine, each with a reason (default `.design-kit/waivers.json`, at most 5 per page; listed under `waived`) / show every finding |
 | `--no-cache` | Measure every page again. By default a local page whose loaded files are all unchanged since its last check with the same flags reuses that result |
 | `--fresh` | Load the page again for every width and color scheme. By default a page is loaded once, then resized and switched to dark in place; one fresh load per page must give the same layout, and a page that differs is redone fresh |
+| `--recheck <id,id>` | Measure again only the pages, states and sizes of these findings (ids from the last run of the same pages) and say which are fixed |
 | `--limit <n>` / `--full` | Findings to show (default 25) / every finding |
 
 A steps file is a list of states. Each state starts from a fresh load and runs its own actions: `click`, `fill`,
@@ -421,7 +425,7 @@ blocks/react/      Vite + React + shadcn/ui blocks on the same tokens
 src/               the CLI (check, probe, copy, steps, browser, impeccable, color commands)
 src/mod/           check-mod: shim and generic test, test runner, Ink terminal, desktop page, engine rules
 src/image/         check-image: canvas rendering, shape, color, sharpness, scoring, contact sheets
-data/              copy-tells.json (copy check), themes.json (theme seeds), claude-themes.json (Claude Code theme colors for check-mod)
+data/              copy-tells.json (copy check), NOTICE-third-party.md, themes.json (theme seeds), claude-themes.json (Claude Code theme colors for check-mod)
 skills/, hooks/    the Claude Code plugin; .claude-plugin/ holds its manifest and marketplace
 scripts/           color pair check, theme solver, DESIGN.md generator, font download, source export, Claude Code theme colors
 docs/              criteria, sources, decisions (Vietnamese)

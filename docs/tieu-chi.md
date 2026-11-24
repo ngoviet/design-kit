@@ -25,7 +25,7 @@ Mã nguồn `s…` và luận điểm `c…` tra trong [`docs/nguon.md`](nguon.m
 | Tương phản phi chữ | ≥ 3:1 (viền ô nhập, icon, vòng focus) | `scripts/kiem-cap-mau.mjs` trên token | cứng với token của kit (CI); trên trang đã dựng: chưa đo, agent tự kiểm | chuẩn: WCAG 1.4.11 (s6) |
 | APCA | Thân chữ \|Lc\| ≥ 75 (nên 90); chữ phụ, nhãn ≥ 60 | `palette-axi` | mềm | quy ước, chưa thành chuẩn (WCAG 3). Mức theo tài liệu APCA: "L c 90 is preferred and L c 75 is the minimum for body text" (git.apcacontrast.com, đọc lại 24/11/2026). Trước 24/11/2026 bảng ghi 60 cho thân chữ: sai |
 | Vùng bấm | ≥ 24×24 px | axe `target-size` | cứng | chuẩn: WCAG 2.5.8 AA (s1). Số 44 là dòng "Đích chạm" |
-| Đích chạm | ≥ 44×44 px trên thiết bị chạm (`--touch` đổi mức). Liên kết trong dòng văn được miễn; vùng bấm nới bằng `::after` hay nhãn được tính | `touch` (mở với `hasTouch` ở khổ điện thoại và khổ máy tính bảng 481–1024 có đo; hộp nhỏ thì thử bấm bốn điểm cách tâm gần nửa mức) | mềm | chuẩn nền tảng: Apple mặc định 44 pt, tối thiểu 28 pt (N40), Android 48 dp (N51); NN/g 1 cm (N101); WCAG 2.5.5 là AAA (N32), không phải AA. Khối mẫu của kit: 31 phát hiện đều thật (nút phụ 40 px, thẻ lọc 36 px, liên kết mục lục), 0 báo oan (24/11/2026) |
+| Đích chạm | ≥ 44×44 px trên thiết bị chạm (`--touch` đổi mức). Liên kết trong dòng văn được miễn; vùng bấm nới bằng `::after` hay nhãn được tính | `touch` (mở với `hasTouch` ở khổ điện thoại và khổ máy tính bảng 481–1024 có đo; hộp nhỏ thì thử bấm bốn điểm cách tâm gần nửa mức) | mềm | chuẩn nền tảng: Apple mặc định 44 pt, tối thiểu 28 pt (N40), Android 48 dp (N51); NN/g 1 cm (N101); WCAG 2.5.5 là AAA (N32), không phải AA. Khối mẫu của kit: 31 phát hiện đều thật (nút phụ 40 px, thẻ lọc 36 px, liên kết mục lục); sau khi nâng trên máy có chạm còn 0 (24/11/2026) |
 | Reflow | 320px không cuộn ngang. Từ 15/11/2026 khổ 320 được đo đủ mọi tiêu chí khác (probe, axe, Impeccable, ảnh chụp), không chỉ tràn ngang: khổ hẹp nhất là nơi bố cục gãy trước. `--sweep` đo thêm 16 khổ từ 344 tới 2560, gồm 640×360 (1280×720 phóng 200%) và 844×390 (điện thoại xoay ngang) | `overflow` | cứng | chuẩn: WCAG 1.4.10 (s8, c41; mốc chiều cao 256 px N35); nghiên cứu: kiểm ở vài khổ gợi ý chỉ thấy 66–81% lỗi bố cục (c40) |
 | Nhãn và tên | Ô nhập có nhãn; tên truy cập chứa chữ đang hiện | axe `label`, `label-content-name-mismatch` | cứng | chuẩn: WCAG 1.3.1, 2.5.3 |
 | Autocomplete | `username`, `current-password`, `new-password` đúng chỗ | axe `autocomplete-valid` + khối mẫu | cứng | chuẩn (s14) |
@@ -34,9 +34,9 @@ Mã nguồn `s…` và luận điểm `c…` tra trong [`docs/nguon.md`](nguon.m
 | Dừng chuyển động | Hiệu ứng tự chạy quá 5 s (vô hạn hoặc dài) hay video tự phát lặp, đứng cạnh nội dung khác, có nút dừng, tạm dừng hay ẩn | `pause` (Web Animations cả trong shadow root mở, `video`; bỏ chỉ báo đang tải: nhỏ hơn 64×64 px, trong `aria-busy`, `status`, `progressbar`, `alert`) | mềm | chuẩn: WCAG 2.2.2 mức A; hướng dẫn giao diện của Vercel (18/08/2026). 0/105 trang của kit (19/11/2026) |
 | Chữ hiện dần khi cuộn | Sau khi cuộn hết trang với giảm chuyển động, không chữ nào còn trong suốt | `reveal` (cuộn từng màn, chữ có opacity < 0,05 ở chính nó hay tổ tiên; bỏ phần tử absolute/fixed, aria-hidden, details/dialog đóng) | mềm | quy ước: taste-skill `hiddenWalk` (2.5.1, 07/11/2026); người bật giảm chuyển động thấy dải trống, ảnh chụp toàn trang đánh lừa người duyệt. 0/105 trang của kit |
 | Thực hành tốt của axe | Thứ tự tiêu đề, một `h1`, vùng `main`, nội dung nằm trong vùng mốc… | `axe-bp` (nhóm `best-practice` của axe, cùng một lượt `axe.run`) | mềm | công cụ: axe-core. Bắt được khối `bai-viet` thiếu vùng `main` (đã sửa, 19/11/2026) |
-| Focus | Thấy được, ≥ 2px, không bị che, không rơi vào phần tử vô hình (bị cắt về 1px, mờ hẳn, ngoài màn). Vẫn còn trong chế độ màu ép buộc (Windows High Contrast bỏ box-shadow; viền, kể cả viền trong suốt, được tô lại bằng màu hệ thống): vòng chỉ bằng bóng thì thêm `outline: 2px solid transparent`, Tailwind v4 là `outline-hidden` | `focus` (Tab 15 lần ở khổ 1280 **và** 390; phần tử có vòng chỉ bằng box-shadow được đo lại với `forcedColors: active` ngay khi đang focus) | mềm | chuẩn: 2.4.7, 2.4.11 AA, 2.4.13 AAA (s9, s10). Mất hẳn chỉ báo là trượt 2.4.7 (AA), mỏng hơn 2px chỉ dưới 2.4.13 (AAA): hai lời báo tách nhau; cả hai còn mềm vì phép đo chỉ đọc outline và box-shadow, chưa thấy chỉ báo bằng viền hay nền. Vòng mặc định của trình duyệt được tính là thấy (24/11/2026); hành vi forced-colors (c44); khối React của kit dính lỗi này (15/11/2026) |
+| Focus | Thấy được, ≥ 2px, không bị che, không rơi vào phần tử vô hình (bị cắt về 1px, mờ hẳn, ngoài màn). Vẫn còn trong chế độ màu ép buộc (Windows High Contrast bỏ box-shadow; viền, kể cả viền trong suốt, được tô lại bằng màu hệ thống): vòng chỉ bằng bóng thì thêm `outline: 2px solid transparent`, Tailwind v4 là `outline-hidden` | `focus` (Tab 15 lần ở khổ 1280 **và** 390; phần tử có vòng chỉ bằng box-shadow được đo lại với `forcedColors: active` ngay khi đang focus) | mềm | chuẩn: 2.4.7, 2.4.11 AA, 2.4.13 AAA (s9, s10). Mất hẳn chỉ báo là trượt 2.4.7 (AA), mỏng hơn 2px chỉ dưới 2.4.13 (AAA): hai lời báo tách nhau; cả hai còn mềm. Phép đo so kiểu trước và sau khi focus nên thấy cả chỉ báo bằng viền, nền, gạch chân; lên cứng khi qua hai đợt không báo oan. Vòng mặc định của trình duyệt được tính là thấy (24/11/2026); hành vi forced-colors (c44); khối React của kit dính lỗi này (15/11/2026) |
 | CWV | LCP ≤ 2,5 s, CLS ≤ 0,1 (lab); INP ≤ 200 ms (thực địa) | `lcp`, `cls` (lần nạp đầu, khổ rộng nhất, chế độ màu đầu, đọc trước khi đổi khổ) | mềm | chuẩn: p75 thực địa (s2). Nạp từ máy cục bộ, không điều tiết CPU hay mạng, nên LCP gần như luôn đạt: số này chỉ bắt trang hỏng nặng. Ghi nhớ cũ nói CLS cộng dồn qua các khổ: không tái hiện trên bản này (24/11/2026, 0,000 ở cả bốn cách chạy) |
-| Tiếng Việt | `lang="vi"`; giãn dòng tiêu đề ≥ 1,2; font có bộ ký tự vietnamese | `lang`, `heading-lh`, `font` | cứng / mềm | quy ước (s18). Giãn dòng tiêu đề 1,2 đang cứng: thứ cần chặn là dấu bị cắt, `text-clip` đã đo; hạ xuống mềm hay không **chờ chủ quyết** |
+| Tiếng Việt | `lang="vi"`; giãn dòng tiêu đề ≥ 1,2; font có bộ ký tự vietnamese | `lang`, `heading-lh`, `font` | cứng / mềm | quy ước (s18). Giãn dòng tiêu đề 1,2 mềm từ 24/11/2026 (chủ quyết): thứ cần chặn là dấu bị cắt, `text-clip` đã đo đúng thứ đó |
 | Mở được không cần máy chủ | Mở dạng `data:` URL (như trình duyệt trong app Claude mở tệp) vẫn còn mọi stylesheet trừ font, token không rỗng; chữ có dấu cùng font với chữ quanh nó; tệp ≤ 400 KB (pane chỉ mở tệp tối đa 512 KiB) | `standalone` (render thêm một lần dạng `data:text/html;charset=utf-8,…`, so với bản http; CDP `CSS.getPlatformFontsForNode` trên chữ có dấu tách riêng) | mềm | quy ước: gặp 10/11/2026, trang báo cáo hướng Giấy hiện toàn chữ Times trong pane mà cổng vẫn đạt; đo 11/11/2026: pane mở tệp 524 288 byte, từ chối 524 289 byte; giới hạn tính theo byte tệp, không theo độ dài URL |
 | Cỡ chữ | Không chữ nào < 12px, tính theo cỡ đã co: chữ SVG (viewBox) và chữ trong khối `transform: scale()`, `scale`, `zoom` | `text-min`, Impeccable `tiny-text` | cứng | quy ước (Impeccable) |
 | Thân chữ | ≥ 16px; giãn dòng ≥ 1,5 | `body-size`, `body-lh` | mềm | quy ước. WCAG 1.4.12 không bắt đặt 1,5 mà bắt chữ không mất khi người đọc ép 1,5 (c47): đó là dòng "Giãn chữ" |
@@ -56,7 +56,7 @@ Mã nguồn `s…` và luận điểm `c…` tra trong [`docs/nguon.md`](nguon.m
 | Phân cấp, cá tính | Trả lời có/không trên ảnh 390 và 1280: (1) nhìn 5 giây, thứ thấy đầu tiên có phải việc chính; (2) có đúng một nút chính; (3) che tiêu đề, còn biết đây là màn gì; (4) hai thứ khác loại có trông khác nhau; (5) có chỗ nào phải đọc hai lần; (6) ảnh thang xám còn phân cấp. Khớp DESIGN.md | ảnh chụp × sáng/tối, thêm một ảnh thang xám | người | nghiên cứu: LLM tự chấm chưa bằng người (s20, s21, c26, c59); sáu câu là quy ước (24/11/2026), thay cho "phân cấp và khẩu vị" không có câu hỏi |
 | Ma trận khổ theo thiết bị | `--profile devices`: 320×568, 390×844, 768×1024, 1280×720, 1920×1080 (điểm ảnh CSS) kèm `--sweep`; mặc định 320/390/1280 không đổi. Chạy trước khi nói "chạy trên mọi máy" | `--profile`, `--viewports RxC` | như từng phép đo | chuẩn nền tảng: mốc 600, 840, 1200, 1600 dp và lớp cao < 480 dp của Android (N50); nghiên cứu: c40. Khối mẫu: 105 trang đạt, chậm hơn mặc định 1,3 lần (24/11/2026) |
 | Phần dính | Thanh dính (fixed, sticky đang dính, rộng ≥ 60% màn) chiếm ≤ 30% chiều cao khung nhìn, ≤ 40% khi khung thấp dưới 480 px | `sticky` (cuộn một khung rồi đo, gộp phần chồng nhau; bỏ phần tử cao từ 70% màn như vỏ app và lớp nền, lớp phủ, vùng thông báo, nền trang trí; chỉ trạng thái đầu) | mềm | chuẩn nền tảng: Android xếp cao < 480 dp là compact (N50); số 30% và 40% là quy ước |
-| Không khoá hướng màn | Manifest không đặt `orientation` portrait hay landscape | `orientation` | mềm | chuẩn: WCAG 1.3.4 AA (N02) |
+| Không khoá hướng màn | Manifest không đặt `orientation` portrait hay landscape; CSS không xoay ngược trang theo hướng máy | `orientation` (manifest tải ngoài trang; luật thử nghiệm `css-orientation-lock` của axe) | mềm | chuẩn: WCAG 1.3.4 AA (N02) |
 | Không chặn phóng to | Không `user-scalable=no`, không `maximum-scale` nhỏ | axe `meta-viewport` (axe xếp mức vừa, nên mềm) | mềm | chuẩn: WCAG 1.4.4 AA (N01), MDN (N61) |
 | Chữ theo cỡ người đọc chọn | Đặt cỡ chữ trình duyệt 200%: thân chữ to lên từ 1,5 lần; không chữ nào mới bị cắt, bị che; trang không tràn ngang | `text-zoom` (CDP `Page.setFontSizes` 32 px ở khổ rộng nhất, đợi hiệu ứng; `data-zoom-ok` cho nhãn cố ý) | mềm | chuẩn: phần mất chữ và tràn là WCAG 1.4.4 AA (N01). Phần "chữ px không to lên" là quy ước theo Apple HIG (N40): 1.4.4 cho đạt bằng phóng cả trang |
 | Giãn chữ | Ép giãn dòng 1,5, cách đoạn 2 em, giãn chữ 0,12 em, giãn từ 0,16 em: không chữ nào mới bị cắt hay bị che | `text-spacing` (khổ rộng nhất và khổ hẹp có đo focus; tiêm vào cả open shadow root) | mềm | chuẩn: WCAG 1.4.12 AA (c47) |
@@ -65,6 +65,17 @@ Mã nguồn `s…` và luận điểm `c…` tra trong [`docs/nguon.md`](nguon.m
 | Ngôn ngữ từng phần | Chữ Hán nằm trong `lang` zh, ja, ko…; câu tiếng Anh trong trang `lang="vi"` có `lang="en"` | `lang-part` (chữ Hán theo Unicode; tiếng Anh nhận theo hư từ, từ 4 từ; `data-lang-ok` cho chữ cố ý) | mềm | chuẩn: WCAG 3.1.2 AA (N23) |
 | Không tự phát tiếng | Trước cú chạm hay phím đầu tiên: không `play()` có tiếng, không `autoplay` thiếu `muted`, không Web Audio `start()`, không đọc máy | `autoplay` (đo ý định: trình duyệt của cổng chặn tự phát nên đọc `paused` thì trang sai cũng đạt; mọi khung con) | mềm | chuẩn: WCAG 1.4.2 A (N12); MDN (N66); Chrome (N88). axe `no-autoplay-audio` đã đo phần thẻ audio, video |
 | Xin quyền đúng lúc | Trước cú chạm đầu tiên: không xin micro, camera, thông báo, vị trí | `permission` (bọc `getUserMedia`, `Notification.requestPermission`, `pushManager.subscribe`, `geolocation`) | mềm | chuẩn nền tảng: Apple HIG (N44); MDN (N67) |
+| Nội dung kéo dài | Chữ dài thêm 50%, một từ 37 chữ không ngắt, số thêm ba chữ số: không tràn, cắt hay che thêm chỗ nào | `stress` (khổ rộng nhất và 390; trả chữ về nguyên văn; `data-stress-ok`) | mềm | quy ước; ý renderlint (MIT). Tìm ra tên dài bị cắt ở khối `bang-du-lieu` |
+| Chữ trên ảnh, gradient, hoạ tiết | ≥ 4,5:1, chữ lớn 3:1, ở vùng xấu nhất (bách phân vị 5) | `contrast-px` (chụp hai lần, đọc điểm ảnh; tối đa 12 khối chữ; `data-contrast-ok`) | mềm | chuẩn: WCAG 1.4.3 (s5); axe không kết luận ở đó (c45) |
+| Bấm được thì Tab tới được | Không phần tử bấm được nào mà Tab không tới; Tab không quẩn một góc | `keyboard` (trình nghe qua CDP, `onclick`, `cursor: pointer`; `data-keyboard-ok`), `tab-trap` | mềm | chuẩn: WCAG 2.1.1, 2.1.2 A (N33) |
+| Bỏ qua khối lặp | Điều hướng ≥ 5 liên kết đứng trước nội dung thì một trong ba điểm Tab đầu là liên kết bỏ qua, hiện khi focus | `skip-link` | mềm | chuẩn: WCAG 2.4.1 A (N25). Tìm ra khối `thanh-ben` thiếu |
+| Hộp thoại giữ và trả focus | Hộp modal: focus ở trong, Tab không ra ngoài, Esc đóng, đóng xong focus về nút mở | `dialog-focus` (trạng thái sau thao tác) | mềm | chuẩn: WCAG 2.1.2 A (N33), MDN `<dialog>` (N77) |
+| Tương phản cao | Trang có luật `prefers-contrast` trúng phần tử của nó: chữ thân ≥ 7:1 khi người dùng bật | `contrast-more` (`emulateMedia`, axe `color-contrast-enhanced`) | mềm | chuẩn: MDN (N63); WCAG 1.4.6 AAA (N37) |
+| Màu ép buộc cả trang | Nút, ô, thẻ còn mép; mục đang chọn còn khác anh em | `forced-colors` | mềm | chuẩn: MDN (N64), c44. Tìm ra mục đang chọn mất dấu ở `dau-trang`, `thanh-ben`, `bo-loc` |
+| Ngoại tuyến | Có service worker: mất mạng tải lại vẫn hiện nội dung, hoặc nói rõ | `offline` (trang riêng) | mềm | chuẩn: MDN (N78); web.dev (N94) |
+| Trạng thái ARIA theo cú bấm | Bấm làm trang đổi thì `aria-expanded`, `-pressed`, `-selected`, `-checked` đổi theo | `aria-state` (trong steps) | mềm | chuẩn: WCAG 4.1.2 A (N36) |
+| Đọc CSS bằng máy | Không `100vh` cho khối gần bằng màn điện thoại (N62); không `transition: all` (c68); chữ Việt không `hyphens: auto`, `break-all` (c76); `color-scheme` khớp nền (N65); thanh sát mép có vùng an toàn (N60, N85); ảnh giữ chỗ (N91); `theme-color` khớp nền (N70); ô mật khẩu, mã không chặn dán (N06) | `css` (chỉ luật thật sự thắng trên phần tử đang hiện; `data-css-ok`) | mềm | chuẩn: theo từng mã ở cột ngưỡng |
+| Giá trị kỹ thuật lộ ra | Không `undefined`, `NaN`, `[object Object]`, `Invalid Date` trong chữ; không bằng chứng xã hội chung chung tự đặt | `copy` | mềm | quy ước; danh sách từ renderlint và FixMySlop (MIT, `data/NOTICE-third-party.md`) |
 
 ## Quy tắc có nguồn, cổng chưa đo (24/11/2026)
 
@@ -74,21 +85,14 @@ ghi kết quả vào báo cáo; không có phát hiện không có nghĩa là đ
 
 | Tiêu chí | Ngưỡng | Đo bằng | Cổng | Loại, nguồn |
 | --- | --- | --- | --- | --- |
-| BC-06 Khung cao bằng màn | Trên điện thoại không `100vh` cho khối gần bằng màn; dùng `100dvh` hoặc `100svh` | đọc CSS | người | chuẩn: MDN (N62) |
 | BC-07 Thanh cuộn | Trang từ ngắn sang dài không làm bố cục nhảy ngang | hai trạng thái steps | người | chuẩn: MDN `scrollbar-gutter` (N81) |
 | BC-08 Thứ tự mã = thứ tự nhìn | Tab hết trang không nhảy ngược | Tab tay | người | chuẩn: WCAG 1.3.2 (N30), 2.4.3 (N21) |
 | BC-09 Điểm gãy theo khung chứa | Thành phần dùng lại (thẻ, bảng, thanh công cụ) đổi bố cục bằng container query, không theo tên máy | đặt thẻ vào cột 300 px ở màn 1920 | người | chuẩn CSS (c4); phần "không theo tên máy" là quy ước |
 | CH-05 Đủ chữ Việt mọi độ đậm | "ẮẰẲẴẶ ỡ ự ĐƯỜNG" ở mỗi độ đậm, kiểu nghiêng đang dùng vẽ từ một font | ảnh chụp, CDP font | người | quy ước (c24, c75) |
 | CH-06 Chữ hoa tiếng Việt | `uppercase` chỉ cho nhãn ngắn; nhiều dòng thì giãn dòng ≥ 1,3 | đọc CSS | người | quy ước, vì dấu chồng (c75) |
-| CH-07 Ngắt dòng | Chữ Việt không `hyphens: auto`, không `break-all` | đọc CSS | người | chuẩn (c76) |
 | CH-10 Phiên âm | Dùng `<ruby>` cho pinyin, furigana; thanh điệu bằng dấu, không bằng số | đọc mã, ảnh chụp | người | chuẩn: MDN (N72) |
-| MA-01 Khai báo theme | `color-scheme` liệt kê đúng theme trang có | đọc CSS | người | chuẩn: MDN (N65) |
 | MA-02 Người dùng chọn theme | Web và PWA: ba nấc Theo máy, Sáng, Tối; áp trước lần vẽ đầu, nhớ theo người. App của chủ có sẵn nhiều bộ màu (khối `chon-mau`) | mở trang khi máy đặt sáng và đặt tối | người | quyết định của chủ (24/11/2026); nghiên cứu: NN/g (N110). Apple HIG khuyên ngược cho app native (N45) |
-| MA-04 Tương phản cao | Với `prefers-contrast: more`: chữ ≥ 7:1, không nền trong mờ sau chữ | giả lập, axe `color-contrast-enhanced` | người | chuẩn: MDN (N63); WCAG 1.4.6 AAA (N37) |
-| MA-05 Màu ép buộc cả trang | Với `forced-colors: active`: nút, ô, thẻ còn viền; đang chọn còn phân biệt được | giả lập, ảnh chụp | người | chuẩn: MDN (N64), c44 |
 | MA-06 Không chỉ dùng màu | Đúng/sai, lỗi, đang chọn có thêm chữ hoặc hình | ảnh thang xám | người | chuẩn: WCAG 1.4.1 A (N08); HIG (N46) |
-| MA-07 Chữ trên ảnh, gradient, hoạ tiết | ≥ 4,5:1 ở vùng xấu nhất. axe không kết luận được chỗ này | xem ảnh chụp; phép đo điểm ảnh chờ chủ chọn | người | chuẩn: WCAG 1.4.3 (s5); c45 |
-| MA-08 Thanh trình duyệt | `theme-color` cho từng theme, khớp nền đầu trang | đọc thẻ | người | chuẩn: MDN (N70) |
 | MA-09 Ảnh trong theme tối | Không mảng sáng lớn do ảnh hay biểu đồ nền trắng | ảnh chụp tối | người | chuẩn nền tảng: HIG (N45) |
 | MA-10 Đủ cặp màu cho mọi trạng thái | hover, nhấn, focus, đang chọn đạt 4,5:1 hoặc 3:1 | steps `hover`, `press` rồi axe | người | chuẩn: WCAG 1.4.3, 1.4.11 (s5, s6) |
 | TB-06 Theo con trỏ, không theo bề rộng | Kiểu hover trong `@media (hover: hover)`; đích lớn theo `(any-pointer: coarse)` | đọc CSS | người | chuẩn: MDN (N68, N69) |
@@ -97,13 +101,11 @@ ghi kết quả vào báo cáo; không có phát hiện không có nghĩa là đ
 | TB-10 Bàn phím ảo | Ô đang gõ và nút gửi nằm trong khung nhìn khi bàn phím mở | máy thật, hoặc hạ chiều cao còn 420 | người | chuẩn: MDN (N80) |
 | TB-11 Máy gập | Màn ngoài 344 px không tràn (`--sweep`); gập đôi không nút hay chữ vắt qua nếp gập | `--sweep`, máy thật | người | chuẩn: MDN `device-posture`, còn thử nghiệm (N73) |
 | TB-13 Không đoán thiết bị | Không rẽ nhánh theo user-agent hay "bề rộng = loại máy" | đọc mã | người | chuẩn nền tảng: HIG (N42) |
-| NT-01 Vùng an toàn | Có `viewport-fit=cover` thì thanh sát mép có `env(safe-area-inset-*)` | đọc CSS, máy thật | người | chuẩn: WebKit (N85), MDN (N60) |
 | NT-03 Kéo để tải lại | Đang làm bài, đang thu: `overscroll-behavior-y: contain`, hoặc bài còn sau khi tải lại | steps tải lại | người | chuẩn: MDN (N74) |
 | NT-04 Back đóng lớp phủ trước | Mở hộp, bấm Back: hộp đóng, vẫn ở trang | steps | người | chuẩn: MDN `<dialog>` (N77) |
 | NT-05 PWA cài được | Manifest có tên, `start_url`, `display`, icon 192 và 512, icon maskable | đọc manifest | người | chuẩn: web.dev (N89); c98–c102 |
 | NT-06 Standalone tự đủ điều hướng | Mọi màn có lối về | giả lập `display-mode` | người | chuẩn: web.dev (N93), MDN (N71) |
 | NT-07 Dữ liệu không chỉ ở trình duyệt | Dữ liệu người dùng lưu ở máy chủ hoặc xuất ra được | đọc mã | người | nền tảng: Safari xoá sau 7 ngày không dùng (N87) |
-| NT-08 Ngoại tuyến có chủ ý | Mất mạng: trang còn, có chữ báo, form giữ chữ; không tin riêng `navigator.onLine` | tắt mạng | người | chuẩn: MDN (N78); web.dev (N94) |
 | NT-09, NT-10 App native | iOS: 44 pt, chữ theo Dynamic Type, ≤ 5 tab. Android: 48 dp, bố cục theo lớp bề rộng, 3–5 đích ở thanh dưới, tràn mép từ Android 15 | công cụ của nền tảng, máy thật | người | chuẩn nền tảng (N40, N41, N43, N50, N51, N52, N53) |
 | TT-02 Phản hồi theo mốc | 0,1 s thấy đổi; trên 1 s có chỉ báo; trên 10 s có ước lượng và cho huỷ | steps | người | nghiên cứu: NN/g (N100, N106) |
 | TT-05 Khung chờ | Khung chờ cho tải cả trang, đúng hình bố cục sau | steps | người | nghiên cứu: NN/g (N105, N100) |
@@ -112,24 +114,22 @@ ghi kết quả vào báo cáo; không có phát hiện không có nghĩa là đ
 | TT-08 Bàn phím ảo đúng loại | `inputmode` đúng; ô gõ đáp án ngoại ngữ tắt tự sửa, tự viết hoa | đọc mã | người | chuẩn: MDN (N76); phần đáp án là quy ước |
 | TT-09 Nhãn luôn hiện | Placeholder không thay nhãn | ảnh chụp | người | nghiên cứu: NN/g (N107); WCAG 3.3.2 A (N19) |
 | TT-10 Không hỏi lại, không bắt nhớ | Không hỏi lại điều đã nhập; mật khẩu, mã cho dán; có lối không cần nhớ | steps | người | chuẩn: WCAG 3.3.7 A (N07), 3.3.8 AA (N06) |
-| TT-11 Hoàn tác thay hỏi lại | Đảo được: làm ngay kèm Hoàn tác. Không đảo được: hộp nêu cái gì mất | steps | người | nghiên cứu: NN/g (N104); WCAG 3.3.4 (N31). Chỗ đặt nút Hoàn tác (toast hay cạnh chỗ đổi) **chờ chủ quyết**: GitLab bỏ khỏi toast (N138), khối `thong-bao` của kit đặt trong toast |
+| TT-11 Hoàn tác thay hỏi lại | Đảo được: làm ngay kèm Hoàn tác. Không đảo được: hộp nêu cái gì mất | steps | người | nghiên cứu: NN/g (N104); WCAG 3.3.4 (N31). Nút Hoàn tác đặt cạnh chỗ vừa đổi (chủ quyết 24/11/2026; GitLab bỏ khỏi toast, N138); khối `thong-bao` giữ trong toast cho việc xoá |
 | TT-12 Thông báo tới trình đọc | Chữ mới sau thao tác nằm trong `role="status"`; lỗi `alert`; không cướp focus | steps, đọc DOM | người | chuẩn: WCAG 4.1.3 AA (N11) |
 | TT-13 Giới hạn thời gian | Bài tính giờ có chế độ không giờ hoặc giờ ×10 | người | người | chuẩn: WCAG 2.2.1 A (N05) |
 | TT-14 Kéo thả, vuốt có lối chạm | Mọi bài kéo thả làm xong được chỉ bằng chạm | steps chỉ `click` | người | chuẩn: WCAG 2.5.7 AA (N03), 2.5.1 A (N09) |
 | TT-15 Chạy khi nhả tay | Hành động ở `click`/`pointerup`; giữ để nói huỷ được | đọc mã | người | chuẩn: WCAG 2.5.2 A (N10) |
 | TT-16 Nội dung khi rê chuột | Esc đóng, rê vào được, tới được bằng focus và chạm | steps `hover` | người | chuẩn: WCAG 1.4.13 AA (N04); MDN (N68) |
-| TT-17 Bàn phím làm được mọi việc | Không gì bấm được mà Tab không tới; hộp thoại giữ và trả focus, Esc đóng | Tab tay | người | chuẩn: WCAG 2.1.1, 2.1.2 A (N33); MDN (N77) |
+| TT-17 Bàn phím làm được mọi việc | Ngoài phần máy đo (`keyboard`, `tab-trap`, `dialog-focus`): làm xong việc chính chỉ bằng bàn phím | Tab tay | người | chuẩn: WCAG 2.1.1, 2.1.2 A (N33); MDN (N77) |
 | TT-18 Phím tắt một ký tự | Tắt được, không chạy khi đang gõ | steps | người | chuẩn: WCAG 2.1.4 A (N22) |
 | TT-19 Chọn không đổi ngữ cảnh | Chọn trong danh sách không tự chuyển trang | steps | người | chuẩn: WCAG 3.2.2 A (N20) |
 | TT-20 Cuộn | Không chiếm quyền cuộn; vùng cuộn lồng nhau có `overscroll-behavior: contain` | đọc CSS | người | chuẩn: MDN (N74) |
-| TC-04 Tên, vai, trạng thái | Sau khi bấm, `aria-selected`, `-pressed`, `-expanded`, `-checked` đổi theo | steps | người | chuẩn: WCAG 4.1.2 A (N36) |
 | TC-05 Chữ là chữ | Từ, câu, nút không phải ảnh chứa chữ | ảnh chụp | người | chuẩn: WCAG 1.4.5 AA (N27) |
 | TC-06 Không bắt lắc, nghiêng máy | Mọi việc làm được không cần cảm biến | đọc mã | người | chuẩn: WCAG 2.5.4 A (N29) |
 | DH-01 Biết đang ở đâu | `aria-current` ở mục hiện tại; mỗi trang `<title>` riêng | đọc mã | người | chuẩn: WCAG 2.4.2 A (N26), 1.4.1 (N08) |
 | DH-02 Điều hướng chính nhìn thấy | Điện thoại ≤ 5 mục cấp một có chữ; màn rộng hiện sẵn | ảnh chụp | người | nghiên cứu: NN/g (N108); nền tảng (N52, N43) |
 | DH-03 Icon có nhãn chữ | Nút chỉ có icon chỉ cho việc ai cũng biết (đóng, tìm, phát…) | ảnh chụp | người | nghiên cứu: NN/g (N109) |
 | DH-05 Vị trí nhất quán | Điều hướng và trợ giúp cùng chỗ, cùng thứ tự mọi màn | ảnh chụp | người | chuẩn: WCAG 3.2.3 AA (N24), 3.2.6 A (N14) |
-| DH-06 Bỏ qua khối lặp | Tab đầu tiên là liên kết tới nội dung chính | Tab một lần | người | chuẩn: WCAG 2.4.1 A (N25) |
 | ND-02 Lỗi nói cách sửa | Không trơ trọi "Đã có lỗi xảy ra" | đọc chữ | người | nghiên cứu: NN/g (N103) |
 | ND-03 Nút xác nhận mang động từ | Không "OK", "Có", "Không" | đọc chữ | người | nghiên cứu: NN/g (N104) |
 | ND-08 Chỉ dẫn không dựa vị trí, màu | Gọi tên nút, không "nút xanh bên phải" | đọc chữ | người | chuẩn: WCAG 1.3.3 A (N28) |
@@ -147,21 +147,19 @@ ghi kết quả vào báo cáo; không có phát hiện không có nghĩa là đ
 | TE-06 Sai không bị phạt | Gợi ý, thử lại, hiện đáp án đúng; không dấu X to, không âm chê | ảnh trạng thái `sai` | người | nghiên cứu: một thí nghiệm ở trẻ khoảng 7,6 tuổi (N135); tổng quan 44 bài thấy lẫn lộn (N134) |
 | TE-08, TE-09 Cổng phụ huynh, bên thứ ba | Hồ sơ trẻ: không liên kết ra ngoài, không yêu cầu tới miền khác; cài đặt sau cổng phụ huynh | nhật ký mạng | người | chuẩn nền tảng: Apple (N48, N136) |
 | TD-02 Phản hồi khi bấm | INP ≤ 200 ms | đo thực địa | người | chuẩn: web.dev (N90); c73 |
-| TD-03 Giữ chỗ ảnh, video | Có `width`, `height` hoặc `aspect-ratio` | đọc mã | người | chuẩn: web.dev (N91) |
 | TD-05 Font không làm nhảy chữ | woff2 tự host, `font-display`, dự phòng chỉnh số đo | đọc CSS | người | chuẩn: web.dev (N92) |
-| TD-07 Hoạt ảnh rẻ | Chỉ đổi `transform`, `opacity`; không `transition: all` | đọc CSS | người | quy ước (c68) |
 | TD-09 Back tức thì | Không nghe `unload`, hạn chế `no-store` | đọc mã | người | web.dev (N95) |
 | RT-03 HTTPS | Micro, service worker cần ngữ cảnh an toàn | nhật ký mạng | người | chuẩn: MDN (N67) |
-| RT-06 Đăng nhập | Ô mật khẩu cho dán, không chặn trình quản lý mật khẩu | steps | người | chuẩn: WCAG 3.3.8 AA (N06) |
+| RT-06 Đăng nhập | Không chặn trình quản lý mật khẩu (ô chặn dán thì `css` đã đo) | steps | người | chuẩn: WCAG 3.3.8 AA (N06) |
 | QT-06 Tám câu kiểm tay | Chỉ bàn phím; trình đọc; phóng 200%; xoay ngang; tắt tiếng; lỗi form đọc lên; thứ tự đọc; không gì chỉ hiện khi rê chuột | người, 15 phút mỗi luồng | người | chuẩn: WCAG 2.2 AA; axe chỉ thấy khoảng 57% (c46) |
 | QT-07 Miễn trừ có hạn | Mỗi miễn trừ có lý do và ngày, xem lại sau 90 ngày; lỗi cứng không miễn được | đọc `.design-kit/waivers.json` | người | c58; số 90 ngày là quy ước |
 
 **Không nhập** từ bộ 149 quy tắc mở rộng, vì chỉ là quy ước chưa có nguồn, nguồn còn viết từ trí nhớ, hoặc câu trích không đỡ con
 số (TD-04, TE-07): BC-02, BC-04, BC-10, CH-09, CH-11, CH-12, MA-11, MA-13, TB-09, TB-12, NT-11, NT-12, TT-03, DH-04, DH-07 đến
-DH-11, ND-01, ND-04 đến ND-07, AT-03, AT-08, AT-10, TE-04, TE-05, TE-07, TE-10 đến TE-12, TD-04, TD-06, TD-08, TD-10, RT-02, RT-04,
-RT-05, RT-07 đến RT-09, QT-01 đến QT-04, QT-08 đến QT-10. Chờ chủ quyết: NT-02 (engine WebKit trong cổng). Đã nằm trong dòng
-khác: BC-01, BC-03, BC-05, CH-01 đến CH-04, CH-08, MA-03, MA-12, TB-01 đến TB-05, TT-01, TT-04, AT-01, AT-06, RT-01, TC-01 đến
-TC-03, TD-01, QT-05.
+DH-11, ND-04 đến ND-07, AT-03, AT-08, AT-10, TE-04, TE-05, TE-07, TE-10 đến TE-12, TD-04, TD-06, TD-08, TD-10, RT-02, RT-04,
+RT-05, RT-07 đến RT-09, QT-01 đến QT-04, QT-08 đến QT-10. NT-02 là cờ `--engine webkit`
+(tuỳ chọn). Đã nằm trong dòng khác: BC-01, BC-03, BC-05, BC-06, CH-01 đến CH-04, CH-07, CH-08, MA-01, MA-03 đến MA-05, MA-07, MA-08,
+MA-12, TB-01 đến TB-05, NT-01, NT-08, TT-01, TT-04, DH-06, ND-01, AT-01, AT-06, RT-01, TC-01 đến TC-04, TD-01, TD-03, TD-07, QT-05.
 
 **Đừng biến thành luật** (hay bị gọi nhầm là chuẩn): "mọi thứ trong 3 cú nhấp" (không có số liệu đỡ, N120); "44 px hay 48 px là
 AA" (AA là 24, c1); "giãn dòng 1,5 là AA" (AA đòi chịu được khi người đọc ép, c47); "768 là máy tính bảng, 1024 là desktop"

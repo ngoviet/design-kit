@@ -35,6 +35,7 @@ Chuẩn và cổng cho giao diện do agent làm.
   - `commands/setup.ts`: kiểm trình duyệt, tải engine.
   - `standalone.ts`: phép đo `standalone`, mở tệp dạng `data:` URL như pane của app Claude rồi so với bản http.
   - `sizes.ts` (khổ có chiều cao, hồ sơ `devices`, khổ quét, phần dính, khoá hướng), `onload.ts` (tự phát tiếng, tự xin quyền), `touch.ts`, `textresize.ts` (phóng chữ 200%, giãn chữ, đơn vị cỡ chữ), `langparts.ts` (NFC, ngôn ngữ từng phần): phép đo mềm thêm 24/11/2026, mỗi tệp một nhóm, hàm trong trang tự chứa.
+  - Đợt hai 24/11/2026: `stress.ts`, `breakpoints.ts`, `pixelcontrast.ts`, `keyboard.ts`, `emulate.ts`, `csscheck.ts` (phép đo mềm), `report.ts` (mã phát hiện, so với lượt trước `.design-kit/runs/`, `--recheck`, ảnh đánh số). Thứ tự chạy ở khổ rộng nhất nằm trong `wideTail` của `check.ts`, có ý: phép nào đổi trang thì chạy sau.
   - `commands/inline.ts`: lệnh `inline`, gộp stylesheet liên kết tương đối vào trang, giữ link font.
   - `commands/check-mod.ts` + `mod/`: lệnh `check-mod`, cổng cho mod Claude Code (vẽ bằng `ui.render`, không có trang).
     - `mod/collect.ts`: đọc `claude plugin validate`, chép mod sang thư mục tạm, gắn lớp chặn, chạy `claude plugin test` mỗi ngôn ngữ một lượt.
@@ -140,6 +141,7 @@ Chuẩn và cổng cho giao diện do agent làm.
   - Người dùng chọn chữ to: CDP `Page.setFontSizes` đúng hơn `html{font-size:200%}` (media query theo em đổi theo; `html{font-size:16px}` lộ ra). Phải chờ hiệu ứng: `transition: all` chạy cả font-size.
   - `outline: auto` (vòng mặc định) có computed width 1px mà vẽ dày hơn; chỉ tính là vòng khi chính phần tử là thứ người dùng thấy.
   - `net::ERR_ADDRESS_IN_USE` ở một trạng thái là Windows hết cổng tạm, không phải lỗi trang: chạy lại (bản cũ cũng trượt chập chờn một lượt trên hai).
+  - Ảnh `fullPage` của trang cao hơn màn làm mất `any-pointer: coarse` và màu ép buộc: kéo khung nhìn cao bằng trang rồi chụp thường.
   - Đừng so thời gian của hai lượt đo cách xa nhau: máy bận làm cùng một bản từ 139 s thành 205 s. Chạy xen kẽ cũ, mới, cũ, mới.
   - `lệnh | tail` nuốt mã thoát: đã commit khi còn một test đỏ. Dùng `set -o pipefail` hoặc ghi ra tệp rồi đọc mã thoát.
 

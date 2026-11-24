@@ -50,7 +50,7 @@ export function longer(text: string, by: number, filler: string[]): string {
 const NOT_AMOUNT = /\d\s*[:h]\s*\d|\d\s*[/]\s*\d|\d{4}-\d{1,2}|\d-\d{1,2}-\d|[★☆⭐°#]|\p{L}[-_.]?\d|\d(?:[KGDhp]|MP|px|fps)\b/u;
 /** Điện thoại, tổng đài. */
 const PHONE = /^\(?(?:\+\d{1,3}|0)[\d\s().-]{8,}$|^1[89]00[\s.]?\d{4,6}$/;
-/** Bốn số 0–255 không có số 0 đứng đầu: địa chỉ IP, kể cả khi trông như dấu nhóm (192.168.100.200). */
+/** Bốn số 0–255 không có số 0 đứng đầu: địa chỉ IP, kể cả khi trông như dấu nhóm (255.255.255.128). */
 const IP = /^(?:(?:0|[1-9]\d?|1\d\d|2[0-4]\d|25[0-5])(?:\.|$)){4}$/;
 
 /**
