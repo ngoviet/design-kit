@@ -78,7 +78,12 @@ ring, motion that ignores reduced-motion, a "Next" button that does not say wher
   *Đậm* (bold: landing pages, marketing), each a token file with light and dark themes and a generated DESIGN.md.
   All 126 color pairs pass WCAG; `design-kit doi-mau` re-hues a direction to fit a brand and re-solves lightness so
   they still pass.
-- **Blocks that already passed.** 13 HTML/CSS blocks and 4 React + shadcn/ui blocks, each gated in 3 directions ×
+- **Nine color themes people can pick.** `tokens/themes.css` holds nine themes in light and dark, solved so that every
+  text and background pair passes WCAG 2 and APCA; the `chon-mau` block is the picker (Theo máy/Sáng/Tối, preview,
+  Undo, applied before first paint). `scripts/sinh-themes.mjs` solves your own palette the same way.
+- **Real screen sizes.** `--profile devices` checks 320×568 to 1920×1080 with their heights and sweeps up to 2560 px,
+  with a phone on its side and a screen zoomed to 200%.
+- **Blocks that already passed.** 14 HTML/CSS blocks and 4 React + shadcn/ui blocks, each gated in 3 directions ×
   light/dark, with the screenshots reviewed.
 - **Claude Code plugin.** A skill, plus hooks that remind the agent when it edits a UI file and stop it once if it
   tries to finish without running the gate.
@@ -261,7 +266,9 @@ Flags of `check`:
 | --- | --- |
 | `--query <q,q>` | Run each page once per query string, e.g. `dk=dem,dk=giay,dk=dam` |
 | `--steps <file.json\|json>` / `--no-steps` | States to reach by clicking and typing (overrides `<page>.steps.json`) / ignore steps files |
-| `--viewports <w,w>` | Widths in px (default `320,390,1280`; every width gets every check) |
+| `--viewports <w,w\|WxH>` | Widths in px, or width x height (default `320,390,1280`; every size gets every check) |
+| `--profile devices` | Real device sizes instead of `--viewports` (320x568, 390x844, 768x1024, 1280x720, 1920x1080) plus `--sweep`; about 1.3 times the default time on the kit's blocks |
+| `--touch <px>` | Smallest touch target wanted on a touch screen (default 44, 0 to skip) |
 | `--schemes <light,dark>` | Color schemes to render (default both) |
 | `--shots <dir>` / `--no-shots` | Screenshot folder (default `.design-kit/shots`) / no screenshots |
 | `--no-impeccable` | Skip the Impeccable detector (faster) |
@@ -269,7 +276,7 @@ Flags of `check`:
 | `--focus <n>` | Tab stops to inspect (default 15) |
 | `--strict` | Exit 1 when any page has a hard failure |
 | `--jobs <n>` | Pages checked at once (default 3, max 8) |
-| `--sweep` | Also check horizontal overflow at in-between widths (360, 414, 480, 600, 768, 900, 1024, 1180 inside the `--viewports` range), about 0.1 s per width |
+| `--sweep` | Also check horizontal overflow, text painted over, stuck bars (and line length from 1536 px) at 16 more sizes from 344 to 2560 px wide, with 640x360 and 844x390, about 0.3 s per size |
 | `--waivers <file>` / `--no-waivers` | Soft findings reviewed as fine, each with a reason (default `.design-kit/waivers.json`, at most 5 per page; listed under `waived`) / show every finding |
 | `--no-cache` | Measure every page again. By default a local page whose loaded files are all unchanged since its last check with the same flags reuses that result |
 | `--fresh` | Load the page again for every width and color scheme. By default a page is loaded once, then resized and switched to dark in place; one fresh load per page must give the same layout, and a page that differs is redone fresh |
@@ -406,16 +413,17 @@ had 45 hard failures and the design-kit builds 0. The owner picked the design-ki
 ## Project layout
 
 ```text
-tokens/            fonts-local.css + fonts/ (self-hosted, Latin + Vietnamese), core.css, dem/giay/dam.css
+tokens/            fonts-local.css + fonts/ (self-hosted, Latin + Vietnamese), core.css, dem/giay/dam.css,
+                   themes.css (nine themes) + NOTICE-themes.txt
 design/<dir>/      DESIGN.md per direction, generated from the tokens
-blocks/html/       13 HTML/CSS blocks, each with an optional <block>.steps.json
+blocks/html/       14 HTML/CSS blocks, each with an optional <block>.steps.json
 blocks/react/      Vite + React + shadcn/ui blocks on the same tokens
 src/               the CLI (check, probe, copy, steps, browser, impeccable, color commands)
 src/mod/           check-mod: shim and generic test, test runner, Ink terminal, desktop page, engine rules
 src/image/         check-image: canvas rendering, shape, color, sharpness, scoring, contact sheets
-data/              copy-tells.json (copy check), claude-themes.json (Claude Code theme colors for check-mod)
+data/              copy-tells.json (copy check), themes.json (theme seeds), claude-themes.json (Claude Code theme colors for check-mod)
 skills/, hooks/    the Claude Code plugin; .claude-plugin/ holds its manifest and marketplace
-scripts/           color pair check, DESIGN.md generator, font download, source export, Claude Code theme colors
+scripts/           color pair check, theme solver, DESIGN.md generator, font download, source export, Claude Code theme colors
 docs/              criteria, sources, decisions (Vietnamese)
 eval/              A/B evaluation pages
 ```

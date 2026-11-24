@@ -34,6 +34,7 @@ Chuẩn và cổng cho giao diện do agent làm.
   - `commands/mau.ts`: `doi-mau` và `kiem-mau`. Hai lệnh nạp `scripts/doi-mau-lib.mjs` lúc chạy (không bundle), nên chỉ có một nguồn thuật toán.
   - `commands/setup.ts`: kiểm trình duyệt, tải engine.
   - `standalone.ts`: phép đo `standalone`, mở tệp dạng `data:` URL như pane của app Claude rồi so với bản http.
+  - `sizes.ts` (khổ có chiều cao, hồ sơ `devices`, khổ quét, phần dính, khoá hướng), `onload.ts` (tự phát tiếng, tự xin quyền), `touch.ts`, `textresize.ts` (phóng chữ 200%, giãn chữ, đơn vị cỡ chữ), `langparts.ts` (NFC, ngôn ngữ từng phần): phép đo mềm thêm 24/11/2026, mỗi tệp một nhóm, hàm trong trang tự chứa.
   - `commands/inline.ts`: lệnh `inline`, gộp stylesheet liên kết tương đối vào trang, giữ link font.
   - `commands/check-mod.ts` + `mod/`: lệnh `check-mod`, cổng cho mod Claude Code (vẽ bằng `ui.render`, không có trang).
     - `mod/collect.ts`: đọc `claude plugin validate`, chép mod sang thư mục tạm, gắn lớp chặn, chạy `claude plugin test` mỗi ngôn ngữ một lượt.
@@ -56,6 +57,7 @@ Chuẩn và cổng cho giao diện do agent làm.
 ## Lệnh
 
 - Đổi màu: sửa `tokens/<huong>.css`, rồi chạy `node scripts/kiem-cap-mau.mjs` (126 cặp, mọi cặp phải đạt) và `node scripts/tao-design-md.mjs`. Lint bằng `npm run lint:design`.
+- Bộ màu cho người dùng chọn: sửa `data/themes.json`, chạy `node scripts/sinh-themes.mjs` (ghi `tokens/themes.css`; `--kiem` chỉ kiểm). Thêm bộ thì thêm thẻ trong `blocks/html/chon-mau.html` và thông báo bản quyền trong `tokens/NOTICE-themes.txt`; `test/themes.test.ts` so cả ba. Kiểm mọi bộ: `design-kit check blocks/html/chon-mau.html --query "chu-de=neon,chu-de=flexoki,…" --strict`.
 - CLI: `npm run check` (tsc, eslint, vitest; test chạy Edge thật), sau đó `npx tsup`. Lệnh toàn cục đi qua `npm link`.
 - Plugin: `claude plugin validate .`. Kiểm gói npm: `npm pack --dry-run --json --ignore-scripts`. Thêm thư mục mới mà gói cần thì phải ghi vào `files`.
 - Cổng cho mọi khối:
@@ -131,6 +133,13 @@ Chuẩn và cổng cho giao diện do agent làm.
 - **Hook Stop từng chỉ thấy Write/Edit**: tệp sửa qua Bash, PowerShell, MCP lọt hết. Nay thêm tệp git thấy đã đổi sau khi phiên bắt đầu (so mtime với lúc lệnh kiểm có kết quả).
 - **Bỏ chờ cố định làm lộ hai chỗ dựa vào thời gian**: hiệu ứng vào trang 1,1 s bị đo giữa chừng (nay chờ hiệu ứng có hồi kết tới 1,5 s trước khi đo chữ), và CDP hỏi font của nút vừa chèn trước khi trình duyệt dàn trang (nay ép dàn trang). Đổi cách chờ thì chạy toàn bộ test vài lượt.
 - **Kiểm thành phần sống trong app chủ** (card HA, widget) cần trang chứa giả đủ thứ app chủ cấp: `ha-card` là khối (`display:block`, thiếu thì mất nền), `ha-icon` chiếm `--mdc-icon-size` (rỗng thì nút co lại, axe báo target-size nhầm), `lang`, bề rộng co theo khổ. Lỗi do trang chứa thì ghi riêng, không tính cho thành phần.
+
+- **Phép đo mới (24/11/2026):**
+  - `page.evaluate` của Playwright chạy kèm userGesture: `navigator.userActivation.hasBeenActive` thành true ngay ở câu hỏi đầu tiên. Muốn biết người dùng đã chạm chưa thì tự nghe sự kiện `isTrusted` (`onload.ts`).
+  - Trình duyệt headless chặn tự phát tiếng: đọc `paused` sau vài giây thì trang sai và trang đúng giống nhau. Đo ý định (bọc `play()`, `start()`).
+  - Người dùng chọn chữ to: CDP `Page.setFontSizes` đúng hơn `html{font-size:200%}` (media query theo em đổi theo; `html{font-size:16px}` lộ ra). Phải chờ hiệu ứng: `transition: all` chạy cả font-size.
+  - `outline: auto` (vòng mặc định) có computed width 1px mà vẽ dày hơn; chỉ tính là vòng khi chính phần tử là thứ người dùng thấy.
+  - `net::ERR_ADDRESS_IN_USE` ở một trạng thái là Windows hết cổng tạm, không phải lỗi trang: chạy lại.
 
 ## Quy tắc
 

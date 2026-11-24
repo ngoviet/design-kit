@@ -41,11 +41,27 @@ All notable changes to this project are documented here. The format follows
 - `check` reuses the result of a local page whose every loaded file is unchanged since its last check with the same
   flags, design-kit code, axe, Impeccable engine and browser (`.design-kit/cache`); the output says how many pages
   were reused. `--no-cache` measures everything again.
-- `check --sweep`: horizontal overflow at in-between widths (360, 414, 480, 600, 768, 900, 1024, 1180 inside the
-  `--viewports` range), measured on the open page.
+- `check --sweep`: horizontal overflow, text painted over, stuck bars, and line length from 1536 px, at 16 more sizes from
+  344 to 2560 px wide, with 640×360 (1280×720 zoomed to 200%) and 844×390 (a phone on its side), on the open page.
+- `check --viewports` takes `WxH`; `check --profile devices` measures 320×568, 390×844, 768×1024, 1280×720 and 1920×1080 with
+  `--sweep`. The default 320/390/1280 (heights 720/844/800) is unchanged.
+- `check` soft checks from the 24/11/2026 research, each with a wrong and a right sample page: `sticky` (stuck bars over 30% of the
+  screen height, 40% under 480 px), `orientation` (manifest locks the direction), `autoplay` and `permission` (sound or a permission
+  asked before the first tap; the attempt is recorded, because the gate's browser blocks the sound), `touch` (targets under 44×44 px on
+  a touch screen, `--touch`), `text-zoom` (the reader's font size at 200%, through CDP), `text-spacing` (WCAG 1.4.12), `font-unit`
+  (font-size in viewport units only), `nfc` (letters typed as letter + combining mark) and `lang-part` (Han outside zh/ja/ko, English
+  sentences inside `lang="vi"`). On the kit's 105 pages and states: `touch` 31 findings, all real targets of 18–40 px; the others 0.
+- Nine color themes for people to pick (`tokens/themes.css`, seeds in `data/themes.json`, MIT notices in `tokens/NOTICE-themes.txt`),
+  the solver `scripts/sinh-themes.mjs` (OKLCH; 774 pairs against WCAG 2 and APCA, plus karaoke text distances) and the picker block
+  `chon-mau`.
+- Skill references: `ux-patterns.md`, `multi-screen.md`, `themes.md`, `language-apps.md`. `docs/tieu-chi.md` has the rules with a
+  checked source that the gate does not measure yet, and eleven corrected rows; `docs/nguon.md` lists their 103 sources.
 
 ### Fixed
 
+- `motion` counts only animations that move, scale, rotate or resize things; a fade or a color change that keeps running with reduced
+  motion is no longer a hard failure (WCAG 2.3.3 is about motion, and is AAA).
+- `focus` accepts the browser's own focus ring, and says "thinner than 2px" apart from "no visible focus ring".
 - The `input-zoom` row said `skipped` when 320 was the only phone width, while the check ran there and reported
   findings.
 - An unexpected error in one page no longer closes the browser under the pages still being checked.

@@ -235,3 +235,28 @@ Chủ yêu cầu rà soát, sửa lỗi, test lại, và nghiên cứu thêm ch�
   2.2.2, chữ hiện dần khi cuộn mà không bao giờ hiện, thẻ `best-practice` của axe ở mức mềm), lỗi hook còn lại (mẫu
   `SKIP` so đường dẫn tuyệt đối, chữ nhắc lệnh trong `grep` tính như đã chạy cổng), bản `data:` URL chưa đợi nội dung
   đến muộn, cờ `--fields` không lệnh nào dùng.
+
+## 24/11/2026: nhập nghiên cứu (149 quy tắc mở rộng, bộ UX, kiểm đa màn hình, bộ màu)
+
+Chủ hỏi "các tri thức từ nghiên cứu có được cập nhật vào design-kit không". Làm trong worktree riêng, từ `origin/main`.
+
+- **Bảng tiêu chí chỉ ghi thứ cổng đo thật.** 159 dòng của bộ mở rộng được xét từng dòng: có nguồn đã đối chiếu mà chưa có phép đo thì
+  vào mục riêng với cổng "người"; chỉ là quy ước hay nguồn từ trí nhớ thì không nhập (danh sách mã ở cuối mục đó). Lý do: bảng cũ có
+  những ngưỡng không ai đo (44 px, tương phản phi chữ trên trang) mà vẫn ghi cứng.
+- **Mười tám nguồn "từ trí nhớ":** 12 đọc thật (câu trích khớp trang gốc), 1 đã có trong kho (c47), 5 để ngoài (N112–N116).
+- **Phép đo mới đều mềm**, kể cả thứ nghiên cứu đề nghị cứng (NFC, chữ Hán, tự phát tiếng, xin quyền): qua hai đợt 0 báo oan mới xét lên cứng.
+- **Khổ thiết bị là hồ sơ, không đổi mặc định**, để trang đang đạt không đổi kết quả. Cổng toàn bộ 105 trang trước và sau: phán quyết và mọi
+  phát hiện cũ trùng hệt, 138,7 s và 138,5 s; `--profile devices` 178,8 s.
+- **Ba báo oan tìm thấy khi chạy trên khối mẫu, đã sửa trong phép đo:** `text-zoom` đo giữa `transition: all` (11 phát hiện giả), `sticky`
+  đo menu vừa mở (6), `touch` bỏ sót nhãn của nút `role="checkbox"`. Thêm một lỗi do test cũ bắt: vòng `auto` của ô tích trong suốt.
+- **`motion` nới theo chuẩn:** chỉ cứng với chuyển động; mờ dần, đổi màu được phép (2.3.3 là AAA, cơ sở AA là 2.2.2).
+- **Focus mất hẳn vẫn mềm**, dù là trượt 2.4.7 AA: phép đo chỉ đọc outline và box-shadow. Muốn lên cứng phải so kiểu trước và sau khi focus.
+- **CLS "cộng dồn qua các khổ" không tái hiện** trên bản này (đọc ở lượt render đầu, trước khi đổi khổ): giữ phép đo, ghi rõ cách đo.
+- **Bộ màu:** chủ muốn tích hợp vào kit vì mọi app có nhiều bộ cho người dùng chọn. Chín bộ sinh từ hạt giống; bản Node cho đúng 391/391 mã màu
+  của bản Python đang chạy thật. Neon tối chép nguyên văn. Bảng gốc MIT giữ thông báo bản quyền.
+- **Không có mức kích thước riêng cho trẻ 6 tuổi:** chủ bỏ ngày 24/11/2026.
+- **Công cụ có sẵn:** chủ muốn khảo sát trước khi viết thêm phép đo, và chốt học để bổ sung chứ không thay design-kit. Năm nhóm phép đo này viết
+  xong trước lời dặn đó; từ đây dừng viết phép đo mới tới khi có bảng khảo sát.
+
+Chờ chủ quyết: giãn dòng tiêu đề 1,2 xuống mềm; engine WebKit trong cổng; chỗ đặt Hoàn tác (toast hay cạnh chỗ đổi); nâng nút phụ của kit
+từ 40 lên 44 px trên màn chạm; focus mất hẳn lên cứng.

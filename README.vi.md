@@ -76,7 +76,12 @@ chế độ giảm chuyển động, nút "Tiếp" không nói đi đâu. Làm c
 - **Ba hướng, chép là dùng.** *Đêm* (ứng dụng, dashboard), *Giấy* (tài liệu, báo cáo) và *Đậm* (landing,
   marketing). Mỗi hướng là một tệp token có bản sáng và tối, kèm DESIGN.md sinh tự động. Cả 126 cặp màu đạt WCAG;
   `design-kit doi-mau` đổi sắc một hướng theo thương hiệu rồi dò lại độ sáng để mọi cặp vẫn đạt.
-- **Khối mẫu đã qua cổng.** 13 khối HTML/CSS và 4 khối React + shadcn/ui, mỗi khối đã qua cổng ở 3 hướng × sáng/tối,
+- **Chín bộ màu cho người dùng tự chọn.** `tokens/themes.css` có chín bộ, mỗi bộ bản sáng và bản tối, đã giải để mọi cặp
+  chữ/nền đạt cả WCAG 2 lẫn APCA; khối `chon-mau` là màn chọn (Theo máy/Sáng/Tối, xem trước, Hoàn tác, áp trước lần
+  vẽ đầu). `scripts/sinh-themes.mjs` giải bảng màu của bạn theo cùng cách.
+- **Khổ màn thật.** `--profile devices` đo từ 320×568 tới 1920×1080 kèm chiều cao và quét tới 2560 px, có cả điện
+  thoại xoay ngang và màn phóng 200%.
+- **Khối mẫu đã qua cổng.** 14 khối HTML/CSS và 4 khối React + shadcn/ui, mỗi khối đã qua cổng ở 3 hướng × sáng/tối,
   và đã được xem ảnh chụp.
 - **Plugin cho Claude Code.** Một skill, cùng hook nhắc agent khi sửa tệp giao diện và chặn một lần nếu agent định
   báo xong mà chưa chạy cổng.
@@ -256,7 +261,9 @@ Cờ của `check`:
 | --- | --- |
 | `--query <q,q>` | Chạy mỗi trang một lần cho mỗi chuỗi truy vấn, ví dụ `dk=dem,dk=giay,dk=dam` |
 | `--steps <tệp.json\|json>` / `--no-steps` | Các trạng thái cần bấm hay gõ để tới (thay cho `<trang>.steps.json`) / bỏ qua tệp steps |
-| `--viewports <w,w>` | Bề rộng tính bằng px (mặc định `320,390,1280`; mọi khổ được đo đủ) |
+| `--viewports <w,w\|RxC>` | Bề rộng tính bằng px, hoặc rộng x cao (mặc định `320,390,1280`; mọi khổ được đo đủ) |
+| `--profile devices` | Khổ của thiết bị thật thay cho `--viewports` (320x568, 390x844, 768x1024, 1280x720, 1920x1080) kèm `--sweep`; chậm hơn mặc định khoảng 1,3 lần trên khối mẫu |
+| `--touch <px>` | Đích chạm nhỏ nhất trên màn chạm (mặc định 44, 0 là bỏ qua) |
 | `--schemes <light,dark>` | Chế độ màu cần render (mặc định cả hai) |
 | `--shots <thư mục>` / `--no-shots` | Thư mục ảnh chụp (mặc định `.design-kit/shots`) / không chụp |
 | `--no-impeccable` | Bỏ qua Impeccable (nhanh hơn) |
@@ -264,7 +271,7 @@ Cờ của `check`:
 | `--focus <n>` | Số điểm dừng Tab cần xem (mặc định 15) |
 | `--strict` | Thoát 1 khi có trang bị lỗi cứng |
 | `--jobs <n>` | Số trang kiểm cùng lúc (mặc định 3, tối đa 8) |
-| `--sweep` | Đo thêm tràn ngang ở các khổ trung gian (360, 414, 480, 600, 768, 900, 1024, 1180 trong dải `--viewports`), khoảng 0,1 giây mỗi khổ |
+| `--sweep` | Đo thêm tràn ngang, chữ bị che, phần dính (và độ dài dòng từ 1536 px) ở 16 khổ nữa từ 344 tới 2560 px, có 640x360 và 844x390, khoảng 0,3 giây mỗi khổ |
 | `--waivers <tệp>` / `--no-waivers` | Phát hiện mềm đã xét là ổn, mỗi mục kèm lý do (mặc định `.design-kit/waivers.json`, tối đa 5 mục mỗi trang; liệt kê ở mục `waived`) / hiện mọi phát hiện |
 | `--no-cache` | Đo lại mọi trang. Mặc định trang cục bộ mà mọi tệp nó nạp chưa đổi kể từ lần kiểm trước (cùng cờ) dùng lại kết quả cũ |
 | `--fresh` | Nạp lại trang cho mỗi khổ và mỗi chế độ màu. Mặc định trang được nạp một lần rồi đổi khổ, đổi sang tối ngay tại chỗ; một lần nạp mới mỗi trang phải cho cùng bố cục, trang nào lệch thì đo lại bằng cách nạp mới |
@@ -399,7 +406,7 @@ chụp nằm trong [`eval/`](eval/).
 ```text
 tokens/            fonts-local.css + fonts/ (tự host, Latin + tiếng Việt), core.css, dem/giay/dam.css
 design/<huong>/    DESIGN.md của từng hướng, sinh từ token
-blocks/html/       13 khối HTML/CSS, mỗi khối có thể kèm <khoi>.steps.json
+blocks/html/       14 khối HTML/CSS, mỗi khối có thể kèm <khoi>.steps.json
 blocks/react/      khối Vite + React + shadcn/ui dùng chung token
 src/               CLI (check, probe, copy, steps, trình duyệt, impeccable, lệnh màu)
 src/mod/           check-mod: lớp chặn và test chung, chạy test, terminal bằng Ink, trang desktop, luật engine
