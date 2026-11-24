@@ -596,7 +596,7 @@ export function probeCovered(): ProbeHit[] {
  * không có outline nào (kể cả trong suốt). Chế độ màu ép buộc (Windows High Contrast) đặt box-shadow về none, nên vòng
  * biến mất; outline thì được tô lại bằng màu hệ thống (thử trên Edge 15/11/2026: outline trong suốt thành rgb(55, 0, 110)).
  */
-export function probeFocus(): { where: string; indicator: boolean; shadowOnly: boolean; obscured: boolean; hidden: boolean } | null {
+export function probeFocus(): { where: string; indicator: boolean; thin: boolean; shadowOnly: boolean; obscured: boolean; hidden: boolean } | null {
   let el: Element | null = document.activeElement;
   while (el && el.shadowRoot && el.shadowRoot.activeElement) el = el.shadowRoot.activeElement;
   if (!el || el === document.body || el === document.documentElement) return null;
@@ -636,7 +636,10 @@ export function probeFocus(): { where: string; indicator: boolean; shadowOnly: b
   const seen = proxies.length ? proxies.map((p) => getComputedStyle(p)) : [cs];
   const anyOutline = seen.some((s) => s.outlineStyle !== "none" && parseFloat(s.outlineWidth) > 0);
   const anyShadow = seen.some((s) => s.boxShadow !== "none" && s.boxShadow !== "");
-  return { where, indicator: hasRing(cs) || proxies.some((p) => hasRing(getComputedStyle(p))), shadowOnly: anyShadow && !anyOutline, obscured, hidden };
+  // `auto` là vòng mặc định của trình duyệt: computed width ghi 1px nhưng Chromium vẽ vòng hai tông dày hơn, WCAG 2.4.7 chấp
+  // nhận nó. Chỉ tính khi chính phần tử là thứ người dùng thấy: ô tích trong suốt có hình vẽ thay thì vòng ấy vô hình.
+  const ownRing = !proxies.length && cs.outlineStyle === "auto" && parseFloat(cs.outlineWidth) > 0;
+  return { where, indicator: hasRing(cs) || ownRing || proxies.some((p) => hasRing(getComputedStyle(p))), thin: anyOutline, shadowOnly: anyShadow && !anyOutline, obscured, hidden };
 }
 
 /**
@@ -803,7 +806,11 @@ export function markVietnameseText(max: number): string[] {
   return out;
 }
 
-/** Animation còn chạy (dùng sau khi giả lập prefers-reduced-motion: reduce). */
+/**
+ * Animation còn chạy và làm vật dịch, phóng, xoay hay đổi kích thước (dùng sau khi giả lập prefers-reduced-motion: reduce).
+ * Mờ dần và đổi màu không tính: WCAG 2.3.3 (mức AAA) nói về chuyển động, và người nhạy cảm tiền đình không bị chúng làm chóng
+ * mặt. Trước 24/11/2026 mọi hiệu ứng còn chạy đều là lỗi cứng, chặt hơn chuẩn.
+ */
 export function probeMotion(): { running: number; samples: string[] } {
   // Gom cả hoạt ảnh trong open shadow root (document.getAnimations() bỏ sót, xem settleAnimations): thẻ web component
   // bỏ qua prefers-reduced-motion từng qua được phép đo cứng này (19/11/2026).
@@ -817,11 +824,19 @@ export function probeMotion(): { running: number; samples: string[] } {
     }
   };
   walk(document);
+  const MOVES = /^(transform|translate|rotate|scale|offset|left|top|right|bottom|width|height|minwidth|minheight|maxwidth|maxheight|margin|padding|inset|backgroundposition|objectposition|perspective|fontsize|letterspacing|gap|flexbasis|gridtemplate|clippath|d$|cx|cy|r$|x$|y$)/i;
   const anims = [...new Set(all)].filter((a) => {
     if (a.playState !== "running") return false;
     const t = a.effect?.getComputedTiming();
     const dur = typeof t?.duration === "number" ? t.duration : 0;
-    return dur > 50 || t?.iterations === Infinity;
+    if (!(dur > 50 || t?.iterations === Infinity)) return false;
+    const eff = a.effect as KeyframeEffect | null;
+    // Không đọc được khung hình chính (hiệu ứng lạ) thì coi là có chuyển động.
+    const frames = typeof eff?.getKeyframes === "function" ? (eff.getKeyframes() as Array<Record<string, unknown>>) : [];
+    const props = frames.flatMap((k) => Object.keys(k)).filter((p) => !["offset", "easing", "composite", "computedOffset"].includes(p));
+    const tp = (a as CSSTransition).transitionProperty;
+    const named = [...props, ...(tp ? [tp] : [])];
+    return !named.length || named.some((p) => MOVES.test(p.replace(/-/g, "")));
   });
   const samples = anims.slice(0, 5).map((a) => {
     const target = (a.effect as KeyframeEffect | null)?.target;

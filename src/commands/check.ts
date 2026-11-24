@@ -11,6 +11,11 @@ import { installSchemeWatch, installVitals, probeCovered, probeFingerprint, prob
 import type { Runtime } from "../runtime.js";
 import { LATE_MS, type NetWatch, QUIET_CAP_MS, settleAfterChange, settlePage, watchNetwork } from "../settle.js";
 import { inputZoomFinding } from "../zoom.js";
+import { heightFor, MAX_WIDTH, MIN_WIDTH, parseSize, probeOrientation, probeSticky, PROFILES, type Size, stickyFinding, SWEEP_SIZES, WIDE_FROM } from "../sizes.js";
+import { installOnload, onloadFinding, readOnload } from "../onload.js";
+import { probeLangParts } from "../langparts.js";
+import { probeTouch, TOUCH_MIN, touchFinding } from "../touch.js";
+import { probeFontUnit, type ResizeFinding, spacingPass, zoomPass } from "../textresize.js";
 import { applyWaivers, loadWaivers, WAIVER_MAX_PER_PAGE } from "../waivers.js";
 import { cacheKey, depPath, entryValid, fileSha, readEntry, sha, writeEntry } from "../cache.js";
 import { VERSION } from "../version.js";
@@ -20,11 +25,13 @@ import { loadSteps, parseSteps, runActions, STEPS_FORMAT, type StepAction, type 
 
 export const CHECK_HELP = `usage: design-kit check <file|dir|url>... [flags]
 description: Design gate. Renders each page at 320/390/1280 px in light and dark, then measures what a person would hit: axe-core (WCAG 2.2 AA), horizontal overflow, text size and line height (through open shadow roots), text cut off by ellipsis or overflow, Vietnamese lang and fonts, line length, reduced motion, keyboard focus, LCP/CLS, guidance (vague "Next" buttons, dead-end empty states, up-front tours), copy that reads as unedited AI text (stock phrases, chatbot residue, placeholders, markdown left in) and the Impeccable detector. States reached by clicking (form errors, step 3, an open dialog) are measured too, from a steps file. A local file is also opened the way the Claude app's browser pane opens it (a data: URL, no server), to catch a page that loses its linked CSS. Prints one verdict per page and state: hard failures block "done", soft ones need a reason. Facts the agent filled in itself (marked data-assumed) are listed for the owner to confirm
-flags[21]:
+flags[23]:
   --query <q,q>: run each page once per query string (e.g. dk=dem,dk=giay,dk=dam for design-kit blocks)
   --steps <file.json|json>: states to reach by clicking/typing, each measured like a page (overrides <page>.steps.json)
   --no-steps: ignore <page>.steps.json files next to the pages
-  --viewports <w,w>: widths in px (default 320,390,1280; every width gets every check)
+  --viewports <w,w|WxH>: widths in px, or width x height (default 320,390,1280; every size gets every check)
+  --profile devices: real device sizes instead of --viewports (320x568, 390x844, 768x1024, 1280x720, 1920x1080) plus --sweep; about 1.3 times the default time on the kit blocks
+  --touch <px>: smallest touch target wanted on a touch screen (default 44, 0 to skip)
   --schemes <light,dark>: color schemes to render (default light,dark)
   --shots <dir>: screenshot folder (default .design-kit/shots); --no-shots to skip
   --no-shots: do not save screenshots
@@ -37,14 +44,14 @@ flags[21]:
   --waivers <file.json>: soft findings reviewed as fine, each with a reason (default .design-kit/waivers.json when it exists); listed under "waived", never hidden; --no-waivers ignores the file
   --no-waivers: show every finding, ignoring the waivers file
   --no-cache: measure every page again (and refresh the cache); by default a local page whose every loaded file is unchanged since its last check (same flags, same design-kit, axe, Impeccable and browser) reuses that result, and the output says how many
-  --sweep: also check horizontal overflow at in-between widths (360, 414, 480, 600, 768, 900, 1024, 1180 within the --viewports range), on the open page; about 0.1 s per width
+  --sweep: also check horizontal overflow, text painted over, stuck bars (and line length from 1536px) at 16 more sizes from 344 to 2560 px wide, with 640x360 (a 1280x720 screen zoomed to 200%) and 844x390 (a phone on its side), on the open page; about 0.3 s per size
   --fresh: load the page again for every width and color scheme (default: load once, resize and switch scheme in place, verified against one fresh load per page and redone fresh when the layout differs)
   --limit <n>: findings to show (default 25)
   --full: every finding
   --help: this help
 gates[3]:
-  hard: a page that shows nothing (no text, image or graphic, also 5 s after the network went idle), an uncaught script error or a script/stylesheet that fails to load, a page a phone lays out wider than its screen and shrinks (no width=device-width viewport meta; measured once with a mobile-emulated render at the widest --viewports width ≤ 480), overflow at 320px, axe serious/critical (contrast, target size, labels…), text < 12px, heading line-height < 1.2 in Vietnamese, missing lang="vi", animation that ignores reduced motion, a step that cannot be done (selector not found), Impeccable slop rules and quality rules a user trips on (low-contrast, tiny-text, overflow, occlusion, script errors)
-  soft: a custom element that is never defined, axe moderate/minor, body text < 16px or line-height < 1.5, lines > 80ch, a scroll box hiding content (cut-off table), text cut off (an ellipsis or line-clamp hiding words, overflow hidden/clip cutting letters or Vietnamese accents; reports the text still shown and the width), more than 12 fields on one screen, input-zoom (a typing field with small text at phone width: iOS zooms the page in when it is tapped; rule in src/zoom.ts), guide (button that only says "Tiếp"/"Next", empty state with no next action, tour or welcome modal on load), web font not loaded, focus ring missing or hidden, copy (generation 1: stock phrases, template openers, chatbot residue such as "Chắc chắn rồi!", placeholders like [Tên công ty] or {{name}} or lorem ipsum, markdown ## or ** shown as text; generation 2: a row of 3–4 short stats under the hero, a heading in fragments "X. Y.", a link that only says "Xem thêm"/"Learn more"; lists in data/copy-tells.json), LCP > 2.5s, CLS > 0.1, standalone (opened as a file the page loses stylesheets or tokens, is over 400 KB (the pane opens at most 512 KiB), or draws Vietnamese letters from a second font), other Impeccable quality rules and advisories
+  hard: a page that shows nothing (no text, image or graphic, also 5 s after the network went idle), an uncaught script error or a script/stylesheet that fails to load, a page a phone lays out wider than its screen and shrinks (no width=device-width viewport meta; measured once with a mobile-emulated render at the widest --viewports width ≤ 480), overflow at 320px, axe serious/critical (contrast, target size, labels…), text < 12px, heading line-height < 1.2 in Vietnamese, missing lang="vi", animation that moves, scales or rotates things and ignores reduced motion (fades and color changes are allowed), a step that cannot be done (selector not found), Impeccable slop rules and quality rules a user trips on (low-contrast, tiny-text, overflow, occlusion, script errors)
+  soft: a custom element that is never defined, axe moderate/minor, body text < 16px or line-height < 1.5, lines > 80ch, a scroll box hiding content (cut-off table), text cut off (an ellipsis or line-clamp hiding words, overflow hidden/clip cutting letters or Vietnamese accents; reports the text still shown and the width), more than 12 fields on one screen, input-zoom (a typing field with small text at phone width: iOS zooms the page in when it is tapped; rule in src/zoom.ts), guide (button that only says "Tiếp"/"Next", empty state with no next action, tour or welcome modal on load), web font not loaded, focus ring missing or hidden, copy (generation 1: stock phrases, template openers, chatbot residue such as "Chắc chắn rồi!", placeholders like [Tên công ty] or {{name}} or lorem ipsum, markdown ## or ** shown as text; generation 2: a row of 3–4 short stats under the hero, a heading in fragments "X. Y.", a link that only says "Xem thêm"/"Learn more"; lists in data/copy-tells.json), sticky (bars that stay stuck take over 30% of the screen height, 40% under 480px high), orientation (the web app manifest locks portrait or landscape), autoplay (sound started before any tap or key: audio/video play() or autoplay without muted, Web Audio start(), speech), permission (microphone, camera, notification, push or location asked before any tap or key), touch (a target under 44x44 px on a touch screen, links inside a sentence exempt; 24 stays hard through axe), text-zoom (with the reader's font size at 200%: body text that does not grow, text newly cut off or painted over, page wider than the screen; data-zoom-ok marks deliberate px text), text-spacing (text newly cut off or painted over with WCAG 1.4.12 spacing), font-unit (font-size in viewport units with no rem, em or %), nfc (letters typed as letter + combining mark), lang-part (Han characters outside lang zh/ja/ko, an English sentence inside lang="vi"; data-lang-ok marks deliberate ones), LCP > 2.5s, CLS > 0.1, standalone (opened as a file the page loses stylesheets or tokens, is over 400 KB (the pane opens at most 512 KiB), or draws Vietnamese letters from a second font), other Impeccable quality rules and advisories
   human: hierarchy and taste, and the task map (every hesitation point has a guide pattern): open the screenshots
 steps:
   ${STEPS_FORMAT}
@@ -65,8 +72,10 @@ examples[4]:
 
 const FLAGS: Record<string, FlagSpec> = {
   query: { type: "string", hint: "--query <q,q>" },
-  viewports: { type: "string", hint: "--viewports <w,w>" },
+  viewports: { type: "string", hint: "--viewports <w,w|WxH>" },
   schemes: { type: "string", hint: "--schemes light,dark" },
+  profile: { type: "string", hint: "--profile devices" },
+  touch: { type: "string", hint: "--touch <px>" },
   shots: { type: "string", hint: "--shots <dir>" },
   "no-shots": { type: "boolean", hint: "--no-shots" },
   "no-impeccable": { type: "boolean", hint: "--no-impeccable" },
@@ -106,9 +115,10 @@ interface PageReport {
   deps: Map<string, Array<Promise<string>>>;
 }
 
-const HEIGHT: Record<number, number> = { 320: 720, 390: 844, 1280: 800 };
 /** Khổ tối đa còn tính là điện thoại (phép đo input-zoom, viewport). */
 const PHONE_MAX = 480;
+/** Khổ tối đa còn tính là máy tính bảng (phép đo touch). */
+const TABLET_MAX = 1024;
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 /** Mọi kiểm tra có tên ở đây (để bảng `checks` liệt kê cả kiểm tra đã đạt). */
@@ -116,6 +126,7 @@ const CHECKS: Array<[string, Gate]> = [
   ["render", "hard"], ["errors", "hard"], ["viewport", "hard"], ["overflow", "hard"], ["axe", "hard"], ["text-min", "hard"], ["heading-lh", "hard"], ["lang", "hard"], ["motion", "hard"],
   ["steps", "hard"], ["impeccable", "hard"], ["body-size", "soft"], ["body-lh", "soft"], ["measure", "soft"], ["font", "soft"],
   ["focus", "soft"], ["inner-scroll", "soft"], ["text-clip", "soft"], ["text-covered", "soft"], ["long-form", "soft"], ["input-zoom", "soft"], ["guide", "soft"], ["copy", "soft"], ["lcp", "soft"], ["cls", "soft"], ["standalone", "soft"], ["axe-bp", "soft"], ["pause", "soft"], ["reveal", "soft"],
+  ["sticky", "soft"], ["orientation", "soft"], ["autoplay", "soft"], ["permission", "soft"], ["touch", "soft"], ["text-zoom", "soft"], ["text-spacing", "soft"], ["font-unit", "soft"], ["nfc", "soft"], ["lang-part", "soft"],
 ];
 
 /**
@@ -256,8 +267,8 @@ async function waitForContent(page: Page, idleAt: number): Promise<number> {
  * cổng, trong khi điện thoại dàn ở 980px rồi thu cả trang cho vừa màn (chữ 16px còn 6,4px). Thiếu meta viewport là
  * nguyên nhân gốc đứng đầu ở trang do AI sinh (46%, WebCompat 2026, docs/nguon.md c38).
  */
-async function checkViewport(browser: Browser, url: string, width: number, r: PageReport): Promise<void> {
-  const ctx = await browser.newContext({ viewport: { width, height: HEIGHT[width] ?? 844 }, isMobile: true, hasTouch: true });
+async function checkViewport(browser: Browser, url: string, width: number, height: number, r: PageReport): Promise<void> {
+  const ctx = await browser.newContext({ viewport: { width, height }, isMobile: true, hasTouch: true });
   try {
     const page = await ctx.newPage();
     const net = watchNetwork(page);
@@ -279,8 +290,55 @@ async function checkViewport(browser: Browser, url: string, width: number, r: Pa
         `${why}: on a phone the page lays out ${v.layout}px wide and is shrunk to fit ${width}px (${Math.round((width / v.layout) * 100)}%), so ${v.fontSize}px body text shows at ${shown}px. Use <meta name="viewport" content="width=device-width, initial-scale=1">`,
         `mobile/${width}`);
     }
+    const locked = await page.evaluate(probeOrientation);
+    if (locked) add(r, "soft", "orientation", "manifest", `"orientation": "${locked}" locks the installed app to one direction (WCAG 1.3.4): drop it, or use "any"`, `mobile/${width}`);
   } finally {
     await ctx.close();
+  }
+}
+
+/**
+ * Đích chạm (phép đo `touch`): mở trang với `hasTouch` để `(any-pointer: coarse)` đúng như máy chạm, ở khổ điện thoại và khổ
+ * máy tính bảng có đo. Cửa sổ rộng hơn 1024 không đo: laptop thường dùng chuột.
+ */
+async function checkTouch(browser: Browser, url: string, size: Size, min: number, r: PageReport): Promise<void> {
+  const ctx = await browser.newContext({ viewport: { width: size.w, height: size.h }, isMobile: true, hasTouch: true });
+  try {
+    const page = await ctx.newPage();
+    const net = watchNetwork(page);
+    await page.goto(url, { waitUntil: "load", timeout: 45_000 });
+    await settlePage(page, net);
+    await waitForContent(page, Date.now());
+    await page.evaluate(settleAnimations, ENTRANCE_MS);
+    const t = await page.evaluate(probeTouch, min);
+    hits(r, "soft", "touch", t.small.map((x) => ({ where: x.where, value: touchFinding(x, min) })), "", `touch/${size.w}`);
+  } finally {
+    await ctx.close();
+  }
+}
+
+/** Ghi các phát hiện của textresize.ts. */
+function addResize(r: PageReport, list: ResizeFinding[], render: string): void {
+  for (const f of list) add(r, "soft", f.check, f.where, f.detail, render);
+}
+
+/** Một phép đo phụ hỏng (CDP, trang tự điều hướng) thì ghi chú, không làm hỏng cả lượt kiểm. */
+async function optional(r: PageReport, name: string, fn: () => Promise<void>): Promise<void> {
+  try {
+    await fn();
+  } catch (e) {
+    r.notes.push(`${name}: not measured (${(e as Error).message.split("\n")[0]})`);
+  }
+}
+
+/** Đọc sổ tự phát tiếng và xin quyền ở mọi khung, muộn nhất có thể trước khi trang bị nạp lại. */
+async function onloadPass(page: Page, r: PageReport, render: string): Promise<void> {
+  for (const frame of page.frames()) {
+    const calls = await frame.evaluate(readOnload).catch(() => []);
+    for (const c of calls) {
+      const f = onloadFinding(c);
+      add(r, "soft", f.check, f.where, f.detail, render);
+    }
   }
 }
 
@@ -295,15 +353,12 @@ interface PageOpts {
   copy?: CopyRules;
   /** Nạp lại trang cho mỗi khổ và chế độ màu (cách cũ), không đổi tại chỗ. */
   fresh?: boolean;
-  /** Khổ trung gian chỉ đo tràn ngang (--sweep). */
-  sweep?: number[];
+  /** Chiều cao của từng bề rộng trong `viewports`. */
+  heights: Record<number, number>;
+  /** Khổ trung gian (--sweep): tràn ngang, chữ bị che, phần dính, và độ dài dòng ở màn rộng. */
+  sweep?: Size[];
 }
-
-/**
- * Khổ trung gian cho --sweep (P5): điện thoại lớn, máy tính bảng dọc và ngang, laptop nhỏ. Kiểm tay ở vài khổ gợi ý chỉ
- * thấy 66–81% lỗi bố cục mà quét cả dải tìm ra (ReDeCheck, docs/nguon.md c40).
- */
-export const SWEEP_WIDTHS = [360, 414, 480, 600, 768, 900, 1024, 1180];
+const vhOf = (opts: PageOpts, vw: number): number => opts.heights[vw] ?? heightFor(vw);
 
 /** Trang không mở được (sai URL, máy chủ dev chưa chạy, HTTP ≥ 400): lỗi của riêng trang đó, không của cả lượt kiểm. */
 export class PageLoadError extends Error {}
@@ -317,9 +372,9 @@ interface Loaded {
 }
 
 /** Mở một trang ở khổ và chế độ màu cho trước, đợi yên và đợi nội dung đến muộn. Ném PageLoadError nếu không mở được. */
-async function openPage(browser: Browser, url: string, label: string, vw: number, scheme: string, r: PageReport): Promise<Loaded> {
+async function openPage(browser: Browser, url: string, label: string, vw: number, vh: number, scheme: string, r: PageReport): Promise<Loaded> {
   const ctx = await browser.newContext({
-    viewport: { width: vw, height: HEIGHT[vw] ?? 900 },
+    viewport: { width: vw, height: vh },
     colorScheme: scheme as "light" | "dark",
     reducedMotion: "no-preference",
   });
@@ -333,6 +388,7 @@ async function openPage(browser: Browser, url: string, label: string, vw: number
     page.on("requestfailed", (q) => dep(q.url(), Promise.resolve("unreadable")));
     await page.addInitScript(installVitals);
     await page.addInitScript(installSchemeWatch);
+    await page.addInitScript(installOnload);
     // Lỗi người dùng gặp ngay khi mở: script ném lỗi, script/stylesheet không tải được (thường là nguyên nhân
     // của trang trắng). Bỏ ERR_ABORTED (yêu cầu bị huỷ khi trang tự điều hướng), bỏ console.error (favicon 404…).
     const errs: string[] = [];
@@ -372,8 +428,8 @@ async function openPage(browser: Browser, url: string, label: string, vw: number
 }
 
 /** Đổi khổ và chế độ màu ngay trên trang đang mở (P7), về đầu trang, đợi bố cục mới. */
-async function switchTo(L: Loaded, vw: number, scheme: string): Promise<void> {
-  await L.page.setViewportSize({ width: vw, height: HEIGHT[vw] ?? 900 });
+async function switchTo(L: Loaded, vw: number, vh: number, scheme: string): Promise<void> {
+  await L.page.setViewportSize({ width: vw, height: vh });
   await L.page.emulateMedia({ colorScheme: scheme as "light" | "dark" });
   await L.page.evaluate(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
   await settleAfterChange(L.page, L.net);
@@ -425,6 +481,12 @@ async function measureRender(
   hits(r, "soft", "inner-scroll", p.innerScroll, "horizontal scroll hides content:", render, 3);
   hits(r, "soft", "text-clip", p.textClip, "text cut off", render);
   hits(r, "soft", "text-covered", await page.evaluate(probeCovered), "text", render);
+  // Chỉ ở trạng thái đầu: menu vừa mở trong đầu trang dính cao hơn 30% màn là chuyện thường, người dùng đóng lại được
+  // (dau-trang #menu bị báo nhầm, 24/11/2026).
+  if (!at.actions) {
+    const stuck = stickyFinding(await page.evaluate(probeSticky), vw, vhOf(opts, vw));
+    if (stuck) add(r, "soft", "sticky", `${vw}x${vhOf(opts, vw)}`, stuck, render);
+  }
   if (p.visibleFields > 12) add(r, "soft", "long-form", "page", `${p.visibleFields} fields on one screen: split into named steps or tuck advanced options away`, render);
   // Ô gõ chữ có chữ nhỏ: chỉ điện thoại phóng to khi chạm (iOS), nên chỉ đo ở khổ điện thoại.
   if (vw <= PHONE_MAX) {
@@ -471,12 +533,20 @@ async function measureRender(
     hits(r, "soft", "copy", c.copy, "", render, 20);
     r.assumed.push(...c.assumed);
   }
+  // Ngôn ngữ từng phần và chữ dựng sẵn: như trên, một lần mỗi trang và trạng thái.
+  if (at.first && at.widest) {
+    const lp = await page.evaluate(probeLangParts);
+    hits(r, "soft", "nfc", lp.nfc, "letters typed as letter + combining mark (normalize to NFC):", render, 4);
+    hits(r, "soft", "lang-part", lp.han, "", render, 4);
+    hits(r, "soft", "lang-part", lp.english, "", render, 4);
+    hits(r, "soft", "font-unit", await page.evaluate(probeFontUnit), "font-size only in viewport units, so zooming cannot enlarge it (add a rem part):", render, 4);
+  }
   // Mở như pane của app Claude (data: URL, không máy chủ) rồi so với bản http vừa đo: một lần mỗi tệp.
   if (at.first && at.widest && !at.actions && opts.standalone) {
     // Phép đo phụ: hỏng (CDP, trang tự điều hướng) thì ghi chú, không làm hỏng cả lượt kiểm.
     try {
       const a = await page.evaluate(probeStandalone, STANDALONE_TOKENS);
-      const res = await runStandalone(browser, opts.standalone, a, vis.text > 0 || vis.media > 0, { width: vw, height: HEIGHT[vw] ?? 900 }, scheme as "light" | "dark");
+      const res = await runStandalone(browser, opts.standalone, a, vis.text > 0 || vis.media > 0, { width: vw, height: vhOf(opts, vw) }, scheme as "light" | "dark");
       for (const f of res.findings) add(r, "soft", "standalone", f.where, f.detail, render);
       r.notes.push(...res.notes);
     } catch (e) {
@@ -499,7 +569,9 @@ async function focusPass(page: Page, vw: number, scheme: string, focusStops: num
     const f = await page.evaluate(probeFocus);
     if (!f || seen.has(f.where)) continue;
     seen.add(f.where);
-    if (!f.indicator) add(r, "soft", "focus", f.where, "no visible focus ring (outline ≥ 2px or box-shadow)", render);
+    // Mất hẳn chỉ báo trượt WCAG 2.4.7 (AA); có mà mỏng hơn 2px chỉ dưới mức 2.4.13 (AAA). Tách hai lời báo, cả hai còn mềm:
+    // phép đo chỉ đọc outline và box-shadow, chưa thấy chỉ báo bằng viền hay nền, nên chưa đủ chắc để thành cứng.
+    if (!f.indicator) add(r, "soft", "focus", f.where, f.thin ? "focus ring thinner than 2px (WCAG 2.4.13)" : "no visible focus ring (outline ≥ 2px or box-shadow)", render);
     else if (f.shadowOnly) {
       // Vòng chỉ bằng box-shadow: đo thật trong chế độ màu ép buộc, ngay khi phần tử đang focus (focus và
       // :focus-visible giữ nguyên). Tailwind v4 `outline-hidden` chỉ thêm viền trong @media (forced-colors), nên
@@ -553,7 +625,7 @@ async function checkFresh(browser: Browser, url: string, label: string, widths: 
   const widestW = Math.max(...widths);
   for (const scheme of opts.schemes) {
     for (const vw of widths) {
-      const L = await openPage(browser, url, label, vw, scheme, r);
+      const L = await openPage(browser, url, label, vw, vhOf(opts, vw), scheme, r);
       try {
         if (actions) {
           // Không tới được trạng thái ⇒ chưa đo được ⇒ cứng: sửa trang (nút bị giấu ở khổ hẹp?) hoặc sửa tệp steps.
@@ -567,6 +639,13 @@ async function checkFresh(browser: Browser, url: string, label: string, widths: 
         const widest = vw === widestW;
         await measureRender(browser, L, vw, scheme, opts, r, { first, widest, actions: !!actions });
         if (first && focusAt.has(vw)) await focusPass(L.page, vw, scheme, opts.focusStops, r);
+        if (first && !actions) {
+          if (focusAt.has(vw)) await optional(r, "text-spacing", async () => addResize(r, await spacingPass(L.page, L.net), `${scheme}/${vw}`));
+          if (widest) {
+            await onloadPass(L.page, r, `${scheme}/${vw}`);
+            await optional(r, "text-zoom", async () => addResize(r, await zoomPass(L.page, L.net), `${scheme}/${vw}`));
+          }
+        }
         if (first && widest) await motionPass(L, vw, scheme, actions, r);
       } finally {
         await L.ctx.close().catch(() => undefined);
@@ -599,19 +678,19 @@ async function checkReuse(browser: Browser, url: string, label: string, widths: 
     const f = await L.page.evaluate(probeFingerprint);
     return { hash: f.hash, ...(f.skipped > f.count ? { why: `${f.skipped} of ${f.skipped + f.count} elements move with a running animation, too many to verify` } : {}) };
   };
-  const main = await openPage(browser, url, label, widestW, first, r);
+  const main = await openPage(browser, url, label, widestW, vhOf(opts, widestW), first, r);
   try {
     const perScheme = opts.schemes.length > 1 && (await main.page.evaluate(schemeReadOnce));
     if (perScheme) r.notes.push("a script reads prefers-color-scheme once without listening for changes: each color scheme loaded fresh");
     for (const [si, scheme] of opts.schemes.entries()) {
       let L = main;
       if (si > 0 && perScheme) {
-        L = await openPage(browser, url, label, widestW, scheme, r);
+        L = await openPage(browser, url, label, widestW, vhOf(opts, widestW), scheme, r);
       }
       try {
         for (const [i, vw] of desc.entries()) {
           // Trang vừa nạp đã đúng khổ rộng nhất và đúng chế độ màu; mọi lượt khác đổi tại chỗ.
-          if (!(i === 0 && (si === 0 || L !== main))) await switchTo(L, vw, scheme);
+          if (!(i === 0 && (si === 0 || L !== main))) await switchTo(L, vw, vhOf(opts, vw), scheme);
           if (si === 0) {
             const f = await fingerprint(L);
             if (f.why) return f.why;
@@ -624,34 +703,45 @@ async function checkReuse(browser: Browser, url: string, label: string, widths: 
       }
     }
     if (desc.length > 1) {
-      const F = await openPage(browser, url, label, narrowW, first, r);
+      const F = await openPage(browser, url, label, narrowW, vhOf(opts, narrowW), first, r);
       try {
         if ((await fingerprint(F)).hash !== fpMain.get(narrowW)) return `layout at ${narrowW}px after resizing differs from a fresh load`;
         // Lỗi script chỉ xảy ra khi trang nạp ở khổ hẹp (khởi tạo menu điện thoại) không đổi bố cục vẫn phải báo.
         for (const e of new Set(F.errs)) add(r, "hard", "errors", "page", e.slice(0, 200), `${first}/${narrowW}`);
         for (const w of [...focusAt].filter((x) => x !== widestW)) {
           if (w !== narrowW) {
-            await switchTo(F, w, first);
+            await switchTo(F, w, vhOf(opts, w), first);
             if ((await fingerprint(F)).hash !== fpMain.get(w)) return `layout at ${w}px differs between resizing down and resizing up`;
           }
           await focusPass(F.page, w, first, opts.focusStops, r);
+          await optional(r, "text-spacing", async () => addResize(r, await spacingPass(F.page, F.net), `${first}/${w}`));
         }
       } finally {
         await F.ctx.close().catch(() => undefined);
       }
     }
-    // Khổ trung gian: chỉ tràn ngang, chế độ màu đầu, trên trang đang mở; đợi hiệu ứng (bề rộng chuyển dần qua mốc).
-    for (const w of opts.sweep ?? []) {
-      await switchTo(main, w, first);
+    // Khổ trung gian: tràn ngang, chữ bị che, phần dính, độ dài dòng ở màn rộng; chế độ màu đầu, trên trang đang mở; đợi
+    // hiệu ứng (bề rộng chuyển dần qua mốc).
+    for (const { w, h } of opts.sweep ?? []) {
+      await switchTo(main, w, h, first);
       await main.page.evaluate(settleAnimations, ENTRANCE_MS);
+      const at = `${first}/${w}`;
       const o = await main.page.evaluate(() => ({ s: document.documentElement.scrollWidth, c: document.documentElement.clientWidth }));
-      if (o.s > o.c + 1) add(r, "hard", "overflow", `${w}px`, `page is ${o.s}px wide, viewport ${o.c}px`, `${first}/${w}`);
+      if (o.s > o.c + 1) add(r, "hard", "overflow", `${w}px`, `page is ${o.s}px wide, viewport ${o.c}px`, at);
+      hits(r, "soft", "text-covered", await main.page.evaluate(probeCovered), "text", at);
+      const stuck = stickyFinding(await main.page.evaluate(probeSticky), w, h);
+      if (stuck) add(r, "soft", "sticky", `${w}x${h}`, stuck, at);
+      if (w >= WIDE_FROM) hits(r, "soft", "measure", (await main.page.evaluate(probePage)).measure, "line length", at, 3);
     }
-    await switchTo(main, widestW, first);
+    await switchTo(main, widestW, vhOf(opts, widestW), first);
     // Đã đi qua các khổ hẹp (và chế độ màu khác): trang phải về đúng như lần nạp đầu, không thì bản tối và focus ở khổ
     // rộng đã đo trên một trang mang trạng thái từ khổ hẹp.
     if ((await fingerprint(main)).hash !== fpMain.get(widestW)) return `layout at ${widestW}px after visiting narrower widths differs from the first load`;
     if (focusAt.has(widestW)) await focusPass(main.page, widestW, first, opts.focusStops, r);
+    const atWide = `${first}/${widestW}`;
+    await onloadPass(main.page, r, atWide);
+    await optional(r, "text-spacing", async () => addResize(r, await spacingPass(main.page, main.net), atWide));
+    await optional(r, "text-zoom", async () => addResize(r, await zoomPass(main.page, main.net), atWide));
     await motionPass(main, widestW, first, undefined, r);
     return undefined;
   } finally {
@@ -671,7 +761,7 @@ async function checkStateInPlace(browser: Browser, url: string, label: string, w
   const first = opts.schemes[0]!;
   const focusAt = focusWidths(widths);
   for (const vw of desc) {
-    const L = await openPage(browser, url, label, vw, first, r);
+    const L = await openPage(browser, url, label, vw, vhOf(opts, vw), first, r);
     try {
       const err = await runActions(L.page, actions, L.net);
       if (err) {
@@ -728,8 +818,18 @@ async function checkPage(browser: Browser, url: string, label: string, opts: Pag
 
 export async function checkCommand(args: string[], rt: Runtime): Promise<Record<string, unknown>> {
   const p = parseCommandArgs("check", args, FLAGS, { min: 1, max: Infinity, usage: "<file|dir|url>..." });
-  const viewports = (listFlag(p, "viewports") ?? ["320", "390", "1280"]).map(Number);
-  if (viewports.some((v) => !Number.isInteger(v) || v < 200 || v > 3000)) fail("--viewports: widths between 200 and 3000", "VALIDATION_ERROR");
+  const profileName = p.str("profile");
+  const profile = profileName === undefined ? undefined : PROFILES[profileName];
+  if (profileName !== undefined && !profile) fail(`--profile: unknown profile ${profileName}`, "VALIDATION_ERROR", [`Profiles: ${Object.keys(PROFILES).join(", ")}`]);
+  if (profile && p.str("viewports") !== undefined) fail("--profile sets the sizes: drop --viewports", "VALIDATION_ERROR");
+  const sizes = profile ? profile.sizes : (listFlag(p, "viewports") ?? ["320", "390", "1280"]).map(parseSize);
+  if (sizes.some((v) => v === undefined)) fail(`--viewports: widths between ${MIN_WIDTH} and ${MAX_WIDTH}, or WxH like 1280x720`, "VALIDATION_ERROR");
+  const given = sizes as Size[];
+  const viewports = given.map((v) => v.w);
+  if (new Set(viewports).size !== viewports.length) fail("--viewports: each width once (two heights at one width: run check twice)", "VALIDATION_ERROR");
+  const heights: Record<number, number> = Object.fromEntries(given.map((v) => [v.w, v.h]));
+  const touchMin = Number(p.str("touch") ?? TOUCH_MIN);
+  if (!Number.isInteger(touchMin) || touchMin < 0 || touchMin > 200) fail("--touch must be a whole number of px from 0 to 200", "VALIDATION_ERROR");
   const schemes = listFlag(p, "schemes") ?? ["light", "dark"];
   if (schemes.some((s) => s !== "light" && s !== "dark")) fail("--schemes: light and/or dark", "VALIDATION_ERROR");
   const queries = listFlag(p, "query") ?? [""];
@@ -762,16 +862,20 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const jobs: Array<{ url: string; label: string; r: PageReport; shotsDir?: string; state?: StepState; standalone?: string; mobile?: boolean; served?: { root: string; origin: string } }> = [];
   // Khổ điện thoại để mở trang như máy thật (phép đo viewport): khổ lớn nhất ≤ 480 trong --viewports; không có thì bỏ.
   const phones = viewports.filter((w) => w <= PHONE_MAX);
-  const sweep = p.bool("sweep") ? SWEEP_WIDTHS.filter((w) => w > Math.min(...viewports) && w < Math.max(...viewports) && !viewports.includes(w)) : [];
-  if (p.bool("sweep") && p.bool("fresh")) fail("--sweep needs resize in place: drop --fresh", "VALIDATION_ERROR");
+  const wantSweep = p.bool("sweep") || profile?.sweep === true;
+  const sweep = wantSweep ? SWEEP_SIZES.filter((s) => s.w > Math.min(...viewports) && !viewports.includes(s.w)) : [];
+  if (wantSweep && p.bool("fresh")) fail("--sweep needs resize in place: drop --fresh", "VALIDATION_ERROR");
   const phoneWidth = phones.length ? Math.max(...phones) : undefined;
+  // Đích chạm: khổ điện thoại đó, và khổ máy tính bảng lớn nhất (481–1024) nếu có đo.
+  const tablets = viewports.filter((w) => w > PHONE_MAX && w <= TABLET_MAX);
+  const touchSizes: Size[] = touchMin ? [...(phoneWidth ? [phoneWidth] : []), ...(tablets.length ? [Math.max(...tablets)] : [])].map((w) => ({ w, h: heights[w]! })) : [];
   // Bộ đệm (N7). Dấu vân của lượt chạy: mọi thứ ngoài nội dung trang quyết định kết quả. --no-cache đo lại mọi trang
   // nhưng vẫn ghi mục mới, để lượt sau dùng được.
   const cacheDir: string | undefined = resolve(rt.cwd, ".design-kit", "cache");
   const readCache = !p.bool("no-cache");
   const runPrint = {
     v: VERSION, code: codeSha(), axe: sha(axeSource), imp: impBin ? (fileSha(impBin) ?? impBin) : null, browser: browser.version(),
-    viewports, schemes, focusStops, copy: copy ? sha(JSON.stringify(copy)) : null, sweep, fresh: p.bool("fresh"),
+    viewports, heights, schemes, focusStops, copy: copy ? sha(JSON.stringify(copy)) : null, sweep, touchMin, fresh: p.bool("fresh"),
   };
   let cachedN = 0;
   try {
@@ -805,7 +909,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
           // Mở dạng data: URL không mang query, nên chỉ cần một lần mỗi tệp: trạng thái đầu của query đầu.
           const standalone = !p.bool("no-standalone") && !/^https?:/i.test(t) && !state && q === queries[0] ? t : undefined;
           // Thẻ meta viewport không đổi theo query hay trạng thái: một lần mỗi trang, trạng thái đầu của query đầu.
-          const mobile = phoneWidth !== undefined && !state && q === queries[0];
+          const mobile = !state && q === queries[0] && (phoneWidth !== undefined || touchSizes.length > 0);
           jobs.push({ url, label, r, ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}), ...(mobile ? { mobile } : {}), ...(served ? { served } : {}) });
         }
       }
@@ -833,7 +937,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
         ? Promise.all(impWidths.map(async (vp) => ({ vp, res: await runImpeccable(impBin, url, vp) })))
         : Promise.resolve([]);
       try {
-        await checkPage(browser, url, label, { viewports, schemes, focusStops, axeSource, fresh: p.bool("fresh"), ...(sweep.length ? { sweep } : {}), ...(copy ? { copy } : {}), ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}) }, r);
+        await checkPage(browser, url, label, { viewports, heights, schemes, focusStops, axeSource, fresh: p.bool("fresh"), ...(sweep.length ? { sweep } : {}), ...(copy ? { copy } : {}), ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}) }, r);
       } catch (e) {
         // Một trang không mở được thì chỉ trang đó trượt; các trang khác vẫn đo. Chờ Impeccable xong để không còn
         // tiến trình con chạy sau khi trình duyệt đã đóng.
@@ -843,13 +947,8 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
         await imp;
         return;
       }
-      if (mobile && phoneWidth) {
-        try {
-          await checkViewport(browser, url, phoneWidth, r);
-        } catch (e) {
-          r.notes.push(`viewport: not measured (${(e as Error).message.split("\n")[0]})`);
-        }
-      }
+      if (mobile && phoneWidth) await optional(r, "viewport", () => checkViewport(browser, url, phoneWidth, heights[phoneWidth]!, r));
+      if (mobile) for (const size of touchSizes) await optional(r, "touch", () => checkTouch(browser, url, size, touchMin, r));
       for (const { vp, res } of await imp) {
         if (res.error) r.notes.push(`impeccable ${vp}: ${res.error}`);
         for (const f of res.findings ?? []) {
@@ -913,7 +1012,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const ofStates = stateJobs ? ` (${stateJobs} of them states after steps)` : "";
   const out: Record<string, unknown> = {
     status: `${hardPages ? `fail: ${hardPages} of ${reports.length} pages have hard failures${ofStates}` : `pass: ${reports.length} pages${ofStates}, 0 hard failures`}`,
-    renders: `${schemes.join("+")} × ${viewports.join("/")} px via ${via}${impBin ? ", impeccable on" : ""}`,
+    renders: `${schemes.join("+")} × ${given.map((v) => (v.h === heightFor(v.w) ? String(v.w) : `${v.w}x${v.h}`)).join("/")} px${sweep.length ? ` + ${sweep.length} swept sizes` : ""} via ${via}${impBin ? ", impeccable on" : ""}`,
   };
   out["pages"] = reports.map((r) => ({
     page: r.target,
@@ -926,7 +1025,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
     const of = (g: Gate) => reports.reduce((s, r) => s + [...r.findings.values()].filter((f) => f.check === id && f.gate === g).length, 0);
     const h = of("hard");
     const s = of("soft");
-    const skipped = (id === "impeccable" && !impBin) || (id === "standalone" && !jobs.some((j) => j.standalone)) || (id === "copy" && !copy) || (id === "viewport" && !phoneWidth) || (id === "input-zoom" && !viewports.some((w) => w <= PHONE_MAX));
+    const skipped = (id === "impeccable" && !impBin) || (id === "standalone" && !jobs.some((j) => j.standalone)) || (id === "copy" && !copy) || (id === "viewport" && !phoneWidth) || (id === "input-zoom" && !viewports.some((w) => w <= PHONE_MAX)) || (id === "orientation" && !phoneWidth) || (id === "touch" && !touchSizes.length);
     const unused = id === "steps" && !stateJobs;
     const result = skipped ? "skipped" : unused ? "none: no steps file" : h || s ? [h && `${h} hard`, s && `${s} soft`].filter(Boolean).join(", ") : "ok";
     return { check: id, gate, result };
