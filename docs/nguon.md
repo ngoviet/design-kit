@@ -1,6 +1,6 @@
 # Nguồn của bộ tiêu chí
 
-Bản xuất từ kho tri thức (`research-hub/kb/tieu-chuan-va-cach-huong-dan-ai-lam-giao-dien-web-dep-de-dun`) ngày 2026-11-18, bằng `node scripts/xuat-nguon.mjs`. **Không sửa tay**: sửa ở kho rồi xuất lại.
+Bản xuất từ kho tri thức (`research-hub/kb/tieu-chuan-va-cach-huong-dan-ai-lam-giao-dien-web-dep-de-dun`) ngày 2026-11-24, bằng `node scripts/xuat-nguon.mjs`. **Không sửa tay**: sửa ở kho rồi xuất lại.
 
 Mã `s…` là nguồn, `c…` là luận điểm. `docs/tieu-chi.md` trích các mã này. Câu trích đã được kiểm lại bằng `research-axi kb verify` (so với trang gốc).
 
@@ -264,3 +264,113 @@ Mã `s…` là nguồn, `c…` là luận điểm. `docs/tieu-chi.md` trích cá
 | s114 | web | [pms.2002.95.3.755&format=json&resultType=core](https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.2466/pms.2002.95.3.755&format=json&resultType=core) | Jacobsen & Höfel 2002, Aesthetic judgments of novel graphic patterns, Percept Mot Skills; tóm tắt Europe PMC |
 | s115 | web | [BF03200730&format=json&resultType=core](https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.3758/BF03200730&format=json&resultType=core) | McDougall, Curry & de Bruijn 1999, norms for 239 symbols, Behav Res Methods; tóm tắt Europe PMC |
 | s116 | web | [search?query=PMID:11218339&format=json&resultType=core](https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:11218339&format=json&resultType=core) | McDougall, de Bruijn & Curry 2000, J Exp Psychol Appl 6(4); tóm tắt Europe PMC |
+
+## Nguồn mã N (bộ quy tắc mở rộng, 24/11/2026)
+
+Câu trích đã đối chiếu nguyên văn với trang gốc khi tải lại ngày 24/11/2026. Trang WCAG "Understanding" là bản gốc trên GitHub của W3C.
+
+| Mã | Nguồn | Câu trích |
+| --- | --- | --- |
+| N01 | WCAG 1.4.4 Resize Text · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/resize-text.html> | "Content satisfies the success criterion if it can be scaled up to 200%" |
+| N02 | WCAG 1.3.4 Orientation · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/21/orientation.html> | "Don't lock content to either portrait or landscape presentation." |
+| N03 | WCAG 2.5.7 Dragging Movements · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/22/dragging-movements.html> | "For any action that involves dragging, provide a simple pointer alternative." |
+| N04 | WCAG 1.4.13 Content on Hover or Focus · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/21/content-on-hover-or-focus.html> | "this success criterion specifies three conditions that must be met" (dismissible, hoverable, persistent) |
+| N05 | WCAG 2.2.1 Timing Adjustable · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/timing-adjustable.html> | "Ten times the default was chosen based on clinical experience and other guidelines." |
+| N06 | WCAG 3.3.8 Accessible Authentication · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/22/accessible-authentication-minimum.html> | "at least one other authentication method must be available which is not a cognitive function test." |
+| N07 | WCAG 3.3.7 Redundant Entry · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/22/redundant-entry.html> | "Don't ask for the same information twice in the same activity." |
+| N08 | WCAG 1.4.1 Use of Color · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/use-of-color.html> | "Use information in addition to color, such as shape or text, to convey meaning." |
+| N09 | WCAG 2.5.1 Pointer Gestures · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/21/pointer-gestures.html> | "Authors must ensure that their content can be operated without multipoint or path-based gestures." |
+| N10 | WCAG 2.5.2 Pointer Cancellation · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/21/pointer-cancellation.html> | "The most accessible way to incorporate pointer cancellation is to make activation occur on the up-event." |
+| N11 | WCAG 4.1.3 Status Messages · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/21/status-messages.html> | "Let assistive technology notify users about status changes that don't take focus." |
+| N12 | WCAG 1.4.2 Audio Control · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/audio-control.html> | "we discourage the practice of automatically starting sounds (especially if they last more than 3 seconds)" |
+| N13 | WCAG 2.3.1 Three Flashes · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/three-flashes-or-below-threshold.html> | "Avoid content that flashes, or keep it under thresholds." |
+| N14 | WCAG 3.2.6 Consistent Help · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/22/consistent-help.html> | "the mechanism must be located in the same relative order on each page within the set of pages." |
+| N15 | WCAG 1.2.2 Captions (Prerecorded) · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/captions-prerecorded.html> | "Provide synchronized text for audio content in existing videos." |
+| N17 | WCAG 3.3.3 Error Suggestion · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/error-suggestion.html> | "Where errors are detected, suggest known ways to correct them." |
+| N18 | WCAG 3.3.1 Error Identification · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/error-identification.html> | "Provide descriptive notification of errors." |
+| N19 | WCAG 3.3.2 Labels or Instructions · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/labels-or-instructions.html> | "Provide labels or instructions for inputs." |
+| N20 | WCAG 3.2.2 On Input · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/on-input.html> | "Forewarn users if their context will change based on their input." |
+| N21 | WCAG 2.4.3 Focus Order · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/focus-order.html> | "Elements receive focus in an order that preserves meaning." |
+| N22 | WCAG 2.1.4 Character Key Shortcuts · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/21/character-key-shortcuts.html> | "Ensure character-only shortcut keys can be turned off or modified." |
+| N23 | WCAG 3.1.2 Language of Parts · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/language-of-parts.html> | "Indicate when words are in a different language." |
+| N24 | WCAG 3.2.3 Consistent Navigation · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/consistent-navigation.html> | "Consistently order navigation that repeats across multiple pages." |
+| N25 | WCAG 2.4.1 Bypass Blocks · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/bypass-blocks.html> | "Provide a means of skipping repeating content." |
+| N26 | WCAG 2.4.2 Page Titled · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/page-titled.html> | "Provide a descriptive page title using appropriate technology." |
+| N27 | WCAG 1.4.5 Images of Text · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/images-of-text.html> | "Use text instead of pictures of text." |
+| N28 | WCAG 1.3.3 Sensory Characteristics · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/sensory-characteristics.html> | "Describe controls by name, not just by appearance or location." |
+| N29 | WCAG 2.5.4 Motion Actuation · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/21/motion-actuation.html> | "Don't rely solely on device motion to control page content." |
+| N30 | WCAG 1.3.2 Meaningful Sequence · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/meaningful-sequence.html> | "Use code to preserve meaningful content order." |
+| N31 | WCAG 3.3.4 Error Prevention · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/error-prevention-legal-financial-data.html> | "Provide ways for users to confirm, correct, or reverse important submissions." |
+| N32 | WCAG 2.5.5 Target Size (Enhanced) · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/21/target-size-enhanced.html> | "Make custom targets at least 44 by 44 pixels." |
+| N33 | WCAG 2.1.1 Keyboard, 2.1.2 No Keyboard Trap · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/keyboard.html>, <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/no-keyboard-trap.html> | "Everything can be done with a keyboard except freehand movements."; "Keyboard users don't get stuck." |
+| N35 | WCAG 1.4.10 Reflow, mốc chiều cao 256 px · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/21/reflow.html> | "need to be able to reflow when rendered at a height equivalent to 256 CSS pixels" |
+| N36 | WCAG 4.1.2 Name, Role, Value · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/name-role-value.html> | "Give components appropriate names, roles, states, and values." |
+| N37 | WCAG 1.4.6 Contrast (Enhanced) 7:1 · <https://raw.githubusercontent.com/w3c/wcag/main/understanding/20/contrast-enhanced.html> | "The contrast ratio of 7:1 was chosen for level AAA" |
+| N38 | WCAG Failure F94 · <https://raw.githubusercontent.com/w3c/wcag/main/techniques/failures/F94.html> | "viewport units applied to text (generally via font-size in CSS) prevent most available methods." |
+| N40 | HIG Accessibility · <https://developer.apple.com/tutorials/data/design/human-interface-guidelines/accessibility.json> | "the option to enlarge text by at least 200 percent"; bảng cỡ điều khiển iOS, iPadOS: mặc định "44x44 pt", tối thiểu "28x28 pt" |
+| N41 | HIG Typography · <https://developer.apple.com/tutorials/data/design/human-interface-guidelines/typography.json> | Bảng iOS, iPadOS: mặc định "17 pt", tối thiểu "11 pt" |
+| N42 | HIG Layout · <https://developer.apple.com/tutorials/data/design/human-interface-guidelines/layout.json> | "Size classes describe the actual space available, regardless of whether an app is in portrait or landscape." |
+| N43 | HIG Tab bars · <https://developer.apple.com/tutorials/data/design/human-interface-guidelines/tab-bars.json> | "aim for a default list of five or fewer" (ngữ cảnh: khi cho người dùng tự chọn tab) |
+| N44 | HIG Privacy · <https://developer.apple.com/tutorials/data/design/human-interface-guidelines/privacy.json> | "Request permission only when your app clearly needs access to the data or resource." |
+| N45 | HIG Dark Mode · <https://developer.apple.com/tutorials/data/design/human-interface-guidelines/dark-mode.json> | "Avoid offering an app-specific appearance setting."; "Make sure full-color images and icons look good in both appearances." |
+| N46 | HIG Color · <https://developer.apple.com/tutorials/data/design/human-interface-guidelines/color.json> | "Avoid relying solely on color to differentiate between objects, indicate interactivity, or communicate essential information." |
+| N47 | HIG Playing audio · <https://developer.apple.com/tutorials/data/design/human-interface-guidelines/playing-audio.json> | "People switch a device to silent when they want to avoid being interrupted by unexpected sounds" |
+| N48 | App Store Review Guidelines 1.3 Kids Category · <https://developer.apple.com/app-store/review/guidelines/> | "Apps in the Kids Category should not include third-party analytics or third-party advertising." |
+| N50 | Android: window size classes · <https://developer.android.com/develop/ui/compose/layouts/adaptive/use-window-size-classes> | "Compact width \\| width < 600dp \\| 99.96% of phones in portrait"; medium 600–840, expanded 840–1200, large 1200–1600; "Compact height \\| height < 480dp" |
+| N51 | Android: accessibility defaults · <https://developer.android.com/develop/ui/compose/accessibility/api-defaults> | "make sure to set the minimum size to 48dp" |
+| N52 | Android: navigation bar · <https://developer.android.com/develop/ui/compose/components/navigation-bar> | "Three to five destinations of equal importance" |
+| N53 | Android: window insets, edge-to-edge · <https://developer.android.com/develop/ui/compose/system/insets> | "Edge-to-edge is enforced on Android 15 and higher once your app targets SDK 35." |
+| N60 | MDN `env()` · <https://developer.mozilla.org/en-US/docs/Web/CSS/env> | "The safe distance from the top, right, bottom, or left inset edge of the viewport" |
+| N61 | MDN Viewport meta · <https://developer.mozilla.org/en-US/docs/Web/HTML/Viewport_meta_tag> | "Disabling zooming capabilities by setting user-scalable to a value of no prevents people experiencing low vision conditions from being able to read" |
+| N62 | MDN `<length>`, đơn vị khung nhìn · <https://developer.mozilla.org/en-US/docs/Web/CSS/length> | "When you want the smallest possible viewport in response to browser interfaces expanding dynamically, you should use the small viewport size." |
+| N63 | MDN `prefers-contrast` · <https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-contrast> | "detect whether the user has requested the web content to be presented with a lower or higher contrast" |
+| N64 | MDN `forced-colors` · <https://developer.mozilla.org/en-US/docs/Web/CSS/@media/forced-colors> | "it enforces a user-chosen limited color palette on the page" |
+| N65 | MDN `color-scheme` · <https://developer.mozilla.org/en-US/docs/Web/CSS/color-scheme> | "Forbids the user agent from overriding the color scheme for the element." (giá trị `only`) |
+| N66 | MDN Autoplay guide · <https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Autoplay> | "The user has interacted with the site (by clicking, tapping, pressing keys, etc.)" |
+| N67 | MDN `getUserMedia()` · <https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia> | "This feature is available only in secure contexts (HTTPS)" |
+| N68 | MDN `hover` · <https://developer.mozilla.org/en-US/docs/Web/CSS/@media/hover> | "The primary input mechanism cannot hover at all or cannot conveniently hover" |
+| N69 | MDN `any-pointer` · <https://developer.mozilla.org/en-US/docs/Web/CSS/@media/any-pointer> | "At least one input mechanism includes a pointing device of limited accuracy." |
+| N70 | MDN `theme-color` · <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta/name/theme-color> | "a suggested color that user agents should use to customize the display of the page or of the surrounding user interface" |
+| N71 | MDN `display-mode` · <https://developer.mozilla.org/en-US/docs/Web/CSS/@media/display-mode> | "test whether a web app is being displayed in a normal browser tab or in some alternative way" |
+| N72 | MDN `<ruby>` · <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ruby> | "usually used for showing the pronunciation of East Asian characters" |
+| N74 | MDN `overscroll-behavior` · <https://developer.mozilla.org/en-US/docs/Web/CSS/overscroll-behavior> | "get rid of unwanted scroll chaining and the browser's \"pull to refresh\"-type behavior" |
+| N75 | MDN `devicePixelRatio` · <https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio> | "the ratio of the resolution in physical pixels to the resolution in CSS pixels" |
+| N76 | MDN `inputmode` · <https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/inputmode> | "This allows a browser to display an appropriate virtual keyboard." |
+| N77 | MDN `<dialog>` · <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dialog> | "pressing the Esc key on desktop platforms, or a \"back\" or \"dismiss\" gesture on mobile platforms" |
+| N78 | MDN `Navigator.onLine` · <https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine> | "connection to LAN is considered online, even though the LAN may not have Internet access" |
+| N79 | MDN Screen Wake Lock · <https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API> | "prevent devices from dimming or locking the screen when an application needs to keep running" |
+| N80 | MDN Visual Viewport · <https://developer.mozilla.org/en-US/docs/Web/API/Visual_Viewport_API> | "the on-screen keyboard (OSK) can shrink the visual viewport without affecting the layout viewport" |
+| N81 | MDN `scrollbar-gutter` · <https://developer.mozilla.org/en-US/docs/Web/CSS/scrollbar-gutter> | "reserve space for the scrollbar, preventing unwanted layout changes as the content grows" |
+| N84 | MDN Web Audio best practices · <https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Best_practices> | "Create or resume context from inside a user gesture" |
+| N85 | WebKit: Designing Websites for iPhone X · <https://webkit.org/blog/7929/designing-websites-for-iphone-x/> | "it is important to respect the system’s safe area insets" |
+| N86 | WebKit: New video policies for iOS · <https://webkit.org/blog/6784/new-video-policies-for-ios/> | "Safari on iOS has required a user gesture to play media in a <video> or <audio> element" |
+| N87 | WebKit: Full Third-Party Cookie Blocking and More · <https://webkit.org/blog/10218/full-third-party-cookie-blocking-and-more/> | "deleting all of a website’s script-writable storage after seven days of Safari use without user interaction on the site" |
+| N88 | Chrome: Autoplay policy · <https://developer.chrome.com/blog/autoplay> | "Muted autoplay is always allowed." |
+| N89 | web.dev: install criteria · <https://web.dev/articles/install-criteria> | "`icons` - must include a 192px and a 512px icon" |
+| N90 | web.dev: INP · <https://web.dev/articles/inp> | "An INP below or at **200 milliseconds** means a page has **good responsiveness**." |
+| N91 | web.dev: Optimize CLS · <https://web.dev/articles/optimize-cls> | "Always include `width` and `height` size attributes on your images and video elements." |
+| N92 | web.dev: Font best practices · <https://web.dev/articles/font-best-practices> | "The practice of font swapping has the potential to [cause layout shifts]" |
+| N93 | web.dev: Learn PWA, App design · <https://web.dev/learn/pwa/app-design> | "standalone mode displays your PWA in an OS-standard window without any browser navigation UI" |
+| N94 | web.dev: Offline UX design guidelines · <https://web.dev/articles/offline-ux-design-guidelines> | "Tell the user both the application's state and the actions they can still take when they have a network failure." |
+| N95 | web.dev: bfcache · <https://web.dev/articles/bfcache> | "The most important way to optimize for bfcache in all browsers is to never use the unload event." |
+| N100 | NN/g: Response Times, 3 Important Limits · <https://www.nngroup.com/articles/response-times-3-important-limits/> | "0.1 second is about the limit for having the user feel that the system is reacting instantaneously" |
+| N101 | NN/g: Touch Target Size · <https://www.nngroup.com/articles/touch-target-size/> | "Interactive elements must be at least 1cm × 1cm (0.4in × 0.4in)" |
+| N103 | NN/g: Error-Message Guidelines · <https://www.nngroup.com/articles/error-message-guidelines/> | "Display the error message close to the error's source." |
+| N104 | NN/g: Confirmation Dialogs · <https://www.nngroup.com/articles/confirmation-dialog/> | "consider a confirmation dialog before actions that cannot be undone" |
+| N105 | NN/g: Skeleton Screens · <https://www.nngroup.com/articles/skeleton-screens/> | "This progress indicator is used for full-page loads and reduces the perceived loading time." |
+| N106 | NN/g: Progress Indicators · <https://www.nngroup.com/articles/progress-indicators/> | "If the result will take more than 10 seconds to appear, you should also show users an estimate" |
+| N107 | NN/g: Placeholders in Form Fields · <https://www.nngroup.com/articles/form-design-placeholders/> | "Disappearing placeholder text strains users’ short-term memory" |
+| N108 | NN/g: Hamburger Menus and Hidden Navigation · <https://www.nngroup.com/articles/hamburger-menus/> | "Discoverability is cut almost in half by hiding a website’s main navigation." |
+| N109 | NN/g: Icon Usability · <https://www.nngroup.com/articles/icon-usability/> | "text labels are necessary to communicate the meaning and reduce ambiguity" |
+| N110 | NN/g: Dark Mode vs. Light Mode · <https://www.nngroup.com/articles/dark-mode/> | "visual performance tends to be better with light mode" |
+| N111 | Baymard: Inline Form Validation · <https://baymard.com/blog/inline-form-validation> | "Remove error messages as soon as the field is corrected" |
+| N118 | W3C i18n: Normalization in HTML and CSS · <https://www.w3.org/International/questions/qa-html-css-normalization.en> (thay charmod-norm) | "NFC is, however, a good recommendation because this is what many (but not all) keyboards tend to produce." |
+| N120 | NN/g: The 3-Click Rule for Navigation Is False · <https://www.nngroup.com/articles/3-click-rule/> | "it has not been supported by data in any published studies to date" |
+| N130 | Design for Kids Based on Their Stage of Physical Development · <https://www.nngroup.com/articles/children-ux-physical-development/> | "Precise dragging of target through a tunnel or to a specific spot was hard for kids, because it required relatively high motor dexterity." |
+| N131 | Design for Kids Based on Their Stage of Physical Development · <https://www.nngroup.com/articles/children-ux-physical-development/> | "When kids want to move a target on a touchscreen, there are two options: dragging the target to the destination or tapping the destination." |
+| N132 | Design for Kids Based on Their Stage of Cognitive Development · <https://www.nngroup.com/articles/kids-cognition/> | "the sound was blocked by the browser, so our participants never heard that explanation" |
+| N133 | Design for Kids Based on Their Stage of Cognitive Development · <https://www.nngroup.com/articles/kids-cognition/> | "The visuals were clear enough even without the simultaneous audio instructions." |
+| N134 | A developmental perspective on feedback: How corrective feedback influences children's literacy, mathematics, and problem solving · <https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1080/00461520.2022.2108426&resultType=core&format=json> | "we review 44 empirical papers published between 1990 and 2022 examining the effects of corrective feedback on children's performance" |
+| N135 | Right or wrong? How feedback content and source influence children's mathematics performance and persistence · <https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1016/j.jecp.2024.105865&resultType=core&format=json> | "feedback with verification cues led to decreased persistence, decreased strategy variability, and higher reliance on entrenched strategies relative to feedback that contained the correct answer alone" |
+| N136 | Design safe and age-appropriate experiences for your apps and games · <https://developer.apple.com/app-store/kids-apps/> | "These are adult-level tasks that must be completed in order to continue using your app or game." |
+| N138 | Saving and feedback · <https://design.gitlab.com/patterns/saving-and-feedback/> | "provide a persistent inline control next to the change, not an action inside a toast, which cannot be reached accessibly before the toast dismisses" |
