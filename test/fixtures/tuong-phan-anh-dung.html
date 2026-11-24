@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>Chữ rõ trên ảnh và gradient</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+/* Hoạ tiết nhạt toàn trang: vòng 0,06 và chấm 0,3, như bộ màu của kit. */
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; color: #1a1a1a; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='36' fill='none' stroke='%231d4fa3' stroke-opacity='0.06'%3E%3Cpath d='M0 36a36 36 0 0 1 72 0M12 36a24 24 0 0 1 48 0'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='40' fill='%23333' fill-opacity='0.3'%3E%3Ccircle cx='14' cy='22' r='1.6'/%3E%3Ccircle cx='48' cy='10' r='1.2'/%3E%3C/svg%3E"), linear-gradient(160deg, #fff, #eef4f7); }
+main { padding: 16px; max-width: 60rem; }
+h1 { font-size: 1.5rem; line-height: 1.3; }
+h2, p { margin: 0; }
+section { position: relative; margin: 0 0 40px; padding: 24px 16px; }
+.phu { color: #666; }
+/* Giấy kẻ ô: đường 1px đậm hơn chữ phụ chịu được, nhưng chỉ mảnh như vậy. */
+.ke { color: #6b6b6b; background: repeating-linear-gradient(0deg, #d2d2d2 0 1px, transparent 1px 20px), repeating-linear-gradient(90deg, #d2d2d2 0 1px, transparent 1px 20px), #fff; }
+.anh img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.anh p, .anh div { position: relative; }
+.che { position: absolute !important; inset: 0; background: rgb(0 0 0 / 0.72); }
+.che + p { color: #fff; }
+.bong-chu { color: #fff; text-shadow: 0 0 4px #000, 0 0 8px #000; }
+.nen-rieng { display: inline-block; color: #fff; background: #222; padding: 4px 8px; }
+.the { background: #fff; color: #444; padding: 12px; width: 70%; }
+.to-nen { font-size: 2rem; line-height: 1.3; background: linear-gradient(90deg, #ddd, #eee); -webkit-background-clip: text; background-clip: text; color: rgb(0 0 0 / 0.2); }
+.lon { font-size: 1.75rem; line-height: 1.3; color: #8a8a8a; background: linear-gradient(90deg, #fff, #fdfdfd); }
+.loc { filter: brightness(0.4); color: #bbb; background: linear-gradient(#fff, #f5f5f5); }
+.tron { mix-blend-mode: multiply; color: #aaa; background: linear-gradient(#fff, #f5f5f5); }
+.dong { position: relative; overflow: hidden; }
+.dong canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.dong p { position: relative; color: #fff; }
+.cham { transition: all 3s; color: #333; background: linear-gradient(#fff, #f5f5f5); }
+/* Gạch chân dày cùng màu chữ, sát chân chữ: không phải nền của chữ. */
+.cham a { color: #1d4fa3; text-decoration: underline; text-decoration-color: #1d4fa3; text-decoration-thickness: 5px; text-underline-offset: 0; }
+.cuon { height: 140px; overflow: auto; background: linear-gradient(#fff, #f5f5f5); border: 1px solid #bbb; }
+.cuon p { height: 120px; }
+.xa { height: 900px; }
+.canh { display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: center; background: #fff; }
+.canh img { width: 120px; height: 60px; }
+.mo-dan { color: #333; background: linear-gradient(90deg, #fff, #eee); animation: nhap 2s infinite alternate; }
+@keyframes nhap { from { background-position: 0 0; } to { background-position: 40px 0; } }
+@media (prefers-reduced-motion: reduce) { .mo-dan { animation: none; } }
+button { font: inherit; min-height: 44px; padding: 4px 20px; border: 0; }
+.nut { color: #fff; background: linear-gradient(90deg, #3730a3, #4338ca); }
+.nut-tat { color: #ccc; background: linear-gradient(90deg, #eee, #fff); }
+.mui-ten { color: #222; background: #f4f4f4 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M1 4l5 5 5-5' stroke='%23222' fill='none'/%3E%3C/svg%3E") no-repeat right 8px center; }
+</style>
+</head>
+<body>
+<main>
+<h1>Chữ rõ</h1>
+<p>Chữ thường trên hoạ tiết nhạt của trang.</p>
+<p class="phu">Chữ phụ trên hoạ tiết nhạt, có vài chấm đi qua.</p>
+<section class="ke"><p>Giấy kẻ ô với chữ phụ ghi chú hằng ngày</p></section>
+<section class="anh"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20'%3E%3Crect width='20' height='20' fill='%23fff'/%3E%3Crect x='20' width='20' height='20' fill='%23667'/%3E%3C/svg%3E"><div class="che"></div><p>Ảnh có lớp tối phủ lên</p></section>
+<section class="anh"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20'%3E%3Crect width='40' height='20' fill='%23e8e2d0'/%3E%3C/svg%3E"><p class="bong-chu">Chữ có bóng tối</p><p><span class="nen-rieng">Chữ có nền riêng</span></p><div class="the"><p>Thẻ đặc đặt trên ảnh</p></div><p data-contrast-ok="tên thương hiệu vẽ bằng chữ" style="color:#fff">Vườn Nhà Xanh</p><p aria-hidden="true" style="color:#fff">01</p></section>
+<section><p class="to-nen">Chữ tô bằng gradient</p></section>
+<section class="lon"><p>Chữ lớn chỉ cần ba trên một</p></section>
+<section class="loc"><p>Khối có bộ lọc</p></section>
+<section class="tron"><p>Khối trộn màu</p></section>
+<section class="dong"><canvas width="40" height="20" aria-hidden="true"></canvas><p>Canvas tối đang chạy phía sau</p></section>
+<section class="cham"><p>Chuyển tiếp mọi thuộc tính và <a href="#x">gạch chân dày gợi ý gì</a></p></section>
+<section class="mo-dan"><p>Nền trôi chậm phía sau</p></section>
+<p><button type="button" class="nut">Nút gradient đậm</button> <button type="button" class="nut-tat" disabled>Nút đang tắt</button> <button type="button" class="mui-ten">Chọn kho</button></p>
+<section class="canh"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20'%3E%3Crect width='40' height='20' fill='%23777'/%3E%3C/svg%3E"><p>Ảnh nằm cạnh, không nằm sau chữ</p></section>
+<div class="cuon" id="cuon" tabindex="0" role="region" aria-label="Danh sách cuộn"><p>Mục đầu</p><p>Mục hai</p><p>Mục ba</p></div>
+<div class="xa"></div>
+<p>Chữ ở cuối trang dài.</p>
+</main>
+<script>
+const g = document.querySelector("canvas").getContext("2d");
+let n = 0;
+const ve = () => {
+  g.fillStyle = n++ % 2 ? "#223" : "#322";
+  g.fillRect(0, 0, 40, 20);
+  g.fillStyle = "#111";
+  g.fillRect(n % 40, 0, 8, 20);
+  requestAnimationFrame(ve);
+};
+ve();
+document.getElementById("cuon").scrollTop = 30;
+</script>
+</body>
+</html>

@@ -41,11 +41,42 @@ All notable changes to this project are documented here. The format follows
 - `check` reuses the result of a local page whose every loaded file is unchanged since its last check with the same
   flags, design-kit code, axe, Impeccable engine and browser (`.design-kit/cache`); the output says how many pages
   were reused. `--no-cache` measures everything again.
-- `check --sweep`: horizontal overflow at in-between widths (360, 414, 480, 600, 768, 900, 1024, 1180 inside the
-  `--viewports` range), measured on the open page.
+- `check --sweep`: horizontal overflow, text painted over, stuck bars, and line length from 1536 px, at 16 more sizes from
+  344 to 2560 px wide, with 640×360 (1280×720 zoomed to 200%) and 844×390 (a phone on its side), on the open page.
+- `check --viewports` takes `WxH`; `check --profile devices` measures 320×568, 390×844, 768×1024, 1280×720 and 1920×1080 with
+  `--sweep`. The default 320/390/1280 (heights 720/844/800) is unchanged.
+- `check` soft checks from the 24/11/2026 research, each with a wrong and a right sample page: `sticky` (stuck bars over 30% of the
+  screen height, 40% under 480 px), `orientation` (manifest locks the direction), `autoplay` and `permission` (sound or a permission
+  asked before the first tap; the attempt is recorded, because the gate's browser blocks the sound), `touch` (targets under 44×44 px on
+  a touch screen, `--touch`), `text-zoom` (the reader's font size at 200%, through CDP), `text-spacing` (WCAG 1.4.12), `font-unit`
+  (font-size in viewport units only), `nfc` (letters typed as letter + combining mark) and `lang-part` (Han outside zh/ja/ko, English
+  sentences inside `lang="vi"`). On the kit's 105 pages and states: `touch` 31 findings, all real targets of 18–40 px; the others 0.
+- Nine color themes for people to pick (`tokens/themes.css`, seeds in `data/themes.json`, MIT notices in `tokens/NOTICE-themes.txt`),
+  the solver `scripts/sinh-themes.mjs` (OKLCH; 774 pairs against WCAG 2 and APCA, plus karaoke text distances) and the picker block
+  `chon-mau`.
+- `check` soft checks learned from other tools (ideas and lists from MIT projects, `data/NOTICE-third-party.md`): `stress` (text 50% longer, a
+  37-letter word, three more digits), `contrast-px` (text over images, gradients and patterns, which axe leaves incomplete), `keyboard`,
+  `tab-trap`, `skip-link`, `dialog-focus`, `contrast-more`, `forced-colors`, `offline`, `aria-state` and `css` (100vh, `transition: all`,
+  Vietnamese hyphenation, `color-scheme`, safe area, image size, `theme-color`, blocked paste). `copy` also flags leaked values (`undefined`,
+  `NaN`, `[object Object]`) and invented social proof. Axe's `css-orientation-lock` is on, under `orientation`.
+- `check` gives every finding an `id`, says what was fixed and what is new since the last run of the same pages, measures chosen findings again
+  with `--recheck <id,id>`, and saves a screenshot with the findings numbered (`marked-*.png`).
+- `check --sweep` adds the two widths beside each of the page's own `@media` breakpoints. `check --engine webkit` (optional; only `render` and
+  `errors` stay hard there).
+- Themes: dark text on bright accents instead of darkening them (with `--accent-border` for 3:1 shapes), a `prefers-contrast: more` version of
+  each theme, and a check that every theme has every role.
+- Skill references: `ux-patterns.md`, `multi-screen.md`, `themes.md`, `language-apps.md`. `docs/tieu-chi.md` has the rules with a
+  checked source that the gate does not measure yet, and eleven corrected rows; `docs/nguon.md` lists their 104 sources.
 
 ### Fixed
 
+- Blocks: touch targets of 44 px on devices with touch (mouse layouts unchanged); the current item keeps a mark in forced-colors mode; `thanh-ben`
+  has a skip link; a long name wraps in `bang-du-lieu`; the React button no longer uses `transition: all`.
+- `heading-lh` is soft (owner's decision): what has to be stopped is a cut accent, which `text-clip` measures.
+- `focus` sees an indicator drawn with border, background or underline, by comparing the style before and during focus.
+- `motion` lets through animations of opacity and colors only: a fade that keeps running with reduced motion is no longer a hard failure
+  (WCAG 2.3.3 is about motion, and is AAA). Everything else stays hard, also when it does not use `transform`.
+- `focus` accepts the browser's own focus ring, and says "thinner than 2px" apart from "no visible focus ring".
 - The `input-zoom` row said `skipped` when 320 was the only phone width, while the check ran there and reported
   findings.
 - An unexpected error in one page no longer closes the browser under the pages still being checked.

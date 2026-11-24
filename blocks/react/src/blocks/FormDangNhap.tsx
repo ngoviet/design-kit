@@ -89,9 +89,10 @@ export function FormDangNhap({ onSubmit }: { onSubmit?: (email: string, password
             <FieldError id={`${id}-email-err`}>{errors.email}</FieldError>
           </div>
           <div className="grid gap-2">
-            <div className="flex items-baseline justify-between gap-3">
+            {/* Máy có chạm: liên kết cao 44px, lề âm trả bớt chỗ; vùng bấm chạm mép ô mật khẩu chứ không chồng (bản HTML cũng vậy). */}
+            <div className="flex items-baseline justify-between gap-3 any-pointer-coarse:-my-2 any-pointer-coarse:items-center">
               <Label htmlFor={`${id}-pw`}>Mật khẩu</Label>
-              <a href="#" className="text-sm font-medium text-primary-text underline underline-offset-[3px]">Quên mật khẩu?</a>
+              <a href="#" className="text-sm font-medium text-primary-text underline underline-offset-[3px] any-pointer-coarse:inline-flex any-pointer-coarse:min-h-11 any-pointer-coarse:items-center">Quên mật khẩu?</a>
             </div>
             <div className="relative">
               <Input
@@ -110,7 +111,8 @@ export function FormDangNhap({ onSubmit }: { onSubmit?: (email: string, password
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute top-0.5 right-0.5"
+                // Máy có chạm: hình giữ 40px trong khung ô, vùng bấm nới ra 44 đúng mép ô.
+                className="absolute top-0.5 right-0.5 any-pointer-coarse:min-h-10 any-pointer-coarse:min-w-10 any-pointer-coarse:after:absolute any-pointer-coarse:after:-inset-0.5"
                 aria-pressed={showPw}
                 aria-controls={`${id}-pw`}
                 onClick={() => setShowPw((s) => !s)}
@@ -121,9 +123,9 @@ export function FormDangNhap({ onSubmit }: { onSubmit?: (email: string, password
             </div>
             <FieldError id={`${id}-pw-err`}>{errors.password}</FieldError>
           </div>
-          <div className="flex min-h-10 items-center gap-2">
+          <div className="flex min-h-10 items-center gap-2 any-pointer-coarse:min-h-11">
             <Checkbox id={`${id}-nho`} name="nho" className="size-5" />
-            <Label htmlFor={`${id}-nho`} className="font-normal">Ghi nhớ trên máy này</Label>
+            <Label htmlFor={`${id}-nho`} className="font-normal any-pointer-coarse:min-h-11">Ghi nhớ trên máy này</Label>
           </div>
           <Button type="submit" disabled={busy} className="w-full">
             {busy ? (

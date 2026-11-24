@@ -235,3 +235,58 @@ Chủ yêu cầu rà soát, sửa lỗi, test lại, và nghiên cứu thêm ch�
   2.2.2, chữ hiện dần khi cuộn mà không bao giờ hiện, thẻ `best-practice` của axe ở mức mềm), lỗi hook còn lại (mẫu
   `SKIP` so đường dẫn tuyệt đối, chữ nhắc lệnh trong `grep` tính như đã chạy cổng), bản `data:` URL chưa đợi nội dung
   đến muộn, cờ `--fields` không lệnh nào dùng.
+
+## 24/11/2026: nhập nghiên cứu (149 quy tắc mở rộng, bộ UX, kiểm đa màn hình, bộ màu)
+
+Chủ hỏi "các tri thức từ nghiên cứu có được cập nhật vào design-kit không". Làm trong worktree riêng, từ `origin/main`.
+
+- **Bảng tiêu chí chỉ ghi thứ cổng đo thật.** 159 dòng của bộ mở rộng được xét từng dòng: có nguồn đã đối chiếu mà chưa có phép đo thì
+  vào mục riêng với cổng "người"; chỉ là quy ước hay nguồn từ trí nhớ thì không nhập (danh sách mã ở cuối mục đó). Lý do: bảng cũ có
+  những ngưỡng không ai đo (44 px, tương phản phi chữ trên trang) mà vẫn ghi cứng.
+- **Mười tám nguồn "từ trí nhớ":** 12 đọc thật (câu trích khớp trang gốc), 1 đã có trong kho (c47), 5 để ngoài (N112–N116).
+- **Phép đo mới đều mềm**, kể cả thứ nghiên cứu đề nghị cứng (NFC, chữ Hán, tự phát tiếng, xin quyền): qua hai đợt 0 báo oan mới xét lên cứng.
+- **Khổ thiết bị là hồ sơ, không đổi mặc định**, để trang đang đạt không đổi kết quả. Cổng toàn bộ 105 trang trước và sau: phán quyết và mọi
+  phát hiện cũ trùng hệt. Thời gian đo xen kẽ hai vòng trên cùng máy (117 trang, máy đang bận): bản cũ 202 và 209 s, bản mới 208 và 212 s
+  (chậm hơn 1–3%); `--profile devices` bằng 1,3 lần mặc định (279 so với 215 s).
+- **Ba báo oan tìm thấy khi chạy trên khối mẫu, đã sửa trong phép đo:** `text-zoom` đo giữa `transition: all` (11 phát hiện giả), `sticky`
+  đo menu vừa mở (6), `touch` bỏ sót nhãn của nút `role="checkbox"`. Thêm một lỗi do test cũ bắt: vòng `auto` của ô tích trong suốt.
+- **Người soát độc lập** (phiên sạch): 13 phát hiện, 0 cứng, sửa hết; 36 đột biến thì 17 còn xanh. Sau khi thêm test, chạy lại 21 đột biến: 20 đỏ,
+  1 xanh là đột biến tương đương (bỏ trả cỡ chữ: `cdp.detach()` tự trả). Chạy từng trang một thì chậm hơn khoảng một phần ba (33,6 → 45,1 s cho 26
+  trang nhỏ); cổng toàn bộ chạy 6 việc song song chỉ chậm 1–3%.
+- **Trùng một phần với công cụ có sẵn** (thấy khi khảo sát, sau khi đã viết): axe `no-autoplay-audio`, `css-orientation-lock`; Lighthouse
+  `geolocation-on-start`, `notification-on-start`. Phần thêm của kit: `play()` từ script, Web Audio, đọc máy, micro, push, manifest.
+- **`motion` nới theo chuẩn:** chỉ cho qua độ mờ và màu; mọi thứ khác vẫn cứng (2.3.3 là AAA, cơ sở AA là 2.2.2). Bản đầu dùng danh sách cấm
+  và sót background-size, stroke-dashoffset: hai trang có chuyển động thật từ trượt thành đạt, người soát bắt được.
+- **Focus mất hẳn vẫn mềm**, dù là trượt 2.4.7 AA: phép đo chỉ đọc outline và box-shadow. Muốn lên cứng phải so kiểu trước và sau khi focus.
+- **CLS "cộng dồn qua các khổ" không tái hiện** trên bản này (đọc ở lượt render đầu, trước khi đổi khổ): giữ phép đo, ghi rõ cách đo.
+- **Bộ màu:** chủ muốn tích hợp vào kit vì mọi app có nhiều bộ cho người dùng chọn. Chín bộ sinh từ hạt giống; bản Node cho đúng 391/391 mã màu
+  của bản Python đang chạy thật. Neon tối chép nguyên văn. Bảng gốc MIT giữ thông báo bản quyền.
+- **Không có mức kích thước riêng cho trẻ 6 tuổi:** chủ bỏ ngày 24/11/2026.
+- **Công cụ có sẵn:** chủ muốn khảo sát trước khi viết thêm phép đo, và chốt học để bổ sung chứ không thay design-kit. Năm nhóm phép đo này viết
+  xong trước lời dặn đó; từ đây dừng viết phép đo mới tới khi có bảng khảo sát.
+
+Chủ quyết cùng ngày (trang khảo sát 56 công cụ, và trong phiên): giãn dòng tiêu đề xuống mềm; WebKit là cờ tuỳ chọn; Hoàn tác đặt cạnh chỗ vừa đổi,
+khối `thong-bao` giữ cho việc xoá; nâng đích chạm khối mẫu lên 44 px khi máy có chạm; so kiểu trước và sau focus rồi mới xét lên cứng; giữ `motion`
+đã sửa; lấy mười mục K1–K6, K8, K9, K14, K16.
+
+### Đợt hai cùng ngày: học từ công cụ khác để bổ sung
+
+Chủ chốt: học để bổ sung, không thay design-kit. Nguồn học chính là renderlint (MIT): nội dung kéo dài, tương phản từ điểm ảnh, lái bàn phím, cách báo.
+
+- **Bốn agent dựng song song, mỗi agent một bộ tệp; một người nối vào `check.ts`.** Mỗi mô-đun có trang sai, trang đúng và đột biến riêng.
+- **Phép đo mới tìm ra năm lỗi thật trong chính khối mẫu**, đã sửa: `thanh-ben` thiếu liên kết bỏ qua; mục đang chọn mất dấu trong màu ép buộc ở
+  `dau-trang`, `thanh-ben`, `bo-loc`; tên dài bị cắt ở `bang-du-lieu` (390 px); nút React dùng `transition: all`. Đó cũng là một nguồn của 11 báo oan
+  `text-zoom` hồi chiều.
+- **Một báo oan của phép đo mới, đã sửa:** `contrast-more` coi khối `@media` của bộ màu không được chọn là lời hứa của trang.
+- **Kết quả trên khối mẫu:** 117 trang và trạng thái, mọi phép đo mới 0 phát hiện (mặc định và `--profile devices`). Thời gian đo xen kẽ: bản cũ 146
+  và 159 s, bản mới 165 và 170 s (chậm hơn khoảng 10%).
+- **Bộ màu:** màu nhấn sáng (vàng, chanh, bạc hà) giữ nguyên với chữ đậm thay vì bị kéo tối; cam vẫn chữ trắng vì chữ đậm chỉ đạt Lc 50. Bản tương phản
+  cao cho chín bộ; ba hướng chưa có vì token của hướng giữ nguyên.
+- **Mã phát hiện bỏ số trước khi băm**, nên "14,2px" thành "14,4px" vẫn là một lỗi; riêng bộ chọn axe ghi ở đầu chi tiết thì giữ nguyên, vì đó là chỗ
+  bị lỗi chứ không phải số đo. Lượt so chỉ tính trang có ở cả hai lượt, cùng bộ khổ, chế độ màu và cùng lựa chọn (quét khổ, số điểm dừng Tab, mức chạm, engine).
+- **Người soát độc lập lượt hai:** 11 phát hiện, 0 cứng, nhưng năm chỗ của phần so với lượt trước và `--recheck` có thể nói "đã sửa" khi chưa đo lại:
+  hai lỗi axe chung một mã, đo lại khổ quét mà không quét, đổi cờ giữa hai lượt, trang hay phép đo không chạy, và trang có service worker được lấy từ
+  bộ đệm. Đã sửa hết; nay đo lại ra "not measured" khi không đo, và từ chối khi cờ khác lượt trước. Ảnh đánh số chụp sau mọi phép đo và xoá ảnh cũ.
+  Chạy lại chín đột biến còn xanh của lượt soát cùng mười bảy đột biến cho phần vừa sửa: 25 đỏ, 1 xanh tương đương (gỡ lớp phủ ảnh đánh số, vì ảnh
+  chụp cuối và trang được nạp lại ngay sau).
+- **Chưa làm:** logo quá to trong ngăn kéo của `thanh-ben` (lỗi có sẵn, đổi giao diện máy chuột nên để riêng); WebKit chưa cài trên PC1 nên chưa chạy thật.

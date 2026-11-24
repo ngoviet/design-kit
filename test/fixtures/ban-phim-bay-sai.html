@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Băng thông báo giữ phím Tab</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main, .bang { padding: 24px 16px; max-width: 40rem; }
+.bang { border: 1px solid #555; }
+</style>
+</head>
+<body>
+<main>
+<h1>Trang chính</h1>
+<p><a href="#a" id="dau">Liên kết đầu</a></p>
+<div class="bang" id="bang" role="region" aria-label="Thông báo cookie">
+<p>Trang này dùng cookie.</p>
+<button type="button" id="n1">Đồng ý</button> <button type="button" id="n2">Từ chối</button> <button type="button" id="n3">Tuỳ chỉnh</button>
+</div>
+<p><a href="#b" id="sau">Liên kết sau</a> <button type="button">Gửi</button></p>
+</main>
+<script>
+// Bẫy focus viết tay cho một khung không phải hộp thoại modal.
+document.getElementById("bang").addEventListener("keydown", (e) => {
+  if (e.key !== "Tab") return;
+  const l = [...document.querySelectorAll("#bang button")];
+  const i = l.indexOf(document.activeElement);
+  e.preventDefault();
+  l[(i + (e.shiftKey ? l.length - 1 : 1)) % l.length].focus();
+});
+</script>
+</body>
+</html>

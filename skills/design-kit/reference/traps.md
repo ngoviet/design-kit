@@ -13,6 +13,7 @@ Contents:
 6. [Pages opened in the Claude app's browser pane](#6-pages-opened-in-the-claude-apps-browser-pane)
 7. [Frameworks and tools](#7-frameworks-and-tools)
 8. [Web components and host apps](#8-web-components-and-host-apps)
+9. [Players, sliders and late loads](#9-players-sliders-and-late-loads)
 
 ## 1. Vietnamese text and fonts
 
@@ -113,3 +114,14 @@ Contents:
   the host provides: its custom elements (`ha-card` as a block element, `ha-icon` at `--mdc-icon-size`), the data
   (`hass`), `lang="vi"`, the viewport meta and a width that follows the viewport. Findings caused by the test page are
   not the component's: say which ones you set aside and why.
+
+## 9. Players, sliders and late loads
+
+- **A home-made seek bar freezes.** `input` sets a "dragging" flag and `change` clears it, but dragging away and dropping on the starting value
+  fires no `change`: the bar and the clock stop. Clear the flag on `pointerup`, `pointercancel` and `blur` too (after one tick).
+- **A slow load lands on the wrong screen.** The item opened first arrives after the one opened second, or the previous person's item
+  shows on the next person's screen. Number every load and drop the ones that come back late.
+- **Lighting words by `audio.currentTime`** must check that the audio is already that item's, or the new text lights up on the old clock.
+- **Full-page screenshots change the emulation**: a page taller than the screen loses `any-pointer: coarse` and forced colors in a `fullPage`
+  shot. Resize the viewport to the page, then take a normal shot.
+

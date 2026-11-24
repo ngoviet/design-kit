@@ -21,7 +21,7 @@
   .steps a { display: grid; grid-template-columns: 28px 1fr; gap: var(--sp-3); align-items: center; padding: var(--sp-2) var(--sp-3); border-radius: var(--r-md); text-decoration: none; color: var(--text-2); font: 500 var(--fs-sm)/1.35 var(--font-ui, var(--font-body)); min-height: var(--hit); }
   .steps a::before { content: counter(b); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--border-strong); font: 600 var(--fs-xs)/1 var(--font-mono); }
   .steps a[aria-current="step"] { background: var(--accent-soft); color: var(--accent-text); }
-  .steps a[aria-current="step"]::before { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+  .steps a[aria-current="step"]::before { border-color: var(--accent-border, var(--accent)); background: var(--accent); color: var(--on-accent); }
   .steps a.done { color: var(--text); }
   .steps a.done::before { content: "✓"; border-color: var(--ok); color: var(--ok); }
   .steps a[aria-disabled="true"] { pointer-events: none; }
@@ -34,24 +34,25 @@
   .panel { padding: var(--sp-5); display: grid; gap: var(--sp-5); min-width: 0; }
   .progress { display: flex; justify-content: space-between; gap: var(--sp-3); align-items: baseline; font: 500 var(--fs-sm)/1.4 var(--font-ui, var(--font-body)); color: var(--text-2); }
   .bar { height: 6px; border-radius: var(--r-full); background: var(--surface-2); overflow: hidden; margin-top: calc(-1 * var(--sp-3)); }
-  .bar span { display: block; height: 100%; background: var(--accent); transition: width var(--dur-3) var(--ease-out); }
+  .bar span { display: block; height: 100%; background: var(--accent-border, var(--accent)); transition: width var(--dur-3) var(--ease-out); }
   .panel h2 { font-size: var(--fs-lg); }
   .panel h2:focus { outline: none; }
   .fields { display: grid; gap: var(--sp-4); }
   .two { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
   .choice { display: grid; gap: var(--sp-3); }
   .choice label { display: grid; grid-template-columns: auto 1fr auto; gap: var(--sp-3); align-items: start; padding: var(--sp-3) var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--r-md); cursor: pointer; }
-  .choice label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
-  .choice input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); }
+  .choice label:has(input:checked) { border-color: var(--accent-border, var(--accent)); background: var(--accent-soft); }
+  .choice input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent-border, var(--accent)); }
   .choice b { display: block; }
   .choice small { color: var(--text-2); font-size: var(--fs-sm); }
   .choice .price { font: 600 var(--fs-sm)/1.4 var(--font-mono); white-space: nowrap; }
   .help summary { cursor: pointer; display: inline-flex; align-items: center; gap: var(--sp-1); min-height: var(--hit-min); color: var(--accent-text); font: 500 var(--fs-sm)/1.4 var(--font-ui, var(--font-body)); }
+  @media (any-pointer: coarse) { .help summary { min-height: var(--hit); } }
   .help p { margin: var(--sp-2) 0 0; padding: var(--sp-3) var(--sp-4); background: var(--surface-2); border-radius: var(--r-md); font-size: var(--fs-sm); color: var(--text-2); }
   .slots { display: flex; flex-wrap: wrap; gap: var(--sp-2); border: 0; margin: 0; padding: 0; }
   .slots legend { font: 600 var(--fs-sm)/1.4 var(--font-ui, var(--font-body)); margin-bottom: var(--sp-2); padding: 0; }
   .slots label { display: inline-flex; align-items: center; min-height: var(--hit); padding: 0 var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--r-full); cursor: pointer; font: 500 var(--fs-sm)/1 var(--font-ui, var(--font-body)); }
-  .slots label:has(input:checked) { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .slots label:has(input:checked) { background: var(--accent); border-color: var(--accent-border, var(--accent)); color: var(--on-accent); }
   .slots label:has(input:focus-visible) { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
   .slots input { position: absolute; opacity: 0; width: 1px; height: 1px; }
   .review { margin: 0; display: grid; gap: var(--sp-3); }

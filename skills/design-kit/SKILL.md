@@ -1,6 +1,6 @@
 ---
 name: design-kit
-description: Build web or app UI that is beautiful, modern and usable on the first pass, and prove it with a measured gate before calling it done. Use whenever you create or restyle a page, screen, component, dashboard, landing page, form, report page, Home Assistant card or any HTML/CSS/React UI — pick a design direction (DESIGN.md + tokens), reuse gated blocks, then run `design-kit check` (axe WCAG 2.2 AA, overflow at 320px, text size and line height through shadow DOM, reduced motion, focus, Core Web Vitals, Impeccable, states reached by clicking) and show screenshots. Also use when designing any user workflow, sign-up, booking, setup wizard, onboarding or first-run experience: plan a task map and guide the user step by step, just in time, like a good game tutorial. Also use to score or check a logo, icon, symbol or illustration (`design-kit check-image`). Vietnamese: chấm điểm logo, icon, biểu tượng, ký hiệu, hình vẽ, làm giao diện, thiết kế trang web, giao diện đẹp, dashboard, landing page, form, kiểm giao diện, chuẩn giao diện, quy trình dễ dùng, hướng dẫn từng bước, làm đến đâu hướng dẫn đến đó, hướng dẫn người dùng mới.
+description: Build web or app UI that is beautiful, modern and usable on the first pass, and prove it with a measured gate before calling it done. Use whenever you create or restyle a page, screen, component, dashboard, landing page, form, report page, Home Assistant card or any HTML/CSS/React UI — pick a design direction (DESIGN.md + tokens), reuse gated blocks, then run `design-kit check` (axe WCAG 2.2 AA, overflow at 320px, text size and line height through shadow DOM, reduced motion, focus, Core Web Vitals, Impeccable, states reached by clicking) and show screenshots. Also use when designing any user workflow, sign-up, booking, setup wizard, onboarding or first-run experience: plan a task map and guide the user step by step, just in time, like a good game tutorial. Also use for phone, tablet, laptop and 4K layouts, several color themes users can pick, and language-learning apps (karaoke subtitles). Also use to score or check a logo, icon, symbol or illustration (`design-kit check-image`). Vietnamese: điện thoại, máy tính bảng, màn 4K, nhiều bộ màu, đổi giao diện sáng tối, phụ đề karaoke, học ngoại ngữ, chấm điểm logo, icon, biểu tượng, ký hiệu, hình vẽ, làm giao diện, thiết kế trang web, giao diện đẹp, dashboard, landing page, form, kiểm giao diện, chuẩn giao diện, quy trình dễ dùng, hướng dẫn từng bước, làm đến đâu hướng dẫn đến đó, hướng dẫn người dùng mới.
 ---
 
 # design-kit: chuẩn + cổng cho giao diện do agent làm
@@ -26,6 +26,9 @@ design-kit gives the numbers, the tokens, the gated blocks and the gate.
 7. Before you build something a trap covers, read that group in `reference/traps.md`: Vietnamese text and fonts,
    phones and narrow widths, tables, focus, states and tips, pages for the Claude app's browser pane,
    shadcn/Tailwind, web components and host apps.
+8. Read the matching reference first: a new page, app or flow → `reference/ux-patterns.md` (page types, 8 questions,
+   32 patterns); "works on every device", phone to 4K → `reference/multi-screen.md`; themes people choose →
+   `reference/themes.md`; a language app (subtitles, sound, words, children) → `reference/language-apps.md`.
 
 ## 1. Pick the direction (before any markup)
 
@@ -40,12 +43,13 @@ design-kit gives the numbers, the tokens, the gated blocks and the gate.
 - No `DESIGN.md` → copy `design/<x>/DESIGN.md` to the project root and `tokens/fonts.css`, `tokens/core.css`,
   `tokens/<x>.css` next to the styles; `<html lang="vi" data-dk="<x>">` and
   `<meta name="viewport" content="width=device-width, initial-scale=1">`.
-- Home network, Home Assistant card, offline page, no third parties: `tokens/fonts-local.css` **and** `tokens/fonts/`
-  (self-hosted woff2, ~410 KB, SIL OFL) instead of `fonts.css`. Load fonts first.
+- Home network, Home Assistant card, offline: `tokens/fonts-local.css` **and** `tokens/fonts/` (self-hosted, ~410 KB)
+  instead of `fonts.css`. Load fonts first.
 - A page the user opens from disk in the Claude app's browser pane: link the tokens while you build, then
   `design-kit inline <page.html>`.
 - Text in the accent color uses `--accent-text`; fills use `--accent` with `--on-accent` text.
 
+**The owner's new apps ship several themes for people to pick** (`tokens/themes.css`, block `chon-mau`).
 **Color comes from the brand, not the surface type.** The direction gives structure; the hue must fit the domain. A
 bakery dashboard in the default teal lost the A/B test to plain Opus's warm brown. Food and craft → warm (accent
 25–70, neutrals 50–70); health → 145–185; finance, tools → 240–260; kids → 25–45 or 300–330; a brand hue wins. Re-hue
@@ -72,6 +76,7 @@ file, check hand edits with `design-kit kiem-mau ./dem.css --huong dem`. Status 
 | `trinh-tu` | step-by-step flow: named steps, "Bước 2/4", next button names the next step, draft survives reload, review step |
 | `bat-dau` | first-run "Bắt đầu" checklist that ticks itself; just-in-time tip under the control |
 | `bo-loc` | filter chips (`aria-pressed`), live result count, pagination "21–40 of 312" |
+| `chon-mau` | theme picker: 9 themes (`tokens/themes.css`), Theo máy/Sáng/Tối, preview, Undo, applied before first paint |
 
 Every data region needs all four states from `trang-thai`. **Dashboards keep the glance:** list what the user must see
 without scrolling (today's numbers, what needs action now) and put it in the first screen at 1280 px, beside or above
@@ -92,10 +97,9 @@ field they don't understand, a choice with consequences, an empty screen). Every
 | Many options, few used | **Progressive disclosure**: common first, "Tuỳ chọn nâng cao" collapsed | — |
 | A reversible action | **Undo** in a toast instead of "Are you sure?"; confirm only the irreversible | `thong-bao`, `hop-thoai` |
 
-Backed by research (NN/g, Gee): **no up-front tour** (swipe-through tutorials did not improve task performance);
-onboarding is skippable and shows progress; never label a button just "Tiếp"/"Trước"; smart defaults; errors say how
-to fix; a "?" beside an unclear field answers inline. The `guide` soft check flags a bare "Tiếp"/"Next", an empty state
-with no next action, and a tour or "Chào mừng" modal on load.
+**No up-front tour** (NN/g, Gee); onboarding is skippable and shows progress; smart defaults; errors say how to fix; a
+"?" beside an unclear field answers inline. The `guide` soft check flags a bare "Tiếp"/"Next", an empty state with no
+next action, and a tour or "Chào mừng" modal on load.
 
 **Measure the guided states, not just the first screen.** URL switches with `--query` (`?lan-dau=1`, `?buoc=3`,
 `?mo=1`), and a steps file beside the page, `<page>.steps.json`, picked up also when checking a folder:
@@ -139,7 +143,13 @@ design-kit check <file.html|folder|http://localhost:port> --strict
   check. axe-core (WCAG 2.2 AA), the shadow-DOM-aware probe (text size, line height, clipped text, text painted over by
   another box), reduced motion, Tab focus at 1280 and 390 (a ring that vanishes in forced-colors mode is reported),
   LCP/CLS, `guide`, `copy`, typing fields under 16px on phones (`input-zoom`), and Impeccable; then every state in
-  `<page>.steps.json`.
+  `<page>.steps.json`. Soft since 24/11/2026: stuck bars (`sticky`), sound or permission before a tap (`autoplay`,
+  `permission`), 44 px touch targets (`touch`), the reader's 200% text and spacing (`text-zoom`, `text-spacing`),
+  `font-unit`, `nfc`, `lang-part`, `orientation`, `stress` (longer content), `contrast-px` (text on images), `keyboard`,
+  `tab-trap`, `skip-link`, `dialog-focus`, `forced-colors`, `contrast-more`, `offline`, `aria-state`, `css`.
+- Every finding has an id: after a fix run the same command with `--recheck <id,id>`; `since_last` lists fixed and new,
+  `marked-*.png` numbers them on the page.
+- `--profile devices` before you say it works everywhere: 320×568 to 1920×1080 with heights, swept to 2560.
 - Each page is also opened once as a real phone (`isMobile`): no `width=device-width` viewport meta is **hard**.
 - A blank page fails (`render`), and so do uncaught script errors and scripts/stylesheets that fail to load (`errors`).
 - A component that lives in a host app (Home Assistant card, widget) needs a test page that provides what the host
@@ -159,11 +169,11 @@ design-kit check <file.html|folder|http://localhost:port> --strict
 
 ## Thresholds (sources in `docs/tieu-chi.md`)
 
-Text contrast ≥ 4.5:1 (large 3:1), non-text ≥ 3:1, both themes · targets ≥ 24×24 px, primary buttons 44 · viewport
+Text contrast ≥ 4.5:1 (large 3:1), non-text ≥ 3:1, every theme · targets ≥ 24×24 px, 44 on touch · viewport
 meta `width=device-width` · no horizontal scroll at 320 px · body ≥ 16 px, nothing under 12 px at rendered size (SVG
 viewBox, `transform`/`scale`/`zoom` count), typing fields 16 px on phones · body line-height ≥ 1.5, Vietnamese headings
-≥ 1.2 · lines ≤ 75 chars (`--measure` = 32em) · no text clipped or painted over · `lang="vi"` · every animation has a
-reduced-motion branch · visible focus ≥ 2 px, not covered, still there in forced-colors mode · LCP ≤ 2.5 s, INP ≤
+≥ 1.2 (soft) · lines ≤ 75 chars (`--measure` = 32em) · no text clipped or painted over · `lang="vi"` · no movement with
+reduced motion (fades are fine) · visible focus ≥ 2 px, not covered, still there in forced-colors mode · LCP ≤ 2.5 s, INP ≤
 200 ms, CLS ≤ 0.1 · 0 Impeccable slop findings · a page for the app's browser pane keeps its CSS in the page and stays
 ≤ 400 KB.
 

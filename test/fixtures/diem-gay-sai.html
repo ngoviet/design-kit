@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bố cục gãy ngay sau mốc</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 16px; }
+h1 { font-size: 1.5rem; line-height: 1.3; }
+.luoi { display: grid; gap: 12px; }
+.luoi div { border: 1px solid #bbb; padding: 8px; }
+/* Ba cột bật quá sớm: cần 3 × 250 + lề mà mốc mở ở 700, nên chỉ tràn từ 700 tới 805. Các khổ quét sẵn 640 và 820 đều đạt. */
+@media (min-width: 700px) { .luoi { grid-template-columns: repeat(3, minmax(250px, 1fr)); } }
+@media (max-width: 480px) { .luoi { gap: 8px; } }
+</style>
+</head>
+<body>
+<main>
+<h1>Ba cột bật quá sớm</h1>
+<div class="luoi"><div>Cột một</div><div>Cột hai</div><div>Cột ba</div></div>
+</main>
+</body>
+</html>

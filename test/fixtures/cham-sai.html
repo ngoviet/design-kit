@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đích chạm nhỏ</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 24px 16px; max-width: 40rem; }
+button { font: inherit; border: 1px solid #555; background: #fff; }
+.nho { width: 30px; height: 30px; padding: 0; }
+.ngang { position: relative; margin: 12px; }
+.ngang::after { content: ""; position: absolute; inset: 0 -9px; }
+.the { display: inline-block; padding: 4px 12px; border: 1px solid #555; color: #1a1a1a; }
+</style>
+</head>
+<body>
+<main><h1>Điều khiển</h1>
+<button type="button" class="nho" id="dong" aria-label="Đóng">×</button>
+<button type="button" style="height:28px;padding:0 24px" id="thap">Nút thấp chữ dài</button>
+<a href="#x" class="the" id="the-loc">Đang học</a>
+<p><input type="checkbox" id="o-tich" aria-label="Nhớ tôi" style="width:24px;height:24px"> <span>Chữ đứng cạnh nhưng không phải nhãn</span></p>
+<p><button type="button" class="nho ngang" id="noi-ngang" aria-label="Thu gọn">–</button> cạnh chữ giải thích dài</p>
+<iframe title="Khung nhúng" width="200" height="80" srcdoc="<!doctype html><html lang='vi'><body><button id='trong-khung' style='width:26px;height:26px;padding:0'>+</button></body></html>"></iframe>
+</main>
+</body>
+</html>

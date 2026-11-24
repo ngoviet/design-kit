@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chỉ mờ dần khi giảm chuyển động</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 24px 16px; max-width: 40rem; }
+.cho { width: 200px; height: 40px; background: #dde; animation: nhip 1.2s ease-in-out infinite alternate; }
+@keyframes nhip { to { opacity: .4; background-color: #ccd; } }
+</style>
+</head>
+<body>
+<main><h1>Đang tải</h1><div class="cho" role="status" aria-label="Đang tải"></div><p>Khung chờ chỉ đổi độ mờ và màu.</p></main>
+</body>
+</html>

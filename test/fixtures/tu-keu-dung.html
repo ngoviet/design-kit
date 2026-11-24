@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chờ người dùng bấm</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 24px 16px; max-width: 40rem; }
+button { min-height: 44px; padding: 0 16px; font: inherit; }
+</style>
+</head>
+<body>
+<main><h1>Bài nghe</h1>
+<p>Chỉ kêu và chỉ xin quyền sau khi bấm.</p>
+<button type="button" id="nghe">Nghe câu mẫu</button>
+<button type="button" id="noi">Thu giọng của mình</button>
+<video muted autoplay playsinline width="64" height="36" aria-label="Hình nền tắt tiếng" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="></video>
+<audio src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" id="mau"></audio></main>
+<script>
+  // Tạo sẵn AudioContext, phân tích ngoài luồng, tiếng tắt hẳn: đều không phải tự phát tiếng.
+  const c = new AudioContext();
+  const off = new OfflineAudioContext(1, 8000, 8000);
+  const s = off.createOscillator();
+  s.connect(off.destination);
+  s.start();
+  off.startRendering();
+  const im = new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=");
+  im.muted = true;
+  im.play().catch(() => {});
+  navigator.permissions.query({ name: "geolocation" }).catch(() => {});
+  document.getElementById("nghe").addEventListener("click", () => {
+    document.getElementById("mau").play().catch(() => {});
+    const o = c.createOscillator();
+    o.connect(c.destination);
+    o.start();
+  });
+  // Sau phím Tab đầu tiên (cổng đo focus) là người dùng đã thao tác: kêu lúc đó không phải tự phát.
+  document.getElementById("nghe").addEventListener("focus", () => {
+    const o = c.createOscillator();
+    o.connect(c.destination);
+    o.start();
+  });
+  document.getElementById("noi").addEventListener("click", () => navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {}));
+</script>
+</body>
+</html>

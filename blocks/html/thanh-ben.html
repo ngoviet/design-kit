@@ -18,7 +18,7 @@
   .side { background: var(--surface); border-right: 1px solid var(--border); padding: var(--sp-4) var(--sp-3); display: none; }
   @media (min-width: 60rem) { .side { display: block; position: sticky; top: 0; height: 100dvh; overflow-y: auto; } }
   .side .brand { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3) var(--sp-4); font: 700 var(--fs-base)/1 var(--font-display); }
-  .side .brand svg { width: 24px; height: 24px; color: var(--accent); }
+  .side .brand svg { width: 24px; height: 24px; color: var(--accent-border, var(--accent)); }
   .group + .group { margin-top: var(--sp-4); }
   .group h2 { font: 600 var(--fs-xs)/1.5 var(--font-ui, var(--font-body)); color: var(--text-2); letter-spacing: 0; padding: 0 var(--sp-3); margin-bottom: var(--sp-1); }
   .group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
@@ -43,6 +43,7 @@
 </style>
 </head>
 <body>
+  <a class="skip-link btn btn-primary" href="#noi-dung">Tới nội dung</a>
   <!-- KHỐI BẮT ĐẦU: thanh-ben -->
   <template id="nav-tpl">
     <div class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M12 7.5v4M12 11.5 6.5 16M12 11.5l5.5 4.5"/></svg>Mạng nhà</div>

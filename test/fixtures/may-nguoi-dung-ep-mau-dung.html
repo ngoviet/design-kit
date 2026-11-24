@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Còn nhận ra trong màu ép buộc</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 24px 16px; max-width: 40rem; display: grid; gap: 16px; justify-items: start; }
+button, input { font: inherit; min-height: 44px; border: 0; padding: 0 16px; }
+.goc { border: revert; background: revert; }
+.nen { background: #0b57d0; color: #fff; }
+.vien-trong { border: 1px solid transparent; }
+.vien-ngoai { outline: 2px solid transparent; }
+.gach { text-decoration: underline; }
+.tron { background: none; color: #0b57d0; }
+.trang { background: #fff; color: #0b57d0; }
+.tich { background: #cfe2ff; }
+.truy-van { background: #0b57d0; color: #fff; }
+.giu-mau { background: #0b57d0; color: #fff; forced-color-adjust: none; }
+.khung { display: flex; border: 1px solid #555; }
+.khung input { background: #f1f3f4; min-height: 40px; }
+.the { display: block; background: #f1f3f4; color: inherit; text-decoration: none; }
+.the > span { display: block; padding: 16px; border: 1px solid transparent; }
+.the-gach { display: block; padding: 16px; background: #f1f3f4; color: inherit; text-decoration: none; }
+.the-gach strong { text-decoration: underline; }
+.anh { background: #ddd; padding: 0; width: 48px; height: 48px; }
+.anh img { width: 48px; height: 48px; display: block; }
+.gia-vien { position: relative; background: #cfe2ff; }
+.gia-vien::after { content: ""; position: absolute; inset: 0; border: 1px solid transparent; }
+.hang { display: flex; gap: 8px; position: relative; }
+.muc { background: #f1f3f4; border: 1px solid #777; }
+.tab-vien[aria-selected="true"] { background: #0b57d0; color: #fff; border-width: 3px; }
+.tab-dam[aria-selected="true"] { background: #0b57d0; color: #fff; font-weight: 700; }
+.tab-gach[aria-selected="true"] { background: #0b57d0; color: #fff; text-decoration: underline; }
+.tab-dau[aria-selected="true"] { background: #0b57d0; color: #fff; }
+.tab-dau[aria-selected="true"]::before { content: "✓ "; }
+.tab-mau[aria-selected="true"] { background: #0b57d0; color: #fff; }
+.vet { position: absolute; left: 0; bottom: -4px; width: 64px; height: 0; border-bottom: 3px solid #0b57d0; }
+.tab-vet { width: 64px; background: #fff; }
+.tab-vet[aria-selected="true"] { color: #0b57d0; }
+.chip { border: 1px solid #777; background: #fff; }
+.chip[aria-pressed="true"] { background: #cfe2ff; }
+.giong[aria-pressed="true"] { background: #fff; }
+.vach { display: block; padding: 8px; position: relative; color: #1a1a1a; text-decoration: none; }
+.vach::before { content: ""; position: absolute; left: 0; top: 0; width: 1px; height: 24px; background: #0b57d0; }
+nav a { display: inline-block; padding: 8px; color: #1a1a1a; }
+nav a[aria-current] { background: #0b57d0; color: #fff; }
+@media (forced-colors: active) {
+  .truy-van { border: 1px solid ButtonText; }
+  .tab-mau[aria-selected="true"] { background: Highlight; color: HighlightText; }
+}
+</style>
+</head>
+<body>
+<main>
+<h1>Màu ép buộc</h1>
+<button type="button" class="nen vien-trong">Viền trong suốt</button>
+<button type="button" class="nen vien-ngoai">Outline trong suốt</button>
+<button type="button" class="nen gach">Gạch chân</button>
+<button type="button" class="tron">Nút chữ trơn ở mọi chế độ</button>
+<button type="button" class="trang">Nút cùng màu với nền</button>
+<a href="#vach" class="vach">Mục có vạch 1px</a>
+<button type="button" class="truy-van">Viền trong @media</button>
+<button type="button" class="giu-mau">Giữ màu riêng</button>
+<button type="button" class="gia-vien">Viền ở phần tử giả</button>
+<button type="button" class="goc">Nút gốc của trình duyệt</button>
+<div class="khung"><input aria-label="Tìm"><button type="button" class="tron">Tìm</button></div>
+<a class="the" href="#the"><span>Viền ở con lớn</span></a>
+<a class="the-gach" href="#the2"><strong>Tiêu đề gạch chân</strong></a>
+<button type="button" class="anh" aria-label="Ảnh đại diện"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%23933'/%3E%3C/svg%3E"></button>
+<p>Đọc <a href="#trong-cau" style="background:#ff0;text-decoration:none">liên kết tô nền</a> trong câu.</p>
+<p><label><input type="checkbox" class="tich" checked> Ô tích gốc</label></p>
+<button type="button" class="nen" data-forced-ok="chỉ dùng trên màn hình treo tường">Được miễn</button>
+<button type="button" class="nen" disabled>Đang khoá</button>
+<div role="tablist" aria-label="Viền" class="hang"><button type="button" role="tab" aria-selected="true" class="muc tab-vien">Ngày</button><button type="button" role="tab" aria-selected="false" class="muc tab-vien">Tuần</button></div>
+<div role="tablist" aria-label="Đậm" class="hang"><button type="button" role="tab" aria-selected="true" class="muc tab-dam">Ngày</button><button type="button" role="tab" aria-selected="false" class="muc tab-dam">Tuần</button></div>
+<div role="tablist" aria-label="Gạch" class="hang"><button type="button" role="tab" aria-selected="true" class="muc tab-gach">Ngày</button><button type="button" role="tab" aria-selected="false" class="muc tab-gach">Tuần</button></div>
+<div role="tablist" aria-label="Dấu" class="hang"><button type="button" role="tab" aria-selected="true" class="muc tab-dau">Ngày</button><button type="button" role="tab" aria-selected="false" class="muc tab-dau">Tuần</button></div>
+<div role="tablist" aria-label="Màu hệ thống" class="hang"><button type="button" role="tab" aria-selected="true" class="muc tab-mau">Ngày</button><button type="button" role="tab" aria-selected="false" class="muc tab-mau">Tuần</button></div>
+<div role="tablist" aria-label="Vệt" class="hang"><button type="button" role="tab" aria-selected="true" class="tab-vet">Ngày</button><button type="button" role="tab" aria-selected="false" class="tab-vet">Tuần</button><span class="vet"></span></div>
+<div class="hang"><button type="button" class="chip" aria-pressed="false">Tất cả</button><button type="button" class="chip" aria-pressed="true">✓ Đang lỗi</button></div>
+<div class="hang"><button type="button" class="chip" aria-pressed="false">Xem lưới</button><button type="button" class="chip" aria-pressed="true"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 6l3 3 7-7" fill="none" stroke="currentColor"/></svg> Xem hàng</button></div>
+<div class="hang"><button type="button" class="chip giong" aria-pressed="false">Giống nhau</button><button type="button" class="chip giong" aria-pressed="true">Cả ở chế độ thường</button></div>
+<nav aria-label="Đường dẫn"><a href="#1">Nhà</a> <a href="#2" aria-current="page">Bài</a></nav>
+</main>
+</body>
+</html>

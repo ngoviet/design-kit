@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Focus đánh dấu bằng kiểu khác vòng</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 24px 16px; max-width: 40rem; display: grid; gap: 16px; justify-items: start; }
+a, button, input { font: inherit; min-height: 44px; outline: none; }
+button, input { border: 1px solid #999; background: #fff; color: #1a1a1a; padding: 0 12px; }
+#vien:focus { border-color: #0b57d0; }
+#vien-day:focus { border-width: 3px; }
+#nen:focus { background: #d2e3fc; }
+#nen-nuot { transition: background-color 250ms; }
+#nen-nuot:focus { background: oklch(0.6 0.2 260); }
+#chu:focus { color: #b3261e; }
+#gach { text-decoration: none; color: #1a1a1a; }
+#gach:focus { text-decoration: underline; }
+#day-gach { color: #1a1a1a; text-decoration-thickness: 1px; }
+#day-gach:focus { text-decoration-thickness: 3px; }
+#duong { position: relative; text-decoration: none; color: #1a1a1a; }
+#duong::after { content: ""; position: absolute; left: 0; bottom: 0; width: 100%; height: 2px; background: #0b57d0; transform: scaleX(0); }
+#duong:focus::after { transform: none; }
+#duong-rong { position: relative; text-decoration: none; color: #1a1a1a; }
+#duong-rong::after { content: ""; position: absolute; left: 0; bottom: 0; width: 0; height: 2px; background: #0b57d0; }
+#duong-rong:focus::after { width: 100%; }
+#dau:focus::before { content: "▸ "; }
+#trong-con { text-decoration: none; color: #1a1a1a; }
+#trong-con:focus strong { text-decoration: underline; }
+#nen-anh:focus { background-image: linear-gradient(#d2e3fc, #d2e3fc); }
+#vong-goc:focus { outline: auto; }
+#vong-mau { outline: 2px solid #ccc; }
+#vong-mau:focus { outline-color: #0b57d0; }
+#bong:focus { box-shadow: inset 0 -3px 0 #0b57d0; }
+.khung { border: 1px solid #999; display: inline-flex; }
+.khung input { border: 0; }
+.khung:focus-within { border-color: #0b57d0; }
+.khung button { outline: auto; }
+.o { position: relative; display: inline-flex; gap: 8px; align-items: center; min-height: 44px; }
+.o input { position: absolute; opacity: 0; width: 24px; height: 24px; min-height: 0; margin: 0; }
+.o .hinh { width: 24px; height: 24px; border: 1px solid #999; }
+.o input:focus + .hinh { border-color: #0b57d0; }
+.nhan-ve input { position: absolute; opacity: 0; width: 1px; height: 1px; min-height: 0; }
+.nhan-ve label::before { content: ""; display: inline-block; width: 20px; height: 20px; border: 1px solid #999; }
+.nhan-ve input:focus + label::before { background: #0b57d0; }
+</style>
+</head>
+<body>
+<main>
+<h1>Kiểu focus</h1>
+<button type="button" id="vien">Viền đổi màu</button>
+<button type="button" id="vien-day">Viền dày lên</button>
+<button type="button" id="nen">Nền đổi</button>
+<button type="button" id="nen-nuot">Nền đổi dần</button>
+<button type="button" id="chu">Chữ đổi màu</button>
+<a href="#a" id="gach">Gạch chân hiện ra</a>
+<a href="#b" id="day-gach">Gạch chân dày lên</a>
+<a href="#c" id="duong">Đường kẻ chạy ra</a>
+<a href="#c2" id="duong-rong">Đường kẻ rộng ra</a>
+<a href="#d" id="dau" style="color:#1a1a1a">Dấu đứng trước</a>
+<a href="#e" id="trong-con"><strong>Tiêu đề thẻ</strong> và mô tả</a>
+<button type="button" id="nen-anh">Dải màu hiện ra</button>
+<button type="button" id="bong">Bóng trong hiện ra</button>
+<button type="button" id="vong-goc">Vòng của trình duyệt</button>
+<button type="button" id="vong-mau">Vòng có sẵn đổi màu</button>
+<div class="khung"><input id="trong-khung" aria-label="Tìm"><button type="button" id="xoa" style="border:0">Xoá</button></div>
+<label class="o"><input type="checkbox" id="o-tich"><span class="hinh"></span>Nhớ tôi</label>
+<div class="nhan-ve"><input type="checkbox" id="o-nhan"><label for="o-nhan">Nhận thư</label></div>
+<nut-focus></nut-focus>
+</main>
+<script>
+customElements.define("nut-focus", class extends HTMLElement {
+  connectedCallback() {
+    this.attachShadow({ mode: "open" }).innerHTML = '<style>button{font:inherit;min-height:44px;outline:none;border:1px solid #999;background:#fff}button:focus{background:#0b57d0;color:#fff}</style><button type="button" id="trong-bong">Trong cây bóng</button>';
+  }
+});
+</script>
+</body>
+</html>

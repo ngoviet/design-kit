@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trạng thái ARIA không đổi theo</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 24px 16px; max-width: 40rem; display: grid; gap: 16px; }
+button { font: inherit; min-height: 44px; border: 1px solid #555; background: #fff; }
+button.bat { background: #0b57d0; color: #fff; }
+[hidden] { display: none; }
+.xep { max-height: 0; overflow: hidden; transition: max-height 200ms; }
+.xep.mo { max-height: 200px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Trạng thái ARIA</h1>
+<div><button type="button" id="quen" aria-expanded="false">Câu hỏi một</button><div class="xep"><p>Trả lời một.</p></div></div>
+<div><button type="button" id="quen-ctrl" aria-expanded="false" aria-controls="v1">Câu hỏi hai</button><div id="v1" hidden><p>Trả lời hai.</p></div></div>
+<div><button type="button" id="tro-sai" aria-expanded="false" aria-controls="v2">Câu hỏi ba</button><div id="v2" hidden><p>Trả lời ba.</p></div></div>
+<div><button type="button" id="nguoc" aria-expanded="true" aria-controls="v3">Câu hỏi bốn</button><div id="v3" hidden><p>Trả lời bốn.</p></div></div>
+<div><button type="button" id="nhan-quen" aria-pressed="false">Yêu thích</button> <button type="button" id="chu-quen" aria-pressed="false">Tắt tiếng</button></div>
+<div><div role="tablist" aria-label="Khoảng"><button type="button" role="tab" id="tab-quen-1" aria-selected="true">Ngày</button><button type="button" role="tab" id="tab-quen-2" aria-selected="false">Tuần</button></div><p id="bang">Số theo ngày.</p></div>
+<div><button type="button" role="checkbox" id="tich-quen" aria-checked="false"><span class="dau" hidden>✓</span> <span id="nhan-tich">Nhận thư</span></button></div>
+<div><button type="button" id="mo-menu" aria-expanded="false">Thao tác</button></div>
+<nut-mo></nut-mo>
+</main>
+<div role="menu" id="menu-xa" aria-label="Thao tác" hidden><button type="button" role="menuitem">Đổi tên</button></div>
+<script>
+const $ = (id) => document.getElementById(id);
+$("quen").onclick = () => $("quen").nextElementSibling.classList.toggle("mo");
+$("quen-ctrl").onclick = () => { $("v1").hidden = !$("v1").hidden; };
+$("tro-sai").onclick = () => $("tro-sai").setAttribute("aria-expanded", "true");
+$("nguoc").onclick = () => { $("v3").hidden = false; $("nguoc").setAttribute("aria-expanded", "false"); };
+$("nhan-quen").onclick = () => $("nhan-quen").classList.toggle("bat");
+$("chu-quen").onclick = () => { $("chu-quen").textContent = "Bật tiếng"; };
+$("tab-quen-2").onclick = () => { $("bang").textContent = "Số theo tuần."; };
+$("tich-quen").onclick = () => { const d = $("tich-quen").querySelector(".dau"); d.hidden = !d.hidden; };
+$("mo-menu").onclick = () => { $("menu-xa").hidden = !$("menu-xa").hidden; };
+customElements.define("nut-mo", class extends HTMLElement {
+  connectedCallback() {
+    const r = this.attachShadow({ mode: "open" });
+    r.innerHTML = '<button type="button" id="trong-bong" aria-expanded="false" aria-controls="vb">Câu hỏi năm</button><div id="vb" hidden><p>Trả lời năm.</p></div>';
+    r.getElementById("trong-bong").onclick = () => { r.getElementById("vb").hidden = false; };
+  }
+});
+</script>
+</body>
+</html>

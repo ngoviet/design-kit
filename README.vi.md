@@ -36,12 +36,12 @@ chế độ giảm chuyển động, nút "Tiếp" không nói đi đâu. Làm c
 - **Cổng đo, không phải cảm tính.** Không có hướng dẫn thì mô hình chọn lựa chọn phổ biến nhất (font Inter, gradient
   tím, các thẻ giống hệt nhau), và mô hình tự chấm giao diện thì lệch nhiều so với người. Vì vậy design-kit chia việc:
   gì đo được thì thành phép đo trong CLI, còn thẩm mỹ để người xem trên ảnh chụp mà công cụ lưu lại.
-- **26 phép đo, 6 lần render mỗi trang cộng một lần mở như điện thoại thật.** Lỗi *cứng* chặn "báo xong": trang
+- **50 phép đo, 6 lần render mỗi trang cộng một lần mở như điện thoại thật.** Lỗi *cứng* chặn "báo xong": trang
   trắng (cổng đợi tối đa 5 giây cho nội dung đến muộn), lỗi script chưa bắt hoặc script/stylesheet không tải được,
   trang mà điện thoại dàn rộng hơn màn hình (thiếu thẻ meta viewport), tràn ngang ở 320 px, axe-core mức
-  serious/critical, chữ dưới 12 px, tiêu đề tiếng Việt có chiều cao dòng dưới 1,2, chữ tiếng Việt mà thiếu
+  serious/critical, chữ dưới 12 px, chữ tiếng Việt mà thiếu
   `lang="vi"`, hiệu ứng bỏ qua `prefers-reduced-motion`, bước thao tác không làm được, các luật slop và chất lượng của
-  Impeccable. Lỗi *mềm* phải sửa hoặc ghi lý do: cỡ và chiều cao dòng chữ thân bài, độ dài dòng, font web đã nạp,
+  Impeccable. Lỗi *mềm* phải sửa hoặc ghi lý do: cỡ và chiều cao dòng chữ thân bài, tiêu đề tiếng Việt có chiều cao dòng dưới 1,2, độ dài dòng, font web đã nạp,
   vòng focus thiếu, bị che hoặc mất trong chế độ màu ép buộc, khung cuộn giấu nội dung, chữ bị cắt (dấu ba chấm hay
   line-clamp giấu chữ, overflow cắt ngang chữ hoặc cắt mất dấu tiếng Việt), chữ bị hộp bên cạnh vẽ đè, ô gõ chữ dưới
   16 px trên điện thoại, hơn 12 ô nhập trên một màn, dẫn đường, chữ trên trang, LCP, CLS, và trang mất CSS (hoặc vỡ
@@ -76,7 +76,14 @@ chế độ giảm chuyển động, nút "Tiếp" không nói đi đâu. Làm c
 - **Ba hướng, chép là dùng.** *Đêm* (ứng dụng, dashboard), *Giấy* (tài liệu, báo cáo) và *Đậm* (landing,
   marketing). Mỗi hướng là một tệp token có bản sáng và tối, kèm DESIGN.md sinh tự động. Cả 126 cặp màu đạt WCAG;
   `design-kit doi-mau` đổi sắc một hướng theo thương hiệu rồi dò lại độ sáng để mọi cặp vẫn đạt.
-- **Khối mẫu đã qua cổng.** 13 khối HTML/CSS và 4 khối React + shadcn/ui, mỗi khối đã qua cổng ở 3 hướng × sáng/tối,
+- **Chín bộ màu cho người dùng tự chọn.** `tokens/themes.css` có chín bộ, mỗi bộ bản sáng và bản tối, đã giải để mọi cặp
+  chữ/nền đạt cả WCAG 2 lẫn APCA; khối `chon-mau` là màn chọn (Theo máy/Sáng/Tối, xem trước, Hoàn tác, áp trước lần
+  vẽ đầu). `scripts/sinh-themes.mjs` giải bảng màu của bạn theo cùng cách.
+- **Khổ màn thật.** `--profile devices` đo từ 320×568 tới 1920×1080 kèm chiều cao và quét tới 2560 px, có cả điện
+  thoại xoay ngang, màn phóng 200% và các bề rộng sát điểm gãy của chính trang.
+- **Sửa nhanh.** Mỗi phát hiện có mã ổn định, lượt sau nói cái gì đã sửa, cái gì mới; `--recheck` chỉ đo lại chỗ vừa động
+  vào; ảnh chụp đánh số chỉ đúng chỗ của từng phát hiện.
+- **Khối mẫu đã qua cổng.** 14 khối HTML/CSS và 4 khối React + shadcn/ui, mỗi khối đã qua cổng ở 3 hướng × sáng/tối,
   và đã được xem ảnh chụp.
 - **Plugin cho Claude Code.** Một skill, cùng hook nhắc agent khi sửa tệp giao diện và chặn một lần nếu agent định
   báo xong mà chưa chạy cổng.
@@ -145,20 +152,20 @@ $ design-kit check test/fixtures/loi.html --limit 4
 status: "fail: 1 of 1 pages have hard failures"
 renders: "light+dark × 320/390/1280 px via msedge, impeccable on"
 pages[1]{page,verdict,hard,soft}:
-  test/fixtures/loi.html,fail,11,10
-checks[26]{check,gate,result}:
+  test/fixtures/loi.html,fail,10,19
+checks[50]{check,gate,result}:
   overflow,hard,2 hard
   axe,hard,2 hard
   text-min,hard,1 hard
   …
   guide,soft,3 soft
-count: 4 of 21 total
-findings[4]{gate,check,where,detail,renders}:
-  hard,overflow,320px,"page is 480px wide, viewport 320px",light/320 dark/320
-  hard,text-min,"topo-card::shadow span.lbl \"Cổng 1 ↓ 12 Mb/s\"",font-size 9.9px,light/320 light/390 light/1280 dark/320 dark/390 dark/1280
-  hard,heading-lh,"h1 \"Bảng điều khiển mạng\"",line-height 1.00,light/320 light/390 light/1280 dark/320 dark/390 dark/1280
-  hard,lang,<html>,"Vietnamese text but lang=\"en\"",light/320 light/390 light/1280 dark/320 dark/390 dark/1280
-help[4]: "17 more findings: add --full","Fix hard failures, then rerun the same command; soft ones need a fix or a written reason",…
+count: 4 of 29 total
+findings[4]{gate,check,where,detail,id,renders}:
+  hard,text-min,"topo-card::shadow span.lbl \"Cổng 1 ↓ 12 Mb/s\"",font-size 9.9px,c6t0r4,light/1280 light/390 …
+  hard,lang,<html>,"Vietnamese text but lang=\"en\"",en462c,light/1280 light/390 …
+  hard,axe,color-contrast,".faint: Element has insufficient color contrast of 2.32 …",5y2qw8,light/1280 light/390 …
+  hard,axe,color-contrast,"[topo-card,span]: Element has insufficient color contrast of 1.55 …",q5qnkp,light/1280 light/390 …
+help[6]: "After a fix: design-kit check <same pages> --recheck <id,id> measures only those findings again","25 more findings: add --full",…
 ```
 
 Một khối có tệp steps (hai phán quyết: trang lúc vừa nạp, và trạng thái sau khi tắt hết bộ lọc; phát hiện mềm duy
@@ -256,7 +263,10 @@ Cờ của `check`:
 | --- | --- |
 | `--query <q,q>` | Chạy mỗi trang một lần cho mỗi chuỗi truy vấn, ví dụ `dk=dem,dk=giay,dk=dam` |
 | `--steps <tệp.json\|json>` / `--no-steps` | Các trạng thái cần bấm hay gõ để tới (thay cho `<trang>.steps.json`) / bỏ qua tệp steps |
-| `--viewports <w,w>` | Bề rộng tính bằng px (mặc định `320,390,1280`; mọi khổ được đo đủ) |
+| `--viewports <w,w\|RxC>` | Bề rộng tính bằng px, hoặc rộng x cao (mặc định `320,390,1280`; mọi khổ được đo đủ) |
+| `--profile devices` | Khổ của thiết bị thật thay cho `--viewports` (320x568, 390x844, 768x1024, 1280x720, 1920x1080) kèm `--sweep`; chậm hơn mặc định khoảng 1,3 lần trên khối mẫu |
+| `--touch <px>` | Đích chạm nhỏ nhất trên màn chạm (mặc định 44, 0 là bỏ qua) |
+| `--engine <chromium\|webkit>` | Engine trình duyệt (mặc định chromium). `webkit` là WebKit của Playwright, gần Safari hơn nhưng không phải Safari iOS; cài một lần bằng `npx playwright install webkit`. Ở đó chỉ `render` và `errors` còn cứng |
 | `--schemes <light,dark>` | Chế độ màu cần render (mặc định cả hai) |
 | `--shots <thư mục>` / `--no-shots` | Thư mục ảnh chụp (mặc định `.design-kit/shots`) / không chụp |
 | `--no-impeccable` | Bỏ qua Impeccable (nhanh hơn) |
@@ -264,10 +274,11 @@ Cờ của `check`:
 | `--focus <n>` | Số điểm dừng Tab cần xem (mặc định 15) |
 | `--strict` | Thoát 1 khi có trang bị lỗi cứng |
 | `--jobs <n>` | Số trang kiểm cùng lúc (mặc định 3, tối đa 8) |
-| `--sweep` | Đo thêm tràn ngang ở các khổ trung gian (360, 414, 480, 600, 768, 900, 1024, 1180 trong dải `--viewports`), khoảng 0,1 giây mỗi khổ |
+| `--sweep` | Đo thêm tràn ngang, chữ bị che, phần dính (và độ dài dòng từ 1536 px) ở 16 khổ nữa từ 344 tới 2560 px, có 640x360 và 844x390, khoảng 0,3 giây mỗi khổ |
 | `--waivers <tệp>` / `--no-waivers` | Phát hiện mềm đã xét là ổn, mỗi mục kèm lý do (mặc định `.design-kit/waivers.json`, tối đa 5 mục mỗi trang; liệt kê ở mục `waived`) / hiện mọi phát hiện |
 | `--no-cache` | Đo lại mọi trang. Mặc định trang cục bộ mà mọi tệp nó nạp chưa đổi kể từ lần kiểm trước (cùng cờ) dùng lại kết quả cũ |
 | `--fresh` | Nạp lại trang cho mỗi khổ và mỗi chế độ màu. Mặc định trang được nạp một lần rồi đổi khổ, đổi sang tối ngay tại chỗ; một lần nạp mới mỗi trang phải cho cùng bố cục, trang nào lệch thì đo lại bằng cách nạp mới |
+| `--recheck <mã,mã>` | Chỉ đo lại trang, trạng thái và khổ của các phát hiện này (mã lấy từ lượt trước của đúng các trang ấy) và nói cái nào đã sửa |
 | `--limit <n>` / `--full` | Số phát hiện hiển thị (mặc định 25) / hiện hết |
 
 Tệp steps là danh sách trạng thái. Mỗi trạng thái bắt đầu từ một lần nạp trang mới và chạy thao tác của riêng nó:
@@ -399,7 +410,7 @@ chụp nằm trong [`eval/`](eval/).
 ```text
 tokens/            fonts-local.css + fonts/ (tự host, Latin + tiếng Việt), core.css, dem/giay/dam.css
 design/<huong>/    DESIGN.md của từng hướng, sinh từ token
-blocks/html/       13 khối HTML/CSS, mỗi khối có thể kèm <khoi>.steps.json
+blocks/html/       14 khối HTML/CSS, mỗi khối có thể kèm <khoi>.steps.json
 blocks/react/      khối Vite + React + shadcn/ui dùng chung token
 src/               CLI (check, probe, copy, steps, trình duyệt, impeccable, lệnh màu)
 src/mod/           check-mod: lớp chặn và test chung, chạy test, terminal bằng Ink, trang desktop, luật engine

@@ -592,11 +592,203 @@ export function probeCovered(): ProbeHit[] {
 }
 
 /**
+ * Ghi kiểu CHƯA focus của mọi phần tử nhận focus vào một WeakMap (`window.__dkFocusBase`), để `probeFocus` biết kiểu có đổi khi
+ * focus không. Chỉ đọc outline và box-shadow thì báo oan trang đánh dấu focus bằng viền, nền hay gạch chân. Gọi sau khi trang yên
+ * và TRƯỚC lần Tab đầu. Ghi: outline, viền, nền, màu chữ, bóng, gạch chân của chính nó, của ::before/::after, của con (thẻ bấm
+ * được đổi tiêu đề bên trong), của phần tử thay thế ô tích (phần tử kế, nhãn), và của khung bao chỉ chứa mình nó (`:focus-within`
+ * trên khung của ô nhập; khung chứa nhiều điều khiển đổi màu thì không nói được cái nào đang focus, nên không tính).
+ *
+ * "Khác đủ thấy": kích thước khác từ 1px, màu cách nhau từ 0,06 trong OKLab sau khi pha trên nền thật. Bỏ phần đang chạy hiệu ứng
+ * lặp vô hạn (nó khác vì hiệu ứng). Đổi khổ, chế độ màu hay bật màu ép buộc sau khi ghi thì không so nữa (trả false). Trả về số
+ * phần tử đã ghi.
+ */
+export function rememberUnfocused(): number {
+  const SEL = "a[href], area[href], button, input:not([type=hidden]), select, textarea, summary, iframe, audio[controls], video[controls], [tabindex], [contenteditable]:not([contenteditable=false])";
+  const TYPING = "input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=reset]):not([type=hidden]):not([type=range]):not([type=file]):not([type=image]):not([type=color]), textarea, select";
+  type Rgba = [number, number, number, number];
+  interface Snap {
+    outline: number;
+    outlineColor: string;
+    border: number[];
+    borderColor: string[];
+    bg: string;
+    image: string;
+    color: string;
+    shadow: string;
+    line: string;
+    lineColor: string;
+    lineWidth: number;
+    /** Chỉ phần tử giả: chữ của nó, độ mờ và biến hình, cỡ (gạch chân vẽ bằng ::after rộng dần). */
+    content: string;
+    box: string;
+    shown: boolean;
+    size: number[];
+  }
+  interface Spot {
+    e: Element;
+    pseudo: "" | "::before" | "::after";
+    kind: "own" | "proxy" | "wrap";
+    /** null: phần tử giả lúc đó không có. */
+    snap: Snap | null;
+  }
+  const env = (): string => `${matchMedia("(forced-colors: active)").matches}|${matchMedia("(prefers-color-scheme: dark)").matches}|${innerWidth}`;
+  const at = env();
+  const base = new WeakMap<Element, Spot[]>();
+  const up = (e: Element): Element | null => e.assignedSlot ?? e.parentElement ?? ((e.getRootNode() as ShadowRoot).host || null);
+  const read = (e: Element, pseudo: Spot["pseudo"]): Snap | null => {
+    const cs = getComputedStyle(e, pseudo || null);
+    if (pseudo && (cs.content === "none" || cs.content === "normal")) return null;
+    const w = (style: string, width: string): number => (/none|hidden/.test(style) ? 0 : parseFloat(width) || 0);
+    return {
+      outline: w(cs.outlineStyle, cs.outlineWidth),
+      outlineColor: cs.outlineColor,
+      border: [w(cs.borderTopStyle, cs.borderTopWidth), w(cs.borderRightStyle, cs.borderRightWidth), w(cs.borderBottomStyle, cs.borderBottomWidth), w(cs.borderLeftStyle, cs.borderLeftWidth)],
+      borderColor: [cs.borderTopColor, cs.borderRightColor, cs.borderBottomColor, cs.borderLeftColor],
+      bg: cs.backgroundColor,
+      image: cs.backgroundImage === "none" ? "" : `${cs.backgroundImage} ${cs.backgroundSize} ${cs.backgroundPosition}`,
+      color: cs.color,
+      shadow: cs.boxShadow,
+      line: cs.textDecorationLine,
+      lineColor: cs.textDecorationColor,
+      lineWidth: parseFloat(cs.textDecorationThickness) || 1,
+      content: pseudo ? cs.content.replace(/^"(.*)"$/s, "$1").trim() : "",
+      box: pseudo ? `${cs.opacity}|${cs.transform}` : "",
+      shown: !pseudo || (Number(cs.opacity) > 0.05 && cs.visibility === "visible" && cs.display !== "none"),
+      size: pseudo ? [parseFloat(cs.width) || 0, parseFloat(cs.height) || 0] : [],
+    };
+  };
+  const spots = (e: Element): Spot[] => {
+    const out: Spot[] = [];
+    const take = (x: Element, kind: Spot["kind"]): void => {
+      for (const pseudo of ["", "::before", "::after"] as const) out.push({ e: x, pseudo, kind, snap: read(x, pseudo) });
+    };
+    take(e, "own");
+    Array.from(e.querySelectorAll("*")).slice(0, 12).forEach((c) => take(c, "own"));
+    if (e.matches("input[type=checkbox], input[type=radio]")) {
+      for (const c of [e.nextElementSibling, ...Array.from((e as HTMLInputElement).labels ?? [])]) if (c) take(c, "proxy");
+    }
+    const inner = (p: Element, sel: string): number => [...Array.from(p.querySelectorAll(sel)), ...Array.from(p.shadowRoot?.querySelectorAll(sel) ?? [])].filter((x) => x !== e && x.getAttribute("tabindex") !== "-1" && !e.contains(x)).length;
+    let p = up(e);
+    for (let i = 0; i < 2 && p && !/^(BODY|MAIN|HTML)$/.test(p.tagName); i++, p = up(p)) {
+      if (inner(p, SEL) === 0 || (e.matches(TYPING) && inner(p, TYPING) === 0)) take(p, "wrap");
+    }
+    return out;
+  };
+  const ctx = Object.assign(document.createElement("canvas"), { width: 1, height: 1 }).getContext("2d", { willReadFrequently: true });
+  // Qua canvas thì đọc được mọi cách viết màu (oklch, color()).
+  const px = (c: string): Rgba => {
+    if (!ctx) return [0, 0, 0, 0];
+    ctx.clearRect(0, 0, 1, 1);
+    ctx.fillStyle = "rgba(0,0,0,0)";
+    ctx.fillStyle = c;
+    ctx.fillRect(0, 0, 1, 1);
+    const d = ctx.getImageData(0, 0, 1, 1).data;
+    return [d[0]!, d[1]!, d[2]!, d[3]! / 255];
+  };
+  const over = (c: Rgba, b: Rgba): Rgba => [c[0] * c[3] + b[0] * (1 - c[3]), c[1] * c[3] + b[1] * (1 - c[3]), c[2] * c[3] + b[2] * (1 - c[3]), 1];
+  const lab = (c: Rgba): [number, number, number] => {
+    const f = (v: number): number => (v / 255 <= 0.04045 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4);
+    const [r, g, b] = [f(c[0]), f(c[1]), f(c[2])];
+    const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+    const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+    const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+    return [0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s, 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s, 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s];
+  };
+  const dist = (a: Rgba, b: Rgba): number => {
+    const [x, y] = [lab(a), lab(b)];
+    return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
+  };
+  const behind = (e: Element): Rgba => {
+    const stack: Rgba[] = [];
+    for (let a = up(e); a; a = up(a)) {
+      const c = px(getComputedStyle(a).backgroundColor);
+      if (c[3] > 0) stack.push(c);
+      if (c[3] >= 0.99) break;
+    }
+    return stack.reverse().reduce((b, c) => over(c, b), [255, 255, 255, 1] as Rgba);
+  };
+  const apart = (a: string, b: string, back: Rgba): boolean => a !== b && dist(over(px(a), back), over(px(b), back)) >= 0.06;
+  // Các lớp bóng thấy được. Tailwind ghi sẵn những lớp trong suốt 0px làm chỗ trống.
+  const layers = (v: string): Array<{ color: string; n: number[]; inset: boolean }> =>
+    (v === "none" ? [] : v.split(/,(?![^(]*\))/))
+      .map((s) => {
+        const color = /([a-z-]+\([^)]*\)|#\w+)/i.exec(s)?.[1] ?? "rgb(0, 0, 0)";
+        return { color, n: (s.replace(color, "").match(/-?[\d.]+px/g) ?? []).map((x) => parseFloat(x)), inset: /\binset\b/.test(s) };
+      })
+      .filter((l) => px(l.color)[3] > 0.05 && l.n.some((x) => Math.abs(x) >= 1));
+  // Phần tử giả có vẽ gì thấy được không: chữ, hay một hộp có nền, viền, bóng.
+  const draws = (x: Snap | null): boolean =>
+    !!x && x.shown && (x.content !== "" || ((x.size.every((v) => v >= 1) || x.border.some((v) => v >= 1)) && (px(x.bg)[3] > 0.05 || x.image !== "" || x.border.some((v) => v >= 1) || x.outline >= 1 || layers(x.shadow).length > 0)));
+  const differs = (a: Snap | null, b: Snap | null, s: Spot): boolean => {
+    if (s.pseudo) {
+      if (draws(a) !== draws(b)) return true;
+      if (!draws(a)) return false;
+    }
+    if (!a || !b) return false;
+    const back = behind(s.e);
+    const far = (x: number, y: number): boolean => Math.abs(x - y) >= 1;
+    // Viền trùng màu nền phía sau thì không ai thấy: coi như rộng 0.
+    const worth = (w: number, c: string): number => (w > 0 && dist(over(px(c), back), back) >= 0.03 ? w : 0);
+    const [oa, ob] = [worth(a.outline, a.outlineColor), worth(b.outline, b.outlineColor)];
+    if (far(oa, ob) || (oa >= 1 && ob >= 1 && apart(a.outlineColor, b.outlineColor, back))) return true;
+    for (let i = 0; i < 4; i++) {
+      const [x, y] = [worth(a.border[i]!, a.borderColor[i]!), worth(b.border[i]!, b.borderColor[i]!)];
+      if (far(x, y) || (x >= 1 && y >= 1 && apart(a.borderColor[i]!, b.borderColor[i]!, back))) return true;
+    }
+    if (apart(a.bg, b.bg, back) || a.image !== b.image) return true;
+    const [la, lb] = [layers(a.shadow), layers(b.shadow)];
+    if (la.length !== lb.length || la.some((l, i) => l.inset !== lb[i]!.inset || l.n.some((x, k) => far(x, lb[i]!.n[k] ?? 0)) || apart(l.color, lb[i]!.color, back))) return true;
+    const inked = s.pseudo ? b.content !== "" : !!(s.e.textContent ?? "").trim() || s.e instanceof SVGElement || !!s.e.querySelector("svg") || s.e.matches(TYPING);
+    if (inked) {
+      const on = over(px(b.bg), back);
+      if (apart(a.color, b.color, on) || a.line !== b.line) return true;
+      if (b.line !== "none" && (far(a.lineWidth, b.lineWidth) || apart(a.lineColor, b.lineColor, on))) return true;
+    }
+    return s.pseudo !== "" && (a.content !== b.content || a.box !== b.box || a.size.some((x, i) => far(x, b.size[i]!)));
+  };
+  const looping = (s: Spot): boolean =>
+    s.e.getAnimations({ subtree: true }).some((a) => {
+      const f = a.effect as KeyframeEffect | null;
+      return f?.target === s.e && (f.pseudoElement ?? "") === s.pseudo && a.playState === "running" && !Number.isFinite(Number(f.getComputedTiming().endTime));
+    });
+  const seen = (e: Element): boolean => {
+    const r = e.getBoundingClientRect();
+    return r.width > 1 && r.height > 1 && Number(getComputedStyle(e).opacity) > 0;
+  };
+  let active: Element | null = document.activeElement;
+  while (active && active.shadowRoot && active.shadowRoot.activeElement) active = active.shadowRoot.activeElement;
+  let n = 0;
+  const walk = (root: Document | ShadowRoot): void => {
+    for (const el of Array.from(root.querySelectorAll("*"))) {
+      if (el.shadowRoot) walk(el.shadowRoot);
+      // Đang focus sẵn (autofocus): kiểu lúc này không phải kiểu chưa focus, nên không có mốc để so.
+      if (!el.matches(SEL) || el === active) continue;
+      base.set(el, spots(el));
+      n++;
+    }
+  };
+  walk(document);
+  (window as unknown as { __dkFocusBase: unknown }).__dkFocusBase = {
+    changed(e: Element, seesOwn: boolean): boolean {
+      if (env() !== at) return false;
+      return (base.get(e) ?? []).some((s) => {
+        // Ô thật trong suốt: kiểu của chính nó không ai thấy, chỉ hình thay thế và khung bao mới tính.
+        if (s.kind === "own" && !seesOwn) return false;
+        return s.e.isConnected && seen(s.e) && !looping(s) && differs(s.snap, read(s.e, s.pseudo), s);
+      });
+    },
+  };
+  return n;
+}
+
+/**
  * Phần tử đang focus (đi xuyên shadow root) và chỉ báo focus của nó. `shadowOnly`: vòng focus chỉ vẽ bằng box-shadow,
  * không có outline nào (kể cả trong suốt). Chế độ màu ép buộc (Windows High Contrast) đặt box-shadow về none, nên vòng
  * biến mất; outline thì được tô lại bằng màu hệ thống (thử trên Edge 15/11/2026: outline trong suốt thành rgb(55, 0, 110)).
+ * `changed`: kiểu lúc focus khác kiểu chưa focus đủ thấy (viền, nền, gạch chân… chứ không chỉ outline và bóng); chỉ có nghĩa khi
+ * `rememberUnfocused` đã chạy trước lần Tab đầu, không thì luôn false.
  */
-export function probeFocus(): { where: string; indicator: boolean; shadowOnly: boolean; obscured: boolean; hidden: boolean } | null {
+export function probeFocus(): { where: string; indicator: boolean; thin: boolean; shadowOnly: boolean; obscured: boolean; hidden: boolean; changed: boolean } | null {
   let el: Element | null = document.activeElement;
   while (el && el.shadowRoot && el.shadowRoot.activeElement) el = el.shadowRoot.activeElement;
   if (!el || el === document.body || el === document.documentElement) return null;
@@ -636,7 +828,12 @@ export function probeFocus(): { where: string; indicator: boolean; shadowOnly: b
   const seen = proxies.length ? proxies.map((p) => getComputedStyle(p)) : [cs];
   const anyOutline = seen.some((s) => s.outlineStyle !== "none" && parseFloat(s.outlineWidth) > 0);
   const anyShadow = seen.some((s) => s.boxShadow !== "none" && s.boxShadow !== "");
-  return { where, indicator: hasRing(cs) || proxies.some((p) => hasRing(getComputedStyle(p))), shadowOnly: anyShadow && !anyOutline, obscured, hidden };
+  // `auto` là vòng mặc định của trình duyệt: computed width ghi 1px nhưng Chromium vẽ vòng hai tông dày hơn, WCAG 2.4.7 chấp
+  // nhận nó. Chỉ tính khi chính phần tử là thứ người dùng thấy: ô tích trong suốt có hình vẽ thay thì vòng ấy vô hình.
+  const ownRing = !proxies.length && cs.outlineStyle === "auto" && parseFloat(cs.outlineWidth) > 0;
+  const base = (window as unknown as { __dkFocusBase?: { changed(e: Element, seesOwn: boolean): boolean } }).__dkFocusBase;
+  const changed = base ? base.changed(el, !hidden && !proxies.length) : false;
+  return { where, indicator: hasRing(cs) || ownRing || proxies.some((p) => hasRing(getComputedStyle(p))), thin: anyOutline, shadowOnly: anyShadow && !anyOutline, obscured, hidden, changed };
 }
 
 /**
@@ -803,7 +1000,11 @@ export function markVietnameseText(max: number): string[] {
   return out;
 }
 
-/** Animation còn chạy (dùng sau khi giả lập prefers-reduced-motion: reduce). */
+/**
+ * Animation còn chạy và làm vật dịch, phóng, xoay hay đổi kích thước (dùng sau khi giả lập prefers-reduced-motion: reduce).
+ * Mờ dần và đổi màu không tính: WCAG 2.3.3 (mức AAA) nói về chuyển động, và người nhạy cảm tiền đình không bị chúng làm chóng
+ * mặt. Trước 24/11/2026 mọi hiệu ứng còn chạy đều là lỗi cứng, chặt hơn chuẩn.
+ */
 export function probeMotion(): { running: number; samples: string[] } {
   // Gom cả hoạt ảnh trong open shadow root (document.getAnimations() bỏ sót, xem settleAnimations): thẻ web component
   // bỏ qua prefers-reduced-motion từng qua được phép đo cứng này (19/11/2026).
@@ -817,11 +1018,21 @@ export function probeMotion(): { running: number; samples: string[] } {
     }
   };
   walk(document);
+  // Chỉ cho qua thứ chắc chắn không phải chuyển động. Danh sách cấm (bản đầu, 24/11/2026) sót background-size và
+  // stroke-dashoffset, làm hai trang có chuyển động thật từ trượt thành đạt.
+  const STILL = /^(opacity|visibility|[a-z]*color|fill|stroke|[a-z]*opacity)$/i;
   const anims = [...new Set(all)].filter((a) => {
     if (a.playState !== "running") return false;
     const t = a.effect?.getComputedTiming();
     const dur = typeof t?.duration === "number" ? t.duration : 0;
-    return dur > 50 || t?.iterations === Infinity;
+    if (!(dur > 50 || t?.iterations === Infinity)) return false;
+    const eff = a.effect as KeyframeEffect | null;
+    // Không đọc được khung hình chính (hiệu ứng lạ) thì coi là có chuyển động.
+    const frames = typeof eff?.getKeyframes === "function" ? (eff.getKeyframes() as Array<Record<string, unknown>>) : [];
+    const props = frames.flatMap((k) => Object.keys(k)).filter((p) => !["offset", "easing", "composite", "computedOffset"].includes(p));
+    const tp = (a as CSSTransition).transitionProperty;
+    const named = [...props, ...(tp ? [tp] : [])];
+    return !named.length || named.some((p) => p.startsWith("--") || !STILL.test(p.replace(/-/g, "")));
   });
   const samples = anims.slice(0, 5).map((a) => {
     const target = (a.effect as KeyframeEffect | null)?.target;

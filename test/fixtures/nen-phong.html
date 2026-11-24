@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chuyển động không qua transform</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 24px 16px; }
+.nen { width: 200px; height: 100px; background: repeating-linear-gradient(90deg, #dde 0 20px, #eef 20px 40px); animation: phong 2s linear infinite; }
+@keyframes phong { to { background-size: 200% 200%; } }
+</style>
+</head>
+<body>
+<main><h1>Nền phóng to</h1><div class="nen" role="img" aria-label="Nền đang phóng"></div><p>Nền phóng to mãi kể cả khi bật giảm chuyển động.</p></main>
+</body>
+</html>

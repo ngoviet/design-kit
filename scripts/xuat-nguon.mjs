@@ -38,5 +38,28 @@ for (const c of claims) {
 }
 lines.push("", "## Nguồn", "", "| Mã | Loại | Tiêu đề | Ghi chú |", "| --- | --- | --- | --- |");
 for (const s of sources) lines.push(`| ${s.id} | ${s.kind ?? ""} | [${cell(s.title)}](${s.url}) | ${cell(s.note)} |`);
+// Nguồn mã N… của bộ quy tắc mở rộng (24/11/2026): bảng ở mục 6 của tệp trong kho. Chỉ xuất mã mà docs/tieu-chi.md dẫn; dẫn một
+// nguồn chưa đọc thật ("từ trí nhớ") là lỗi, vì bảng tiêu chí chỉ nhận nguồn đã đối chiếu câu trích.
+const EXT = join(dir, "tai-lieu", "bo-quy-tac-mo-rong-2026-11-24.md");
+let nN = 0;
+if (existsSync(EXT)) {
+  const ext = readFileSync(EXT, "utf8").replace(/\r\n/g, "\n");
+  const prefix = { W: "https://raw.githubusercontent.com/w3c/wcag/main/understanding", A: "https://developer.apple.com/tutorials/data/design/human-interface-guidelines", M: "https://developer.mozilla.org/en-US/docs/Web" };
+  const rows = new Map();
+  for (const m of ext.matchAll(/^\| (N\d+) \| (.*?) \| (.*) \| ([^|]*) \|$/gm)) rows.set(m[1], { name: m[2], quote: m[3], status: m[4].trim() });
+  const cited = [...new Set(readFileSync(join(root, "docs", "tieu-chi.md"), "utf8").match(/\bN\d+\b/g) ?? [])].sort((x, y) => Number(x.slice(1)) - Number(y.slice(1)));
+  const bad = cited.filter((c) => !/^đã (đọc|có)/.test(rows.get(c)?.status ?? ""));
+  if (bad.length) {
+    console.error(`error: "docs/tieu-chi.md dẫn nguồn chưa đọc thật: ${bad.join(", ")}"\ncode: VALIDATION_ERROR`);
+    process.exit(1);
+  }
+  lines.push("", "## Nguồn mã N (bộ quy tắc mở rộng, 24/11/2026)", "", "Câu trích đã đối chiếu nguyên văn với trang gốc khi tải lại ngày 24/11/2026. Trang WCAG \"Understanding\" là bản gốc trên GitHub của W3C.", "", "| Mã | Nguồn | Câu trích |", "| --- | --- | --- |");
+  for (const c of cited) {
+    const { name, quote } = rows.get(c);
+    const full = name.replace(/(^|[ ·,])([WAM])\/([\w./-]+)/g, (_, pre, k, path) => `${pre}${prefix[k]}/${path}`).replace(/ \((A|B)\d-\d\d\)/, "");
+    lines.push(`| ${c} | ${cell(full.replace(/(https?:\/\/[^\s,]+)/g, "<$1>"))} | ${cell(quote)} |`);
+  }
+  nN = cited.length;
+}
 writeFileSync(join(root, "docs", "nguon.md"), lines.join("\n") + "\n");
-console.log(`status: "${sources.length} nguồn, ${claims.length} luận điểm"\nfile: docs/nguon.md`);
+console.log(`status: "${sources.length} nguồn, ${claims.length} luận điểm, ${nN} nguồn mã N"\nfile: docs/nguon.md`);

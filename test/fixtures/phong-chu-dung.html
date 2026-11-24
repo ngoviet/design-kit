@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chữ theo người đọc</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 24px 16px; max-width: 40rem; }
+:root { --co-tieu-de: clamp(1.5rem, 1rem + 2vw, 2.5rem); }
+h1 { font-size: var(--co-tieu-de); line-height: 1.3; }
+h2 { font-size: 5vw; }
+h2.de { font-size: 1.5rem; line-height: 1.3; }
+.lau { transition: all 4s; }
+.hop { min-height: 1.6em; width: min(100%, 11em); }
+.nhan { font-size: 13px; }
+button { font: inherit; font-size: 0.875rem; min-height: 44px; transition: all .4s; }
+.thu { font-size: 2rem; }
+@media (max-width: 45em) { .thu { font-size: 1.75rem; } }
+</style>
+</head>
+<body>
+<main><h1>Tiêu đề có phần rem</h1>
+<p>Đoạn văn này đặt cỡ chữ bằng rem nên to lên khi người đọc chọn chữ to.</p>
+<p class="thu">Bố cục hẹp dùng chữ nhỏ hơn một nấc.</p>
+<h2 class="de">Luật vw bị luật sau đè</h2>
+<p class="lau">Đoạn văn đổi cỡ chữ chậm bốn giây nhưng vẫn theo người đọc.</p>
+<div class="hop">Vừa khít một dòng</div>
+<button type="button" id="chuyen-dan">Nút có chuyển tiếp mọi thuộc tính</button>
+<p class="nhan" data-zoom-ok="nhãn trục biểu đồ, có bảng số bên dưới">Th1 · Th2 · Th3</p>
+</main>
+</body>
+</html>

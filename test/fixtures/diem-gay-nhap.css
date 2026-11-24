@@ -1,0 +1,3 @@
+/* Tệp được @import có điều kiện: mốc 1100 nằm ở dòng @import, mốc 1000 nằm bên trong. */
+.nhap { color: #222; }
+@media (min-width: 1000px) { .nhap { color: #333; } }

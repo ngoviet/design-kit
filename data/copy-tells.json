@@ -6,7 +6,10 @@
     "Mỗi nhóm: id, label (tiếng Anh, in ra output), gen (1 hoặc 2), min (số cụm KHÁC NHAU tối thiểu trên một trang mới báo; 1 = báo từng chỗ),",
     "at: \"start\" (chỉ khớp ở đầu khối chữ), scope: \"text\" (mặc định) hoặc \"text+attr\" (cả alt, aria-label, title, <title>),",
     "phrases: cụm chữ thường (không phân biệt hoa thường, khớp trọn từ), regex: biểu thức (cờ iu) hoặc {\"re\": \"...\", \"flags\": \"u\"} khi cần phân biệt hoa thường.",
-    "Viết cả hai kiểu bỏ dấu khi tiếng Việt có hai cách viết (toả/tỏa, kỷ/kỉ, khoá/khóa, hy/hi)."
+    "Viết cả hai kiểu bỏ dấu khi tiếng Việt có hai cách viết (toả/tỏa, kỷ/kỉ, khoá/khóa, hy/hi).",
+    "Khoá thêm 24/11/2026: unless (mẫu: khối chữ khớp thì bỏ qua cả nhóm), bare: true (chỉ báo khi đứng trần: cùng dòng và hai khối cạnh không có từ ba từ giải thích trở lên),",
+    "assumed: \"skip\" (bỏ qua chữ có data-assumed, đã nằm trong mục assumed), unlessLink: true (bỏ qua khi có liên kết ra ngoài hay itemprop làm nguồn), max (nhiều hơn ngần này cụm khác nhau là dữ liệu thật, không báo).",
+    "raw-value, raw-word, error-code: giá trị kỹ thuật lộ ra; ý và danh sách giá trị theo renderlint placeholder-text (MIT). fake-proof, fake-rating: danh từ tiếng Anh lấy từ FixMySlop ui/fake-social-proof (MIT), mẫu tiếng Việt tự viết. Giấy phép: data/NOTICE-third-party.md."
   ],
   "categories": [
     {
@@ -80,12 +83,94 @@
         "your text here", "your company", "company name", "insert text", "placeholder text", "sample text"
       ],
       "regex": [
-        "\\[(?=[^\\]\\n]*\\p{L})(?=[^\\]\\n]*\\s)[^\\]\\n]{3,60}\\]",
+        "\\[(?!object [A-Z])(?=[^\\]\\n]*\\p{L})(?=[^\\]\\n]*\\s)[^\\]\\n]{3,60}\\]",
         "\\[(tên|name|email|sđt|phone|địa chỉ|address|logo|ảnh|image|link|url|giá|price|ngày|date)\\]",
         "\\{\\{[^}\\n]{0,60}\\}\\}",
         "\\$\\{[^}\\n]{0,60}\\}",
+        "^[\\s\"“”–—-]*((nguyễn|trần|lê|phạm)\\s+(văn|thị)\\s+[a-d]|(john|jane)\\s+(doe|smith))(?![\\p{L}\\p{N}])",
+        "(?<![\\p{L}\\p{N}])acme (inc|corp|co)(?![\\p{L}\\p{N}])",
         { "re": "\\b(TODO|TBD|FIXME|XXX)\\b", "flags": "u" }
       ]
+    },
+    {
+      "id": "raw-value",
+      "label": "raw value shown to the reader",
+      "gen": 1,
+      "min": 1,
+      "scope": "text+attr",
+      "regex": [
+        { "re": "\\[object [A-Z]\\w*\\]", "flags": "u" },
+        { "re": "(?<![\\p{L}\\p{N}])Invalid Date(Time)?(?![\\p{L}\\p{N}])", "flags": "u" },
+        { "re": "^(null|NULL)([\\s/,·|–-]+(null|NULL))*(\\s*(đ|₫|VND|USD|%|px))?$", "flags": "u" },
+        "(?<!\\p{L})(chào|hello|hi|dear|welcome)[\\s,]+null(?![\\p{L}\\p{N}])",
+        { "re": "(?<![\\p{L}\\p{N}%])%(\\d+\\$)?[sd@](?![\\p{L}\\p{N}])", "flags": "u" }
+      ]
+    },
+    {
+      "id": "raw-word",
+      "label": "raw value shown to the reader",
+      "gen": 1,
+      "min": 1,
+      "scope": "text+attr",
+      "regex": [
+        { "re": "(?<![\\p{L}\\p{N}_.])(undefined|NaN)((?![\\p{L}\\p{N}_])|(?=(đ|px|VND|USD)(?!\\p{L})))", "flags": "u" },
+        { "re": "(?<!\\p{L})(Uncaught )?(Type|Reference|Syntax|Range|URI|Eval|Aggregate)Error(?!\\p{L})", "flags": "u" },
+        "cannot read propert(y|ies) of null",
+        "(?<!\\p{L})uncaught \\(in promise\\)",
+        "(?<!\\p{L})unhandled (promise )?rejection(?!\\p{L})",
+        "traceback \\(most recent call last\\)",
+        "(?<!\\p{L})nullpointerexception(?!\\p{L})"
+      ],
+      "unless": [
+        "(?<!\\p{L})(javascript|typescript|python|lập trình|mã nguồn|tham số|kiểu dữ liệu|cú pháp|trình biên dịch|ngoại lệ|devtools|function|variable|parameter|exception)(?!\\p{L})",
+        "(?<!\\p{L})(gọi|trong|một|các|viết|khai báo|tên)\\s+(hàm|biến)(?!\\p{L})(?!\\s+(lượng|thể|đổi|động))",
+        "(?<!\\p{L})(hàm|biến)\\s+(này|trả về|số|không có|chưa)(?!\\p{L})"
+      ]
+    },
+    {
+      "id": "error-code",
+      "label": "bare error code, say what happened and what to do",
+      "gen": 1,
+      "min": 1,
+      "bare": true,
+      "regex": [
+        { "re": "(?<![\\p{L}\\p{N}_])(net::)?ERR_[A-Z_]{3,}(?![\\p{L}\\p{N}_])", "flags": "u" },
+        { "re": "(?<![\\p{L}\\p{N}_])(ECONN(REFUSED|RESET|ABORTED)|ENOTFOUND|ETIMEDOUT|EAI_AGAIN|EACCES|ENOENT|EPIPE)(?![\\p{L}\\p{N}_])", "flags": "u" },
+        "request failed with status code \\d{3}",
+        "^(typeerror: )?failed to fetch[.!]?$",
+        "networkerror when attempting to fetch resource",
+        "^network ?error[.!]?$",
+        "(?<!\\p{L})(http(/\\d(\\.\\d)?)?|status( code)?|error( code)?|mã lỗi|lỗi)\\s*[:#]?\\s*#?[45]\\d{2}(?!\\d)",
+        "^([45]\\d{2}\\s+)?(internal server error|bad gateway|service unavailable|gateway time-?out|bad request)[.!]?$",
+        "(?<![\\p{L}\\p{N}])0x[0-9a-f]{8}(?![\\p{L}\\p{N}])"
+      ]
+    },
+    {
+      "id": "fake-proof",
+      "label": "invented social proof, use real numbers or cut it",
+      "gen": 2,
+      "min": 1,
+      "assumed": "skip",
+      "regex": [
+        "(?<![\\p{L}\\p{N}.,])(hơn\\s+|trên\\s+|gần\\s+)?(\\d{3,}|\\d{1,3}([.,]\\d{3})+|\\d+([.,]\\d+)?\\s*(k|nghìn|ngàn|vạn|triệu)|\\d+(?=\\+)|hàng\\s+(trăm|nghìn|ngàn|vạn|triệu))\\s*\\+?\\s*(khách hàng|khách|người dùng|người|doanh nghiệp|công ty|đối tác|học viên|học sinh|phụ huynh|gia đình|cửa hàng|thành viên|bạn trẻ|chị em|mẹ bỉm)\\s+(việt nam\\s+|việt\\s+)?(đã\\s+|đang\\s+|luôn\\s+)?(tin dùng|tin tưởng|tin chọn|tín nhiệm|hài lòng|yêu thích|yêu mến|đồng hành)(?!\\p{L})",
+        "(?<!\\p{L})được\\s+(tin dùng|tin tưởng|tin chọn|lựa chọn|tín nhiệm|yêu thích)\\s+bởi\\s+(hơn\\s+|trên\\s+|gần\\s+)?(\\d|hàng\\s+(trăm|nghìn|ngàn|vạn|triệu))[\\d.,]*",
+        "(?<![\\p{L}\\p{N}.,])\\d{2,3}([.,]\\d+)?\\s*%\\s*(khách hàng|người dùng|học viên|phụ huynh|gia đình)\\s+(đã\\s+)?(hài lòng|quay lại|giới thiệu)(?!\\p{L})",
+        "(?<![\\p{L}\\p{N}.,])(\\d{3,}|\\d{1,3}([.,]\\d{3})+|\\d+([.,]\\d+)?\\s*(k|nghìn|ngàn|triệu))\\s*\\+\\s*(khách hàng|người dùng|doanh nghiệp|đối tác|học viên|phụ huynh|gia đình)(?!\\p{L})",
+        "(?<![\\p{L}\\p{N}.,])(\\d{3,}|\\d{1,3}([,.]\\d{3})+|\\d+(\\.\\d)?[km])\\+\\s*(happy |active |satisfied |trusted )?(users|customers|developers|companies|teams|clients|downloads|businesses|creators|travell?ers|guests|members|readers|students|learners|people|families|hosts|makers|shoppers|subscribers|founders|designers|freelancers|patients|investors|merchants|sellers|buyers|writers|marketers)(?!\\p{L})",
+        "(?<!\\p{L})(trusted|loved) by (over |more than |nearly |tens of |hundreds of )?(thousands|millions|hundreds|(\\d{3,}|\\d{1,3}([.,]\\d{3})+|\\d+([.,]\\d+)?\\s?[km]|\\d+(?=\\+))\\+?)(?![\\p{L}\\p{N}])",
+        "(?<!\\p{L})join (over |more than )?(thousands|millions|(\\d{3,}|\\d{1,3}([.,]\\d{3})+|\\d+([.,]\\d+)?\\s?[km]|\\d+(?=\\+))\\+?)( of)?( happy| other| satisfied)? (users|customers|developers|companies|teams|businesses|creators|members|students|learners|people|subscribers|founders)(?!\\p{L})"
+      ]
+    },
+    {
+      "id": "fake-rating",
+      "label": "rating with no source, link the reviews or cut it",
+      "gen": 2,
+      "min": 1,
+      "max": 2,
+      "assumed": "skip",
+      "unlessLink": true,
+      "regex": ["(?<![\\p{L}\\p{N}.,])4[.,][5-9]\\d?\\s*(/\\s*5|trên\\s+5|out of 5)(?![\\p{L}\\p{N}])", "(?<![\\p{L}\\p{N}.,])4[.,][5-9]\\d?\\s*(sao|stars?)(?!\\p{L})"],
+      "unless": ["(?<!\\p{L})(google|shopee|lazada|tiki|app ?store|ch ?play|trustpilot|g2|capterra|facebook|tripadvisor|foody|booking|agoda|nguồn|khảo sát|source|survey)(?!\\p{L})", "(?<![\\d.,])\\d[\\d.,]*\\s+(lượt |bài )?(đánh giá|nhận xét|reviews?|ratings?)(?!\\p{L})"]
     },
     {
       "id": "markdown",

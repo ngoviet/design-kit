@@ -25,7 +25,9 @@
   .delta svg { width: 14px; height: 14px; }
   .delta.up-good { color: var(--ok); }
   .delta.up-bad { color: var(--bad); }
-  .spark { width: 100%; height: 28px; margin-top: var(--sp-1); color: var(--accent); }
+  /* Máy có chạm: nới vùng bấm bằng ::after (18 + 2×13 = 44), không nâng hộp, để dòng này vẫn thẳng hàng với ô bên cạnh. */
+  @media (any-pointer: coarse) { .delta a { position: relative; } .delta a::after { content: ""; position: absolute; inset: -13px 0; } }
+  .spark { width: 100%; height: 28px; margin-top: var(--sp-1); color: var(--accent-border, var(--accent)); }
   @container kpis (max-width: 44rem) {
     .kpis dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .kpi:nth-child(3) { border-left: 0; }

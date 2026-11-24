@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bấm được và Tab tới được</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 24px 16px; max-width: 40rem; display: grid; gap: 16px; }
+.o { border: 1px solid #555; padding: 12px; }
+.tay, label { cursor: pointer; }
+.an-mo { opacity: 0; }
+.ngoai { position: fixed; left: -400px; top: 0; width: 300px; }
+.phu { position: fixed; inset: 0; background: rgb(0 0 0 / 0.02); z-index: -1; }
+.xep { height: 0; overflow: hidden; }
+</style>
+</head>
+<body>
+<div id="vo-app">
+<main id="khung">
+<h1>Danh sách việc</h1>
+<p><label><input type="checkbox"> Nhớ tôi</label></p>
+<p><label for="gui" id="nhan-ngoai">Nhận thư báo</label> <input type="checkbox" id="gui"></p>
+<p><input type="radio" name="muc" id="cao" checked><label for="cao">Cao</label> <input type="radio" name="muc" id="thap"><label for="thap">Thấp</label></p>
+<p><input type="checkbox" id="khoa-lai" disabled><label for="khoa-lai">Chưa dùng được</label></p>
+<article class="o tay" onclick="this.querySelector('a').click()"><h2><a href="#viec-1">Việc thứ nhất</a></h2><p>Thẻ bấm được cả khối, có liên kết bên trong.</p></article>
+<button type="button"><span class="tay" id="trong-nut">☰</span> Trình đơn</button>
+<div class="o tay" style="display:none" onclick="this.dataset.x = 1">Đang ẩn</div>
+<div class="o tay an-mo" onclick="this.dataset.x = 1">Trong suốt</div>
+<div class="o tay ngoai" onclick="this.dataset.x = 1">Ngăn kéo đóng</div>
+<div class="xep"><div class="o tay" onclick="this.dataset.x = 1">Mục đang gập</div></div>
+<div class="o" id="chan-lan" onclick="event.stopPropagation()">Khung chặn lan</div>
+<div class="o" id="chan-lan-2">Khung chặn lan bằng script</div>
+<div class="o" id="vung-tha">Kéo ảnh vào đây</div>
+<div class="o tay" draggable="true">Kéo để xếp lại</div>
+<ul id="uy-quyen"><li>Dòng một</li><li>Dòng hai</li></ul>
+<div role="tablist" aria-label="Mục"><button type="button" role="tab" aria-selected="true" id="t1">Hôm nay</button><button type="button" role="tab" aria-selected="false" tabindex="-1" id="t2">Tuần này</button></div>
+<div><input role="combobox" aria-label="Thành phố" aria-expanded="true" aria-controls="ds" id="cb"><div role="listbox" id="ds" aria-label="Gợi ý"><div role="option" aria-selected="true" class="tay">Hà Nội</div><div role="option" aria-selected="false" class="tay">Huế</div></div></div>
+<div><input type="number" aria-label="Số lượng" value="1"><button type="button" tabindex="-1" id="tang">+</button></div>
+<div class="nhom-mau"><button type="button" tabindex="0" id="m1">Đỏ</button><button type="button" tabindex="-1" id="m2">Xanh</button></div>
+<div><a href="#bai-2" tabindex="-1" aria-hidden="true"><span style="display:inline-block;width:40px;height:40px;background:#ccc"></span></a> <a href="#bai-2">Bài thứ hai</a></div>
+<div class="o tay" data-keyboard-ok="nút Lưu ở trên làm cùng việc">Vùng bấm thêm</div>
+<div class="o tay" aria-disabled="true">Nút giả đang khoá</div>
+<div class="o tay" style="pointer-events:none">Không nhận chuột</div>
+<div class="o tay"><button type="button" disabled>Chỉ chứa nút đang khoá</button></div>
+<div class="o" id="rong-react">Trình nghe rỗng của React</div>
+<div class="o"><span id="nhan-tien">₫</span> <input aria-label="Giá"></div>
+<div class="o" id="khung-chu" style="cursor:text">Bấm vào đâu cũng là gõ</div>
+<div class="o"><span tabindex="-1" class="the-chon">Hà Nội <span class="tay">×</span></span> <input role="combobox" aria-label="Nơi đến" aria-expanded="false"></div>
+<canvas id="bieu-do" width="200" height="60" aria-label="Biểu đồ" role="img"></canvas>
+<details><summary>Câu hỏi</summary><p>Trả lời.</p></details>
+<nut-bong id="nut-bong"></nut-bong>
+<div class="o" tabindex="0" role="button" id="nut-tu-lam">Nút tự làm</div>
+<p contenteditable="true" class="tay">Sửa được chữ này</p>
+</main>
+</div>
+<div class="phu" id="phu"></div>
+<button type="button" aria-label="Đóng">×</button>
+<script>
+const $ = (id) => document.getElementById(id);
+const lam = () => { document.title = "đã bấm"; };
+$("chan-lan-2").addEventListener("click", (e) => e.stopPropagation());
+$("trong-nut").addEventListener("click", lam);
+$("vung-tha").addEventListener("drop", lam);
+$("vung-tha").addEventListener("click", lam);
+$("uy-quyen").addEventListener("click", lam);
+$("khung").addEventListener("click", lam);
+$("vo-app").addEventListener("click", lam);
+document.body.addEventListener("click", lam);
+document.addEventListener("click", lam);
+$("rong-react").onclick = function noop() {};
+$("nhan-tien").addEventListener("click", () => $("nhan-tien").nextElementSibling.focus());
+$("khung-chu").addEventListener("click", lam);
+for (const id of ["t2", "tang", "m2", "bieu-do", "phu", "nut-tu-lam"]) $(id).addEventListener("click", lam);
+customElements.define("nut-bong", class extends HTMLElement {
+  connectedCallback() {
+    const r = this.attachShadow({ mode: "open" });
+    r.innerHTML = '<button type="button">Nút trong cây bóng</button>';
+    this.addEventListener("click", lam);
+  }
+});
+</script>
+</body>
+</html>

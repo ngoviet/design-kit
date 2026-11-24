@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trạng thái ARIA đổi theo</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 24px 16px; max-width: 40rem; display: grid; gap: 16px; }
+button { font: inherit; min-height: 44px; border: 1px solid #555; background: #fff; }
+button:hover { background: #eee; }
+button:focus { border-color: #0b57d0; }
+button.bat { background: #0b57d0; color: #fff; }
+[hidden] { display: none; }
+.xep { max-height: 0; overflow: hidden; transition: max-height 300ms; }
+.xep.mo { max-height: 200px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Trạng thái ARIA</h1>
+<div><button type="button" id="dong-mo" aria-expanded="false" aria-controls="v1">Câu hỏi một</button><div class="xep" id="v1"><p>Trả lời một.</p></div></div>
+<div><button type="button" id="muon" aria-expanded="false">Câu hỏi hai</button><div hidden><p>Trả lời hai, thuộc tính cập nhật sau một nhịp.</p></div></div>
+<div><button type="button" id="yeu-thich" aria-pressed="false">Yêu thích 12</button></div>
+<div><div role="tablist" aria-label="Khoảng"><button type="button" role="tab" id="tab-1" aria-selected="true">Ngày</button><button type="button" role="tab" id="tab-2" aria-selected="false">Tuần</button></div><p id="bang">Số theo ngày.</p></div>
+<div role="radiogroup" aria-label="Cỡ"><button type="button" role="radio" id="r1" aria-checked="true">Vừa</button><button type="button" role="radio" id="r2" aria-checked="false">To</button></div>
+<div><button type="button" id="khong-lam-gi" aria-pressed="false">Chưa có gì đổi</button> <span id="dong-ho">00:00</span> <span role="status" id="bao"></span></div>
+<div><button type="button" id="hover-js" aria-pressed="false">Thêm lớp khi rê chuột</button></div>
+<div><span id="da-chon">Chưa chọn nơi nào</span><div role="listbox" aria-label="Chọn" id="ds"><div role="option" id="lc" aria-selected="false" tabindex="0">Hà Nội</div></div></div>
+<div><span role="tab" aria-selected="false" tabindex="0" id="tab-dong">Tệp một <button type="button" id="nut-dong" aria-label="Đóng tệp một">×</button></span> <span id="ghi-chu">Đang mở một tệp</span></div>
+<div data-aria-ok="khung chứa tự quản"><button type="button" id="mien" aria-pressed="false">Tắt tiếng</button></div>
+<div><button type="button" id="xem-them" aria-expanded="false" aria-controls="doan">Xem thêm</button><div id="doan"><p>Phần đầu luôn hiện.</p><p id="doan-2" hidden>Phần sau.</p></div></div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+$("dong-mo").onclick = () => { $("v1").classList.toggle("mo"); $("dong-mo").setAttribute("aria-expanded", $("v1").classList.contains("mo")); };
+$("muon").onclick = () => { const v = $("muon").nextElementSibling; v.hidden = !v.hidden; setTimeout(() => $("muon").setAttribute("aria-expanded", !v.hidden), 180); };
+$("yeu-thich").onclick = () => { $("yeu-thich").classList.toggle("bat"); $("yeu-thich").textContent = "Yêu thích 13"; $("yeu-thich").setAttribute("aria-pressed", "true"); };
+const tab = (a, b, t) => { $(a).setAttribute("aria-selected", "true"); $(b).setAttribute("aria-selected", "false"); $("bang").textContent = t; };
+$("tab-1").onclick = () => { tab("tab-1", "tab-2", "Số theo ngày, tải lại."); };
+$("tab-2").onclick = () => tab("tab-2", "tab-1", "Số theo tuần.");
+$("r1").onclick = () => { $("r1").classList.add("bat"); };
+$("khong-lam-gi").onclick = () => { $("dong-ho").textContent = "00:07"; $("bao").textContent = "Đã nhận"; };
+$("hover-js").addEventListener("mouseenter", () => $("hover-js").classList.add("is-hover"));
+$("hover-js").addEventListener("focus", () => $("hover-js").setAttribute("data-focus", ""));
+$("lc").onclick = () => { $("ds").hidden = true; $("da-chon").textContent = "Đã chọn Hà Nội"; };
+$("nut-dong").onclick = () => { $("ghi-chu").textContent = "Đã đóng tệp"; };
+$("mien").onclick = () => { $("mien").textContent = "Bật tiếng"; };
+$("xem-them").onclick = () => { $("doan-2").hidden = false; $("xem-them").setAttribute("aria-expanded", "true"); };
+</script>
+</body>
+</html>

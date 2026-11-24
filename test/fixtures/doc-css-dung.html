@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101214" media="(prefers-color-scheme: dark)">
+<title>Đọc CSS: trang đúng</title>
+<style>
+:root { color-scheme: light dark; --nen: #fff; --chu: #1a1a1a; --lien-ket: #0b5394; --mep-duoi: env(safe-area-inset-bottom, 0px); --dem-duoi: calc(var(--mep-duoi) + 12px); }
+@media (prefers-color-scheme: dark) { :root { --nen: #14161a; --chu: #f2f2f2; --lien-ket: #9ecbff; } }
+html, body { height: 100%; }
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: var(--nen); color: var(--chu); }
+main { padding: 0 16px 120px; }
+button, input { font: inherit; min-height: 44px; }
+a { color: var(--lien-ket); }
+/* vh-full: có dvh thay trong cùng luật, trong @supports, chỉ iOS, bị luật sau đè, khổ khác, lvh cố ý, cao hơn màn, khối dài hơn, khối bị ẩn. */
+.thay { min-height: 100vh; min-height: 100dvh; }
+.thay-supports { min-height: 100vh; }
+@supports (height: 100dvh) { .thay-supports { min-height: 100dvh; } }
+.thay-ios { min-height: 100vh; }
+@supports (-webkit-touch-callout: none) { .thay-ios { min-height: -webkit-fill-available; } }
+.de { min-height: 100vh; }
+.de { min-height: 40vh; }
+.phan-tram-vo { height: 844px; }
+.phan-tram { height: 100vh; }
+.phan-tram-vo .phan-tram { height: 100%; }
+@media (min-width: 900px) { .rong { height: 100vh; } }
+.lvh { min-height: 100lvh; }
+.qua-man { min-height: 120vh; }
+.dai { min-height: 100vh; }
+.dai > div { height: 1200px; }
+.an { display: none; height: 100vh; transition: all 1s; }
+.ngan-keo { position: fixed; top: 0; left: 0; width: 280px; height: 100vh; transform: translateX(-110%); }
+.nen-trang-tri { position: fixed; inset: 0 0 auto; height: 100vh; z-index: -1; pointer-events: none; background: transparent; }
+/* transition */
+.khong-chay { transition: all 0s; }
+.chi-thoi-luong { transition-duration: 0.2s; }
+.mau { transition: color 0.2s, background-color 0.2s; }
+.re:hover { transition: all 0.2s; }
+.tat { transition: all 0.3s; }
+.tat { transition: none; }
+/* ngắt dòng */
+code { word-break: break-all; }
+.mot-dong { word-break: break-all; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tach-anh { hyphens: auto; }
+.gay-han, .gay-link { word-break: break-all; }
+.dai-bat-ky { overflow-wrap: anywhere; }
+/* thanh sát mép: biến qua biến, và env() ở phần tử bên trong. */
+.day { position: fixed; left: 0; right: 0; bottom: 0; background: var(--nen); padding: 12px 16px var(--dem-duoi); }
+header { position: sticky; top: 0; background: light-dark(#fafafa, #101214); }
+header > div { padding: max(12px, env(safe-area-inset-top)) 16px 12px; }
+/* ảnh giữ chỗ */
+img { max-width: 100%; height: auto; }
+.ti-le { width: 100%; aspect-ratio: 16 / 9; }
+.cao-co-dinh { width: 100%; height: 120px; object-fit: cover; }
+.hop-ti-le { aspect-ratio: 4 / 3; max-width: 16rem; }
+.hop-ti-le img { width: 100%; height: 100%; object-fit: cover; }
+.hop-phu { position: relative; height: 120px; }
+.hop-phu img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hop-cat { height: 120px; overflow: hidden; }
+.hop-cat img { width: 100%; }
+iframe { width: 100%; height: 160px; border: 0; }
+</style>
+</head>
+<body>
+<div class="nen-trang-tri"></div>
+<header id="dau"><div>Cửa hàng</div></header>
+<main>
+<h1>Đọc CSS</h1>
+<section class="thay"><p>Có dvh thay trong cùng luật.</p></section>
+<section class="thay-supports"><p>Có dvh thay trong khối supports.</p></section>
+<section class="thay-ios"><p>Có cách sửa riêng cho iOS.</p></section>
+<section class="de"><p>Luật vh bị luật sau đè.</p></section>
+<div class="phan-tram-vo"><section class="phan-tram"><p>Luật vh bị luật phần trăm đè, hai giá trị trùng nhau ở khổ này.</p></section></div>
+<section class="rong"><p>Chỉ cao bằng màn ở màn rộng.</p></section>
+<section class="lvh"><p>Cố ý lấy khung lớn.</p></section>
+<section class="qua-man"><p>Cố ý cao hơn màn để cuộn.</p></section>
+<section class="dai"><div><p>Khối dài hơn màn vì nội dung, không phải vì min-height.</p></div></section>
+<section class="man-co-y" data-css-ok="vh-full: trang chiếu ảnh, đáy chỉ là nền" style="min-height:100vh"><p>Đã nêu lý do.</p></section>
+<section class="an"><p>Đang ẩn.</p></section>
+<div class="ngan-keo"><p>Ngăn kéo đang đóng.</p></div>
+<p><button type="button" class="khong-chay">Thời lượng 0</button> <button type="button" class="chi-thoi-luong">Chỉ đặt thời lượng</button> <button type="button" class="mau">Chỉ đổi màu</button> <button type="button" class="re">Chỉ khi rê chuột</button> <button type="button" class="tat">Đã tắt</button></p>
+<p><button type="button" style="transition: all 0.2s" data-css-ok="thử nghiệm phóng cả nút">Có lý do</button></p>
+<p>Mã đơn <code>Đơn-hàng-2f7c1c9e8b7a4d6f9012ab34cd56ef78</code> nằm trong thẻ mã.</p>
+<p class="mot-dong">Dòng này không xuống hàng nên không bị ngắt giữa âm tiết.</p>
+<p class="tach-anh" lang="en">Internationalization of hyphenation in English paragraphs is fine.</p>
+<p class="gay-han" lang="zh">你好，世界。学而时习之，不亦说乎。</p>
+<p class="gay-link"><a href="#dau">https://example.com/a/very/long/path/that/has/no/vietnamese/letters</a></p>
+<p class="dai-bat-ky">Đoạn này chỉ ngắt khi một chuỗi quá dài.</p>
+<img src="hinh/minh-hoa-sac.png" width="640" height="480" alt="Có cỡ trong thẻ">
+<img class="ti-le" src="hinh/minh-hoa-sac.png" alt="Có tỉ lệ trong CSS">
+<img class="cao-co-dinh" src="hinh/minh-hoa-sac.png" alt="Chiều cao cố định">
+<div class="hop-ti-le"><img src="hinh/minh-hoa-sac.png" alt="Hộp có tỉ lệ"></div>
+<div class="hop-phu"><img src="hinh/minh-hoa-sac.png" alt="Phủ kín hộp"></div>
+<div class="hop-cat"><img src="hinh/minh-hoa-sac.png" alt="Trong hộp cắt"></div>
+<picture><source srcset="hinh/minh-hoa-sac.png" width="640" height="480" media="(min-width: 1px)"><img src="hinh/minh-hoa-mo.png" alt="Cỡ ở thẻ source"></picture>
+<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40'/%3E%3C/svg%3E" alt="Ảnh nằm trong trang">
+<img src="hinh/icon-manh.svg" style="width:1px;height:auto" alt="">
+<svg width="40" height="40" aria-hidden="true"><rect width="40" height="40"></rect></svg>
+<iframe title="Khung nhúng" srcdoc="&lt;p&gt;Trong khung&lt;/p&gt;"></iframe>
+<form>
+<p><label for="mk">Mật khẩu</label> <input id="mk" type="password"></p>
+<p><label for="ma-1">Mã xác nhận</label> <input id="ma-1" inputmode="numeric" maxlength="1" autocomplete="one-time-code" value="7"> <input id="ma-2" inputmode="numeric" maxlength="1" aria-label="Chữ số thứ hai"></p>
+<p><label for="ma-doc">Mã nhận hàng</label> <input id="ma-doc" readonly value="A12" onpaste="return false"></p>
+<p><label for="ma-ly-do">Mã thẻ cào</label> <input id="ma-ly-do" onpaste="return false" data-css-ok="paste: mã chỉ có trên thẻ giấy"></p>
+<p><label for="ghi-chu">Ghi chú</label> <input id="ghi-chu" type="text" onpaste="return false"></p>
+</form>
+<the-dung></the-dung>
+</main>
+<nav class="day" id="day" aria-label="Chính"><a href="#dau">Trang chủ</a></nav>
+<script>
+// Ô mã tự xử lý dán: chặn mặc định nhưng có đọc clipboard rồi chia vào các ô.
+for (const id of ["ma-1", "ma-2"]) document.getElementById(id).addEventListener("paste", (e) => {
+  e.preventDefault();
+  const t = e.clipboardData.getData("text");
+  if (t) document.getElementById("ma-1").value = t[0];
+});
+// Nghe dán ảnh ở cả trang: không chặn dán chữ.
+document.addEventListener("paste", (e) => { for (const i of e.clipboardData.items) if (i.type.startsWith("image/")) e.preventDefault(); });
+customElements.define("the-dung", class extends HTMLElement {
+  connectedCallback() {
+    const r = this.attachShadow({ mode: "open" });
+    r.innerHTML = "<style>:host { display: block; } p { transition: opacity 0.2s; min-height: 2rem; }</style><p>Thẻ tự làm không sai gì.</p>";
+  }
+});
+</script>
+</body>
+</html>
