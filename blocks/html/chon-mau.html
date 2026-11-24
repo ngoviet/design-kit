@@ -7,7 +7,7 @@
 <title>Khối: chọn bộ màu</title>
 <!-- Áp TRƯỚC lần vẽ đầu: script ngắn, đứng trước mọi stylesheet. Giá trị lạ bị bỏ qua; hỏng thì trang giữ màu của hướng.
      App có đăng nhập: lưu ở máy chủ theo người, chép một bản vào localStorage để lần mở sau không chớp sai màu. -->
-<script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,k=q.get("dk");if(k&&/^(dem|giay|dam)$/.test(k))d.dataset.dk=k;let s={};try{s=JSON.parse(localStorage.getItem("giao-dien")||"{}")}catch{}const b=q.get("chu-de")||s.bo,c=q.get("theme")||s.che;if(/^[a-z][a-z0-9-]{0,30}$/.test(b||""))d.dataset.chuDe=b;if(c==="light"||c==="dark")d.dataset.theme=c;})();</script>
+<script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,k=q.get("dk");if(k&&/^(dem|giay|dam)$/.test(k))d.dataset.dk=k;let s={};try{s=JSON.parse(localStorage.getItem("giao-dien")||"{}")||{}}catch{}const b=q.get("chu-de")||s.bo,c=q.get("theme")||s.che;if(/^[a-z][a-z0-9-]{0,30}$/.test(b||""))d.dataset.chuDe=b;if(c==="light"||c==="dark")d.dataset.theme=c;})();</script>
 <link rel="stylesheet" href="../../tokens/fonts-local.css">
 <link rel="stylesheet" href="../../tokens/core.css">
 <link rel="stylesheet" href="../../tokens/dem.css">
@@ -16,6 +16,8 @@
 <link rel="stylesheet" href="../../tokens/themes.css">
 <link rel="stylesheet" href="_base.css">
 <style>
+  /* Thanh Hoàn tác dính đáy không được che thẻ đang focus. */
+  html { scroll-padding-bottom: 8rem; }
   body { background: var(--bg); background-image: var(--nen-trang, none); min-height: 100dvh; }
   .page { max-width: 64rem; margin: 0 auto; padding: var(--sp-6) var(--sp-4) var(--sp-8); display: grid; gap: var(--sp-5); }
   .page > header p { margin: var(--sp-2) 0 0; color: var(--text-2); }
@@ -165,6 +167,8 @@
   const KHOA = "giao-dien";
   const doc = () => ({ bo: goc.dataset.chuDe ?? "", che: goc.dataset.theme ?? "" });
   // Hoàn tác về bộ LÚC MỞ TRANG, không về bộ vừa đi ngang qua: người dùng thường bấm thử vài bộ liền.
+  // Bộ đã lưu mà app không còn (đổi tên, gỡ bộ): coi như mặc định, và lần đổi sau ghi đè giá trị hỏng.
+  if (goc.dataset.chuDe && !document.querySelector(`.the input[value="${CSS.escape(goc.dataset.chuDe)}"]`)) delete goc.dataset.chuDe;
   const dau = doc();
   const ten = (v) => document.querySelector(`.the input[value="${CSS.escape(v)}"]`)?.closest(".the").querySelector("b").textContent ?? "Mặc định";
   const CHE = { "": "theo máy", light: "sáng", dark: "tối" };

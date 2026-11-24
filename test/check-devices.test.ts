@@ -1,11 +1,15 @@
 // Phép đo mềm thêm 24/11/2026: khổ màn có chiều cao, phần dính, khoá hướng, tự phát tiếng, tự xin quyền, phóng chữ, giãn
 // chữ, đơn vị cỡ chữ, NFC, ngôn ngữ từng phần, đích chạm; và hai chỗ sửa của motion, focus. Mỗi phép đo có trang sai và
 // trang đúng trong test/fixtures/: trang đúng gom các ca dễ báo oan.
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { launchBrowser } from "../src/browser.js";
 import { main } from "../src/cli.js";
 import { onloadFinding } from "../src/onload.js";
-import { heightFor, parseSize, PROFILES, stickyFinding, SWEEP_SIZES } from "../src/sizes.js";
+import { heightFor, lockedOrientation, parseSize, PROFILES, stickyFinding, SWEEP_SIZES } from "../src/sizes.js";
+import { watchNetwork } from "../src/settle.js";
+import { zoomPass } from "../src/textresize.js";
 import { touchFinding } from "../src/touch.js";
 
 const root = join(__dirname, "..");
@@ -71,6 +75,8 @@ describe("sticky and orientation", () => {
     expect(stickyFinding(s(0.3), 1280, 720)).toBeUndefined();
     expect(stickyFinding(s(0.32), 1280, 720)).toMatch(/take 32% of a 1280x720 screen \(limit 30%\): header 100px/);
     expect(stickyFinding(s(0.39), 844, 390)).toBeUndefined();
+    expect(stickyFinding(s(0.35), 900, 470)).toBeUndefined();
+    expect(stickyFinding(s(0.35), 900, 480)).toMatch(/limit 30%/);
     expect(stickyFinding(s(0.42), 844, 390)).toMatch(/limit 40%/);
   });
   it("reports bars that stay stuck after scrolling, and a manifest that locks the orientation", async () => {
@@ -83,10 +89,15 @@ describe("sticky and orientation", () => {
     expect(rows(out, "sticky").join("\n")).toMatch(/844x390,"stuck bars take 7\d%/);
     expect(rows(out, "sticky").join("\n")).toMatch(/640x360,/);
   }, 120_000);
-  it("leaves side columns, decoration, live regions, sticky blocks not stuck yet, and a manifest with orientation any", async () => {
-    const out = await check("man-thap-dung");
+  it("leaves side columns, decoration, an app shell that scrolls itself, live regions, sticky blocks not stuck yet, a menu opened by a step, and orientation any", async () => {
+    const out = await check("man-thap-dung", "--viewports", "390,1280x720", "--steps", '[{"name":"mo","do":[{"click":"#mo"}]}]');
+    expect(out).toContain("#mo,");
     expect(out).toContain("sticky,soft,ok");
     expect(out).toContain("orientation,soft,ok");
+  }, 120_000);
+  it("reads the manifest's orientation, also from broken JSON without failing", () => {
+    expect(lockedOrientation('{"orientation":"landscape-primary"}')).toBe("landscape-primary");
+    for (const m of ['{"orientation":"any"}', "{}", "not json", '{"orientation":3}']) expect(lockedOrientation(m)).toBeUndefined();
   }, 120_000);
 });
 
@@ -115,11 +126,14 @@ describe("autoplay and permission", () => {
 describe("text-zoom, text-spacing, font-unit", () => {
   it("reports px text once per selector, text that spacing cuts, and a viewport-unit font-size", async () => {
     const out = await check("phong-chu-sai");
-    expect(rows(out, "text-zoom")).toHaveLength(1);
+    expect(rows(out, "text-zoom")).toHaveLength(2);
+    expect(rows(out, "text-zoom").join("\n")).toMatch(/p\.nhap,/);
     expect(rows(out, "text-zoom")[0]).toMatch(/p\.px,"text does not follow the reader's font size \(16px → 16px at 200%, 2 elements\)/);
     expect(rows(out, "text-spacing").join("\n")).toMatch(/div#hop-hai-dong .*at 390px/);
     expect(rows(out, "text-spacing").join("\n")).toMatch(/div#hop-hai-dong .*at 1280px/);
     expect(rows(out, "font-unit").join("\n")).toMatch(/h1,.*4vw/);
+    // Luật nằm trong tệp @import cũng thấy.
+    expect(rows(out, "font-unit").join("\n")).toMatch(/\.nhap,.*3vw/);
     expect(out).toContain("pass: 1 pages");
   }, 120_000);
   it("leaves rem text, a clamp() with a rem part behind a variable, a smaller step on narrow layouts, transition: all, and data-zoom-ok", async () => {
@@ -154,7 +168,7 @@ describe("touch", () => {
   });
   it("reports small buttons, low buttons, chips and a bare checkbox; --touch 24 and 0 change the bar", async () => {
     const out = await check("cham-sai", "--viewports", "390");
-    expect(rows(out, "touch").map((l) => /#([\w-]+)/.exec(l)?.[1])).toEqual(["dong", "thap", "the-loc", "o-tich"]);
+    expect(rows(out, "touch").map((l) => /#([\w-]+)/.exec(l)?.[1])).toEqual(["dong", "thap", "the-loc", "o-tich", "noi-ngang", "trong-khung"]);
     expect(rows(await check("cham-sai", "--viewports", "390", "--touch", "24"), "touch")).toHaveLength(0);
     expect(await check("cham-sai", "--viewports", "390", "--touch", "0")).toContain("touch,soft,skipped");
     expect(await check("cham-sai", "--viewports", "1280")).toContain("touch,soft,skipped");
@@ -171,6 +185,29 @@ describe("motion and focus, corrected 24/11/2026", () => {
   it("a fade or color change that keeps running with reduced motion is allowed; one that moves things stays hard", async () => {
     expect(await check("mo-dan", "--viewports", "390")).toContain("motion,hard,ok");
     expect(rows(await check("bong-xoay", "--viewports", "390"), "motion")).toHaveLength(1);
+  }, 120_000);
+  it("motion that does not use transform (background-size) stays hard: only opacity and colors are let through", async () => {
+    expect(rows(await check("nen-phong", "--viewports", "390"), "motion").join("\n")).toMatch(/hard,motion,.*phong/);
+  }, 120_000);
+  it("a ring thinner than 2px is told apart from no ring", async () => {
+    const d = join(root, ".design-kit", "test", "vong");
+    mkdirSync(d, { recursive: true });
+    writeFileSync(join(d, "a.html"), '<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Vòng</title><style>body{font:1rem/1.6 system-ui;background:#fff;color:#111}button{min-height:44px;font:inherit}#mong:focus{outline:1px solid #000}#mat:focus{outline:none}</style></head><body><main><h1>Vòng focus</h1><button id="mong">Vòng mỏng</button><button id="mat">Mất vòng</button></main></body></html>');
+    const { out } = await run(["check", ".design-kit/test/vong/a.html", ...BASE, "--viewports", "390"]);
+    expect(rows(out, "focus").join("\n")).toMatch(/button#mong .*thinner than 2px/);
+    expect(rows(out, "focus").join("\n")).toMatch(/button#mat .*no visible focus ring/);
+  }, 120_000);
+  it("after the 200% pass the page is back at its own text size", async () => {
+    const { browser } = await launchBrowser(process.env);
+    try {
+      const page = await browser.newPage();
+      const net = watchNetwork(page);
+      await page.setContent('<!doctype html><html lang="vi"><body><p id="p" style="font-size:1rem">Chữ theo người đọc</p></body></html>');
+      expect(await zoomPass(page, net)).toEqual([]);
+      expect(await page.evaluate(() => getComputedStyle(document.getElementById("p")!).fontSize)).toBe("16px");
+    } finally {
+      await browser.close();
+    }
   }, 120_000);
   it("the browser's own focus ring counts as visible", async () => {
     expect(await check("cham-dung", "--viewports", "390")).toContain("focus,soft,ok");

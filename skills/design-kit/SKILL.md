@@ -49,6 +49,7 @@ design-kit gives the numbers, the tokens, the gated blocks and the gate.
   `design-kit inline <page.html>`.
 - Text in the accent color uses `--accent-text`; fills use `--accent` with `--on-accent` text.
 
+**The owner's new apps ship several themes for people to pick** (`tokens/themes.css`, block `chon-mau`).
 **Color comes from the brand, not the surface type.** The direction gives structure; the hue must fit the domain. A
 bakery dashboard in the default teal lost the A/B test to plain Opus's warm brown. Food and craft → warm (accent
 25–70, neutrals 50–70); health → 145–185; finance, tools → 240–260; kids → 25–45 or 300–330; a brand hue wins. Re-hue

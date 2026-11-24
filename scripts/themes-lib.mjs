@@ -180,12 +180,13 @@ export function checkTheme(tokens, mode, relax = {}) {
     const lc = relax[`${mode} ${f}/${b}`] ?? lc0;
     const w = wcag(t[f], t[b]);
     const c = Math.abs(apca(t[f], t[b]));
-    if (w < cr - 0.01 || c < lc - 0.5) bad.push(`${f}/${b} ${w.toFixed(2)}:1 Lc ${c.toFixed(0)} (cần ${cr}:1 Lc ${lc})`);
+    // Viết ngược để NaN (màu hỏng) cũng là trượt: `w < cr` với NaN luôn sai, nên từng cho qua.
+    if (!(w >= cr - 0.01) || !(c >= lc - 0.5)) bad.push(`${f}/${b} ${w.toFixed(2)}:1 Lc ${c.toFixed(0)} (cần ${cr}:1 Lc ${lc})`);
   }
   const kt = dE(t["accent-text"], t["text"]);
   const kb = dE(t["accent-soft"], t["surface-2"]);
-  if (kt < KARAOKE.text) bad.push(`karaoke: chữ đã đọc cách chưa đọc ${kt.toFixed(3)} (cần ${KARAOKE.text})`);
-  if (kb < KARAOKE.back) bad.push(`karaoke: nền chữ đang đọc cách khung lời ${kb.toFixed(3)} (cần ${KARAOKE.back})`);
+  if (!(kt >= KARAOKE.text)) bad.push(`karaoke: chữ đã đọc cách chưa đọc ${kt.toFixed(3)} (cần ${KARAOKE.text})`);
+  if (!(kb >= KARAOKE.back)) bad.push(`karaoke: nền chữ đang đọc cách khung lời ${kb.toFixed(3)} (cần ${KARAOKE.back})`);
   return bad;
 }
 
@@ -204,7 +205,11 @@ export function loadSeeds(file = join(root, "data", "themes.json")) {
     if (!/^[a-z][a-z0-9-]*$/.test(s.id ?? "")) throw new Error(`themes: id không hợp lệ: ${JSON.stringify(s.id)}`);
     for (const m of ["light", "dark"]) {
       const need = s[m]?.fixed ? [] : ["bg", "surface", "surface2", "border", "text", "text2", "accent", "ok", "warn", "bad", "info"];
-      const miss = s[m] ? need.filter((k) => !/^#[0-9a-f]{6}$/i.test(s[m][k] ?? "")) : ["(cả bản)"];
+      // Khoá tuỳ chọn có ghi thì cũng phải đúng: border2 sai từng cho ra "#NaNNaNNaN" mà vẫn báo đạt.
+      const opt = ["edge", "border2", "tren"].filter((k) => s[m]?.[k] !== undefined);
+      const miss = s[m] ? [...need, ...opt].filter((k) => !/^#[0-9a-f]{6}$/i.test(s[m][k] ?? "")) : ["(cả bản)"];
+      const pat = s[m]?.pattern;
+      if (pat && (!/^(waves|dots)$/.test(pat.kind ?? "") || !/^#[0-9a-f]{6}$/i.test(pat.color ?? "") || !(pat.opacity > 0 && pat.opacity <= 1))) miss.push("pattern");
       if (miss.length) throw new Error(`themes: bộ ${s.id}, bản ${m}: thiếu hoặc sai hex: ${miss.join(", ")}`);
     }
   }

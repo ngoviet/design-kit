@@ -76,7 +76,8 @@ export function probeLangParts(): LangHits {
         const run = own.match(/\p{Script=Han}[\p{Script=Han}\p{P}\s]*/u)?.[0]?.trim() ?? own;
         out.han.push({ where: label(el), value: `"${run.slice(0, 20)}" inside lang="${lang}": add lang="zh" (or ja, ko), so the right Han font and voice are used` });
       }
-      if (pageVi && /^(vi\b|$)/.test(lang)) {
+      // Tên tác phẩm trong <cite>, chữ khai `translate="no"`: để nguyên văn là đúng.
+      if (pageVi && /^(vi\b|$)/.test(lang) && !el.closest("cite, [translate=no]")) {
         const b = blockOf(el);
         blocks.set(b, `${blocks.get(b) ?? ""} ${own}`);
       }

@@ -91,9 +91,30 @@ export function probeFontUnit(): ProbeHit[] {
     return v;
   };
   const shownText = (el: Element): boolean => !!(el.textContent ?? "").trim() && el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
+  // Luật có thật sự thắng không: đặt một phần tử thử cạnh nó với đúng giá trị đó, cỡ tính ra phải bằng cỡ của phần tử. Luật bị
+  // luật sau đè thì cỡ khác.
+  const wins = (el: Element, v: string): boolean => {
+    const host = el.parentNode;
+    if (!host) return false;
+    const probe = document.createElement("span");
+    probe.style.cssText = "position:absolute!important;visibility:hidden!important;transition:none!important";
+    probe.style.fontSize = v;
+    host.appendChild(probe);
+    const same = Math.abs(parseFloat(getComputedStyle(probe).fontSize) - parseFloat(getComputedStyle(el).fontSize)) < 0.2;
+    probe.remove();
+    return same;
+  };
   const rulesOf = (list: CSSRuleList, root: Document | ShadowRoot): void => {
     for (const r of Array.from(list)) {
       if (r instanceof CSSMediaRule && !matchMedia(r.conditionText).matches) continue;
+      if (r instanceof CSSImportRule) {
+        try {
+          if (r.styleSheet && (!r.media.mediaText || matchMedia(r.media.mediaText).matches)) rulesOf(r.styleSheet.cssRules, root);
+        } catch {
+          /* tệp nhập khác nguồn */
+        }
+        continue;
+      }
       if (r instanceof CSSStyleRule && r.style.fontSize) {
         let els: Element[] = [];
         try {
@@ -101,14 +122,12 @@ export function probeFontUnit(): ProbeHit[] {
         } catch {
           /* bộ chọn lạ */
         }
-        const el = els.find(shownText);
-        if (el) {
+        for (const el of els.filter(shownText).slice(0, 5)) {
           const v = resolve(r.style.fontSize, el);
           const key = `${r.selectorText}|${v}`;
-          if (VIEW.test(v) && !REL.test(v) && !seen.has(key)) {
-            seen.add(key);
-            out.push({ where: r.selectorText.slice(0, 60), value: v.slice(0, 60) });
-          }
+          if (!VIEW.test(v) || REL.test(v) || seen.has(key) || !wins(el, v)) continue;
+          seen.add(key);
+          out.push({ where: r.selectorText.slice(0, 60), value: v.slice(0, 60) });
         }
       }
       const inner = (r as CSSGroupingRule).cssRules as CSSRuleList | undefined;
@@ -145,12 +164,29 @@ const keys = (l: { clip: ProbeHit[]; covered: ProbeHit[] }): Lost => ({ clip: ne
 const CAP = 4;
 
 /**
- * Yên sau khi đổi cỡ hay giãn chữ. Phải chờ cả hiệu ứng: `transition: all` của nút shadcn chạy cả font-size, đo ngay thì nút
- * 14px mới tới 16px và bị báo nhầm là không theo người đọc (24/11/2026, 11 phát hiện giả trên khối React).
+ * Yên sau khi đổi cỡ hay giãn chữ. `transition: all` của nút shadcn chạy cả font-size, đo ngay thì nút 14px mới tới 16px và bị
+ * báo nhầm là không theo người đọc (24/11/2026, 11 phát hiện giả trên khối React). Cho hiệu ứng có hồi kết chạy xong ngay thay vì
+ * chờ: chuyển tiếp 4 giây thì chờ bao lâu cũng hụt.
  */
 async function settleText(page: Page, net: NetWatch): Promise<void> {
   await settleAfterChange(page, net);
-  await page.evaluate(settleAnimations, 1_500);
+  await page.evaluate(finishAnimations);
+  await page.evaluate(settleAnimations, 300);
+}
+
+function finishAnimations(): void {
+  const walk = (root: Document | ShadowRoot): void => {
+    for (const a of root.getAnimations()) {
+      const t = a.effect?.getComputedTiming();
+      try {
+        if (t && Number.isFinite(Number(t.endTime))) a.finish();
+      } catch {
+        /* hiệu ứng không cho kết thúc sớm */
+      }
+    }
+    for (const el of Array.from(root.querySelectorAll("*"))) if (el.shadowRoot) walk(el.shadowRoot);
+  };
+  walk(document);
 }
 
 /** Giữ các phát hiện mới (không có trước khi đổi). */

@@ -824,7 +824,9 @@ export function probeMotion(): { running: number; samples: string[] } {
     }
   };
   walk(document);
-  const MOVES = /^(transform|translate|rotate|scale|offset|left|top|right|bottom|width|height|minwidth|minheight|maxwidth|maxheight|margin|padding|inset|backgroundposition|objectposition|perspective|fontsize|letterspacing|gap|flexbasis|gridtemplate|clippath|d$|cx|cy|r$|x$|y$)/i;
+  // Chỉ cho qua thứ chắc chắn không phải chuyển động. Danh sách cấm (bản đầu, 24/11/2026) sót background-size và
+  // stroke-dashoffset, làm hai trang có chuyển động thật từ trượt thành đạt.
+  const STILL = /^(opacity|visibility|[a-z]*color|fill|stroke|[a-z]*opacity)$/i;
   const anims = [...new Set(all)].filter((a) => {
     if (a.playState !== "running") return false;
     const t = a.effect?.getComputedTiming();
@@ -836,7 +838,7 @@ export function probeMotion(): { running: number; samples: string[] } {
     const props = frames.flatMap((k) => Object.keys(k)).filter((p) => !["offset", "easing", "composite", "computedOffset"].includes(p));
     const tp = (a as CSSTransition).transitionProperty;
     const named = [...props, ...(tp ? [tp] : [])];
-    return !named.length || named.some((p) => MOVES.test(p.replace(/-/g, "")));
+    return !named.length || named.some((p) => p.startsWith("--") || !STILL.test(p.replace(/-/g, "")));
   });
   const samples = anims.slice(0, 5).map((a) => {
     const target = (a.effect as KeyframeEffect | null)?.target;

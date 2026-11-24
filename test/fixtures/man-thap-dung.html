@@ -12,15 +12,21 @@ header { position: sticky; top: 0; height: 56px; background: #eef; }
 .ben { position: fixed; top: 56px; left: 0; width: 160px; bottom: 0; background: #f4f4ff; }
 .thong-bao { position: fixed; left: 0; right: 0; bottom: 0; height: 300px; }
 .trang-tri { position: fixed; inset: 0; z-index: -1; background: linear-gradient(#fff, #f6f6ff); }
+.vo { position: fixed; inset: 0; overflow: auto; z-index: 0; pointer-events: auto; background: rgba(255, 255, 255, .01); }
+header, main, nav { z-index: 1; }
+main { position: relative; }
 .chua-dinh { position: sticky; top: 0; height: 320px; background: #eee; }
 main { min-height: 2400px; margin-left: 160px; }
-main .xa { margin-top: 1800px; }
+main .xa { margin-top: 900px; }
+header.mo { height: 420px; }
+header button { min-height: 44px; font: inherit; }
 @media (max-width: 600px) { .ben { display: none; } main { margin-left: 0; } }
 </style>
 </head>
 <body>
 <div class="trang-tri" aria-hidden="true"></div>
-<header><p>Đầu trang</p></header>
+<header><p>Đầu trang <button type="button" id="mo" onclick="document.querySelector('header').classList.add('mo')">Mở menu</button></p></header>
+<div class="vo"></div>
 <nav class="ben" aria-label="Chính"><p>Cột bên hẹp, không phải thanh ngang</p></nav>
 <main><h1>Danh sách dài</h1><p>Chỉ đầu trang dính.</p><div class="xa"><div class="chua-dinh"><p>Khối cao dính ở cuối trang, lúc đo chưa dính.</p></div></div></main>
 <div class="thong-bao" role="status"></div>

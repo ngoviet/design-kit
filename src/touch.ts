@@ -39,7 +39,10 @@ export function probeTouch(min: number): { total: number; small: TouchHit[] } {
   };
   // Liên kết (hay nút hiện như chữ) nằm trong dòng văn: khối chứa còn chữ khác ngoài nó.
   const inSentence = (el: Element): boolean => {
-    if (!/^inline($|-)/.test(getComputedStyle(el).display) || getComputedStyle(el).display === "inline-flex") return false;
+    // Chỉ `display: inline` không viền không nền: nút (mặc định inline-block) đứng cạnh chữ vẫn là một đích riêng.
+    const cs = getComputedStyle(el);
+    if (cs.display !== "inline" || parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderBottomWidth) > 0) return false;
+    if (!/^(transparent|rgba\(\d+, \d+, \d+, 0\))$/.test(cs.backgroundColor) || cs.backgroundImage !== "none") return false;
     let b: Element | null = up(el);
     while (b && /^inline/.test(getComputedStyle(b).display)) b = up(b);
     if (!b) return false;

@@ -2,7 +2,9 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import type { Page } from "playwright-core";
 import { describe, expect, it } from "vitest";
+import { launchBrowser, startServer } from "../src/browser.js";
 
 const root = join(__dirname, "..");
 interface Built { id: string; name: string; mode: string; tokens: Record<string, string>; relax: Record<string, number> }
@@ -88,5 +90,86 @@ describe("themes", () => {
     expect(bad.code).toBe(2);
     expect(bad.out).toContain("thiếu hoặc sai hex");
     expect(run("--la").code).toBe(2);
+    // Một khoá sai hex, kể cả khoá tuỳ chọn, là lỗi chứ không phải "#NaNNaNNaN" lặng lẽ.
+    const seed = one as unknown as { light: Record<string, string> };
+    for (const k of ["bg", "border2", "edge", "tren"]) {
+      writeFileSync(join(d, "mot.json"), JSON.stringify([{ ...one, light: { ...seed.light, [k]: "#abc" } }]));
+      const r = run(join(d, "mot.json"), "--ra", join(d, "x.css"));
+      expect({ k, code: r.code }).toEqual({ k, code: 2 });
+      expect(r.out).toContain(k);
+    }
+    // --kiem với tệp đích không có hoặc lệch thì trượt.
+    expect(run(join(d, "mau.json"), "--kiem", "--ra", join(d, "khong-co.css")).code).toBe(1);
+    expect(run(join(d, "mau.json"), "--kiem", "--ra", join(d, "ra.css")).code).toBe(0);
+    writeFileSync(join(d, "lech.css"), "/* khác */");
+    expect(run(join(d, "mau.json"), "--kiem", "--ra", join(d, "lech.css")).code).toBe(1);
   });
+  it("a broken color never counts as passing", () => {
+    expect(lib.checkTheme({ ...all[0]!.tokens, "border-strong": "#NaNNaNNaN" }, "light").join(" ")).toMatch(/border-strong/);
+  });
+});
+
+describe("the picker block, in a browser", () => {
+  const open = async (storage: string | null, fn: (page: Page, errs: string[]) => Promise<void>): Promise<void> => {
+    const { browser } = await launchBrowser(process.env);
+    const s = await startServer(root);
+    try {
+      const page = await browser.newPage({ viewport: { width: 390, height: 568 } });
+      const errs: string[] = [];
+      page.on("pageerror", (e) => errs.push(e.message));
+      if (storage !== null) await page.addInitScript((v) => { if (!sessionStorage.getItem("da")) { localStorage.setItem("giao-dien", v); sessionStorage.setItem("da", "1"); } }, storage);
+      await page.goto(`${s.origin}/blocks/html/chon-mau.html`);
+      await fn(page, errs);
+    } finally {
+      await browser.close();
+      s.server.close();
+    }
+  };
+  const state = (page: Page) => page.evaluate(() => ({ bo: document.documentElement.dataset.chuDe ?? "", che: document.documentElement.dataset.theme ?? "", chon: document.querySelector<HTMLInputElement>("input[name=bo]:checked")?.value ?? null, luu: localStorage.getItem("giao-dien") }));
+
+  it("Undo goes back to the theme at the start of the visit, not to one passed through", async () => {
+    await open('{"bo":"gomlam","che":"dark"}', async (page, errs) => {
+      expect(await state(page)).toMatchObject({ bo: "gomlam", che: "dark", chon: "gomlam" });
+      await page.click(".the[data-mau=flexoki]");
+      await page.click(".the[data-mau=sonmai]");
+      await page.click(".che label:has(input[value=light])");
+      expect(await state(page)).toMatchObject({ bo: "sonmai", che: "light" });
+      await page.click("#hoan-tac");
+      expect(await state(page)).toMatchObject({ bo: "gomlam", che: "dark", chon: "gomlam", luu: '{"bo":"gomlam","che":"dark"}' });
+      expect(await page.isHidden("#hoan-tac")).toBe(true);
+      expect(errs).toEqual([]);
+    });
+  }, 60_000);
+  it("applies the saved theme before first paint and survives a reload", async () => {
+    await open(null, async (page) => {
+      await page.click(".the[data-mau=everforest]");
+      await page.reload({ waitUntil: "commit" });
+      expect(await page.evaluate(() => document.documentElement.dataset.chuDe)).toBe("everforest");
+    });
+  }, 60_000);
+  it("ignores odd saved values: null, broken JSON, wrong types, a theme that no longer exists", async () => {
+    for (const v of ["null", "{hong", "5", "[]", '{"bo":7,"che":[]}', '{"bo":"BO HOA","che":"tim"}', '{"bo":"bo-da-xoa","che":"dark"}']) {
+      await open(v, async (page, errs) => {
+        const s = await state(page);
+        expect({ v, bo: s.bo, chon: s.chon }).toEqual({ v, bo: "", chon: "" });
+        await page.click(".the[data-mau=neon]");
+        await page.click("#hoan-tac");
+        expect({ v, bo: (await state(page)).bo, errs }).toEqual({ v, bo: "", errs: [] });
+      });
+    }
+  }, 120_000);
+  it("the Undo bar does not cover the card that has focus on a small phone", async () => {
+    await open(null, async (page) => {
+      await page.click(".the[data-mau=neon]");
+      for (let i = 0; i < 8; i++) {
+        await page.keyboard.press("ArrowDown");
+        const covered = await page.evaluate(() => {
+          const card = document.activeElement!.closest(".the")!.getBoundingClientRect();
+          const bar = document.querySelector(".vua-doi")!.getBoundingClientRect();
+          return Math.max(0, Math.min(card.bottom, bar.bottom) - Math.max(card.top, bar.top));
+        });
+        expect({ i, covered: Math.round(covered) }).toEqual({ i, covered: 0 });
+      }
+    });
+  }, 60_000);
 });

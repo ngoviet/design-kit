@@ -11,7 +11,7 @@ import { installSchemeWatch, installVitals, probeCovered, probeFingerprint, prob
 import type { Runtime } from "../runtime.js";
 import { LATE_MS, type NetWatch, QUIET_CAP_MS, settleAfterChange, settlePage, watchNetwork } from "../settle.js";
 import { inputZoomFinding } from "../zoom.js";
-import { heightFor, MAX_WIDTH, MIN_WIDTH, parseSize, probeOrientation, probeSticky, PROFILES, type Size, stickyFinding, SWEEP_SIZES, WIDE_FROM } from "../sizes.js";
+import { heightFor, lockedOrientation, manifestHref, MAX_WIDTH, MIN_WIDTH, parseSize, probeSticky, PROFILES, type Size, stickyFinding, SWEEP_SIZES, WIDE_FROM } from "../sizes.js";
 import { installOnload, onloadFinding, readOnload } from "../onload.js";
 import { probeLangParts } from "../langparts.js";
 import { probeTouch, TOUCH_MIN, touchFinding } from "../touch.js";
@@ -290,7 +290,10 @@ async function checkViewport(browser: Browser, url: string, width: number, heigh
         `${why}: on a phone the page lays out ${v.layout}px wide and is shrunk to fit ${width}px (${Math.round((width / v.layout) * 100)}%), so ${v.fontSize}px body text shows at ${shown}px. Use <meta name="viewport" content="width=device-width, initial-scale=1">`,
         `mobile/${width}`);
     }
-    const locked = await page.evaluate(probeOrientation);
+    // Tải manifest ngoài trang: CSP `connect-src` của trang không chặn được.
+    const href = await page.evaluate(manifestHref);
+    const res = href && /^https?:/.test(href) ? await ctx.request.get(href, { timeout: 10_000 }).catch(() => undefined) : undefined;
+    const locked = res?.ok() ? lockedOrientation(await res.text()) : undefined;
     if (locked) add(r, "soft", "orientation", "manifest", `"orientation": "${locked}" locks the installed app to one direction (WCAG 1.3.4): drop it, or use "any"`, `mobile/${width}`);
   } finally {
     await ctx.close();
@@ -310,8 +313,10 @@ async function checkTouch(browser: Browser, url: string, size: Size, min: number
     await settlePage(page, net);
     await waitForContent(page, Date.now());
     await page.evaluate(settleAnimations, ENTRANCE_MS);
-    const t = await page.evaluate(probeTouch, min);
-    hits(r, "soft", "touch", t.small.map((x) => ({ where: x.where, value: touchFinding(x, min) })), "", `touch/${size.w}`);
+    // Cả khung con: nút trong iframe nhúng cũng là thứ ngón tay phải trúng.
+    const small = [];
+    for (const frame of page.frames()) small.push(...((await frame.evaluate(probeTouch, min).catch(() => undefined))?.small ?? []));
+    hits(r, "soft", "touch", small.map((x) => ({ where: x.where, value: touchFinding(x, min) })), "", `touch/${size.w}`);
   } finally {
     await ctx.close();
   }

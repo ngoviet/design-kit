@@ -48,9 +48,11 @@ console.log(`modes[${rows.length}]{id,mode,karaoke,bad}:`);
 for (const r of rows) console.log(`  ${r.id},${r.mode},${r.karaoke},${r.bad.length ? JSON.stringify(r.bad.join("; ")) : 0}`);
 if (failed.length) fail("có cặp màu không đạt", 1, "Đổi hạt giống màu (thường là accent quá nhạt hay bg2 quá gần surface) rồi chạy lại");
 const css = themesCss(seeds);
-if (only) {
+if (only && seedFile && !out) {
+  console.log(`file: ${JSON.stringify("không so tệp: chưa có --ra")}`);
+} else if (only) {
   const same = existsSync(target) && readFileSync(target, "utf8").replace(/\r\n/g, "\n") === css;
-  if (!seedFile && !same) fail("tokens/themes.css lệch data/themes.json", 1, "Chạy node scripts/sinh-themes.mjs rồi commit");
+  if (!same) fail(`${target.replace(/\\/g, "/")} ${existsSync(target) ? "lệch hạt giống" : "không có"}`, 1, "Chạy lại không có --kiem để ghi");
   console.log(`file: ${JSON.stringify("khớp, không ghi")}`);
 } else {
   writeFileSync(target, css);

@@ -116,6 +116,9 @@ export function probeSticky(): { share: number; parts: Array<{ where: string; he
       if (cs.visibility === "hidden" || cs.display === "none" || Number(cs.opacity) < 0.05) continue;
       const r = el.getBoundingClientRect();
       if (r.width < W * 0.6 || r.height < 1 || r.bottom <= 0 || r.top >= H) continue;
+      // Cao gần cả màn thì không phải thanh: vỏ app tự cuộn (`fixed; inset: 0; overflow: auto`) hay lớp nền. Thanh bên trong vỏ
+      // vẫn được xét vì vẫn đi tiếp xuống cây con.
+      if (r.height >= H * 0.7) continue;
       if (cs.position === "sticky") {
         const stuckTop = cs.top !== "auto" && Math.abs(r.top - parseFloat(cs.top)) <= 1.5;
         const stuckBottom = cs.bottom !== "auto" && Math.abs(H - r.bottom - parseFloat(cs.bottom)) <= 1.5;
@@ -149,12 +152,15 @@ export function stickyFinding(s: { share: number; parts: Array<{ where: string; 
   return `stuck bars take ${Math.round(s.share * 100)}% of a ${w}x${h} screen (limit ${limit * 100}%): ${s.parts.map((p) => `${p.where} ${p.height}px`).join(", ")}; unstick some below that height`;
 }
 
-/** Hướng màn bị khoá trong manifest (WCAG 1.3.4, N02): trả giá trị `orientation`, hoặc undefined. Chạy trong trang. */
-export async function probeOrientation(): Promise<string | undefined> {
-  const link = document.querySelector<HTMLLinkElement>('link[rel~="manifest"]');
-  if (!link?.href) return undefined;
+/** Địa chỉ manifest của trang. Chạy trong trang. */
+export function manifestHref(): string | undefined {
+  return document.querySelector<HTMLLinkElement>('link[rel~="manifest"]')?.href || undefined;
+}
+
+/** Hướng màn bị khoá trong manifest (WCAG 1.3.4, N02): giá trị `orientation`, hoặc undefined. */
+export function lockedOrientation(manifest: string): string | undefined {
   try {
-    const m = (await (await fetch(link.href)).json()) as { orientation?: unknown };
+    const m = JSON.parse(manifest) as { orientation?: unknown };
     return typeof m.orientation === "string" && /^(portrait|landscape)/.test(m.orientation) ? m.orientation : undefined;
   } catch {
     return undefined;

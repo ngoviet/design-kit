@@ -35,6 +35,12 @@ button { min-height: 44px; padding: 0 16px; font: inherit; }
     o.connect(c.destination);
     o.start();
   });
+  // Sau phím Tab đầu tiên (cổng đo focus) là người dùng đã thao tác: kêu lúc đó không phải tự phát.
+  document.getElementById("nghe").addEventListener("focus", () => {
+    const o = c.createOscillator();
+    o.connect(c.destination);
+    o.start();
+  });
   document.getElementById("noi").addEventListener("click", () => navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {}));
 </script>
 </body>
