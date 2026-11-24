@@ -363,6 +363,18 @@ describe("contrast-px", () => {
     }
     await close(o);
   });
+  it("ignores a flaw under 5% of the text and reports one over it, whatever the font", async () => {
+    // Sáu mươi chữ n trên một dải màu rộng theo phần trăm: tỉ lệ chữ nằm trên dải không phụ thuộc font. Nền trơn 5,33; trên dải 3,53.
+    for (const font of ["system-ui", "Georgia, serif", "monospace"]) {
+      for (const [pct, lo, hi] of [[3, 5.2, 5.4], [10, 3.4, 3.8]] as const) {
+        const o = await write(`<main><p style="display:inline-block;margin:20px;white-space:nowrap;font-family:${font};color:#6b6b6b;background:linear-gradient(90deg,#fff 40%,#d2d2d2 40% ${40 + pct}%,#fff ${40 + pct}%)">${"n".repeat(60)}</p></main>`);
+        const m = (await measurePixelText(o.page))[0]!;
+        expect(m.ratio, `${font} ${pct}%`).toBeGreaterThan(lo);
+        expect(m.ratio, `${font} ${pct}%`).toBeLessThan(hi);
+        await close(o);
+      }
+    }
+  });
   it("puts text over images before text over gradients when there is too much to measure", async () => {
     const grad = Array.from({ length: PX_BLOCKS + 6 }, (_, i) => `<p style="margin:0;color:rgb(${60 + i},60,60)">Dòng gradient ${i}</p>`).join("");
     const img = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Crect width='8' height='8' fill='%23e8e2d0'/%3E%3C/svg%3E";
