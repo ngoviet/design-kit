@@ -27,6 +27,14 @@
   .toast .tools { display: flex; gap: var(--sp-1); align-items: center; }
   .toast .btn-sm { min-height: 32px; padding: 0 var(--sp-3); }
   .toast .x { min-width: 32px; min-height: 32px; padding: 0; }
+  /* Máy có chạm: nút giữ hình 32px để thông báo không cao thêm và còn chỗ cho chữ ở 320px; vùng bấm nới ra 44px vào phần đệm của
+     thông báo, hai nút cách nhau đủ rộng để hai vùng không chồng. */
+  @media (any-pointer: coarse) {
+    .toast .tools { gap: var(--sp-2); }
+    .toast .tools .btn { position: relative; }
+    .toast .tools .btn::after { content: ""; position: absolute; inset: -7px 0; }
+    .toast .tools .x::after { inset-inline: -7px; }
+  }
   @media (prefers-reduced-motion: no-preference) {
     .toast { animation: vao var(--dur-2) var(--ease-out); }
     @keyframes vao { from { opacity: 0; transform: translateY(8px); } }

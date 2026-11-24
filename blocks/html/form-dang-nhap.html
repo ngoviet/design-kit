@@ -24,7 +24,7 @@
   .pw .input { padding-right: calc(var(--hit) + var(--sp-2)); }
   .pw .toggle { position: absolute; right: 2px; top: 2px; min-height: calc(var(--hit-lg) - 4px); min-width: var(--hit); border-radius: var(--r-sm); }
   .check { display: flex; align-items: center; gap: var(--sp-2); min-height: var(--hit); font: 400 var(--fs-sm)/1.4 var(--font-ui, var(--font-body)); cursor: pointer; width: fit-content; }
-  .check input { width: 20px; height: 20px; accent-color: var(--accent); margin: 0; }
+  .check input { width: 20px; height: 20px; accent-color: var(--accent-border, var(--accent)); margin: 0; }
   .alert { display: flex; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: var(--bad-soft); color: var(--bad); font: 500 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); }
   .alert svg { width: 18px; height: 18px; flex: none; margin-top: 2px; }
   .alert[hidden] { display: none; }
@@ -33,6 +33,14 @@
   @keyframes quay { to { transform: rotate(1turn); } }
   .alt { text-align: center; margin: 0 auto; color: var(--text-2); font: 400 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); }
   .ui-link { font: 500 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); }
+  /* Máy có chạm. "Quên mật khẩu?" nằm sát trên ô mật khẩu: nới bằng ::after sẽ lấn vào ô, nên nâng hộp lên 44px rồi trả bớt chỗ
+     bằng lề âm (tối đa bằng khoảng cách hàng, vùng bấm chạm mép ô chứ không chồng). Nút hiện mật khẩu giữ hình 40px trong khung
+     ô, vùng bấm nới trên dưới ra đúng mép ô (bề ngang đã đủ). */
+  @media (any-pointer: coarse) {
+    .row { align-items: center; margin-block: calc(-1 * var(--sp-2)); }
+    .row .ui-link { display: inline-flex; align-items: center; min-height: var(--hit); }
+    .pw .toggle::after { content: ""; position: absolute; inset: -3px 0; }
+  }
 </style>
 </head>
 <body>

@@ -165,7 +165,7 @@ count: 4 of 21 total
 findings[4]{gate,check,where,detail,renders}:
   hard,overflow,320px,"page is 480px wide, viewport 320px",light/320 dark/320
   hard,text-min,"topo-card::shadow span.lbl \"Cổng 1 ↓ 12 Mb/s\"",font-size 9.9px,light/320 light/390 light/1280 dark/320 dark/390 dark/1280
-  hard,heading-lh,"h1 \"Bảng điều khiển mạng\"",line-height 1.00,light/320 light/390 light/1280 dark/320 dark/390 dark/1280
+  soft,heading-lh,"h1 \"Bảng điều khiển mạng\"",line-height 1.00,light/320 light/390 light/1280 dark/320 dark/390 dark/1280
   hard,lang,<html>,"Vietnamese text but lang=\"en\"",light/320 light/390 light/1280 dark/320 dark/390 dark/1280
 help[4]: "17 more findings: add --full","Fix hard failures, then rerun the same command; soft ones need a fix or a written reason",…
 ```

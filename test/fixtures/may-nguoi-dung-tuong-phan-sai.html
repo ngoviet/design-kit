@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hứa tương phản cao nhưng chưa tới</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #222; }
+main { padding: 24px 16px; max-width: 40rem; }
+.phu { color: #6b6b6b; }
+.rat-nhat { color: #808080; }
+.lon { color: #6b6b6b; font-size: 2rem; }
+.lon-nhat { color: #a0a0a0; font-size: 2rem; }
+button { color: #6b6b6b; background: #fff; border: 1px solid #6b6b6b; font: inherit; min-height: 44px; }
+nav a { color: #6b6b6b; }
+@supports (color: red) {
+  @media (prefers-contrast: more) { main { border: 2px solid #000; } }
+}
+</style>
+</head>
+<body>
+<nav aria-label="Chính"><a href="#a">Trang chủ</a></nav>
+<main>
+<h1>Cài đặt</h1>
+<p>Chữ chính đã đủ đậm.</p>
+<p class="phu" id="phu">Chữ phụ còn nhạt ở chế độ tương phản cao.</p>
+<p class="rat-nhat" id="rat-nhat">Chữ này dưới cả 4,5:1.</p>
+<p class="lon" id="lon">Chữ lớn chỉ cần 4,5:1.</p>
+<p class="lon-nhat" id="lon-nhat">Chữ lớn quá nhạt là việc của luật thường.</p>
+<p class="phu" data-contrast-ok="chữ của mẫu màu">Chữ được miễn.</p>
+<p><button type="button" id="nut">Lưu thay đổi</button></p>
+</main>
+</body>
+</html>

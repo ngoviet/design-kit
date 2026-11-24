@@ -51,7 +51,7 @@
   .tip strong { display: block; margin-bottom: var(--sp-1); }
   .tip .row { display: flex; justify-content: flex-end; gap: var(--sp-2); }
   .tip .btn-tip { min-height: 36px; padding: 0 var(--sp-3); border-radius: var(--r-sm); border: 1px solid transparent; font: 600 var(--fs-sm)/1 var(--font-ui, var(--font-body)); cursor: pointer; }
-  .tip .ok { background: var(--accent); color: var(--on-accent); }
+  .tip .ok { background: var(--accent); color: var(--on-accent); border-color: var(--accent-border, transparent); }
   .tip .off { background: transparent; color: var(--text); border-color: var(--border-strong); }
   @media (prefers-reduced-motion: no-preference) {
     .tip:not([hidden]) { animation: mo var(--dur-2) var(--ease-out); }
@@ -66,9 +66,14 @@
   .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
   .switch span { position: absolute; inset: 0; border-radius: var(--r-full); background: var(--border-strong); transition: background-color var(--dur-1) var(--ease-out); pointer-events: none; }
   .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--surface); transition: transform var(--dur-1) var(--ease-out); }
-  .switch input:checked + span { background: var(--accent); }
+  .switch input:checked + span { background: var(--accent-border, var(--accent)); }
   .switch input:checked + span::after { transform: translateX(20px); }
   .switch input:focus-visible + span { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
+  /* Máy có chạm: nút mẹo cao 44px; công tắc giữ hình 48×28, ô thật (trong suốt) nới ra 48×44. */
+  @media (any-pointer: coarse) {
+    .tip .btn-tip { min-height: var(--hit); }
+    .switch input { inset: -8px 0; width: 100%; height: calc(100% + 16px); }
+  }
 </style>
 </head>
 <body>

@@ -1,7 +1,10 @@
 /* design-kit · bộ màu cho người dùng tự chọn. SINH bằng `node scripts/sinh-themes.mjs` từ data/themes.json; đừng sửa tay
    (test/themes.test.ts so hai bên). Nạp SAU tokens/<hướng>.css. Chọn bằng <html data-dk="…" data-chu-de="<id>">; bỏ thuộc tính
    là màu của hướng. Sáng/tối theo máy, hoặc ép bằng data-theme="light|dark" như các hướng. Áp TRƯỚC lần vẽ đầu bằng script ngắn
-   trong <head> (blocks/html/chon-mau.html). Nguồn và giấy phép bảng màu: tokens/NOTICE-themes.txt. */
+   trong <head> (blocks/html/chon-mau.html). Nguồn và giấy phép bảng màu: tokens/NOTICE-themes.txt.
+   Máy xin tương phản cao (prefers-contrast: more): mỗi bộ ghi đè những token cần đi xa nền hơn; bản tối vẫn thắng bản sáng vì bộ
+   chọn của nó nặng hơn. Bộ có màu nhấn sáng (vàng, chanh) còn có --accent-border: mặt nút giữ màu nhấn, còn viền nút, vạch, vòng,
+   công tắc dùng var(--accent-border, var(--accent)). */
 
 /* ── Neon (neon) · tự phối ── */
 [data-dk][data-chu-de="neon"] {
@@ -59,6 +62,28 @@
   --shadow-2: 0 10px 30px -10px oklch(0 0 0 / 0.70);
   --nen-trang: linear-gradient(160deg, var(--surface-2) 0%, var(--bg) 42%, var(--bg-edge) 100%);
   --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+}
+@media (prefers-contrast: more) {
+  [data-dk][data-chu-de="neon"] {
+    --text-2: #37526a;
+    --accent: #095e73; --accent-text: #064b5d;
+    --ok: #005a30;
+    --warn: #704306;
+    --bad: #9c0b22;
+    --info: #0548a5;
+  }
+  @media (prefers-color-scheme: dark) {
+    [data-dk][data-chu-de="neon"]:not([data-theme="light"]) {
+      --border-strong: #7c8dab;
+      --text: #e9f0fa;
+      --info: #8fbbfc;
+    }
+  }
+  [data-dk][data-chu-de="neon"][data-theme="dark"] {
+    --border-strong: #7c8dab;
+    --text: #e9f0fa;
+    --info: #8fbbfc;
+  }
 }
 
 /* ── Giấy và mực (flexoki) · Flexoki, Steph Ango, MIT ── */
@@ -118,6 +143,31 @@
   --nen-trang: linear-gradient(160deg, #1c1b1a 0%, #100f0f 46%, #0b0a0a 100%);
   --font-display: "Literata", "Times New Roman", serif;
 }
+@media (prefers-contrast: more) {
+  [data-dk][data-chu-de="flexoki"] {
+    --border-strong: #6c6b66;
+    --text-2: #504f4a;
+    --accent: #00615b; --accent-text: #004d48;
+    --ok: #425406;
+    --warn: #644b04;
+    --bad: #971413;
+    --info: #064b91;
+  }
+  @media (prefers-color-scheme: dark) {
+    [data-dk][data-chu-de="flexoki"]:not([data-theme="light"]) {
+      --border-strong: #908e89;
+      --text: #ffffff;
+      --accent-text: #6ed8cd;
+      --warn: #e5b738;
+    }
+  }
+  [data-dk][data-chu-de="flexoki"][data-theme="dark"] {
+    --border-strong: #908e89;
+    --text: #ffffff;
+    --accent-text: #6ed8cd;
+    --warn: #e5b738;
+  }
+}
 
 /* ── Gốm lam (gomlam) · tự phối ── */
 [data-dk][data-chu-de="gomlam"] {
@@ -176,6 +226,34 @@
   --nen-trang: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='36' fill='none' stroke='%239dc0ff' stroke-opacity='0.055'%3E%3Cpath d='M0 36a36 36 0 0 1 72 0M12 36a24 24 0 0 1 48 0M24 36a12 12 0 0 1 24 0M-36 18a36 36 0 0 1 72 0M-24 18a24 24 0 0 1 48 0M36 18a36 36 0 0 1 72 0M48 18a24 24 0 0 1 48 0'/%3E%3C/svg%3E"), linear-gradient(160deg, #1c2d54 0%, #0f1a33 46%, #0a1224 100%);
   --font-display: "Literata", "Times New Roman", serif;
 }
+@media (prefers-contrast: more) {
+  [data-dk][data-chu-de="gomlam"] {
+    --text: #0d1c37; --text-2: #3d4e68;
+    --accent-text: #0a3d90;
+    --ok: #105641;
+    --warn: #694402;
+    --bad: #902014;
+    --info: #00517d;
+  }
+  @media (prefers-color-scheme: dark) {
+    [data-dk][data-chu-de="gomlam"]:not([data-theme="light"]) {
+      --text: #ffffff;
+      --accent-text: #c5dbff;
+      --ok: #9cddc2;
+      --warn: #f2cc83;
+      --bad: #fdbeb0;
+      --info: #9cd8f5;
+    }
+  }
+  [data-dk][data-chu-de="gomlam"][data-theme="dark"] {
+    --text: #ffffff;
+    --accent-text: #c5dbff;
+    --ok: #9cddc2;
+    --warn: #f2cc83;
+    --bad: #fdbeb0;
+    --info: #9cd8f5;
+  }
+}
 
 /* ── Hồng thông (rosepine) · Rosé Pine, Rosé Pine, MIT ── */
 [data-dk][data-chu-de="rosepine"] {
@@ -233,6 +311,37 @@
   --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
   --nen-trang: linear-gradient(160deg, #2f2c49 0%, #232136 46%, #1b192c 100%);
   --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+}
+@media (prefers-contrast: more) {
+  [data-dk][data-chu-de="rosepine"] {
+    --border-strong: #696582;
+    --text: #1c1732; --text-2: #4d4965;
+    --accent: #883c53; --accent-text: #71273f;
+    --ok: #05516a;
+    --warn: #6c4300;
+    --bad: #8f163b;
+    --info: #58426e;
+  }
+  @media (prefers-color-scheme: dark) {
+    [data-dk][data-chu-de="rosepine"]:not([data-theme="light"]) {
+      --border-strong: #9b97b5;
+      --text: #ffffff; --text-2: #c2bedd;
+      --accent-text: #fec6d2;
+      --ok: #acdfe8;
+      --warn: #fed092;
+      --bad: #fec4b4;
+      --info: #e0c8fe;
+    }
+  }
+  [data-dk][data-chu-de="rosepine"][data-theme="dark"] {
+    --border-strong: #9b97b5;
+    --text: #ffffff; --text-2: #c2bedd;
+    --accent-text: #fec6d2;
+    --ok: #acdfe8;
+    --warn: #fed092;
+    --bad: #fec4b4;
+    --info: #e0c8fe;
+  }
 }
 
 /* ── Sân chơi (sanchoi) · tự phối ── */
@@ -295,6 +404,34 @@
   --font-display: "Bricolage Grotesque", "Be Vietnam Pro", sans-serif;
   --r-sm: 12px; --r-md: 18px; --r-lg: 26px;
 }
+@media (prefers-contrast: more) {
+  [data-dk][data-chu-de="sanchoi"] {
+    --text: #261d3c; --text-2: #51466b;
+    --accent: #9d2f00; --accent-text: #812603;
+    --ok: #065925;
+    --warn: #684506;
+    --bad: #970748;
+    --info: #034e87;
+  }
+  @media (prefers-color-scheme: dark) {
+    [data-dk][data-chu-de="sanchoi"]:not([data-theme="light"]) {
+      --text: #ffffff; --text-2: #ccc5f1;
+      --accent-text: #fed680;
+      --ok: #8eefae;
+      --warn: #fdd2aa;
+      --bad: #fec8d4;
+      --info: #b4defd;
+    }
+  }
+  [data-dk][data-chu-de="sanchoi"][data-theme="dark"] {
+    --text: #ffffff; --text-2: #ccc5f1;
+    --accent-text: #fed680;
+    --ok: #8eefae;
+    --warn: #fdd2aa;
+    --bad: #fec8d4;
+    --info: #b4defd;
+  }
+}
 
 /* ── Sơn mài (sonmai) · tự phối ── */
 [data-dk][data-chu-de="sonmai"] {
@@ -352,6 +489,34 @@
   --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
   --nen-trang: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='190' fill='%23e4b660' fill-opacity='0.16'%3E%3Ccircle cx='14' cy='22' r='1.4'/%3E%3Ccircle cx='88' cy='10' r='1'/%3E%3Ccircle cx='140' cy='60' r='1.7'/%3E%3Ccircle cx='52' cy='96' r='1.1'/%3E%3Ccircle cx='176' cy='128' r='1.3'/%3E%3Ccircle cx='104' cy='150' r='1'/%3E%3Ccircle cx='24' cy='168' r='1.6'/%3E%3Ccircle cx='196' cy='30' r='1'/%3E%3C/svg%3E"), linear-gradient(160deg, #35201a 0%, #1d110d 46%, #140a07 100%);
   --font-display: "Literata", "Times New Roman", serif;
+}
+@media (prefers-contrast: more) {
+  [data-dk][data-chu-de="sonmai"] {
+    --text: #28150f; --text-2: #624536;
+    --accent: #9e2f18; --accent-text: #7d1b05;
+    --ok: #395204;
+    --warn: #6a4101;
+    --bad: #940247;
+    --info: #145062;
+  }
+  @media (prefers-color-scheme: dark) {
+    [data-dk][data-chu-de="sonmai"]:not([data-theme="light"]) {
+      --text: #ffffff;
+      --accent-text: #eec06a;
+      --ok: #b0cb86;
+      --warn: #feb06b;
+      --bad: #ffaa96;
+      --info: #a7c7d1;
+    }
+  }
+  [data-dk][data-chu-de="sonmai"][data-theme="dark"] {
+    --text: #ffffff;
+    --accent-text: #eec06a;
+    --ok: #b0cb86;
+    --warn: #feb06b;
+    --bad: #ffaa96;
+    --info: #a7c7d1;
+  }
 }
 
 /* ── Phố Hội (hoian) · tự phối ── */
@@ -411,6 +576,34 @@
   --nen-trang: linear-gradient(160deg, #1c3532 0%, #102120 46%, #0a1716 100%);
   --font-display: "Be Vietnam Pro", system-ui, sans-serif;
 }
+@media (prefers-contrast: more) {
+  [data-dk][data-chu-de="hoian"] {
+    --text: #2b261c; --text-2: #564c34;
+    --accent: #005f6d; --accent-text: #01525f;
+    --ok: #235615;
+    --warn: #714104;
+    --bad: #980d0a;
+    --info: #244889;
+  }
+  @media (prefers-color-scheme: dark) {
+    [data-dk][data-chu-de="hoian"]:not([data-theme="light"]) {
+      --text: #ffffff; --text-2: #baccc2;
+      --accent-text: #fdd0b1;
+      --ok: #b6e19c;
+      --warn: #fad270;
+      --bad: #ffc2bc;
+      --info: #9ddfef;
+    }
+  }
+  [data-dk][data-chu-de="hoian"][data-theme="dark"] {
+    --text: #ffffff; --text-2: #baccc2;
+    --accent-text: #fdd0b1;
+    --ok: #b6e19c;
+    --warn: #fad270;
+    --bad: #ffc2bc;
+    --info: #9ddfef;
+  }
+}
 
 /* ── Sóng lừng (kanagawa) · Kanagawa, Tommaso Laurenzi, MIT ── */
 [data-dk][data-chu-de="kanagawa"] {
@@ -469,6 +662,34 @@
   --nen-trang: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='36' fill='none' stroke='%237e9cd8' stroke-opacity='0.05'%3E%3Cpath d='M0 36a36 36 0 0 1 72 0M12 36a24 24 0 0 1 48 0M24 36a12 12 0 0 1 24 0M-36 18a36 36 0 0 1 72 0M-24 18a24 24 0 0 1 48 0M36 18a36 36 0 0 1 72 0M48 18a24 24 0 0 1 48 0'/%3E%3C/svg%3E"), linear-gradient(160deg, #223249 0%, #1f1f28 46%, #16161d 100%);
   --font-display: "Be Vietnam Pro", system-ui, sans-serif;
 }
+@media (prefers-contrast: more) {
+  [data-dk][data-chu-de="kanagawa"] {
+    --text: #1e1d36; --text-2: #4e4b3d;
+    --accent: #2a5598; --accent-text: #194385;
+    --ok: #3a5217;
+    --warn: #753c01;
+    --bad: #99052e;
+    --info: #0a5166;
+  }
+  @media (prefers-color-scheme: dark) {
+    [data-dk][data-chu-de="kanagawa"]:not([data-theme="light"]) {
+      --text: #ffffff; --text-2: #d2ca9c;
+      --accent-text: #c7dafe;
+      --ok: #badf8e;
+      --warn: #f7d394;
+      --bad: #febebb;
+      --info: #a4dbf1;
+    }
+  }
+  [data-dk][data-chu-de="kanagawa"][data-theme="dark"] {
+    --text: #ffffff; --text-2: #d2ca9c;
+    --accent-text: #c7dafe;
+    --ok: #badf8e;
+    --warn: #f7d394;
+    --bad: #febebb;
+    --info: #a4dbf1;
+  }
+}
 
 /* ── Rừng thông (everforest) · Everforest, sainnhe, MIT ── */
 [data-dk][data-chu-de="everforest"] {
@@ -526,6 +747,37 @@
   --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
   --nen-trang: linear-gradient(160deg, #38444a 0%, #2d353b 46%, #232a2e 100%);
   --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+}
+@media (prefers-contrast: more) {
+  [data-dk][data-chu-de="everforest"] {
+    --border-strong: #5b6a73;
+    --text: #131e23; --text-2: #404e57;
+    --accent: #485e07; --accent-text: #374701;
+    --ok: #04563c;
+    --warn: #634605;
+    --bad: #9a0b19;
+    --info: #075174;
+  }
+  @media (prefers-color-scheme: dark) {
+    [data-dk][data-chu-de="everforest"]:not([data-theme="light"]) {
+      --border-strong: #adb9b0;
+      --text: #ffffff; --text-2: #d7e5da;
+      --accent-text: #d3ecaa;
+      --ok: #befdcd;
+      --warn: #fff0d2;
+      --bad: #ffe3e3;
+      --info: #bcf9f0;
+    }
+  }
+  [data-dk][data-chu-de="everforest"][data-theme="dark"] {
+    --border-strong: #adb9b0;
+    --text: #ffffff; --text-2: #d7e5da;
+    --accent-text: #d3ecaa;
+    --ok: #befdcd;
+    --warn: #fff0d2;
+    --bad: #ffe3e3;
+    --info: #bcf9f0;
+  }
 }
 
 /* Ô màu mẫu trên thẻ chọn: màu của CHÍNH bộ ấy theo sáng/tối đang áp, không theo bộ đang dùng. */

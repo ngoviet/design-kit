@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bố cục chịu được dữ liệu thật</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+header { padding: 8px 16px; }
+main { padding: 16px; max-width: 60rem; }
+h1 { font-size: 1.5rem; line-height: 1.3; margin: 0 0 16px; overflow-wrap: anywhere; }
+h2 { font-size: 1.25rem; line-height: 1.3; }
+section { margin: 0 0 24px; }
+.khit { display: block; width: max-content; overflow: hidden; white-space: nowrap; font-style: normal; }
+.trong-dong { display: inline-block; vertical-align: bottom; }
+.logo-chu { font-weight: 700; }
+.tron { width: 40px; height: 40px; border-radius: 50%; background: #dde; overflow: hidden; display: grid; place-items: center; }
+.cuon { overflow-x: auto; max-width: 300px; }
+.cuon table { white-space: nowrap; border-collapse: collapse; }
+.cuon td, .cuon th { padding: 4px 8px; }
+.cham { display: block; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hai-dong { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; max-width: 180px; }
+.bang { overflow: hidden; border: 1px solid #bbb; }
+.bang table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.bang td, .bang th { padding: 8px; text-align: left; overflow-wrap: anywhere; vertical-align: top; }
+.vien { display: inline-block; border-radius: 99px; background: #def0de; padding: 2px 8px; font-size: 0.875rem; white-space: nowrap; }
+.the { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); gap: 12px; }
+.the > div { border: 1px solid #bbb; padding: 8px; min-width: 0; }
+.the h3 { margin: 0; overflow-wrap: anywhere; font-size: 1rem; line-height: 1.4; }
+.lon-chu { font-size: 1.5rem; line-height: 1.3; margin: 0; }
+.so { display: flex; flex-wrap: wrap; gap: 8px; }
+.so div { border: 1px solid #bbb; padding: 4px 8px; }
+.an { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.muc { display: flex; gap: 12px; flex-wrap: wrap; }
+textarea, pre, code { max-width: 100%; }
+pre { overflow-x: auto; }
+button { font: inherit; min-height: 44px; padding: 4px 16px; }
+</style>
+</head>
+<body>
+<header>
+<a class="khit" href="/">Vườn Nhà Xanh</a>
+<span class="logo-chu khit">Vườn Nhà Xanh</span>
+<nav aria-label="Chính"><ul class="muc"><li><a href="#a">Trang chủ</a></li><li><a href="#b">Đơn hàng</a></li></ul></nav>
+</header>
+<main>
+<h1>Đơn hàng trong tuần</h1>
+<section>
+<!-- Chữ không bao giờ dài hơn -->
+<code class="khit">npm test</code>
+<pre class="khit">node index</pre>
+<kbd class="khit">Ctrl K</kbd>
+<textarea class="w96" aria-label="Ghi chú">Ghi chú ngắn</textarea>
+<select aria-label="Kho"><option>Kho phía Nam</option></select>
+<p class="khit" data-stress-ok="mã trạng thái cố định">Đang giao hàng</p>
+<p class="khit" contenteditable="true">Sửa tại chỗ</p>
+<p class="khit" translate="no">Bản quyền số</p>
+<div class="tron">LA</div>
+<div class="khit">A</div>
+<time class="khit" datetime="2026-11-24">thứ Ba, 24 tháng 11</time>
+<div class="khit" aria-hidden="true">Hình minh hoạ</div>
+<div class="khit" role="img" aria-label="Sơ đồ">Cổng chính</div>
+<svg width="120" height="24" viewBox="0 0 120 24" role="presentation"><text x="0" y="16" font-size="14">Trục hoành</text></svg>
+<p hidden>Phần này đang ẩn</p>
+<details><summary>Xem thêm</summary><p class="khit">Nội dung đóng</p></details>
+<span class="an">Chỉ cho trình đọc màn hình</span>
+<p><span>182,4</span> <span class="khit trong-dong">Mb/s</span></p>
+<p><b>350</b><i class="khit trong-dong">km</i></p>
+</section>
+<section>
+<!-- Số không phải số liệu: giữ nguyên dù hộp vừa khít -->
+<div class="khit">08:12</div><div class="khit">24/11/2026</div><div class="khit">2026-11-24</div><div class="khit">0901 234 567</div>
+<div class="khit">192.168.1.31</div><div class="khit">2026</div><div class="khit">1.2.10</div><div class="khit">4,8 ★</div><div class="khit">28 °C</div><div class="khit">23/26</div><div class="khit">#10234</div><div class="khit">001099012345</div>
+<div class="khit" id="mot-so">7</div>
+</section>
+<section>
+<!-- Cuộn ngang có chủ ý, cắt có chủ ý -->
+<div class="cuon" tabindex="0" role="region" aria-label="Bảng rộng"><table><tr><th scope="row">Kho phía Nam</th><td>Đang nhập hàng</td><td>1.250.000 ₫</td></tr></table></div>
+<span class="cham" title="Giao trong ngày">Giao trong ngày</span>
+<span class="cham" aria-label="Giao tận nơi, trong ngày">Giao tận nơi</span>
+<a href="don-hang-12.html"><span class="hai-dong">Đơn của chị Hoa</span></a>
+</section>
+<section class="bang">
+<table>
+<thead><tr><th scope="col">Tên</th><th scope="col">Trạng thái</th><th scope="col">Loại</th></tr></thead>
+<tbody>
+<tr><td>Báo cáo tuần</td><td><span class="vien">Xong</span></td><td>Bảng</td></tr>
+<tr><td>Danh sách khách</td><td><span class="vien">Xong</span></td><td>Bảng</td></tr>
+</tbody>
+</table>
+</section>
+<!-- Viên trạng thái và danh mục không phải dữ liệu tự do: không nhận từ dài -->
+<section class="bang"><table><tbody>
+<tr><td><span class="vien" style="max-width:100%;overflow:hidden">Mới tạo</span></td><td>Phiếu 1</td></tr>
+<tr><td><span class="vien" style="max-width:100%;overflow:hidden">Đã huỷ</span></td><td>Phiếu 2</td></tr>
+</tbody></table></section>
+<section class="bang"><table><tbody>
+<tr><td style="overflow-wrap:normal">Nhập kho</td><td>Phiếu 3</td></tr>
+<tr><td style="overflow-wrap:normal">Nhập kho</td><td>Phiếu 4</td></tr>
+</tbody></table></section>
+<section class="the">
+<div><h3>Đơn mới</h3><p>3 đơn chờ</p></div><div><h3>Đang giao</h3><p>5 đơn</p></div><div><h3>Đã xong</h3><p>9 đơn</p></div>
+</section>
+<!-- Tiêu đề phần trang do người viết trang đặt, không nhận từ dài (cỡ này một từ 37 chữ sẽ tràn ở 390px) -->
+<section><h2>Cách đóng gói</h2><p>Gói trong 24 giờ.</p></section>
+<section><h2>Cách giao hàng</h2><p>Giao trong 48 giờ.</p></section>
+<section><h2>Cách đổi trả</h2><p>Đổi trong 30 ngày.</p></section>
+<!-- Thẻ giới thiệu chỉ có tiêu đề và câu; nhãn thứ tự; thẻ chỉ có số thứ tự: không phải dữ liệu -->
+<ul><li><h3 class="lon-chu">Chọn hàng</h3><p>Chọn món bạn cần rồi bỏ vào giỏ.</p></li><li><span>2</span><h3 class="lon-chu">Trả tiền</h3><p>Trả khi nhận hàng cũng được.</p></li></ul>
+<ul><li><h3 class="lon-chu">Thứ 2</h3><a href="#lich">Xem lịch</a></li></ul>
+<section class="so"><div>1.250.000 ₫</div><div>12,5%</div><div>98 765</div></section>
+<!-- Câu dài mang lớp tên món: là câu, không phải tên -->
+<p class="product" style="max-width:20em">Món này trồng ở vườn phía sau nhà, hái lúc sáng sớm rồi giao luôn trong buổi</p>
+<p>Đã mở trang <span id="dem">0</span> nhịp.</p>
+<button type="button">Lưu thay đổi</button>
+</main>
+<script>
+// Hộp vừa khít chữ đang có: chữ nào bị kéo dài nhầm thì lộ ra ngay.
+for (const e of document.querySelectorAll(".khit")) e.style.width = `${Math.ceil(e.getBoundingClientRect().width)}px`;
+// Trang tự đổi chữ trong lúc đo: chữ của trang phải được giữ.
+let n = 0;
+setInterval(() => { document.getElementById("dem").textContent = `nhịp thứ ${++n}`; }, 30);
+</script>
+</body>
+</html>

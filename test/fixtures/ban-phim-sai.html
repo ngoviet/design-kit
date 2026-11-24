@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bấm được mà Tab không tới</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 24px 16px; max-width: 40rem; display: grid; gap: 16px; }
+.o { border: 1px solid #555; padding: 12px; }
+.tay { cursor: pointer; }
+.nut-tep { display: inline-block; border: 1px solid #555; padding: 12px; cursor: pointer; }
+</style>
+</head>
+<body>
+<main>
+<h1>Danh sách việc</h1>
+<button type="button">Lưu</button>
+<div class="o" id="thuoc-tinh" onclick="this.dataset.x = 1">Mở chi tiết</div>
+<div class="o" id="trinh-nghe">Đánh dấu xong</div>
+<div class="o"><span class="tay" id="con-tro">Xem thêm</span> ba việc khác</div>
+<a class="o" id="khong-href" onclick="this.dataset.x = 1">Xoá việc này</a>
+<div><label class="nut-tep" id="nhan-tep" for="tep">Chọn ảnh</label><input type="file" id="tep" style="display:none"></div>
+<div><input type="password" aria-label="Mật khẩu"> <button type="button" tabindex="-1" id="tab-am">Hiện</button></div>
+<div role="listbox" aria-label="Mức ưu tiên" class="o"><div role="option" aria-selected="false" class="tay" id="lua-chon">Cao</div></div>
+<table><tbody><tr class="tay" id="hang"><td>Họp tổ dân phố</td><td>Thứ bảy</td></tr></tbody></table>
+<div class="the tay">Thẻ một</div>
+<div class="the tay">Thẻ hai</div>
+<div class="the tay">Thẻ ba</div>
+<the-bam></the-bam>
+<div class="o" id="ten-nut">Xem bản đồ</div>
+<div class="o"><div><button type="button" tabindex="-1" id="tab-am-xa">Sao chép</button></div> <div><button type="button">Dán</button> <button type="button" tabindex="0">Cắt</button> <input type="number" aria-label="Số"> <input aria-label="Chữ"></div></div>
+<div><input type="number" aria-label="Số khác"></div>
+<article class="o" id="the-bai"><h2>Tiêu đề bài</h2><p>Tóm tắt bài.</p></article>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+$("trinh-nghe").addEventListener("click", () => { document.title = "xong"; });
+$("tab-am").addEventListener("click", () => { document.title = "hiện"; });
+$("tab-am-xa").addEventListener("click", () => { document.title = "chép"; });
+$("the-bai").addEventListener("click", () => { document.title = "bài"; });
+$("ten-nut").onclick = function () { document.title = "bản đồ"; };
+customElements.define("the-bam", class extends HTMLElement {
+  connectedCallback() {
+    const r = this.attachShadow({ mode: "open" });
+    r.innerHTML = '<div id="trong-bong" style="border:1px solid #555;padding:12px">Thẻ trong cây bóng</div>';
+    r.getElementById("trong-bong").addEventListener("click", () => { document.title = "bóng"; });
+  }
+});
+</script>
+</body>
+</html>

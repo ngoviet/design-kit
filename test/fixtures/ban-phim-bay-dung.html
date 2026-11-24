@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tab đi hết trang</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 24px 16px; max-width: 40rem; display: grid; gap: 16px; }
+iframe { width: 100%; height: 120px; border: 1px solid #555; }
+</style>
+</head>
+<body>
+<main>
+<h1>Tab đi hết trang</h1>
+<p><a href="#a">Liên kết</a></p>
+<p><label>Ngày <input type="date"></label> <label>Giờ <input type="datetime-local"></label></p>
+<p><label><input type="radio" name="r" checked> Một</label> <label><input type="radio" name="r"> Hai</label></p>
+<p><audio controls aria-label="Bài nghe"></audio></p>
+<iframe title="Khung con" srcdoc="<!doctype html><html lang='vi'><body><a href='#1'>1</a> <a href='#2'>2</a> <a href='#3'>3</a> <a href='#4'>4</a> <a href='#5'>5</a> <a href='#6'>6</a> <a href='#7'>7</a> <a href='#8'>8</a> <a href='#9'>9</a> <a href='#10'>10</a> <a href='#11'>11</a> <a href='#12'>12</a> <a href='#13'>13</a> <a href='#14'>14</a> <a href='#15'>15</a> <a href='#16'>16</a></body></html>"></iframe>
+<p><label for="ma">Mã nguồn (Esc rồi Tab để ra)</label><br><textarea id="ma" rows="2"></textarea></p>
+<p><button type="button">Gửi</button></p>
+</main>
+<script>
+// Ô soạn mã: Tab gõ dấu tab, bấm Esc trước thì Tab đi tiếp.
+let ra = false;
+document.getElementById("ma").addEventListener("keydown", (e) => {
+  if (e.key === "Escape") ra = true;
+  else if (e.key === "Tab" && !ra) { e.preventDefault(); e.target.value += "  "; }
+});
+</script>
+</body>
+</html>

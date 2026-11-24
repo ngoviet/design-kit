@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Có service worker mà mất mạng là hỏng</title>
+<style>body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; } main { padding: 24px 16px; }</style>
+</head>
+<body>
+<main><h1>Bản tin</h1><p>Trang đăng ký service worker nhưng không giữ gì lại.</p></main>
+<script>
+const kieu = new URLSearchParams(location.search).get("kieu") || "qua-mang";
+navigator.serviceWorker.register(`may-nguoi-dung-sw.js?kieu=${kieu}`, { scope: "./may-nguoi-dung-ngoai-tuyen-sai.html" });
+</script>
+</body>
+</html>

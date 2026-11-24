@@ -31,19 +31,19 @@
   .loi { background: var(--surface-2); border-radius: var(--r-sm); padding: var(--sp-3) var(--sp-4); font-size: var(--fs-md); max-width: none; }
   .loi .da { color: var(--accent-text); }
   /* Chữ đang đọc khác không chỉ bằng màu: nền, gạch chân dày, đậm. */
-  .loi .nay { color: var(--text); background: var(--accent-soft); border-radius: 4px; padding: 0 .2em; font-weight: 600; text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 4px; text-decoration-color: var(--accent); }
+  .loi .nay { color: var(--text); background: var(--accent-soft); border-radius: 4px; padding: 0 .2em; font-weight: 600; text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 4px; text-decoration-color: var(--accent-border, var(--accent)); }
   .xem .hang { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; }
 
   /* ---- Sáng, tối, theo máy ---- */
   .che { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
   .che label { position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 var(--sp-5); border: 1px solid var(--border-strong); border-radius: var(--r-full); background: var(--surface); font: 600 var(--fs-sm)/1.2 var(--font-ui, var(--font-body)); cursor: pointer; }
-  .che label:has(:checked) { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .che label:has(:checked) { background: var(--accent); color: var(--on-accent); border-color: var(--accent-border, var(--accent)); }
 
   /* ---- Thẻ bộ màu: ô màu của chính bộ ấy (biến --m-* trong tokens/themes.css) ---- */
   .luoi { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: var(--sp-3); }
   .the { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--sp-3); align-items: center; min-height: 72px; padding: var(--sp-3) var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--r-md); background: var(--surface); cursor: pointer; }
   .the:hover { background: var(--surface-2); }
-  .the:has(:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .the:has(:checked) { border-color: var(--accent-border, var(--accent)); box-shadow: inset 0 0 0 1px var(--accent-border, var(--accent)); }
   .o { display: grid; grid-template-columns: repeat(2, 20px); border: 1px solid var(--m-vien, var(--border-strong)); border-radius: var(--r-sm); overflow: hidden; background: var(--m-nen, var(--bg)); padding: 6px; gap: 4px; }
   .o i { width: 20px; height: 20px; border-radius: 50%; background: var(--m-nhan, var(--accent)); }
   .o i:nth-child(2) { background: var(--m-chu, var(--text)); }

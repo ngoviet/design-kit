@@ -27,7 +27,7 @@ const BADGE: Record<TrangThaiTB, string> = {
 
 function SortButton({ label, active, dir, onClick }: { label: string; active: boolean; dir: "ascending" | "descending"; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className={cn("inline-flex min-h-6 items-center gap-1 rounded-sm px-1 -mx-1 hover:bg-muted", active && "text-foreground")}>
+    <button type="button" onClick={onClick} className={cn("inline-flex min-h-6 items-center gap-1 rounded-sm px-1 -mx-1 hover:bg-muted any-pointer-coarse:min-h-11", active && "text-foreground")}>
       {label}
       <ChevronUp aria-hidden className={cn("size-3.5 opacity-45", active && "opacity-100", active && dir === "descending" && "rotate-180")} />
     </button>

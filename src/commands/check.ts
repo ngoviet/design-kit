@@ -3,11 +3,11 @@ import { createRequire } from "node:module";
 import { basename, dirname, extname, join, relative, resolve } from "node:path";
 import type { Browser, BrowserContext, Page } from "playwright-core";
 import { type FlagSpec, listFlag, parseCommandArgs } from "../args.js";
-import { launchBrowser, serveRoot, startServer, urlFor } from "../browser.js";
+import { type Engine, launchBrowser, serveRoot, startServer, urlFor } from "../browser.js";
 import { fail } from "../errors.js";
 import { type AssumedHit, type CopyRules, loadCopyRules, probeCopy } from "../copy.js";
 import { findImpeccable, runImpeccable } from "../impeccable.js";
-import { installSchemeWatch, installVitals, probeCovered, probeFingerprint, probeFocus, probeMotion, probePage, probePause, probeReveal, probeStandalone, probeVisible, schemeReadOnce, settleAnimations, STANDALONE_TOKENS, type ProbeHit } from "../probe.js";
+import { installSchemeWatch, installVitals, probeCovered, probeFingerprint, probeFocus, probeMotion, probePage, probePause, probeReveal, probeStandalone, probeVisible, rememberUnfocused, schemeReadOnce, settleAnimations, STANDALONE_TOKENS, type ProbeHit } from "../probe.js";
 import type { Runtime } from "../runtime.js";
 import { LATE_MS, type NetWatch, QUIET_CAP_MS, settleAfterChange, settlePage, watchNetwork } from "../settle.js";
 import { inputZoomFinding } from "../zoom.js";
@@ -16,6 +16,13 @@ import { installOnload, onloadFinding, readOnload } from "../onload.js";
 import { probeLangParts } from "../langparts.js";
 import { probeTouch, TOUCH_MIN, touchFinding } from "../touch.js";
 import { probeFontUnit, type ResizeFinding, spacingPass, zoomPass } from "../textresize.js";
+import { probeCss, probePaste } from "../csscheck.js";
+import { stressPass } from "../stress.js";
+import { probeBreakpoints, sweepAround } from "../breakpoints.js";
+import { pixelContrastPass } from "../pixelcontrast.js";
+import { dialogFocusPass, focusLogWatch, keyboardPass, tabPass } from "../keyboard.js";
+import { ariaStateWatch, contrastMorePass, forcedColorsPass, offlinePass, registersWorker } from "../emulate.js";
+import { clearMarks, diffRuns, drawMarks, findingId, labelOf, loadRun, locateLabels, recheckPlan, type Run, saveRun } from "../report.js";
 import { applyWaivers, loadWaivers, WAIVER_MAX_PER_PAGE } from "../waivers.js";
 import { cacheKey, depPath, entryValid, fileSha, readEntry, sha, writeEntry } from "../cache.js";
 import { VERSION } from "../version.js";
@@ -25,12 +32,13 @@ import { loadSteps, parseSteps, runActions, STEPS_FORMAT, type StepAction, type 
 
 export const CHECK_HELP = `usage: design-kit check <file|dir|url>... [flags]
 description: Design gate. Renders each page at 320/390/1280 px in light and dark, then measures what a person would hit: axe-core (WCAG 2.2 AA), horizontal overflow, text size and line height (through open shadow roots), text cut off by ellipsis or overflow, Vietnamese lang and fonts, line length, reduced motion, keyboard focus, LCP/CLS, guidance (vague "Next" buttons, dead-end empty states, up-front tours), copy that reads as unedited AI text (stock phrases, chatbot residue, placeholders, markdown left in) and the Impeccable detector. States reached by clicking (form errors, step 3, an open dialog) are measured too, from a steps file. A local file is also opened the way the Claude app's browser pane opens it (a data: URL, no server), to catch a page that loses its linked CSS. Prints one verdict per page and state: hard failures block "done", soft ones need a reason. Facts the agent filled in itself (marked data-assumed) are listed for the owner to confirm
-flags[23]:
+flags[25]:
   --query <q,q>: run each page once per query string (e.g. dk=dem,dk=giay,dk=dam for design-kit blocks)
   --steps <file.json|json>: states to reach by clicking/typing, each measured like a page (overrides <page>.steps.json)
   --no-steps: ignore <page>.steps.json files next to the pages
   --viewports <w,w|WxH>: widths in px, or width x height (default 320,390,1280; every size gets every check)
   --profile devices: real device sizes instead of --viewports (320x568, 390x844, 768x1024, 1280x720, 1920x1080) plus --sweep; about 1.3 times the default time on the kit blocks
+  --engine <chromium|webkit>: browser engine (default chromium). webkit is Playwright's WebKit, closer to Safari but not iOS Safari: only render and errors stay hard there, checks that need Chromium (text-zoom, standalone) are noted as not measured; install it once with npx playwright install webkit
   --touch <px>: smallest touch target wanted on a touch screen (default 44, 0 to skip)
   --schemes <light,dark>: color schemes to render (default light,dark)
   --shots <dir>: screenshot folder (default .design-kit/shots); --no-shots to skip
@@ -44,14 +52,15 @@ flags[23]:
   --waivers <file.json>: soft findings reviewed as fine, each with a reason (default .design-kit/waivers.json when it exists); listed under "waived", never hidden; --no-waivers ignores the file
   --no-waivers: show every finding, ignoring the waivers file
   --no-cache: measure every page again (and refresh the cache); by default a local page whose every loaded file is unchanged since its last check (same flags, same design-kit, axe, Impeccable and browser) reuses that result, and the output says how many
-  --sweep: also check horizontal overflow, text painted over, stuck bars (and line length from 1536px) at 16 more sizes from 344 to 2560 px wide, with 640x360 (a 1280x720 screen zoomed to 200%) and 844x390 (a phone on its side), on the open page; about 0.3 s per size
+  --sweep: also check horizontal overflow, text painted over, stuck bars (and line length from 1536px) at 16 more sizes from 344 to 2560 px wide, with 640x360 (a 1280x720 screen zoomed to 200%) and 844x390 (a phone on its side), and one pixel to each side of the page's own @media breakpoints, on the open page; about 0.3 s per size
   --fresh: load the page again for every width and color scheme (default: load once, resize and switch scheme in place, verified against one fresh load per page and redone fresh when the layout differs)
+  --recheck <id,id>: measure again only the pages, states and sizes of these findings (ids from the last run of the same pages) and say which are fixed
   --limit <n>: findings to show (default 25)
   --full: every finding
   --help: this help
 gates[3]:
-  hard: a page that shows nothing (no text, image or graphic, also 5 s after the network went idle), an uncaught script error or a script/stylesheet that fails to load, a page a phone lays out wider than its screen and shrinks (no width=device-width viewport meta; measured once with a mobile-emulated render at the widest --viewports width ≤ 480), overflow at 320px, axe serious/critical (contrast, target size, labels…), text < 12px, heading line-height < 1.2 in Vietnamese, missing lang="vi", animation that moves, scales or rotates things and ignores reduced motion (fades and color changes are allowed), a step that cannot be done (selector not found), Impeccable slop rules and quality rules a user trips on (low-contrast, tiny-text, overflow, occlusion, script errors)
-  soft: a custom element that is never defined, axe moderate/minor, body text < 16px or line-height < 1.5, lines > 80ch, a scroll box hiding content (cut-off table), text cut off (an ellipsis or line-clamp hiding words, overflow hidden/clip cutting letters or Vietnamese accents; reports the text still shown and the width), more than 12 fields on one screen, input-zoom (a typing field with small text at phone width: iOS zooms the page in when it is tapped; rule in src/zoom.ts), guide (button that only says "Tiếp"/"Next", empty state with no next action, tour or welcome modal on load), web font not loaded, focus ring missing or hidden, copy (generation 1: stock phrases, template openers, chatbot residue such as "Chắc chắn rồi!", placeholders like [Tên công ty] or {{name}} or lorem ipsum, markdown ## or ** shown as text; generation 2: a row of 3–4 short stats under the hero, a heading in fragments "X. Y.", a link that only says "Xem thêm"/"Learn more"; lists in data/copy-tells.json), sticky (bars that stay stuck take over 30% of the screen height, 40% under 480px high), orientation (the web app manifest locks portrait or landscape), autoplay (sound started before any tap or key: audio/video play() or autoplay without muted, Web Audio start(), speech), permission (microphone, camera, notification, push or location asked before any tap or key), touch (a target under 44x44 px on a touch screen, links inside a sentence exempt; 24 stays hard through axe), text-zoom (with the reader's font size at 200%: body text that does not grow, text newly cut off or painted over, page wider than the screen; data-zoom-ok marks deliberate px text), text-spacing (text newly cut off or painted over with WCAG 1.4.12 spacing), font-unit (font-size in viewport units with no rem, em or %), nfc (letters typed as letter + combining mark), lang-part (Han characters outside lang zh/ja/ko, an English sentence inside lang="vi"; data-lang-ok marks deliberate ones), LCP > 2.5s, CLS > 0.1, standalone (opened as a file the page loses stylesheets or tokens, is over 400 KB (the pane opens at most 512 KiB), or draws Vietnamese letters from a second font), other Impeccable quality rules and advisories
+  hard: a page that shows nothing (no text, image or graphic, also 5 s after the network went idle), an uncaught script error or a script/stylesheet that fails to load, a page a phone lays out wider than its screen and shrinks (no width=device-width viewport meta; measured once with a mobile-emulated render at the widest --viewports width ≤ 480), overflow at 320px, axe serious/critical (contrast, target size, labels…), text < 12px, missing lang="vi", animation that moves, scales or rotates things and ignores reduced motion (fades and color changes are allowed), a step that cannot be done (selector not found), Impeccable slop rules and quality rules a user trips on (low-contrast, tiny-text, overflow, occlusion, script errors)
+  soft: a custom element that is never defined, axe moderate/minor, body text < 16px or line-height < 1.5, heading line-height < 1.2 in Vietnamese, lines > 80ch, a scroll box hiding content (cut-off table), text cut off (an ellipsis or line-clamp hiding words, overflow hidden/clip cutting letters or Vietnamese accents; reports the text still shown and the width), more than 12 fields on one screen, input-zoom (a typing field with small text at phone width: iOS zooms the page in when it is tapped; rule in src/zoom.ts), guide (button that only says "Tiếp"/"Next", empty state with no next action, tour or welcome modal on load), web font not loaded, focus ring missing or hidden, copy (generation 1: stock phrases, template openers, chatbot residue such as "Chắc chắn rồi!", placeholders like [Tên công ty] or {{name}} or lorem ipsum, markdown ## or ** shown as text; generation 2: a row of 3–4 short stats under the hero, a heading in fragments "X. Y.", a link that only says "Xem thêm"/"Learn more"; lists in data/copy-tells.json), sticky (bars that stay stuck take over 30% of the screen height, 40% under 480px high), orientation (the web app manifest or CSS locks portrait or landscape), autoplay (sound started before any tap or key: audio/video play() or autoplay without muted, Web Audio start(), speech), permission (microphone, camera, notification, push or location asked before any tap or key), touch (a target under 44x44 px on a touch screen, links inside a sentence exempt; 24 stays hard through axe), text-zoom (with the reader's font size at 200%: body text that does not grow, text newly cut off or painted over, page wider than the screen; data-zoom-ok marks deliberate px text), text-spacing (text newly cut off or painted over with WCAG 1.4.12 spacing), font-unit (font-size in viewport units with no rem, em or %), stress (layout that breaks with text 50% longer, a 37-letter word or three more digits; data-stress-ok), contrast-px (text over images and gradients below 4.5:1, large 3:1, at its worst part; data-contrast-ok), keyboard (something to click that Tab never reaches; data-keyboard-ok), tab-trap (Tab circles in one corner), skip-link (a navigation of 5+ links with no working skip link), dialog-focus (an open modal loses focus, lets Tab out, ignores Esc or does not give focus back), contrast-more (a page that has prefers-contrast rules still under 7:1), forced-colors (a control or its selected state disappears in forced-colors mode), offline (a page with a service worker is blank without network), aria-state (a click changes the page but aria-expanded/pressed/selected/checked stays), css (100vh blocks, transition: all, Vietnamese hyphenation, color-scheme, safe-area, image size, theme-color, blocked paste; data-css-ok), nfc (letters typed as letter + combining mark), lang-part (Han characters outside lang zh/ja/ko, an English sentence inside lang="vi"; data-lang-ok marks deliberate ones), LCP > 2.5s, CLS > 0.1, standalone (opened as a file the page loses stylesheets or tokens, is over 400 KB (the pane opens at most 512 KiB), or draws Vietnamese letters from a second font), other Impeccable quality rules and advisories
   human: hierarchy and taste, and the task map (every hesitation point has a guide pattern): open the screenshots
 steps:
   ${STEPS_FORMAT}
@@ -76,6 +85,8 @@ const FLAGS: Record<string, FlagSpec> = {
   schemes: { type: "string", hint: "--schemes light,dark" },
   profile: { type: "string", hint: "--profile devices" },
   touch: { type: "string", hint: "--touch <px>" },
+  engine: { type: "string", hint: "--engine <chromium|webkit>" },
+  recheck: { type: "string", hint: "--recheck <id,id>" },
   shots: { type: "string", hint: "--shots <dir>" },
   "no-shots": { type: "boolean", hint: "--no-shots" },
   "no-impeccable": { type: "boolean", hint: "--no-impeccable" },
@@ -123,10 +134,11 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 /** Mọi kiểm tra có tên ở đây (để bảng `checks` liệt kê cả kiểm tra đã đạt). */
 const CHECKS: Array<[string, Gate]> = [
-  ["render", "hard"], ["errors", "hard"], ["viewport", "hard"], ["overflow", "hard"], ["axe", "hard"], ["text-min", "hard"], ["heading-lh", "hard"], ["lang", "hard"], ["motion", "hard"],
+  ["render", "hard"], ["errors", "hard"], ["viewport", "hard"], ["overflow", "hard"], ["axe", "hard"], ["text-min", "hard"], ["heading-lh", "soft"], ["lang", "hard"], ["motion", "hard"],
   ["steps", "hard"], ["impeccable", "hard"], ["body-size", "soft"], ["body-lh", "soft"], ["measure", "soft"], ["font", "soft"],
   ["focus", "soft"], ["inner-scroll", "soft"], ["text-clip", "soft"], ["text-covered", "soft"], ["long-form", "soft"], ["input-zoom", "soft"], ["guide", "soft"], ["copy", "soft"], ["lcp", "soft"], ["cls", "soft"], ["standalone", "soft"], ["axe-bp", "soft"], ["pause", "soft"], ["reveal", "soft"],
   ["sticky", "soft"], ["orientation", "soft"], ["autoplay", "soft"], ["permission", "soft"], ["touch", "soft"], ["text-zoom", "soft"], ["text-spacing", "soft"], ["font-unit", "soft"], ["nfc", "soft"], ["lang-part", "soft"],
+  ["stress", "soft"], ["contrast-px", "soft"], ["keyboard", "soft"], ["tab-trap", "soft"], ["skip-link", "soft"], ["dialog-focus", "soft"], ["contrast-more", "soft"], ["forced-colors", "soft"], ["offline", "soft"], ["aria-state", "soft"], ["css", "soft"],
 ];
 
 /**
@@ -220,7 +232,7 @@ async function axeRun(page: Page, axeSource: string): Promise<Array<{ id: string
   if (!(await page.evaluate(() => "axe" in window))) await page.evaluate(axeSource);
   return page.evaluate(async (tags) => {
     const w = window as unknown as { axe: { run: (c: unknown, o: unknown) => Promise<{ violations: Array<{ id: string; impact: string; help: string; tags: string[]; nodes: Array<{ target: unknown[]; any: Array<{ message: string }> }> }> }> } };
-    const res = await w.axe.run(document, { runOnly: { type: "tag", values: [...tags, "best-practice"] }, resultTypes: ["violations"] });
+    const res = await w.axe.run(document, { runOnly: { type: "tag", values: [...tags, "best-practice"] }, rules: { "css-orientation-lock": { enabled: true } }, resultTypes: ["violations"] });
     return res.violations.map((v) => ({
       id: v.id,
       impact: v.impact ?? "minor",
@@ -322,9 +334,43 @@ async function checkTouch(browser: Browser, url: string, size: Size, min: number
   }
 }
 
-/** Ghi các phát hiện của textresize.ts. */
-function addResize(r: PageReport, list: ResizeFinding[], render: string): void {
+/** Ghi phát hiện mềm của các mô-đun đo phụ. */
+function addSoft(r: PageReport, list: Array<{ check: string; where: string; detail: string }>, render: string): void {
   for (const f of list) add(r, "soft", f.check, f.where, f.detail, render);
+}
+const addResize = (r: PageReport, list: ResizeFinding[], render: string): void => addSoft(r, list, render);
+
+/** Trang đăng ký service worker: mở một trang riêng rồi ngắt mạng (phép đo `offline`), để yêu cầu hỏng không lẫn vào sổ lỗi chính. */
+async function checkOffline(browser: Browser, url: string, size: Size, r: PageReport, render: string): Promise<void> {
+  const ctx = await browser.newContext({ viewport: { width: size.w, height: size.h } });
+  try {
+    const page = await ctx.newPage();
+    const net = watchNetwork(page);
+    await page.goto(url, { waitUntil: "load", timeout: 45_000 });
+    await settlePage(page, net);
+    addSoft(r, await offlinePass(page), render);
+  } finally {
+    await ctx.close().catch(() => undefined);
+  }
+}
+
+/** Ảnh đánh số (K9): khung và số của các phát hiện thấy được ở lượt render này, để sửa đúng chỗ mà không phải dò nhãn. */
+async function markedShot(page: Page, r: PageReport, render: string, shotsDir: string | undefined): Promise<void> {
+  if (!shotsDir) return;
+  const list = [...r.findings.values()].filter((f) => f.renders.has(render)).map((f) => ({ f, label: labelOf(f) })).filter((x): x is { f: Finding; label: string } => !!x.label);
+  if (!list.length) return;
+  const places = await page.evaluate(locateLabels, [...new Set(list.map((x) => x.label))]);
+  const marks = places.map((p, i) => ({ n: i + 1, x: p.x, y: p.y, w: p.w, h: p.h, hard: list.some((x) => x.label === p.label && x.f.gate === "hard") }));
+  if (!marks.length) return;
+  try {
+    await page.evaluate(drawMarks, marks);
+    await page.screenshot({ path: join(shotsDir, `marked-${render.replace("/", "-")}.png`), fullPage: true });
+    r.shots++;
+    const ids = places.map((p, i) => `${i + 1} ${[...new Set(list.filter((x) => x.label === p.label).map((x) => findingId({ page: r.target, check: x.f.check, where: x.f.where, detail: x.f.detail })))].join("+")}`);
+    r.notes.push(`marked-${render.replace("/", "-")}.png: ${ids.slice(0, 20).join(", ")}${ids.length > 20 ? ", …" : ""}`);
+  } finally {
+    await page.evaluate(clearMarks);
+  }
 }
 
 /** Một phép đo phụ hỏng (CDP, trang tự điều hướng) thì ghi chú, không làm hỏng cả lượt kiểm. */
@@ -492,6 +538,7 @@ async function measureRender(
     const stuck = stickyFinding(await page.evaluate(probeSticky), vw, vhOf(opts, vw));
     if (stuck) add(r, "soft", "sticky", `${vw}x${vhOf(opts, vw)}`, stuck, render);
   }
+  for (const h of await page.evaluate(probeCss)) add(r, "soft", "css", h.where, h.detail, render);
   if (p.visibleFields > 12) add(r, "soft", "long-form", "page", `${p.visibleFields} fields on one screen: split into named steps or tuck advanced options away`, render);
   // Ô gõ chữ có chữ nhỏ: chỉ điện thoại phóng to khi chạm (iOS), nên chỉ đo ở khổ điện thoại.
   if (vw <= PHONE_MAX) {
@@ -506,17 +553,29 @@ async function measureRender(
   // Tour mở bằng tay (bấm "Hướng dẫn") là được; chỉ tour tự bật lúc mở trang mới bị nhắc.
   if (!at.actions) hits(r, "soft", "guide", p.tour, "up-front tour, teach in context instead:", render, 1);
   if (p.vietnamese) {
-    hits(r, "hard", "heading-lh", p.headingTight, "line-height", render);
+    // Mềm từ 24/11/2026 (chủ quyết): thứ phải chặn là dấu bị cắt, `text-clip` đã đo đúng thứ đó.
+    hits(r, "soft", "heading-lh", p.headingTight, "line-height", render);
     if (!/^vi\b/i.test(p.lang)) add(r, "hard", "lang", "<html>", `Vietnamese text but lang="${p.lang}"`, render);
   }
   // axe chạy ở mọi khổ và mọi chế độ: tương phản bản tối hay hỏng nhất.
   for (const v of await axeRun(page, opts.axeSource)) {
+    // Luật thử nghiệm của axe (K16, 24/11/2026): mềm, gộp vào `orientation` cùng phần manifest.
+    if (v.id === "css-orientation-lock") {
+      for (const n of v.nodes) add(r, "soft", "orientation", v.id, `CSS locks the page to one direction (WCAG 1.3.4): ${n}`.slice(0, 220), render);
+      continue;
+    }
     if (!v.wcag) {
       for (const n of v.nodes) add(r, "soft", "axe-bp", v.id, n.slice(0, 220), render);
       continue;
     }
     const gate: Gate = v.impact === "serious" || v.impact === "critical" ? "hard" : "soft";
     for (const n of v.nodes) add(r, gate, "axe", `${v.id}`, n.slice(0, 220), render);
+  }
+  // Chữ trên ảnh, gradient, hoạ tiết: chỗ axe trả incomplete. Mỗi chế độ màu, khổ rộng nhất.
+  if (at.widest) {
+    await optional(r, "contrast-px", async () => addSoft(r, await pixelContrastPass(page), render));
+    if (!at.actions) await optional(r, "contrast-more", async () => addSoft(r, await contrastMorePass(page, opts.axeSource), render));
+    if (at.first) await optional(r, "keyboard", async () => addSoft(r, await keyboardPass(page), render));
   }
   // WCAG 2.2.2: chuyển động tự chạy quá 5 giây không có nút dừng. Một lần, ở trạng thái đầu (N4, 19/11/2026).
   if (at.first && at.widest && !at.actions) hits(r, "soft", "pause", await page.evaluate(probePause), "", render, 4);
@@ -568,15 +627,18 @@ async function measureRender(
 async function focusPass(page: Page, vw: number, scheme: string, focusStops: number, r: PageReport): Promise<void> {
   const render = `${scheme}/${vw}`;
   const seen = new Set<string>();
+  // Ghi kiểu chưa focus để thấy chỉ báo bằng viền, nền, gạch chân (q5, 24/11/2026), không chỉ outline và bóng.
+  await page.evaluate(rememberUnfocused);
   for (let i = 0; i < focusStops; i++) {
     await page.keyboard.press("Tab");
     await page.evaluate(settleAnimations, 600);
     const f = await page.evaluate(probeFocus);
     if (!f || seen.has(f.where)) continue;
     seen.add(f.where);
-    // Mất hẳn chỉ báo trượt WCAG 2.4.7 (AA); có mà mỏng hơn 2px chỉ dưới mức 2.4.13 (AAA). Tách hai lời báo, cả hai còn mềm:
-    // phép đo chỉ đọc outline và box-shadow, chưa thấy chỉ báo bằng viền hay nền, nên chưa đủ chắc để thành cứng.
-    if (!f.indicator) add(r, "soft", "focus", f.where, f.thin ? "focus ring thinner than 2px (WCAG 2.4.13)" : "no visible focus ring (outline ≥ 2px or box-shadow)", render);
+    // Mất hẳn chỉ báo trượt WCAG 2.4.7 (AA); có mà mỏng hơn 2px chỉ dưới mức 2.4.13 (AAA). Tách hai lời báo, cả hai còn mềm tới
+    // khi phép so kiểu trước và sau focus (`changed`) qua hai đợt không báo oan.
+    if (!f.indicator && f.thin) add(r, "soft", "focus", f.where, "focus ring thinner than 2px (WCAG 2.4.13)", render);
+    else if (!f.indicator && !f.changed) add(r, "soft", "focus", f.where, "no visible focus ring (outline ≥ 2px or box-shadow), and nothing else about it changes", render);
     else if (f.shadowOnly) {
       // Vòng chỉ bằng box-shadow: đo thật trong chế độ màu ép buộc, ngay khi phần tử đang focus (focus và
       // :focus-visible giữ nguyên). Tailwind v4 `outline-hidden` chỉ thêm viền trong @media (forced-colors), nên
@@ -617,6 +679,38 @@ async function motionPass(L: Loaded, vw: number, scheme: string, actions: StepAc
   hits(r, "soft", "reveal", await page.evaluate(probeReveal), "", `${scheme}/${vw}`, 4);
 }
 
+/**
+ * Các phép đo đổi trang tạm thời, chạy sau mọi phép đo khác ở khổ rộng nhất, chế độ màu đầu, ngay trước lượt giảm chuyển động (lượt
+ * đó nạp lại trang). Thứ tự có ý: ảnh đánh số trước khi trang bị đổi; bấm Tab; màu ép buộc; giãn chữ; nội dung kéo dài; phóng chữ;
+ * dán. Trạng thái sau thao tác chỉ đo màu ép buộc và, cuối cùng, hộp thoại (bấm Esc, đóng hộp).
+ */
+async function wideTail(browser: Browser, L: Loaded, url: string, vw: number, scheme: string, opts: PageOpts, r: PageReport, actions: boolean): Promise<void> {
+  const { page, net } = L;
+  const at = `${scheme}/${vw}`;
+  await optional(r, "marked screenshot", () => markedShot(page, r, at, opts.shotsDir));
+  if (actions) {
+    await optional(r, "forced-colors", async () => addSoft(r, await forcedColorsPass(page), at));
+    await optional(r, "dialog-focus", async () => addSoft(r, await dialogFocusPass(page), at));
+    return;
+  }
+  await onloadPass(page, r, at);
+  await optional(r, "tab-trap, skip-link", async () => addSoft(r, await tabPass(page), at));
+  await optional(r, "forced-colors", async () => addSoft(r, await forcedColorsPass(page), at));
+  await optional(r, "text-spacing", async () => addResize(r, await spacingPass(page, net), at));
+  await optional(r, "stress", async () => addSoft(r, await stressPass(page, net), at));
+  await optional(r, "text-zoom", async () => addResize(r, await zoomPass(page, net), at));
+  await optional(r, "css paste", async () => {
+    for (const h of await page.evaluate(probePaste)) add(r, "soft", "css", h.where, h.detail, at);
+  });
+  if (await registersWorker(page).catch(() => false)) await optional(r, "offline", () => checkOffline(browser, url, { w: vw, h: vhOf(opts, vw) }, r, at));
+}
+
+/** Như trên ở khổ hẹp có đo focus: chỉ giãn chữ và nội dung kéo dài. */
+async function narrowTail(L: Loaded, at: string, r: PageReport): Promise<void> {
+  await optional(r, "text-spacing", async () => addResize(r, await spacingPass(L.page, L.net), at));
+  await optional(r, "stress", async () => addSoft(r, await stressPass(L.page, L.net), at));
+}
+
 /** Khổ được đo focus: rộng nhất và khổ hẹp nhất ngoài 320 (mặc định 390). */
 function focusWidths(widths: number[]): Set<number> {
   const measured = widths.filter((w) => w !== 320);
@@ -634,7 +728,9 @@ async function checkFresh(browser: Browser, url: string, label: string, widths: 
       try {
         if (actions) {
           // Không tới được trạng thái ⇒ chưa đo được ⇒ cứng: sửa trang (nút bị giấu ở khổ hẹp?) hoặc sửa tệp steps.
-          const err = await runActions(L.page, actions, L.net);
+          const aria = ariaStateWatch();
+          const err = await runActions(L.page, actions, L.net, [aria.watch, focusLogWatch]);
+          addSoft(r, aria.findings, `${scheme}/${vw}`);
           if (err) {
             add(r, "hard", "steps", opts.state!.name, err, `${scheme}/${vw}`);
             continue;
@@ -644,13 +740,8 @@ async function checkFresh(browser: Browser, url: string, label: string, widths: 
         const widest = vw === widestW;
         await measureRender(browser, L, vw, scheme, opts, r, { first, widest, actions: !!actions });
         if (first && focusAt.has(vw)) await focusPass(L.page, vw, scheme, opts.focusStops, r);
-        if (first && !actions) {
-          if (focusAt.has(vw)) await optional(r, "text-spacing", async () => addResize(r, await spacingPass(L.page, L.net), `${scheme}/${vw}`));
-          if (widest) {
-            await onloadPass(L.page, r, `${scheme}/${vw}`);
-            await optional(r, "text-zoom", async () => addResize(r, await zoomPass(L.page, L.net), `${scheme}/${vw}`));
-          }
-        }
+        if (first && widest) await wideTail(browser, L, url, vw, scheme, opts, r, !!actions);
+        else if (first && !actions && focusAt.has(vw)) await narrowTail(L, `${scheme}/${vw}`, r);
         if (first && widest) await motionPass(L, vw, scheme, actions, r);
       } finally {
         await L.ctx.close().catch(() => undefined);
@@ -719,7 +810,7 @@ async function checkReuse(browser: Browser, url: string, label: string, widths: 
             if ((await fingerprint(F)).hash !== fpMain.get(w)) return `layout at ${w}px differs between resizing down and resizing up`;
           }
           await focusPass(F.page, w, first, opts.focusStops, r);
-          await optional(r, "text-spacing", async () => addResize(r, await spacingPass(F.page, F.net), `${first}/${w}`));
+          await narrowTail(F, `${first}/${w}`, r);
         }
       } finally {
         await F.ctx.close().catch(() => undefined);
@@ -727,7 +818,14 @@ async function checkReuse(browser: Browser, url: string, label: string, widths: 
     }
     // Khổ trung gian: tràn ngang, chữ bị che, phần dính, độ dài dòng ở màn rộng; chế độ màu đầu, trên trang đang mở; đợi
     // hiệu ứng (bề rộng chuyển dần qua mốc).
-    for (const { w, h } of opts.sweep ?? []) {
+    let swept = opts.sweep ?? [];
+    if (swept.length) {
+      // Điểm gãy của chính trang: khổ chọn sẵn không trúng mốc riêng của từng trang (ReDeCheck gọi là lỗi dải hẹp, c40).
+      const around = sweepAround(await main.page.evaluate(probeBreakpoints), narrowW, Math.max(widestW, ...swept.map((x) => x.w)), [...widths, ...swept.map((x) => x.w)]);
+      swept = [...swept, ...around.map((w) => ({ w, h: heightFor(w) }))];
+      if (around.length) r.notes.push(`swept ${around.length} more widths beside the page's own breakpoints: ${around.join(", ")}`);
+    }
+    for (const { w, h } of swept) {
       await switchTo(main, w, h, first);
       await main.page.evaluate(settleAnimations, ENTRANCE_MS);
       const at = `${first}/${w}`;
@@ -743,10 +841,7 @@ async function checkReuse(browser: Browser, url: string, label: string, widths: 
     // rộng đã đo trên một trang mang trạng thái từ khổ hẹp.
     if ((await fingerprint(main)).hash !== fpMain.get(widestW)) return `layout at ${widestW}px after visiting narrower widths differs from the first load`;
     if (focusAt.has(widestW)) await focusPass(main.page, widestW, first, opts.focusStops, r);
-    const atWide = `${first}/${widestW}`;
-    await onloadPass(main.page, r, atWide);
-    await optional(r, "text-spacing", async () => addResize(r, await spacingPass(main.page, main.net), atWide));
-    await optional(r, "text-zoom", async () => addResize(r, await zoomPass(main.page, main.net), atWide));
+    await wideTail(browser, main, url, widestW, first, opts, r, false);
     await motionPass(main, widestW, first, undefined, r);
     return undefined;
   } finally {
@@ -768,7 +863,9 @@ async function checkStateInPlace(browser: Browser, url: string, label: string, w
   for (const vw of desc) {
     const L = await openPage(browser, url, label, vw, vhOf(opts, vw), first, r);
     try {
-      const err = await runActions(L.page, actions, L.net);
+      const aria = ariaStateWatch();
+      const err = await runActions(L.page, actions, L.net, [aria.watch, focusLogWatch]);
+      addSoft(r, aria.findings, `${first}/${vw}`);
       if (err) {
         // Như cách cũ: mỗi lượt render của khổ này là một lần không tới được trạng thái.
         for (const scheme of opts.schemes) add(r, "hard", "steps", opts.state!.name, err, `${scheme}/${vw}`);
@@ -789,7 +886,10 @@ async function checkStateInPlace(browser: Browser, url: string, label: string, w
         }
         await focusPass(L.page, vw, first, opts.focusStops, r);
       }
-      if (vw === widestW) await motionPass(L, vw, first, actions, r);
+      if (vw === widestW) {
+        await wideTail(browser, L, url, vw, first, opts, r, true);
+        await motionPass(L, vw, first, actions, r);
+      }
     } finally {
       await L.ctx.close().catch(() => undefined);
     }
@@ -829,13 +929,11 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   if (profile && p.str("viewports") !== undefined) fail("--profile sets the sizes: drop --viewports", "VALIDATION_ERROR");
   const sizes = profile ? profile.sizes : (listFlag(p, "viewports") ?? ["320", "390", "1280"]).map(parseSize);
   if (sizes.some((v) => v === undefined)) fail(`--viewports: widths between ${MIN_WIDTH} and ${MAX_WIDTH}, or WxH like 1280x720`, "VALIDATION_ERROR");
-  const given = sizes as Size[];
-  const viewports = given.map((v) => v.w);
-  if (new Set(viewports).size !== viewports.length) fail("--viewports: each width once (two heights at one width: run check twice)", "VALIDATION_ERROR");
-  const heights: Record<number, number> = Object.fromEntries(given.map((v) => [v.w, v.h]));
+  let given = sizes as Size[];
+  if (new Set(given.map((v) => v.w)).size !== given.length) fail("--viewports: each width once (two heights at one width: run check twice)", "VALIDATION_ERROR");
   const touchMin = Number(p.str("touch") ?? TOUCH_MIN);
   if (!Number.isInteger(touchMin) || touchMin < 0 || touchMin > 200) fail("--touch must be a whole number of px from 0 to 200", "VALIDATION_ERROR");
-  const schemes = listFlag(p, "schemes") ?? ["light", "dark"];
+  let schemes = listFlag(p, "schemes") ?? ["light", "dark"];
   if (schemes.some((s) => s !== "light" && s !== "dark")) fail("--schemes: light and/or dark", "VALIDATION_ERROR");
   const queries = listFlag(p, "query") ?? [""];
   const focusStops = Number(p.str("focus") ?? 15);
@@ -843,6 +941,22 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   if (!/^[1-8]$/.test(p.str("jobs") ?? "3")) fail("--jobs must be 1 to 8", "VALIDATION_ERROR");
   const limit = p.global.full ? Infinity : (p.global.limit ?? 25);
   const targets = expandTargets(p.positionals, rt.cwd);
+  // Lượt trước của đúng các trang này (K9): so "đã sửa, mới", và --recheck đo lại đúng chỗ theo mã.
+  const runFile = join(rt.cwd, ".design-kit", "runs", `${sha([...targets.map((x) => relative(rt.cwd, x)), ...queries].join("\n")).slice(0, 12)}.json`);
+  const prevRun = loadRun(runFile);
+  const recheckIds = listFlag(p, "recheck");
+  let plan: ReturnType<typeof recheckPlan> | undefined;
+  if (recheckIds) {
+    if (!prevRun) fail("--recheck: no earlier run of these pages here", "VALIDATION_ERROR", ["Run the same `design-kit check` command without --recheck first"]);
+    plan = recheckPlan(prevRun, recheckIds);
+    if (!plan.items.length) fail(`--recheck: not in the last run: ${plan.unknown.join(", ")}`, "VALIDATION_ERROR", ["Ids are in the `id` column of the last run of the same pages"]);
+    const want = new Set(plan.items.flatMap((i) => i.widths));
+    given = prevRun.sizes.map((z) => parseSize(z)).filter((z): z is Size => !!z && want.has(z.w));
+    schemes = schemes.filter((x) => plan!.items.some((i) => i.schemes.includes(x)));
+    if (!schemes.length) schemes = prevRun.schemes;
+  }
+  const viewports = given.map((v) => v.w);
+  const heights: Record<number, number> = Object.fromEntries(given.map((v) => [v.w, v.h]));
   const shotsBase = p.bool("no-shots") ? undefined : resolve(rt.cwd, p.str("shots") ?? ".design-kit/shots");
   const waiversArg = p.str("waivers");
   const waivers = p.bool("no-waivers") ? [] : loadWaivers(resolve(rt.cwd, waiversArg ?? join(".design-kit", "waivers.json")), waiversArg ?? ".design-kit/waivers.json", waiversArg !== undefined);
@@ -860,14 +974,16 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const axeSource = readFileSync(require.resolve("axe-core/axe.min.js"), "utf8");
   const impBin = p.bool("no-impeccable") ? undefined : findImpeccable(rt.env);
   const copy = p.bool("no-copy") ? undefined : loadCopyRules();
-  const { browser, via } = await launchBrowser(rt.env);
+  const engine = (p.str("engine") ?? "chromium") as Engine;
+  if (engine !== "chromium" && engine !== "webkit") fail("--engine: chromium or webkit", "VALIDATION_ERROR");
+  const { browser, via } = await launchBrowser(rt.env, engine);
   const servers = new Map<string, { origin: string; close: () => void }>();
   const jobsN = Number(p.str("jobs") ?? 3);
   // Bước 1: danh sách việc (máy chủ tĩnh dựng tuần tự). Bước 2: chạy song song có giới hạn, giữ thứ tự kết quả.
   const jobs: Array<{ url: string; label: string; r: PageReport; shotsDir?: string; state?: StepState; standalone?: string; mobile?: boolean; served?: { root: string; origin: string } }> = [];
   // Khổ điện thoại để mở trang như máy thật (phép đo viewport): khổ lớn nhất ≤ 480 trong --viewports; không có thì bỏ.
   const phones = viewports.filter((w) => w <= PHONE_MAX);
-  const wantSweep = p.bool("sweep") || profile?.sweep === true;
+  const wantSweep = plan ? plan.items.some((i) => i.sweep) : p.bool("sweep") || profile?.sweep === true;
   const sweep = wantSweep ? SWEEP_SIZES.filter((s) => s.w > Math.min(...viewports) && !viewports.includes(s.w)) : [];
   if (wantSweep && p.bool("fresh")) fail("--sweep needs resize in place: drop --fresh", "VALIDATION_ERROR");
   const phoneWidth = phones.length ? Math.max(...phones) : undefined;
@@ -880,7 +996,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const readCache = !p.bool("no-cache");
   const runPrint = {
     v: VERSION, code: codeSha(), axe: sha(axeSource), imp: impBin ? (fileSha(impBin) ?? impBin) : null, browser: browser.version(),
-    viewports, heights, schemes, focusStops, copy: copy ? sha(JSON.stringify(copy)) : null, sweep, touchMin, fresh: p.bool("fresh"),
+    engine, viewports, heights, schemes, focusStops, copy: copy ? sha(JSON.stringify(copy)) : null, sweep, touchMin, fresh: p.bool("fresh"),
   };
   let cachedN = 0;
   try {
@@ -901,7 +1017,9 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
         const url = q ? `${base}${base.includes("?") ? "&" : "?"}${q}` : base;
         // Trạng thái đầu (không thao tác) rồi từng trạng thái trong tệp steps: mỗi cái một dòng phán quyết.
         for (const state of [undefined, ...states]) {
-          const label = `${/^https?:/i.test(t) ? t : relative(rt.cwd, t).replace(/\\/g, "/")}${q ? `?${q}` : ""}${state ? ` #${state.name}` : ""}`;
+          const pageLabel = `${/^https?:/i.test(t) ? t : relative(rt.cwd, t).replace(/\\/g, "/")}${q ? `?${q}` : ""}`;
+          const label = `${pageLabel}${state ? ` #${state.name}` : ""}`;
+          if (plan && !plan.items.some((i) => i.page === pageLabel && i.state === state?.name)) continue;
           const r: PageReport = { target: label, findings: new Map(), checks: new Map(), notes: [], shots: 0, assumed: [], deps: new Map() };
           let shotsDir: string | undefined;
           if (shotsBase) {
@@ -1008,6 +1126,24 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   }
 
   const reports = jobs.map((j) => j.r);
+  // WebKit trên Windows không phải Safari iOS thật: chỉ trang trắng và lỗi script là cứng, còn lại hạ xuống mềm (NT-02).
+  if (engine === "webkit") {
+    for (const r of reports) for (const f of r.findings.values()) if (f.gate === "hard" && f.check !== "render" && f.check !== "errors") f.gate = "soft";
+  }
+  const isSkipped = (id: string): boolean =>
+    (id === "impeccable" && !impBin) || (id === "standalone" && !jobs.some((j) => j.standalone)) || (id === "copy" && !copy) || (id === "viewport" && !phoneWidth) ||
+    (id === "input-zoom" && !viewports.some((w) => w <= PHONE_MAX)) || (id === "orientation" && !phoneWidth) || (id === "touch" && !touchSizes.length) || (id === "text-zoom" && engine === "webkit");
+  const idOf = (r: PageReport, f: Finding): string => findingId({ page: r.target, check: f.check, where: f.where, detail: f.detail });
+  // Trước khi gỡ miễn trừ: thêm hay bớt một dòng miễn trừ không phải là "đã sửa".
+  const nowRun: Run = {
+    v: 1,
+    at: new Date().toISOString(),
+    sizes: given.map((v) => `${v.w}x${v.h}`),
+    schemes,
+    pages: reports.map((r) => r.target),
+    skipped: CHECKS.map(([id]) => id).filter(isSkipped),
+    findings: reports.flatMap((r) => [...r.findings.values()].map((f) => ({ id: idOf(r, f), gate: f.gate, page: r.target, check: f.check, where: f.where, detail: f.detail, renders: [...f.renders] }))),
+  };
   // Miễn trừ có lý do: gỡ phát hiện mềm đã được xét trước khi đếm (N8).
   const wv = applyWaivers(reports, waivers);
   // ---- Tổng hợp TOON ----
@@ -1030,14 +1166,14 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
     const of = (g: Gate) => reports.reduce((s, r) => s + [...r.findings.values()].filter((f) => f.check === id && f.gate === g).length, 0);
     const h = of("hard");
     const s = of("soft");
-    const skipped = (id === "impeccable" && !impBin) || (id === "standalone" && !jobs.some((j) => j.standalone)) || (id === "copy" && !copy) || (id === "viewport" && !phoneWidth) || (id === "input-zoom" && !viewports.some((w) => w <= PHONE_MAX)) || (id === "orientation" && !phoneWidth) || (id === "touch" && !touchSizes.length);
-    const unused = id === "steps" && !stateJobs;
+    const skipped = isSkipped(id);
+    const unused = (id === "steps" || id === "dialog-focus" || id === "aria-state") && !stateJobs;
     const result = skipped ? "skipped" : unused ? "none: no steps file" : h || s ? [h && `${h} hard`, s && `${s} soft`].filter(Boolean).join(", ") : "ok";
     return { check: id, gate, result };
   });
   out["checks"] = checkRows;
   const all = reports.flatMap((r) =>
-    [...r.findings.values()].map((f) => ({ ...f, page: r.target })),
+    [...r.findings.values()].map((f) => ({ ...f, page: r.target, id: idOf(r, f) })),
   ).sort((a, b) => (a.gate === b.gate ? 0 : a.gate === "hard" ? -1 : 1));
   const shown = all.slice(0, limit).map((f) => ({
     gate: f.gate,
@@ -1045,10 +1181,33 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
     check: f.check,
     where: f.where,
     detail: f.detail,
+    id: f.id,
     renders: [...f.renders].join(" "),
   }));
   if (shown.length < all.length) out["count"] = `${shown.length} of ${all.length} total`;
   out["findings"] = shown.length ? shown : "0 findings found";
+  if (plan) {
+    // Đo lại theo mã: mã nào không còn trong phát hiện là đã sửa. Không ghi đè lượt trước, vì lượt này chỉ đo một phần.
+    const left = new Set(nowRun.findings.map((f) => f.id));
+    out["recheck"] = recheckIds!.map((raw) => {
+      const id = raw.trim().toLowerCase().replace(/^#/, "");
+      const was = prevRun!.findings.find((f) => f.id === id);
+      return { id, result: !was ? "unknown id" : left.has(id) ? "still there" : "fixed", page: was?.page ?? "", check: was?.check ?? "", where: was?.where ?? "" };
+    });
+  } else {
+    if (prevRun) {
+      const d = diffRuns(prevRun, nowRun);
+      out["since_last"] = d.why ? `not compared: ${d.why}` : `${d.fixed.length} fixed, ${d.added.length} new, ${d.same} same on ${d.pages} page(s), last run ${prevRun.at.slice(0, 16).replace("T", " ")} UTC`;
+      const brief = (l: typeof d.fixed) => l.slice(0, 8).map((f) => ({ id: f.id, page: f.page, check: f.check, where: f.where }));
+      if (d.added.length) out["new_since_last"] = brief(d.added);
+      if (d.fixed.length) out["fixed_since_last"] = brief(d.fixed);
+    }
+    try {
+      saveRun(runFile, nowRun);
+    } catch {
+      /* thư mục chỉ đọc: không so được lần sau, không phải lỗi của trang */
+    }
+  }
   // Nhiều trang: ghi chú gộp lại, bỏ ghi chú riêng từng trang; ghi chú về một trang cụ thể thì kèm tên trang.
   const perPage = (n: string) => n.startsWith("resize in place not used") || n.startsWith("motion: not measured");
   const notes = reports.length === 1
@@ -1079,6 +1238,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const help: string[] = [];
   if (assumed.length) help.push(`${assumed.length} fact(s) the agent filled in (data-assumed): list them for the owner to confirm or correct, then remove the attribute; a page with assumed facts is not ready to publish`);
   if (all.some((f) => f.check === "copy")) help.push("copy: rewrite flagged text with the owner's real details and words (skill viet-tu-nhien), or put data-copy-ok on the element when the wording is deliberate; lists in data/copy-tells.json");
+  if (all.length && !plan) help.push("After a fix: design-kit check <same pages> --recheck <id,id> measures only those findings again");
   if (all.length > shown.length) help.push(`${all.length - shown.length} more findings: add --full`);
   if (all.some((f) => f.gate === "hard")) help.push("Fix hard failures, then rerun the same command; soft ones need a fix or a written reason");
   if (all.some((f) => f.check === "render" && f.gate === "hard")) {

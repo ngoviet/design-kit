@@ -95,6 +95,27 @@ export function mix(a, b, t) {
   return toHex(L, Math.hypot(p, q), (((Math.atan2(q, p) * 180) / Math.PI) % 360 + 360) % 360);
 }
 
+// ---------- ngưỡng theo mức tương phản ----------
+/**
+ * Một bảng cho cả bộ giải lẫn cổng, [WCAG, |Lc|]: ngưỡng là tham số của mức, thuật toán chỉ có một (ý của Leonardo và của
+ * ContrastCurve trong Material). `thuong` là AA (riêng thân chữ 7:1); `cao` là `@media (prefers-contrast: more)`: người dùng đã tự xin tương phản
+ * cao nên chữ lấy mức AAA (7:1), thân chữ 12:1.
+ *  - text: thân chữ; textMau: thân chữ trên nền nhạt của màu trạng thái; chu: chữ phụ, chữ màu nhấn, màu trạng thái, chữ trên nút;
+ *  - nhanNhat: chữ màu nhấn trên nền nhấn nhạt. Mức cao cũng chỉ bắt 4,5: bộ giải nhắm 7, nhưng lùi lại khi 7 làm chữ đã đọc
+ *    (karaoke) trắng bệch như chữ chưa đọc, vì ở đó hai thứ chỉ khác nhau bằng màu;
+ *  - net: viền, vòng focus, màu nhấn dùng làm hình khối (không phải chữ nên không có ngưỡng APCA).
+ */
+export const LEVELS = {
+  thuong: { text: [7, 75], textMau: [4.5, 60], chu: [4.5, 60], nhanNhat: [4.5, 60], net: [3, 0] },
+  cao: { text: [12, 75], textMau: [12, 75], chu: [7, 60], nhanNhat: [4.5, 60], net: [4.5, 0] },
+};
+/** Bộ giải nhắm cao hơn cổng một chút, để sai số làm tròn ra hex không đánh trượt chính nó. */
+const BUF = { text: 0, chu: 0.1, net: 0.05 };
+const goal = (level) => Object.fromEntries(Object.entries(BUF).map(([k, d]) => [k, [LEVELS[level][k][0] + d, LEVELS[level][k][1]]]));
+const STATUS = ["ok", "warn", "bad", "info"];
+/** Chữ xa nền nhất có thể của một bản. */
+const pole = (dark) => (dark ? "#ffffff" : "#000000");
+
 // ---------- bộ giải ----------
 /** Đẩy độ sáng của `color` ra xa nền tới khi đạt `cr` và |Lc| ≥ `lc` với MỌI nền; giữ sắc và chroma. */
 export function solve(color, backgrounds, dark, cr, lc) {
@@ -119,38 +140,68 @@ export function pattern({ kind, color, opacity }) {
   return url(`<svg xmlns='http://www.w3.org/2000/svg' width='220' height='190' fill='${color}' fill-opacity='${opacity}'>${dots.map(([x, y, r]) => `<circle cx='${x}' cy='${y}' r='${r}'/>`).join("")}</svg>`);
 }
 
-/** Hạt giống của một bản (sáng hoặc tối) → token đủ vai trò. */
+/** Đẩy mặt nút ra xa chữ `on` trên nó. Không dùng `solve`: APCA có chiều, ở đây chữ là `on` còn màu di chuyển là nền. */
+function fill(accent, on, up, cr, lc) {
+  const [L0, C, H] = toOklch(accent);
+  let L = L0;
+  let a = accent;
+  for (let i = 0; i < 200; i++) {
+    a = toHex(L, C, H);
+    if (wcag(on, a) >= cr && Math.abs(apca(on, a)) >= lc) break;
+    L += up ? 0.005 : -0.005;
+  }
+  return { a, shift: Math.abs(L - L0) };
+}
+
+/** Bản sáng: cực chữ trắng phải kéo màu nhấn tối đi quá mức này (OKLCH L) thì thử cực chữ đậm. */
+export const POLE_SHIFT = 0.15;
+/**
+ * Mặt nút chính và chữ trên nó. Bản tối: nền sáng, chữ đen nhuốm. Bản sáng: nền đậm, chữ trắng nhuốm, trừ khi màu nhấn vốn sáng
+ * (vàng, chanh, bạc hà): chữ trắng buộc kéo vàng #facc15 xuống nâu #8a700f, tức là đổi hẳn màu người ta chọn. Khi đó, nếu chữ đậm
+ * đạt ngay trên đúng màu ấy thì giữ màu và dùng chữ đậm (ý: Radix Colors chọn chữ tối cho các thang sáng). Cam #f97316 không rơi
+ * vào nhánh này: chữ đậm trên cam chỉ được Lc 50 (cần 60).
+ * Bản tối không có nhánh này (chữ của nó vốn đã là chữ đậm): màu nhấn ở đó được kéo SÁNG lên, vẫn là màu ấy; giữ một màu nhấn
+ * đậm với chữ trắng thì nút chìm vào nền.
+ */
+export function buttonPole(accent, dark) {
+  const [cr, lc] = goal("thuong").chu;
+  const H = toOklch(accent)[2];
+  const ink = toHex(0.17, 0.03, H);
+  const on = dark ? ink : toHex(0.99, 0.008, H);
+  const { a, shift } = fill(accent, on, dark, cr, lc);
+  const flip = shift > POLE_SHIFT && wcag(ink, accent) >= cr && Math.abs(apca(ink, accent)) >= lc;
+  return flip ? { accent: accent.toLowerCase(), on: ink, flip } : { accent: a, on, flip };
+}
+
+/** Hạt giống của một bản (sáng hoặc tối) → token đủ vai trò, mức tương phản thường. */
 export function build(m, dark) {
+  const { text, chu, net } = goal("thuong");
   const { bg, surface: sf, surface2: s2 } = m;
   const edge = m.edge ?? bg;
   const on3 = [bg, sf, s2];
   const on4 = [...on3, edge];
   const t = { bg, "bg-edge": edge, surface: sf, "surface-2": s2, border: m.border };
-  t["border-strong"] = solve(m.border2 ?? m.text2, on3, dark, 3.05, 0);
-  t["text"] = solve(m.text, on4, dark, 7, 75);
-  t["text-2"] = solve(m.text2, on4, dark, 4.6, 60);
+  t["border-strong"] = solve(m.border2 ?? m.text2, on3, dark, ...net);
+  t["text"] = solve(m.text, on4, dark, ...text);
+  t["text-2"] = solve(m.text2, on4, dark, ...chu);
   // Nền chữ đang đọc (karaoke) phải tách khỏi khung lời: tăng phần màu nhấn tới khi cách ≥ 0,055 OKLab.
   let k = dark ? 0.16 : 0.12;
   while (dE(mix(sf, m.accent, k), s2) < 0.055 && k < 0.4) k += 0.02;
   t["accent-soft"] = mix(sf, m.accent, k);
-  t["accent-text"] = solve(m.accent, [...on4, t["accent-soft"]], dark, 4.6, 60);
-  t["text"] = solve(t["text"], [...on4, t["accent-soft"]], dark, 7, 75);
-  // Nút chính: bản tối nền sáng chữ đen nhuốm, bản sáng nền đậm chữ trắng nhuốm.
-  let [L, C, H] = toOklch(m.accent);
-  const on = dark ? toHex(0.17, 0.03, H) : toHex(0.99, 0.008, H);
-  let a = m.accent;
-  for (let i = 0; i < 200; i++) {
-    a = toHex(L, C, H);
-    if (wcag(on, a) >= 4.6 && Math.abs(apca(on, a)) >= 60) break;
-    L += dark ? 0.005 : -0.005;
-  }
-  t["accent"] = a;
-  t["on-accent"] = on;
-  for (const s of ["ok", "warn", "bad", "info"]) {
+  t["accent-text"] = solve(m.accent, [...on4, t["accent-soft"]], dark, ...chu);
+  t["text"] = solve(t["text"], [...on4, t["accent-soft"]], dark, ...text);
+  const btn = buttonPole(m.accent, dark);
+  t["accent"] = btn.accent;
+  t["on-accent"] = btn.on;
+  // Màu nhấn sáng giữ nguyên thì không tách nổi khỏi nền sáng (vàng trên trắng 1,5:1), nên viền nút, vạch, vòng, công tắc dùng
+  // `accent-border`: cùng sắc, đậm tới 3:1. Không kéo `accent` xuống 3:1 vì như thế là quay lại màu nâu; không bỏ cổng 3:1 vì
+  // thanh tiến độ, viền thẻ đang chọn, công tắc là hình khối mang nghĩa (WCAG 1.4.11).
+  if (btn.flip) t["accent-border"] = solve(m.accent, on3, dark, ...net);
+  for (const s of STATUS) {
     t[`${s}-soft`] = mix(sf, m[s], dark ? 0.16 : 0.12);
-    t[s] = solve(m[s], [...on4, t[`${s}-soft`]], dark, 4.6, 60);
+    t[s] = solve(m[s], [...on4, t[`${s}-soft`]], dark, ...chu);
   }
-  t["focus"] = solve(t["accent-text"], on4, dark, 3.05, 0);
+  t["focus"] = solve(t["accent-text"], on4, dark, ...net);
   const grad = `linear-gradient(160deg, ${m.tren ?? bg} 0%, ${bg} 46%, ${edge} 100%)`;
   t["nen-trang"] = m.pattern ? `${pattern(m.pattern)}, ${grad}` : grad;
   t["shadow-1"] = dark ? "0 1px 2px oklch(0 0 0 / .45)" : "0 1px 2px oklch(0.3 0.03 60 / .10)";
@@ -158,35 +209,117 @@ export function build(m, dark) {
   return t;
 }
 
+/**
+ * Bản `prefers-contrast: more` của một bản đã giải: cùng bộ giải, ngưỡng `cao`, đi tiếp từ token thường (nên làm được cả bản
+ * `fixed` không có hạt giống). Nền giữ nguyên; chữ, màu trạng thái, viền, vòng focus và mặt nút đi xa nền hơn. Trả về ĐỦ token.
+ */
+export function moreContrast(t, mode) {
+  const dark = mode === "dark";
+  const { text, chu, net } = goal("cao");
+  const h = (k) => asHex(t[k]);
+  const on3 = ["bg", "surface", "surface-2"].map(h);
+  const on4 = [...on3, h("bg-edge")];
+  const out = { ...t };
+  // Trùng màu cũ thì giữ cách ghi cũ (oklch của bản `fixed`), để themes.css chỉ ghi token khác.
+  const put = (k, v) => {
+    if (v !== h(k)) out[k] = v;
+  };
+  // 12:1 hoặc cao nhất có thể: trên nền sáng vừa (xanh xám của Rừng thông) thì chữ trắng tinh cũng chưa tới 12.
+  const under = [...on4, h("accent-soft"), ...STATUS.map((s) => h(`${s}-soft`))];
+  const tx = solve(h("text"), under, dark, ...text);
+  put("text", under.every((b) => wcag(tx, b) >= text[0]) ? tx : pole(dark));
+  put("text-2", solve(h("text-2"), on4, dark, ...chu));
+  // 7:1 trên bốn nền; trên nền nhấn nhạt thì cao nhất (tới 7) mà chữ đã đọc còn tách khỏi chữ chưa đọc.
+  const base = solve(h("accent-text"), on4, dark, ...chu);
+  let at = base;
+  for (let x = chu[0]; x >= LEVELS.cao.nhanNhat[0]; x -= 0.1) {
+    at = solve(base, [h("accent-soft")], dark, x, chu[1]);
+    if (dE(at, asHex(out["text"])) >= KARAOKE.text + 0.005) break;
+  }
+  put("accent-text", at);
+  for (const s of STATUS) put(s, solve(h(s), [...on4, h(`${s}-soft`)], dark, ...chu));
+  put("border-strong", solve(h("border-strong"), on3, dark, ...net));
+  put("focus", solve(h("focus"), on4, dark, ...net));
+  // Mặt nút đi xa chữ của nó (cực nào cũng được), rồi xa nền nếu chính nó là hình khối.
+  let { a } = fill(h("accent"), h("on-accent"), toOklch(h("accent"))[0] > toOklch(h("on-accent"))[0], ...chu);
+  if (!t["accent-border"]) a = solve(a, on3, dark, ...net);
+  put("accent", a);
+  if (t["accent-border"]) put("accent-border", solve(h("accent-border"), on3, dark, ...net));
+  return out;
+}
+
 // ---------- cổng đo ----------
+/** Vai trò bản nào cũng phải có (ý `core/required-modes` của Terrazzo, MIT; tự viết). */
+const COLOR_ROLES = ["bg", "bg-edge", "surface", "surface-2", "border", "border-strong", "text", "text-2", "accent", "accent-text", "on-accent", "accent-soft", ...STATUS.flatMap((s) => [s, `${s}-soft`]), "focus"];
+export const ROLES = [...COLOR_ROLES, "shadow-1", "shadow-2", "nen-trang", "font-display"];
 /** Chữ đã đọc so với chưa đọc, và nền chữ đang đọc so với khung lời: dưới mức này mắt không thấy chữ đang sáng tới đâu. */
 export const KARAOKE = { text: 0.12, back: 0.05 };
-/** [chữ hay thành phần, nền, WCAG, |Lc|] */
-export const THEME_PAIRS = [
-  ...["bg", "bg-edge", "surface", "surface-2", "accent-soft"].map((b) => ["text", b, 7, 75]),
-  ...["bg", "bg-edge", "surface", "surface-2"].map((b) => ["text-2", b, 4.5, 60]),
-  ...["bg", "surface", "surface-2", "accent-soft"].map((b) => ["accent-text", b, 4.5, 60]),
-  ["on-accent", "accent", 4.5, 60],
-  ...["ok", "warn", "bad", "info"].flatMap((s) => [[s, `${s}-soft`, 4.5, 60], [s, "bg", 4.5, 60], [s, "surface", 4.5, 60], ["text", `${s}-soft`, 4.5, 60], ["surface", s, 4.5, 0]]),
-  ...["border-strong", "focus"].flatMap((f) => ["bg", "surface", "surface-2"].map((b) => [f, b, 3, 0])),
-  ...["bg", "surface", "surface-2"].map((b) => ["accent", b, 3, 0]),
+/** [chữ hay thành phần, nền, WCAG, |Lc|] của một mức. Dòng cuối: hình khối màu nhấn; bộ có `accent-border` thì kiểm nó thay `accent`. */
+const pairsOf = ({ text, textMau, chu, nhanNhat, net }) => [
+  ...["bg", "bg-edge", "surface", "surface-2", "accent-soft"].map((b) => ["text", b, ...text]),
+  ...["bg", "bg-edge", "surface", "surface-2"].map((b) => ["text-2", b, ...chu]),
+  ...["bg", "surface", "surface-2", "accent-soft"].map((b) => ["accent-text", b, ...(b === "accent-soft" ? nhanNhat : chu)]),
+  ["on-accent", "accent", ...chu],
+  ...STATUS.flatMap((s) => [[s, `${s}-soft`, ...chu], [s, "bg", ...chu], [s, "surface", ...chu], ["text", `${s}-soft`, ...textMau], ["surface", s, chu[0], 0]]),
+  ...["border-strong", "focus"].flatMap((f) => ["bg", "surface", "surface-2"].map((b) => [f, b, ...net])),
+  ...["bg", "surface", "surface-2"].map((b) => ["accent", b, ...net]),
 ];
+export const THEME_PAIRS = { thuong: pairsOf(LEVELS.thuong), cao: pairsOf(LEVELS.cao) };
 
-/** Cặp hỏng của một bản, viết thành chữ; rỗng là đạt. `relax`: {"dark info/info-soft": 59} nới |Lc| có lý do ghi ở data/themes.json. */
-export function checkTheme(tokens, mode, relax = {}) {
+/**
+ * Lỗi của một bản, viết thành chữ; rỗng là đạt. `relax`: {"dark info/info-soft": 59} nới |Lc| có lý do ghi ở data/themes.json, chỉ
+ * cho mức thường. `level`: "thuong", hay "cao" cho bản prefers-contrast: more.
+ */
+export function checkTheme(tokens, mode, relax = {}, level = "thuong") {
   const t = Object.fromEntries(Object.entries(tokens).map(([k, v]) => [k, /^(#|oklch\()/.test(v) && !v.includes("/") ? asHex(v) : v]));
   const bad = [];
-  for (const [f, b, cr, lc0] of THEME_PAIRS) {
-    const lc = relax[`${mode} ${f}/${b}`] ?? lc0;
+  const miss = ROLES.filter((k) => !t[k]);
+  if (miss.length) bad.push(`thiếu token: ${miss.join(", ")}`);
+  const odd = COLOR_ROLES.filter((k) => t[k] && !/^#[0-9a-f]{6}$/i.test(t[k]));
+  if (odd.length) bad.push(`sai màu: ${odd.join(", ")}`);
+  for (const [f0, b, cr0, lc0] of THEME_PAIRS[level]) {
+    const f = f0 === "accent" && t["accent-border"] ? "accent-border" : f0;
+    if (!t[f] || !t[b]) continue;
+    let cr = cr0;
+    let lc = (level === "thuong" ? relax[`${mode} ${f}/${b}`] : undefined) ?? lc0;
+    // Mức cao, thân chữ: 12:1 hoặc cao nhất mà nền đó cho phép.
+    if (level === "cao" && f === "text") {
+      cr = Math.min(cr, wcag(pole(mode === "dark"), t[b]));
+      lc = Math.min(lc, Math.abs(apca(pole(mode === "dark"), t[b])));
+    }
     const w = wcag(t[f], t[b]);
     const c = Math.abs(apca(t[f], t[b]));
     // Viết ngược để NaN (màu hỏng) cũng là trượt: `w < cr` với NaN luôn sai, nên từng cho qua.
-    if (!(w >= cr - 0.01) || !(c >= lc - 0.5)) bad.push(`${f}/${b} ${w.toFixed(2)}:1 Lc ${c.toFixed(0)} (cần ${cr}:1 Lc ${lc})`);
+    if (!(w >= cr - 0.01) || !(c >= lc - 0.5)) bad.push(`${f}/${b} ${w.toFixed(2)}:1 Lc ${c.toFixed(0)} (cần ${+cr.toFixed(2)}:1 Lc ${Math.round(lc)})`);
   }
+  if (miss.length) return bad;
   const kt = dE(t["accent-text"], t["text"]);
   const kb = dE(t["accent-soft"], t["surface-2"]);
   if (!(kt >= KARAOKE.text)) bad.push(`karaoke: chữ đã đọc cách chưa đọc ${kt.toFixed(3)} (cần ${KARAOKE.text})`);
   if (!(kb >= KARAOKE.back)) bad.push(`karaoke: nền chữ đang đọc cách khung lời ${kb.toFixed(3)} (cần ${KARAOKE.back})`);
+  return bad;
+}
+
+/**
+ * Lỗi của cả tập bộ màu (đầu ra của buildAll); rỗng là đạt. Token chỉ có ở một bản là lỗi: hai bản cùng gắn trên một phần tử, nên
+ * bản thiếu không "trống" mà thừa hưởng giá trị của bản kia. Hai bộ trùng hệt mọi token là chép nhầm (ý `core/duplicate-values`
+ * của Terrazzo).
+ */
+export function checkSet(built) {
+  const bad = [];
+  const of = (id, mode) => built.find((b) => b.id === id && b.mode === mode)?.tokens;
+  const seen = new Map();
+  for (const id of new Set(built.map((b) => b.id))) {
+    for (const [m, other] of [["light", "dark"], ["dark", "light"]]) {
+      const here = of(id, m);
+      if (!here) bad.push(`${id}: thiếu bản ${m}`);
+      const lack = here ? Object.keys(of(id, other) ?? {}).filter((k) => !(k in here)) : [];
+      if (lack.length) bad.push(`${id} ${m}: thiếu token mà bản ${other} có: ${lack.join(", ")}`);
+    }
+    const print = JSON.stringify(["light", "dark"].map((m) => Object.entries(of(id, m) ?? {}).map(([k, v]) => [k, asHex(v)]).sort()));
+    if (seen.has(print)) bad.push(`${id}: mọi token trùng hệt bộ ${seen.get(print)}`);
+    else seen.set(print, id);
+  }
   return bad;
 }
 
@@ -203,6 +336,7 @@ export function loadSeeds(file = join(root, "data", "themes.json")) {
   if (!Array.isArray(list) || !list.length) throw new Error("themes: cần một mảng JSON không rỗng");
   for (const s of list) {
     if (!/^[a-z][a-z0-9-]*$/.test(s.id ?? "")) throw new Error(`themes: id không hợp lệ: ${JSON.stringify(s.id)}`);
+    if (list.filter((x) => x?.id === s.id).length > 1) throw new Error(`themes: id dùng hai lần: ${s.id}`);
     for (const m of ["light", "dark"]) {
       const need = s[m]?.fixed ? [] : ["bg", "surface", "surface2", "border", "text", "text2", "accent", "ok", "warn", "bad", "info"];
       // Khoá tuỳ chọn có ghi thì cũng phải đúng: border2 sai từng cho ra "#NaNNaNNaN" mà vẫn báo đạt.
@@ -216,19 +350,23 @@ export function loadSeeds(file = join(root, "data", "themes.json")) {
   return list;
 }
 
-/** Mọi bản đã giải: [{id, name, mode, tokens, relax}]. */
+/** Mọi bản đã giải: [{id, name, mode, tokens, more, relax}]. `more`: đủ token của bản prefers-contrast: more. */
 export function buildAll(seeds) {
-  return seeds.flatMap((s) =>
-    ["light", "dark"].map((mode) => {
-      const tokens = s[mode].fixed ? { ...s[mode].fixed } : build(s[mode], mode === "dark");
+  return seeds.flatMap((s) => {
+    const two = ["light", "dark"].map((mode) => ({ mode, tokens: s[mode].fixed ? { ...s[mode].fixed } : build(s[mode], mode === "dark") }));
+    // Một bản có `accent-border` thì bản kia cũng phải ghi, không thì bản tối thừa hưởng viền đậm của bản sáng.
+    if (two.some((x) => x.tokens["accent-border"])) for (const x of two) x.tokens["accent-border"] ??= x.tokens["accent"];
+    return two.map(({ mode, tokens }) => {
       tokens["font-display"] = FONTS[s.font] ?? FONTS.viet;
       if (s.radius) [tokens["r-sm"], tokens["r-md"], tokens["r-lg"]] = s.radius;
-      return { id: s.id, name: s.name, mode, tokens, relax: s.relax ?? {} };
-    }),
-  );
+      // Bản `fixed` thiếu vai trò thì không giải tiếp được; để nguyên cho checkTheme nói thiếu gì.
+      const more = COLOR_ROLES.every((k) => tokens[k]) ? moreContrast(tokens, mode) : { ...tokens };
+      return { id: s.id, name: s.name, mode, tokens, more, relax: s.relax ?? {} };
+    });
+  });
 }
 
-const ROWS = [["bg-edge", "bg"], ["surface", "surface-2"], ["border", "border-strong"], ["text", "text-2"], ["accent", "accent-text"], ["on-accent", "accent-soft"], ["ok", "ok-soft"], ["warn", "warn-soft"], ["bad", "bad-soft"], ["info", "info-soft"], ["focus"], ["shadow-1"], ["shadow-2"], ["nen-trang"], ["font-display"], ["r-sm", "r-md", "r-lg"]];
+const ROWS = [["bg-edge", "bg"], ["surface", "surface-2"], ["border", "border-strong"], ["text", "text-2"], ["accent", "accent-text"], ["on-accent", "accent-soft"], ["accent-border"], ["ok", "ok-soft"], ["warn", "warn-soft"], ["bad", "bad-soft"], ["info", "info-soft"], ["focus"], ["shadow-1"], ["shadow-2"], ["nen-trang"], ["font-display"], ["r-sm", "r-md", "r-lg"]];
 const SWATCH = [["m-nen", "bg"], ["m-mat", "surface"], ["m-vien", "border-strong"], ["m-chu", "text"], ["m-nhan", "accent"], ["m-ok", "ok"], ["m-info", "info"]];
 
 /** Toàn văn tokens/themes.css. */
@@ -236,11 +374,19 @@ export function themesCss(seeds) {
   const all = buildAll(seeds);
   const at = (id, mode) => all.find((x) => x.id === id && x.mode === mode).tokens;
   const body = (t, mode, pad) => [`${pad}color-scheme: ${mode};`, ...ROWS.map((r) => r.filter((k) => k in t)).filter((r) => r.length).map((r) => pad + r.map((k) => `--${k}: ${t[k]};`).join(" "))].join("\n");
+  // Bản tương phản cao: chỉ token khác bản thường.
+  const diff = (id, mode, pad) => {
+    const b = all.find((x) => x.id === id && x.mode === mode);
+    return ROWS.map((r) => r.filter((k) => b.more[k] !== b.tokens[k])).filter((r) => r.length).map((r) => pad + r.map((k) => `--${k}: ${b.more[k]};`).join(" ")).join("\n");
+  };
   const sw = (t) => SWATCH.map(([n, k]) => `--${n}: ${t[k]};`).join(" ");
   const out = [`/* design-kit · bộ màu cho người dùng tự chọn. SINH bằng \`node scripts/sinh-themes.mjs\` từ data/themes.json; đừng sửa tay
    (test/themes.test.ts so hai bên). Nạp SAU tokens/<hướng>.css. Chọn bằng <html data-dk="…" data-chu-de="<id>">; bỏ thuộc tính
    là màu của hướng. Sáng/tối theo máy, hoặc ép bằng data-theme="light|dark" như các hướng. Áp TRƯỚC lần vẽ đầu bằng script ngắn
-   trong <head> (blocks/html/chon-mau.html). Nguồn và giấy phép bảng màu: tokens/NOTICE-themes.txt. */
+   trong <head> (blocks/html/chon-mau.html). Nguồn và giấy phép bảng màu: tokens/NOTICE-themes.txt.
+   Máy xin tương phản cao (prefers-contrast: more): mỗi bộ ghi đè những token cần đi xa nền hơn; bản tối vẫn thắng bản sáng vì bộ
+   chọn của nó nặng hơn. Bộ có màu nhấn sáng (vàng, chanh) còn có --accent-border: mặt nút giữ màu nhấn, còn viền nút, vạch, vòng,
+   công tắc dùng var(--accent-border, var(--accent)). */
 `];
   for (const s of seeds) {
     const src = s.source ? `${s.source.palette}, ${s.source.author}, ${s.source.license}` : "tự phối";
@@ -258,6 +404,13 @@ ${body(at(s.id, "dark"), "dark", "    ")}
 ${body(at(s.id, "dark"), "dark", "  ")}
 }
 `);
+    const sel = `[data-dk][data-chu-de="${s.id}"]`;
+    const block = (head, mode, pad) => `${pad}${head} {\n${diff(s.id, mode, `${pad}  `)}\n${pad}}\n`;
+    const more = [
+      diff(s.id, "light", "") && block(sel, "light", "  "),
+      diff(s.id, "dark", "") && `  @media (prefers-color-scheme: dark) {\n${block(`${sel}:not([data-theme="light"])`, "dark", "    ")}  }\n${block(`${sel}[data-theme="dark"]`, "dark", "  ")}`,
+    ].filter(Boolean);
+    if (more.length) out.push(`@media (prefers-contrast: more) {\n${more.join("")}}\n`);
   }
   out.push(`
 /* Ô màu mẫu trên thẻ chọn: màu của CHÍNH bộ ấy theo sáng/tối đang áp, không theo bộ đang dùng. */

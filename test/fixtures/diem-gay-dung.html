@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mọi cách viết mốc</title>
+<style>
+@import url("diem-gay-nhap.css") screen and (min-width: 1100px);
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 16px; max-width: 60rem; }
+h1 { font-size: 1.5rem; line-height: 1.3; }
+/* Cùng một mốc 768 viết bốn cách, sáu luật: đứng đầu danh sách. */
+@media (min-width: 768px) { .a { color: #222; } .b { color: #222; } .c { color: #222; } }
+@media (max-width: 767px) { .a { color: #333; } }
+@media (max-width: 767.98px) { .a { color: #444; } }
+@media (width < 48rem) { .a { color: #555; } }
+/* Cú pháp khoảng, em, calc, hai đầu, phủ định, danh sách */
+@media (width >= 40rem) { .d { color: #222; } }
+@media (max-width: 30em) { .e { color: #222; } }
+@media (500px <= width < 560px) { .f { color: #222; } }
+@media (min-width: calc(56rem + 4px)) { .g { color: #222; } }
+@media not all and (min-width: 640.5px) { .h { color: #222; } }
+@media print, (width > 1300px) { .i { color: #222; } }
+/* Trong tầng, trong @supports đúng, lồng trong luật, lồng trong @media */
+@layer nen { @media (min-width: 810px) { .k { color: #222; } } }
+@supports (display: grid) { @media (min-width: 820px) { .l { color: #222; } } }
+.m { @media (min-width: 830px) { color: #222; } }
+@media (hover: hover) { @media (min-width: 840px) { .n { color: #222; } } }
+/* Không phải mốc của cửa sổ */
+@container (min-width: 333px) { .o { color: #222; } }
+@supports (display: khong-co) { @media (min-width: 334px) { .p { color: #222; } } }
+@media print { .q { color: #222; } @media (min-width: 335px) { .q { color: #222; } } }
+@media only print and (min-width: 336px) { .q { color: #222; } }
+@media (min-device-width: 337px) { .r { color: #222; } }
+@media (min-width: 0) { .r { color: #222; } }
+@media (min-height: 338px) { .r { color: #222; } }
+@media (min-width: 339px) { }
+@media (min-width: calc(1vw + 340px)) { .r { color: #222; } }
+</style>
+<style media="(min-width: 900px)">.s { color: #222; }</style>
+<style media="print">@media (min-width: 341px) { .s { color: #222; } }</style>
+</head>
+<body>
+<main>
+<h1>Mọi cách viết mốc</h1>
+<p class="a b c d e f g h i k l m n">Chữ thường.</p>
+<the-moc></the-moc>
+</main>
+<script>
+customElements.define("the-moc", class extends HTMLElement {
+  connectedCallback() {
+    this.attachShadow({ mode: "open" }).innerHTML = "<style>@media (min-width: 850px) { p { color: #222; } }</style><p>Trong bóng</p>";
+  }
+});
+const to = new CSSStyleSheet();
+to.replaceSync("@media (min-width: 860px) { .a { color: #222; } }");
+document.adoptedStyleSheets = [to];
+</script>
+</body>
+</html>

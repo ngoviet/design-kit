@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hộp thoại quản focus đúng</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 24px 16px; max-width: 40rem; }
+button { font: inherit; min-height: 44px; }
+.hop { position: fixed; left: 10%; right: 10%; top: 420px; border: 1px solid #555; background: #fff; padding: 16px; }
+#hop-tv { transition: opacity 250ms; }
+[hidden] { display: none; }
+dialog[open] { animation: hien 200ms; }
+@keyframes hien { from { opacity: 0; } }
+.canh { position: fixed; outline: none; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<main id="nen">
+<h1>Hộp thoại quản focus đúng</h1>
+<button type="button" id="mo-goc">Mở hộp gốc</button>
+<button type="button" id="mo-hoi">Mở hộp hỏi</button>
+<button type="button" id="mo-thu-vien">Mở hộp của thư viện</button>
+<button type="button" id="mo-menu" aria-haspopup="menu">Thao tác</button>
+<div role="menu" id="menu" aria-label="Thao tác" hidden><button type="button" role="menuitem" id="mo-tu-menu">Đổi tên</button></div>
+<button type="button" id="mo-mien">Mở hộp được miễn</button>
+<div id="mo-div" style="border:1px solid #555;padding:8px">Mở bằng vùng không nhận focus</div>
+</main>
+<dialog id="hop-goc" aria-labelledby="t-goc"><h2 id="t-goc">Đổi tên việc</h2><input aria-label="Tên"> <button type="button" id="mo-trong">Chọn ngày</button> <form method="dialog"><button>Đóng</button></form></dialog>
+<dialog id="hop-trong" aria-label="Chọn ngày"><form method="dialog"><button>Xong</button></form></dialog>
+<div class="hop" id="hop-hoi" role="alertdialog" aria-modal="true" aria-label="Xoá việc này?" hidden><button type="button" id="hoi-xoa">Xoá</button> <button type="button" id="hoi-huy">Giữ lại</button></div>
+<span tabindex="0" aria-hidden="true" class="canh" hidden></span>
+<div class="hop" id="hop-tv" role="dialog" aria-label="Bộ lọc" hidden><button type="button" aria-describedby="meo">Một</button> <button type="button">Hai</button><span role="tooltip" id="meo" hidden>Mẹo</span></div>
+<span tabindex="0" aria-hidden="true" class="canh" hidden></span>
+<div class="hop" id="hop-mien" role="dialog" aria-modal="true" aria-label="Màn khoá" data-dialog-ok="phải nhập mã mới mở" hidden><input aria-label="Mã"></div>
+<script>
+const $ = (id) => document.getElementById(id);
+let cu;
+$("mo-goc").onclick = () => $("hop-goc").showModal();
+$("mo-trong").onclick = () => $("hop-trong").showModal();
+$("mo-div").onclick = () => $("hop-goc").showModal();
+// Menu đóng lại khi chọn mục: nút đã mở hộp không còn hiện, không thể trả focus về nó.
+$("mo-menu").onclick = () => { $("menu").hidden = false; $("mo-tu-menu").focus(); };
+$("mo-tu-menu").onclick = () => { $("menu").hidden = true; $("hop-goc").showModal(); };
+const giu = (hop) => hop.addEventListener("keydown", (e) => {
+  if (e.key !== "Tab") return;
+  const l = [...hop.querySelectorAll("button, input")];
+  e.preventDefault();
+  l[(l.indexOf(document.activeElement) + (e.shiftKey ? l.length - 1 : 1)) % l.length].focus();
+});
+// Hộp hỏi: phải trả lời, Esc không đóng.
+$("mo-hoi").onclick = () => { cu = document.activeElement; $("hop-hoi").hidden = false; $("hoi-huy").focus(); };
+giu($("hop-hoi"));
+$("hoi-huy").onclick = () => { $("hop-hoi").hidden = true; cu.focus(); };
+// Kiểu thư viện: không aria-modal, phần còn lại aria-hidden, chốt canh hai đầu; focus vào hộp sau một nhịp; mẹo đang mở ăn
+// phím Esc đầu; đóng có hiệu ứng rồi mới trả focus.
+const canh = [...document.querySelectorAll(".canh")];
+$("mo-thu-vien").onclick = () => {
+  cu = document.activeElement;
+  $("nen").setAttribute("aria-hidden", "true");
+  $("hop-tv").hidden = false;
+  $("meo").hidden = false;
+  canh.forEach((c) => { c.hidden = false; });
+  setTimeout(() => $("hop-tv").querySelector("button").focus(), 350);
+};
+canh.forEach((c, i) => c.addEventListener("focus", () => { const l = $("hop-tv").querySelectorAll("button"); setTimeout(() => l[i ? 0 : l.length - 1].focus(), 120); }));
+$("hop-tv").addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (!$("meo").hidden) { $("meo").hidden = true; return; }
+  $("hop-tv").style.opacity = "0";
+  setTimeout(() => {
+    $("hop-tv").hidden = true;
+    canh.forEach((c) => { c.hidden = true; });
+    $("nen").removeAttribute("aria-hidden");
+    setTimeout(() => cu.focus(), 60);
+  }, 250);
+});
+$("mo-mien").onclick = () => { $("hop-mien").hidden = false; };
+</script>
+</body>
+</html>

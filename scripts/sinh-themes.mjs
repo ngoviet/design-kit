@@ -6,7 +6,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildAll, checkTheme, dE, asHex, loadSeeds, themesCss, THEME_PAIRS } from "./themes-lib.mjs";
+import { buildAll, checkSet, checkTheme, dE, asHex, loadSeeds, themesCss, THEME_PAIRS } from "./themes-lib.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -37,15 +37,24 @@ try {
   fail(e.message, 2, "Mỗi bộ cần id, name, light và dark (bg, surface, surface2, border, text, text2, accent, ok, warn, bad, info dạng #rrggbb)");
 }
 const all = buildAll(seeds);
-const rows = all.map((b) => {
-  const t = b.tokens;
-  const bad = checkTheme(t, b.mode, b.relax);
-  return { id: b.id, mode: b.mode, bad, karaoke: dE(asHex(t["accent-text"]), asHex(t["text"])).toFixed(2) };
-});
+// Mỗi bản hai mức: thường, và cao cho máy xin tương phản cao (prefers-contrast: more).
+const rows = all.flatMap((b) =>
+  [["thuong", b.tokens], ["cao", b.more]].map(([level, t]) => {
+    const bad = checkTheme(t, b.mode, b.relax, level);
+    const karaoke = dE(asHex(t["accent-text"] ?? ""), asHex(t["text"] ?? "")).toFixed(2);
+    const pole = t["accent-border"] ? asHex(t["accent-border"]) : "-";
+    return { id: b.id, mode: b.mode, level, karaoke, pole, bad };
+  }),
+);
+const set = checkSet(all);
 const failed = rows.filter((r) => r.bad.length);
-console.log(`status: "${failed.length ? `fail: ${failed.length} of ${rows.length} modes` : `pass: ${seeds.length} themes × light/dark, ${rows.length * THEME_PAIRS.length} pairs`}"`);
-console.log(`modes[${rows.length}]{id,mode,karaoke,bad}:`);
-for (const r of rows) console.log(`  ${r.id},${r.mode},${r.karaoke},${r.bad.length ? JSON.stringify(r.bad.join("; ")) : 0}`);
+const pairs = (rows.length / 2) * (THEME_PAIRS.thuong.length + THEME_PAIRS.cao.length);
+const verdict = failed.length || set.length ? `fail: ${failed.length} of ${rows.length} modes, ${set.length} in the set` : `pass: ${seeds.length} themes × light/dark × normal/more contrast, ${pairs} pairs`;
+console.log(`status: "${verdict}"`);
+console.log(`modes[${rows.length}]{id,mode,contrast,karaoke,accent_border,bad}:`);
+for (const r of rows) console.log(`  ${r.id},${r.mode},${r.level === "cao" ? "more" : "normal"},${r.karaoke},${r.pole},${r.bad.length ? JSON.stringify(r.bad.join("; ")) : 0}`);
+console.log(`set[${set.length}]:${set.map((x) => `\n  ${JSON.stringify(x)}`).join("")}`);
+if (set.length) fail("bộ màu thiếu token ở một bản, hoặc trùng hệt nhau", 1, "Bản nào cũng phải đủ vai trò; hai bộ trùng hệt thì bỏ một");
 if (failed.length) fail("có cặp màu không đạt", 1, "Đổi hạt giống màu (thường là accent quá nhạt hay bg2 quá gần surface) rồi chạy lại");
 const css = themesCss(seeds);
 if (only && seedFile && !out) {

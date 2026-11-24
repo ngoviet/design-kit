@@ -16,8 +16,18 @@ export interface CopyCategory {
   label: string;
   gen: number;
   min: number;
+  /** Nhiều hơn ngần này cụm khác nhau trên trang thì là dữ liệu thật (danh sách sản phẩm), không báo. 0 = không giới hạn. */
+  max: number;
   attr: boolean;
+  /** Chữ nằm trong hay có `data-assumed` thì bỏ qua: mục `assumed` đã liệt kê cho chủ duyệt. */
+  skipAssumed: boolean;
+  /** Chỉ báo khi đứng trần: trong dòng và ở hai khối cạnh nó không có lời giải thích. */
+  bare: boolean;
+  /** Có liên kết ra ngoài (nguồn) trong dòng hay bao quanh dòng thì bỏ qua. */
+  unlessLink: boolean;
   res: Array<{ src: string; flags: string }>;
+  /** Khối chữ khớp một trong các mẫu này thì bỏ qua cả nhóm. */
+  unless: Array<{ src: string; flags: string }>;
 }
 export interface CopyRules {
   categories: CopyCategory[];
@@ -62,10 +72,25 @@ export function parseCopyRules(json: string, file: string): CopyRules {
     if (!Number.isInteger(min) || min < 1) bad(`${id}: min must be a whole number ≥ 1`);
     const start = c.at === "start";
     if (c.at !== undefined && !start) bad(`${id}: at must be "start" or absent`);
+    const max = c.max === undefined ? 0 : Number(c.max);
+    if (!Number.isInteger(max) || max < 0 || (max > 0 && max < min)) bad(`${id}: max must be a whole number ≥ min, or absent`);
+    if (c.assumed !== undefined && c.assumed !== "skip") bad(`${id}: assumed must be "skip" or absent`);
+    for (const k of ["bare", "unlessLink"] as const) if (c[k] !== undefined && typeof c[k] !== "boolean") bad(`${id}: ${k} must be true or false`);
     const phrases = (c.phrases ?? []) as unknown[];
     const regex = (c.regex ?? []) as unknown[];
-    if (!Array.isArray(phrases) || !Array.isArray(regex)) bad(`${id}: phrases and regex must be lists`);
+    const unlessRaw = (c.unless ?? []) as unknown[];
+    if (!Array.isArray(phrases) || !Array.isArray(regex) || !Array.isArray(unlessRaw)) bad(`${id}: phrases, regex and unless must be lists`);
     const res: Array<{ src: string; flags: string }> = [];
+    const unless: Array<{ src: string; flags: string }> = [];
+    for (const u of unlessRaw) {
+      if (typeof u !== "string" || !u) bad(`${id}: every unless must be a non-empty string`);
+      try {
+        new RegExp(u as string, "iu");
+      } catch (e) {
+        bad(`${id}: unless /${u as string}/ does not compile (${(e as Error).message})`);
+      }
+      unless.push({ src: u as string, flags: "iu" });
+    }
     for (const p of phrases) {
       if (typeof p !== "string" || !p.trim()) bad(`${id}: every phrase must be a non-empty string`);
       const body = word(escapeRe((p as string).normalize("NFC").trim()).replace(/\s+/g, "\\s+"));
@@ -83,7 +108,7 @@ export function parseCopyRules(json: string, file: string): CopyRules {
       res.push({ src: start && !(src as string).startsWith("^") ? `^(?:${src as string})` : (src as string), flags });
     }
     if (!res.length) bad(`${id}: no phrases or regex`);
-    return { id, label, gen: Number(c.gen ?? 1), min, attr: c.scope === "text+attr", res };
+    return { id, label, gen: Number(c.gen ?? 1), min, max, attr: c.scope === "text+attr", skipAssumed: c.assumed === "skip", bare: c.bare === true, unlessLink: c.unlessLink === true, res, unless };
   });
   const v = (o.vagueLinks ?? {}) as Record<string, unknown>;
   const names = Array.isArray(v.names) ? (v.names as unknown[]).filter((n): n is string => typeof n === "string").map((n) => n.normalize("NFC").toLowerCase()) : [];
@@ -188,24 +213,47 @@ export function probeCopy(rules: CopyRules): CopyResult {
   }
   if (document.title) texts.push({ el: document.documentElement, text: norm(document.title), attr: true });
 
-  const regs = rules.categories.map((c) => ({ c, res: c.res.map((r) => new RegExp(r.src, r.flags)) }));
-  for (const { c, res } of regs) {
+  const up = (e: Element): Element | null => e.assignedSlot ?? e.parentElement ?? ((e.getRootNode() as ShadowRoot).host || null);
+  // Chữ đã nằm trong mục `assumed`: chính nó, tổ tiên, hay phần con mang đúng con số bị khớp.
+  const assumedHere = (el: Element, hit: string): boolean => {
+    for (let a: Element | null = el; a; a = up(a)) if (a.hasAttribute("data-assumed")) return true;
+    const key = /[0-9][0-9.,]*/.exec(hit)?.[0] ?? hit;
+    return Array.from(el.querySelectorAll("[data-assumed]")).some((x) => {
+      const s = norm(x.textContent ?? "");
+      return s.includes(key) || (s.length >= key.length && hit.includes(s));
+    });
+  };
+  const words = (s: string): number => (s.match(/[\p{L}\p{N}]+/gu) ?? []).length;
+  // Mã lỗi có lời giải thích: ít nhất ba từ khác trong cùng dòng, hay ở khối ngay trước, ngay sau.
+  const explained = (el: Element, text: string, hit: string): boolean =>
+    words(text.replace(hit, " ")) >= 3 || [el.previousElementSibling, el.nextElementSibling].some((x) => !!x && shown(x) && words(norm(x.textContent ?? "")) >= 3);
+  const sourced = (el: Element): boolean =>
+    !!el.closest("a[href^='http'], [itemprop], [itemscope]") || !!el.querySelector("a[href^='http'], [itemprop]");
+  const regs = rules.categories.map((c) => ({ c, res: c.res.map((r) => new RegExp(r.src, r.flags)), unless: c.unless.map((r) => new RegExp(r.src, r.flags)) }));
+  for (const { c, res, unless } of regs) {
     const distinct = new Map<string, Element>();
+    const found: ProbeHit[] = [];
     for (const t of texts) {
       if (t.attr && !c.attr) continue;
+      if (unless.some((re) => re.test(t.text)) || (c.unlessLink && sourced(t.el))) continue;
       for (const re of res) {
         const m = re.exec(t.text);
         if (!m) continue;
-        const hit = norm(m[0]).slice(0, 60);
+        const whole = norm(m[0]);
+        if ((c.skipAssumed && assumedHere(t.el, whole)) || (c.bare && explained(t.el, t.text, whole))) continue;
+        const hit = whole.slice(0, 60);
         const where = t.el === document.documentElement ? "<title>" : `${label(t.el)}${t.attr ? " (attribute)" : ""}`;
         if (c.min === 1) {
-          out.copy.push({ where, value: `${c.label}: "${hit}"` });
+          found.push({ where, value: `${c.label}: "${hit}"` });
+          distinct.set(hit.toLowerCase(), t.el);
           break; // một dòng cho mỗi khối và nhóm
         }
         // Nhóm đếm cụm khác nhau: thử mọi cụm trong khối ("hành trình khám phá" là hai cụm).
         if (!distinct.has(hit.toLowerCase())) distinct.set(hit.toLowerCase(), t.el);
       }
     }
+    if (c.max && distinct.size > c.max) continue;
+    out.copy.push(...found);
     if (c.min > 1 && distinct.size >= c.min) {
       out.copy.push({ where: "page", value: `${distinct.size} ${c.label}: ${[...distinct.keys()].slice(0, 8).join(", ")}` });
     }

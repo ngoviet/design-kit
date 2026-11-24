@@ -481,7 +481,7 @@ describe("check on real pages", () => {
     const { out } = await run(["check", "test/fixtures/csp.htm", "--no-impeccable", "--no-shots", "--no-standalone", "--schemes", "light", "--full"]);
     expect(out).toMatch(/csp\.htm,pass/);
     expect(out).toContain("axe,hard,ok");
-    expect(out).toContain("heading-lh,hard,ok");
+    expect(out).toContain("heading-lh,soft,ok");
   }, 120_000);
 
   it("an infinite animation inside a shadow root that ignores reduced motion is a hard motion failure", async () => {

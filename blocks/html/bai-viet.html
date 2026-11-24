@@ -48,6 +48,13 @@
   .toc ol { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--sp-1); }
   .toc a { display: block; padding: 6px var(--sp-3); border-radius: var(--r-sm); color: var(--text-2); text-decoration: none; }
   .toc a:hover { background: var(--surface-2); color: var(--text); }
+  /* Máy có chạm: dòng mục lục và vụn bánh mì cao 44px. Vụn bánh mì nâng hộp chứ không nới bằng ::after (hàng xuống dòng thì hai
+     vùng bấm chồng nhau); lề âm trả lại chỗ đã nới để tiêu đề không bị đẩy xuống xa. */
+  @media (any-pointer: coarse) {
+    .toc a { display: flex; align-items: center; min-height: var(--hit); }
+    .crumbs ol { align-items: center; gap: 0 var(--sp-2); margin: calc(-1 * var(--sp-3)) 0 var(--sp-3); }
+    .crumbs a { display: inline-flex; align-items: center; min-height: var(--hit); }
+  }
 </style>
 </head>
 <body>

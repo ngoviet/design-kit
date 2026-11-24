@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Không có liên kết bỏ qua</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+header, main { padding: 16px; }
+nav ul { display: flex; flex-wrap: wrap; gap: 16px; list-style: none; margin: 0; padding: 0; }
+.giau { position: absolute; left: -9999px; }
+</style>
+</head>
+<body>
+<header>
+<a href="/" id="logo">Biểu tượng</a>
+<nav aria-label="Chính"><ul>
+<li><a href="/a">Trang chủ</a></li><li><a href="/b">Bài viết</a></li><li><a href="/c">Ảnh</a></li><li><a href="/d">Video</a></li><li><a href="/e">Liên hệ</a></li>
+</ul></nav>
+</header>
+<main id="noi-dung"><h1>Bài mới</h1><p>Đọc <a href="/bai">bài đầu tiên</a>.</p></main>
+<script>
+// ?kieu=giau: có liên kết bỏ qua nhưng không hiện khi focus; ?kieu=hong: trỏ tới chỗ không có.
+const kieu = new URLSearchParams(location.search).get("kieu");
+if (kieu) document.getElementById("logo").insertAdjacentHTML("beforebegin", `<a id="bq" class="${kieu === "giau" ? "giau" : ""}" href="#${kieu === "hong" ? "khong-co" : "noi-dung"}">Bỏ qua tới nội dung</a> `);
+</script>
+</body>
+</html>

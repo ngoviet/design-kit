@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Đọc CSS: trang sai</title>
+<style>
+@import url("doc-css-nhap.css");
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #14161a; color: #f2f2f2; }
+main { padding: 0 16px 120px; }
+button, input { font: inherit; min-height: 44px; }
+a { color: #9ecbff; }
+/* vh-full: luật thường, calc() sau biến, trong @layer, và luật lồng. */
+.man { min-height: 100vh; }
+:root { --cao: calc(100vh - 2rem); }
+.tinh { height: var(--cao); }
+@layer nen { .lop { height: 96vh; } }
+.vo { & > .long { min-height: 100vh; } }
+/* transition-all */
+.nut { transition: all 0.2s; }
+.nut-ngam { transition: 0.3s; }
+@media (min-width: 1px) { .nut-media { transition-property: all; transition-duration: 0.15s; } }
+/* vi-hyphen */
+.tach { hyphens: auto; }
+.gay { word-break: break-all; }
+/* safe-area */
+header { position: sticky; top: 0; background: #1c1f26; padding: 12px 16px; }
+.day { position: fixed; left: 0; right: 0; bottom: 0; background: #1c1f26; padding: 12px 16px; }
+/* img-size: chỉ đặt bề rộng, chiều cao theo nội dung. */
+.anh { width: 100%; max-width: 20rem; height: auto; }
+</style>
+</head>
+<body>
+<header id="dau">Cửa hàng</header>
+<main>
+<h1>Đọc CSS</h1>
+<section class="man" id="man"><p>Khối cao bằng màn bằng đơn vị vh.</p></section>
+<section class="tinh" id="tinh"><p>Khối cao bằng màn trừ hai rem, qua biến.</p></section>
+<section class="lop" id="lop"><p>Khối trong một lớp CSS.</p></section>
+<div class="vo"><section class="long" id="long"><p>Khối dùng luật lồng.</p></section></div>
+<p><button type="button" class="nut">Nút một</button> <button type="button" class="nut">Nút hai</button></p>
+<p><button type="button" class="nut-ngam">Nút đặt thời lượng trần</button> <button type="button" class="nut-media">Nút trong media</button> <a class="tu-tep-nhap" href="#man">Liên kết</a></p>
+<p class="tach" id="tach">Đoạn tiếng Việt này cho phép trình duyệt tự tách từ ở cuối dòng.</p>
+<div class="gay" id="gay"><p>Đoạn tiếng Việt này bị ngắt ở bất kỳ chữ cái nào.</p><p>Đoạn thứ hai cùng một nguồn, chỉ báo một dòng.</p></div>
+<img class="anh" id="anh" src="hinh/minh-hoa-sac.png" alt="Minh hoạ">
+<video id="phim" controls></video>
+<iframe id="khung" title="Khung nhúng" srcdoc="&lt;p&gt;Trong khung&lt;/p&gt;"></iframe>
+<form>
+<p><label for="mk">Mật khẩu</label> <input id="mk" type="password" onpaste="return false"></p>
+<p><label for="email-lai">Nhập lại email</label> <input id="email-lai" type="email"></p>
+<p><label for="ma-xn">Mã xác nhận</label> <input id="ma-xn" type="text" inputmode="numeric" value="12"></p>
+</form>
+<the-sai></the-sai>
+</main>
+<nav class="day" id="day" aria-label="Chính"><a href="#man">Trang chủ</a></nav>
+<script>
+// Chặn ở document (cách của nhiều thư viện): sự kiện phải nổi bọt mới thấy.
+document.addEventListener("paste", (e) => { if (e.target.id === "email-lai") e.preventDefault(); });
+// Chặn và xoá ô: giá trị cũ phải được trả lại.
+document.getElementById("ma-xn").addEventListener("paste", (e) => { e.preventDefault(); e.target.value = ""; });
+customElements.define("the-sai", class extends HTMLElement {
+  connectedCallback() {
+    const r = this.attachShadow({ mode: "open" });
+    const s = new CSSStyleSheet();
+    s.replaceSync(":host { display: block; min-height: 95vh; } p { transition: all 1s; word-break: break-all; }");
+    r.adoptedStyleSheets = [s];
+    r.innerHTML = '<p>Chữ trong thẻ tự làm bị ngắt ở bất kỳ chữ cái nào.</p><label for="o-trong">Mã</label> <input id="o-trong" name="otp" style="min-height:44px">';
+    r.getElementById("o-trong").addEventListener("paste", (e) => e.preventDefault());
+  }
+});
+</script>
+</body>
+</html>

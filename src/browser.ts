@@ -8,8 +8,21 @@ import { fail } from "./errors.js";
 /** Ưu tiên trình duyệt có sẵn trên máy (Playwright Python từng lệch phiên bản Chromium); Chromium của Playwright chỉ là đường lùi. */
 const CHANNELS = ["msedge", "chrome"] as const;
 
-export async function launchBrowser(env: Record<string, string | undefined>): Promise<{ browser: Browser; via: string }> {
-  const { chromium } = await import("playwright-core");
+export type Engine = "chromium" | "webkit";
+
+/**
+ * `webkit` (tuỳ chọn, chủ duyệt 24/11/2026): bản WebKit của Playwright, gần Safari hơn Chromium nhưng trên Windows không phải
+ * Safari iOS thật. Không tự tải: thiếu thì báo lệnh cài.
+ */
+export async function launchBrowser(env: Record<string, string | undefined>, engine: Engine = "chromium"): Promise<{ browser: Browser; via: string }> {
+  const { chromium, webkit } = await import("playwright-core");
+  if (engine === "webkit") {
+    try {
+      return { browser: await webkit.launch(), via: "webkit (playwright)" };
+    } catch (e) {
+      fail(`webkit did not start: ${(e as Error).message.split("\n")[0]}`, "BROWSER_MISSING", ["Run `npx playwright install webkit` once (about 100 MB), or drop --engine webkit"]);
+    }
+  }
   const exe = env["DK_BROWSER"];
   if (exe) {
     if (!existsSync(exe)) fail(`DK_BROWSER does not exist: ${exe}`, "BROWSER_MISSING", ["Unset DK_BROWSER or point it at chrome.exe / msedge.exe"]);

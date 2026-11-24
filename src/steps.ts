@@ -90,12 +90,37 @@ export function describeAction(a: StepAction): string {
 }
 
 /**
+ * Móc quan sát quanh các thao tác (aria-state, sổ focus của dialog-focus): phép đo cần thấy trang ngay trước và ngay sau một
+ * lần bấm, mà runActions chỉ trả trang sau thao tác cuối. Móc hỏng thì bỏ qua: phép đo mềm không được làm hỏng trạng thái.
+ * Móc `after` được phép chờ, nên chỉ chờ khi thật cần: trạng thái theo hẹn giờ của trang ("đang gửi" 900 ms) trôi qua trong lúc đó.
+ */
+export interface ActionWatch {
+  /** Một lần, trước thao tác đầu. */
+  start?(page: Page): Promise<void>;
+  before?(page: Page, action: StepAction): Promise<void>;
+  /** Chỉ gọi khi thao tác làm được. */
+  after?(page: Page, action: StepAction): Promise<void>;
+}
+
+/**
  * Chạy thao tác trên trang (bộ chọn của Playwright: CSS đi xuyên open shadow root, `text=…`, `role=button[name="…"]`).
  * Trả về mô tả lỗi của thao tác hỏng đầu tiên, hoặc undefined nếu chạy hết.
  */
-export async function runActions(page: Page, actions: StepAction[], net: NetWatch): Promise<string | undefined> {
+export async function runActions(page: Page, actions: StepAction[], net: NetWatch, watch: ActionWatch[] = []): Promise<string | undefined> {
   const timeout = 5000;
+  const tell = async (at: "start" | "before" | "after", action?: StepAction): Promise<void> => {
+    for (const w of watch) {
+      try {
+        if (at === "start") await w.start?.(page);
+        else await w[at]?.(page, action!);
+      } catch {
+        /* trang vừa chuyển, phần tử vừa bị gỡ: bỏ qua lần quan sát này */
+      }
+    }
+  };
+  await tell("start");
   for (const a of actions) {
+    await tell("before", a);
     try {
       if (a.click !== undefined) await page.click(a.click, { timeout });
       else if (a.fill) await page.fill(a.fill[0], a.fill[1], { timeout });
@@ -109,6 +134,7 @@ export async function runActions(page: Page, actions: StepAction[], net: NetWatc
       const msg = (e as Error).message.split("\n")[0]!.replace(/^\w+\.\w+:\s*/, "");
       return `${describeAction(a)} failed: ${msg.slice(0, 140)}`;
     }
+    await tell("after", a);
   }
   // Thao tác có thể gọi mạng (gửi form, tải thêm hàng): đợi mạng im và hai khung hình, không chờ cố định.
   // Trạng thái chỉ hiện sau một hẹn giờ của trang (giả lập "đang gửi" 900 ms) thì tệp steps phải ghi `wait`.

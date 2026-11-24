@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bố cục chỉ vừa dữ liệu mẫu</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 16px; max-width: 60rem; }
+h1 { font-size: 1.5rem; line-height: 1.3; margin: 0 0 16px; }
+section { margin: 0 0 24px; }
+/* Dài thêm 50% */
+.the { width: 170px; border: 1px solid #bbb; padding: 8px; }
+.the h3 { margin: 0; height: 26px; overflow: hidden; font-size: 1rem; line-height: 26px; }
+.cap { display: flex; align-items: center; }
+.cap .nhan { width: 96px; white-space: nowrap; }
+.cap .gia { background: #eef; padding: 4px 8px; position: relative; }
+.cham { width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mat { width: 120px; overflow: hidden; white-space: nowrap; }
+/* Một từ không ngắt được */
+.bang { overflow: hidden; border: 1px solid #bbb; }
+.bang table { width: 100%; border-collapse: collapse; }
+.bang td, .bang th { padding: 8px; text-align: left; }
+.nguoi { display: flex; gap: 12px; max-width: 300px; overflow: clip; }
+/* Số thêm ba chữ số */
+.so { display: grid; grid-template-columns: 108px 72px 72px; gap: 8px; }
+.so div { overflow: hidden; white-space: nowrap; border: 1px solid #bbb; padding: 4px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Đơn hàng trong tuần</h1>
+<section>
+<div class="the"><h3 id="tieu-de-the">Đơn hàng mới nhận</h3><p>Chưa giao</p></div>
+<div class="cap"><span class="nhan" id="nhan">Tổng cộng</span><span class="gia">Đã trả</span></div>
+<p class="cham" id="cham">Giao trong ngày</p>
+<!-- Đã bị cắt từ trước khi kéo dài: phép đo text-clip đã báo, stress không báo lại. -->
+<div class="mat" id="mat-san">Chữ này bị cắt sẵn từ lúc mở trang</div>
+</section>
+<section class="bang">
+<table>
+<thead><tr><th scope="col">STT</th><th scope="col">Tệp</th><th scope="col">Loại</th></tr></thead>
+<tbody>
+<tr><td>1</td><td id="o-ten">Báo cáo tuần</td><td>Bảng</td></tr>
+<tr><td>2</td><td>Danh sách khách</td><td>Bảng</td></tr>
+</tbody>
+</table>
+</section>
+<section class="nguoi"><img alt="" width="48" height="48" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Crect width='48' height='48' fill='%23ccc'/%3E%3C/svg%3E"><strong class="user-name" id="ten-nguoi">Lan Anh</strong></section>
+<section class="so"><div id="tien">1.250.000 ₫</div><div id="phan-tram">12,5%</div><div id="dem">98 765</div></section>
+<the-don id="trong-bong"></the-don>
+</main>
+<script>
+customElements.define("the-don", class extends HTMLElement {
+  connectedCallback() {
+    this.attachShadow({ mode: "open" }).innerHTML = "<style>h3 { width: 150px; height: 26px; line-height: 26px; overflow: hidden; margin: 0; font-size: 1rem; }</style><h3 class=\"ten-don\">Thẻ trong bóng</h3>";
+  }
+});
+</script>
+</body>
+</html>

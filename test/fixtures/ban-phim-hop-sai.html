@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hộp thoại quản focus sai</title>
+<style>
+body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+main { padding: 24px 16px; max-width: 40rem; }
+button { font: inherit; min-height: 44px; }
+.hop { position: fixed; left: 10%; right: 10%; top: 320px; border: 1px solid #555; background: #fff; padding: 16px; }
+[hidden] { display: none; }
+</style>
+</head>
+<body>
+<main>
+<h1>Hộp thoại quản focus sai</h1>
+<button type="button" id="mo-ngoai">Mở hộp không giữ focus</button>
+<button type="button" id="mo-roi">Mở hộp đóng rồi rơi focus</button>
+<button type="button" id="mo-lac">Mở hộp đóng rồi lạc focus</button>
+<button type="button" id="mo-kin">Mở hộp chặn Esc</button>
+<a href="#x" id="khac">Liên kết khác</a>
+</main>
+<div class="hop" id="hop-ngoai" role="dialog" aria-modal="true" aria-label="Chọn ngày" hidden><button type="button">Thứ hai</button> <button type="button" class="dong">Đóng</button></div>
+<div class="hop" id="hop-roi" role="dialog" aria-modal="true" aria-label="Đổi tên" hidden><input aria-label="Tên mới"> <button type="button" class="dong">Huỷ</button></div>
+<div class="hop" id="hop-lac" role="dialog" aria-modal="true" aria-label="Chia sẻ" hidden><input aria-label="Email"> <button type="button" class="dong">Huỷ</button></div>
+<dialog id="hop-kin" aria-label="Cảnh báo"><button type="button">Tiếp tục làm</button></dialog>
+<script>
+const $ = (id) => document.getElementById(id);
+$("mo-ngoai").onclick = () => { $("hop-ngoai").hidden = false; };
+$("hop-ngoai").querySelector(".dong").onclick = () => { $("hop-ngoai").hidden = true; };
+// Hai hộp giữ Tab và Esc đúng, chỉ sai lúc trả focus.
+const giu = (hop, dong) => {
+  hop.addEventListener("keydown", (e) => {
+    const l = [...hop.querySelectorAll("input, button")];
+    if (e.key === "Escape") dong();
+    if (e.key === "Tab") { e.preventDefault(); l[(l.indexOf(document.activeElement) + (e.shiftKey ? l.length - 1 : 1)) % l.length].focus(); }
+  });
+  hop.querySelector(".dong").onclick = dong;
+};
+giu($("hop-roi"), () => { $("hop-roi").remove(); });
+giu($("hop-lac"), () => { $("hop-lac").hidden = true; $("khac").focus(); });
+$("mo-roi").onclick = () => { $("hop-roi").hidden = false; $("hop-roi").querySelector("input").focus(); };
+$("mo-lac").onclick = () => { $("hop-lac").hidden = false; $("hop-lac").querySelector("input").focus(); };
+$("hop-kin").addEventListener("keydown", (e) => { if (e.key === "Escape") e.preventDefault(); });
+$("mo-kin").onclick = () => $("hop-kin").showModal();
+</script>
+</body>
+</html>

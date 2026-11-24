@@ -54,6 +54,7 @@ describe("sizes", () => {
       [["--viewports", "390x844,390x600"], "each width once"],
       [["--viewports", "390x"], "--viewports: widths between"],
       [["--touch", "500"], "--touch must be"],
+      [["--engine", "gecko"], "--engine: chromium or webkit"],
     ] as const) {
       const { out, code } = await bad(...args);
       expect(out).toContain(msg);
@@ -66,6 +67,20 @@ describe("sizes", () => {
     const p = await check("mo-dan", "--profile", "devices");
     expect(p).toMatch(/light × 320x568\/390\/768x1024\/1280x720\/1920x1080 px \+ 14 swept sizes via/);
     expect(p).toContain("pass: 1 pages");
+  }, 120_000);
+});
+
+describe("engine", () => {
+  it("webkit runs when installed, else says how to install it; nothing is downloaded by itself", async () => {
+    const { out, code } = await run(["check", "test/fixtures/loi.html", ...BASE, "--viewports", "390", "--engine", "webkit"]);
+    if (out.includes("BROWSER_MISSING")) {
+      expect(out).toContain("npx playwright install webkit");
+      expect(code).not.toBe(0);
+      return;
+    }
+    expect(out).toContain("via webkit (playwright)");
+    // Trên WebKit chỉ render và errors còn cứng.
+    for (const l of out.split("\n").filter((x) => /^\s+hard,/.test(x))) expect(l).toMatch(/^\s+hard,(render|errors),/);
   }, 120_000);
 });
 
@@ -94,6 +109,11 @@ describe("sticky and orientation", () => {
     expect(out).toContain("#mo,");
     expect(out).toContain("sticky,soft,ok");
     expect(out).toContain("orientation,soft,ok");
+  }, 120_000);
+  it("CSS that turns the page back when the device turns is a soft orientation finding (axe css-orientation-lock)", async () => {
+    const out = await check("khoa-huong-css", "--viewports", "1280x720");
+    expect(rows(out, "orientation").join("\n")).toMatch(/soft,orientation,css-orientation-lock/);
+    expect(out).toContain("axe,hard,ok");
   }, 120_000);
   it("reads the manifest's orientation, also from broken JSON without failing", () => {
     expect(lockedOrientation('{"orientation":"landscape-primary"}')).toBe("landscape-primary");

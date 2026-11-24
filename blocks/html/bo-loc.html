@@ -22,8 +22,9 @@
     border: 1px solid var(--border-strong); border-radius: var(--r-full); background: var(--surface); color: var(--text);
     font: 500 var(--fs-sm)/1 var(--font-ui, var(--font-body)); cursor: pointer;
   }
+  @media (any-pointer: coarse) { .chip { min-height: var(--hit); } }
   .chip svg { width: 14px; height: 14px; display: none; }
-  .chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); }
+  .chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent-border, var(--accent)); color: var(--accent-text); }
   .chip[aria-pressed="true"] svg { display: block; }
   .filter-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); border-top: 1px solid var(--border); padding-top: var(--sp-3); }
   .result { margin: 0; font: 400 var(--fs-sm)/1.5 var(--font-ui, var(--font-body)); color: var(--text-2); }
@@ -34,7 +35,7 @@
   .pager ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-1); align-items: center; }
   .pager a, .pager .gap { display: inline-grid; place-items: center; min-width: var(--hit); min-height: var(--hit); padding: 0 var(--sp-2); border-radius: var(--r-sm); font: 500 var(--fs-sm)/1 var(--font-ui, var(--font-body)); color: var(--text); text-decoration: none; }
   .pager a:hover { background: var(--surface-2); }
-  .pager a[aria-current="page"] { background: var(--accent); color: var(--on-accent); }
+  .pager a[aria-current="page"] { background: var(--accent); color: var(--on-accent); box-shadow: inset 0 0 0 1px var(--accent-border, transparent); }
   .pager a[aria-disabled="true"] { color: var(--text-2); pointer-events: none; opacity: 0.6; }
   .pager .gap { color: var(--text-2); }
   .pager .prevnext { gap: var(--sp-1); display: inline-flex; padding: 0 var(--sp-3); }

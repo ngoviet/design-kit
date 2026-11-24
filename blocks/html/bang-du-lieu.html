@@ -30,10 +30,13 @@
   .sort { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: var(--hit-min); padding: 2px var(--sp-1); margin: -2px calc(-1 * var(--sp-1)); border: 0; border-radius: var(--r-sm); background: none; color: inherit; font: inherit; cursor: pointer; }
   .sort:hover { color: var(--text); background: var(--surface-2); }
   .sort svg { width: 14px; height: 14px; opacity: 0.45; }
+  /* Máy có chạm: nới vùng bấm ra hết ô tiêu đề (đệm 12px trên dưới), không nâng hàng tiêu đề lên 64px. */
+  @media (any-pointer: coarse) { .sort { position: relative; } .sort::after { content: ""; position: absolute; inset: -10px 0; } }
   th[aria-sort] .sort { color: var(--text); }
   th[aria-sort] .sort svg { opacity: 1; }
   th[aria-sort="descending"] .sort svg { transform: rotate(180deg); }
-  .name { font-weight: 600; color: var(--text); }
+  /* Tên dài không có chỗ ngắt (mã máy, từ ghép) xuống dòng thay vì đẩy ra ngoài khung cắt. */
+  .name { font-weight: 600; color: var(--text); overflow-wrap: anywhere; min-width: 0; }
   .sub { display: block; color: var(--text-2); font-size: var(--fs-xs); }
   .rate { white-space: nowrap; }
   .rate .num { font-size: var(--fs-sm); }
