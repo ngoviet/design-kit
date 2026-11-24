@@ -287,4 +287,6 @@ Chủ chốt: học để bổ sung, không thay design-kit. Nguồn học chín
 - **Người soát độc lập lượt hai:** 11 phát hiện, 0 cứng, nhưng năm chỗ của phần so với lượt trước và `--recheck` có thể nói "đã sửa" khi chưa đo lại:
   hai lỗi axe chung một mã, đo lại khổ quét mà không quét, đổi cờ giữa hai lượt, trang hay phép đo không chạy, và trang có service worker được lấy từ
   bộ đệm. Đã sửa hết; nay đo lại ra "not measured" khi không đo, và từ chối khi cờ khác lượt trước. Ảnh đánh số chụp sau mọi phép đo và xoá ảnh cũ.
+  Chạy lại chín đột biến còn xanh của lượt soát cùng mười bảy đột biến cho phần vừa sửa: 25 đỏ, 1 xanh tương đương (gỡ lớp phủ ảnh đánh số, vì ảnh
+  chụp cuối và trang được nạp lại ngay sau).
 - **Chưa làm:** logo quá to trong ngăn kéo của `thanh-ben` (lỗi có sẵn, đổi giao diện máy chuột nên để riêng); WebKit chưa cài trên PC1 nên chưa chạy thật.
