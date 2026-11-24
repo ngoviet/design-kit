@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="vi" data-dk="dem">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<title>Khối: chọn bộ màu</title>
+<!-- Áp TRƯỚC lần vẽ đầu: script ngắn, đứng trước mọi stylesheet. Giá trị lạ bị bỏ qua; hỏng thì trang giữ màu của hướng.
+     App có đăng nhập: lưu ở máy chủ theo người, chép một bản vào localStorage để lần mở sau không chớp sai màu. -->
+<script>(()=>{const q=new URLSearchParams(location.search),d=document.documentElement,k=q.get("dk");if(k&&/^(dem|giay|dam)$/.test(k))d.dataset.dk=k;let s={};try{s=JSON.parse(localStorage.getItem("giao-dien")||"{}")}catch{}const b=q.get("chu-de")||s.bo,c=q.get("theme")||s.che;if(/^[a-z][a-z0-9-]{0,30}$/.test(b||""))d.dataset.chuDe=b;if(c==="light"||c==="dark")d.dataset.theme=c;})();</script>
+<link rel="stylesheet" href="../../tokens/fonts-local.css">
+<link rel="stylesheet" href="../../tokens/core.css">
+<link rel="stylesheet" href="../../tokens/dem.css">
+<link rel="stylesheet" href="../../tokens/giay.css">
+<link rel="stylesheet" href="../../tokens/dam.css">
+<link rel="stylesheet" href="../../tokens/themes.css">
+<link rel="stylesheet" href="_base.css">
+<style>
+  body { background: var(--bg); background-image: var(--nen-trang, none); min-height: 100dvh; }
+  .page { max-width: 64rem; margin: 0 auto; padding: var(--sp-6) var(--sp-4) var(--sp-8); display: grid; gap: var(--sp-5); }
+  .page > header p { margin: var(--sp-2) 0 0; color: var(--text-2); }
+  fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  legend { padding: 0; margin: 0 0 var(--sp-3); font: 600 var(--fs-md)/1.3 var(--font-display); }
+
+  /* ---- Xem trước: chữ, nút, chữ sáng theo tiếng ---- */
+  .xem { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-5); display: grid; gap: var(--sp-3); }
+  .xem h2 { font-size: var(--fs-md); line-height: var(--lh-snug); letter-spacing: 0; }
+  .xem p { margin: 0; }
+  .loi { background: var(--surface-2); border-radius: var(--r-sm); padding: var(--sp-3) var(--sp-4); font-size: var(--fs-md); max-width: none; }
+  .loi .da { color: var(--accent-text); }
+  /* Chữ đang đọc khác không chỉ bằng màu: nền, gạch chân dày, đậm. */
+  .loi .nay { color: var(--text); background: var(--accent-soft); border-radius: 4px; padding: 0 .2em; font-weight: 600; text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 4px; text-decoration-color: var(--accent); }
+  .xem .hang { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; }
+
+  /* ---- Sáng, tối, theo máy ---- */
+  .che { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  .che label { position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 var(--sp-5); border: 1px solid var(--border-strong); border-radius: var(--r-full); background: var(--surface); font: 600 var(--fs-sm)/1.2 var(--font-ui, var(--font-body)); cursor: pointer; }
+  .che label:has(:checked) { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+
+  /* ---- Thẻ bộ màu: ô màu của chính bộ ấy (biến --m-* trong tokens/themes.css) ---- */
+  .luoi { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: var(--sp-3); }
+  .the { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--sp-3); align-items: center; min-height: 72px; padding: var(--sp-3) var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--r-md); background: var(--surface); cursor: pointer; }
+  .the:hover { background: var(--surface-2); }
+  .the:has(:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .o { display: grid; grid-template-columns: repeat(2, 20px); border: 1px solid var(--m-vien, var(--border-strong)); border-radius: var(--r-sm); overflow: hidden; background: var(--m-nen, var(--bg)); padding: 6px; gap: 4px; }
+  .o i { width: 20px; height: 20px; border-radius: 50%; background: var(--m-nhan, var(--accent)); }
+  .o i:nth-child(2) { background: var(--m-chu, var(--text)); }
+  .o i:nth-child(3) { background: var(--m-ok, var(--ok)); }
+  .o i:nth-child(4) { background: var(--m-info, var(--info)); }
+  .chu b { display: block; font: 600 var(--fs-base)/1.35 var(--font-ui, var(--font-body)); }
+  .chu small { display: block; color: var(--text-2); font-size: var(--fs-sm); line-height: 1.45; }
+  .dang { display: none; color: var(--accent-text); font: 600 var(--fs-sm)/1.2 var(--font-ui, var(--font-body)); }
+  .the:has(:checked) .dang { display: block; }
+  .the input, .che input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .the:has(:focus-visible), .che label:has(:focus-visible) { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
+
+  /* ---- Vừa đổi gì, hoàn tác: dính ở đáy màn khi đã đổi (danh sách dài hơn màn điện thoại), nằm yên, không tự mất ---- */
+  .vua-doi { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--sp-2) var(--sp-3); align-items: center; }
+  .vua-doi:has(button:not([hidden])) { position: sticky; bottom: var(--sp-3); padding: var(--sp-3) var(--sp-4); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-md); box-shadow: var(--shadow-2); }
+  .vua-doi p { margin: 0; color: var(--text); font-size: var(--fs-sm); }
+</style>
+</head>
+<body>
+  <a class="skip-link btn btn-primary" href="#noi-dung">Tới nội dung</a>
+  <main class="page" id="noi-dung">
+    <header>
+      <h1>Giao diện</h1>
+      <p>Chọn màu bạn thích. Đổi là áp ngay, chỉ cho riêng bạn trên máy này.</p>
+    </header>
+
+    <section class="xem" aria-labelledby="t-xem">
+      <h2 id="t-xem">Xem trước</h2>
+      <p>Chữ thường trên mặt thẻ, <span class="muted">chữ phụ nhạt hơn</span> và <a href="#bo-mau">liên kết trong câu</a>.</p>
+      <p class="loi"><span class="da">Sáng nay trời</span> <span class="nay">nắng</span> <span>đẹp, cả nhà ra vườn.</span></p>
+      <div class="hang"><button type="button" class="btn btn-primary">Nút chính</button><button type="button" class="btn btn-secondary">Nút phụ</button></div>
+    </section>
+
+    <form id="chon">
+      <fieldset>
+        <legend>Sáng hay tối</legend>
+        <div class="che">
+          <label><input type="radio" name="che" value="" checked><span>Theo máy</span></label>
+          <label><input type="radio" name="che" value="light"><span>Sáng</span></label>
+          <label><input type="radio" name="che" value="dark"><span>Tối</span></label>
+        </div>
+      </fieldset>
+    </form>
+
+    <form id="chon-bo">
+      <fieldset id="bo-mau">
+        <legend>Bộ màu</legend>
+        <div class="luoi">
+          <label class="the">
+            <input type="radio" name="bo" value="" checked>
+            <span class="chu"><b>Mặc định</b><small>Màu gốc của app này</small></span>
+            <span></span>
+            <span class="dang">Đang dùng</span>
+          </label>
+          <label class="the" data-mau="neon">
+            <input type="radio" name="bo" value="neon">
+            <span class="o" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span class="chu"><b>Neon</b><small>Xanh đêm, nhấn lục lam</small></span>
+            <span class="dang">Đang dùng</span>
+          </label>
+          <label class="the" data-mau="flexoki">
+            <input type="radio" name="bo" value="flexoki">
+            <span class="o" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span class="chu"><b>Giấy và mực</b><small>Nền giấy ấm, mực đen</small></span>
+            <span class="dang">Đang dùng</span>
+          </label>
+          <label class="the" data-mau="gomlam">
+            <input type="radio" name="bo" value="gomlam">
+            <span class="o" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span class="chu"><b>Gốm lam</b><small>Men lam trên nền gốm</small></span>
+            <span class="dang">Đang dùng</span>
+          </label>
+          <label class="the" data-mau="rosepine">
+            <input type="radio" name="bo" value="rosepine">
+            <span class="o" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span class="chu"><b>Hồng thông</b><small>Hồng và tím nhạt</small></span>
+            <span class="dang">Đang dùng</span>
+          </label>
+          <label class="the" data-mau="sanchoi">
+            <input type="radio" name="bo" value="sanchoi">
+            <span class="o" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span class="chu"><b>Sân chơi</b><small>Vàng nắng, bo tròn</small></span>
+            <span class="dang">Đang dùng</span>
+          </label>
+          <label class="the" data-mau="sonmai">
+            <input type="radio" name="bo" value="sonmai">
+            <span class="o" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span class="chu"><b>Sơn mài</b><small>Son, then, vàng quỳ</small></span>
+            <span class="dang">Đang dùng</span>
+          </label>
+          <label class="the" data-mau="hoian">
+            <input type="radio" name="bo" value="hoian">
+            <span class="o" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span class="chu"><b>Phố Hội</b><small>Tường vàng, cửa gỗ xanh</small></span>
+            <span class="dang">Đang dùng</span>
+          </label>
+          <label class="the" data-mau="kanagawa">
+            <input type="radio" name="bo" value="kanagawa">
+            <span class="o" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span class="chu"><b>Sóng lừng</b><small>Xanh sóng, giấy ngà</small></span>
+            <span class="dang">Đang dùng</span>
+          </label>
+          <label class="the" data-mau="everforest">
+            <input type="radio" name="bo" value="everforest">
+            <span class="o" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span class="chu"><b>Rừng thông</b><small>Xanh rừng dịu</small></span>
+            <span class="dang">Đang dùng</span>
+          </label>
+        </div>
+      </fieldset>
+    </form>
+
+    <div class="vua-doi">
+      <p role="status" id="loi-bao"></p>
+      <button type="button" class="btn btn-secondary" id="hoan-tac" hidden>Hoàn tác</button>
+    </div>
+  </main>
+
+<script>
+  const goc = document.documentElement;
+  const KHOA = "giao-dien";
+  const doc = () => ({ bo: goc.dataset.chuDe ?? "", che: goc.dataset.theme ?? "" });
+  // Hoàn tác về bộ LÚC MỞ TRANG, không về bộ vừa đi ngang qua: người dùng thường bấm thử vài bộ liền.
+  const dau = doc();
+  const ten = (v) => document.querySelector(`.the input[value="${CSS.escape(v)}"]`)?.closest(".the").querySelector("b").textContent ?? "Mặc định";
+  const CHE = { "": "theo máy", light: "sáng", dark: "tối" };
+
+  function ap({ bo, che }, luu = true) {
+    if (bo) goc.dataset.chuDe = bo; else delete goc.dataset.chuDe;
+    if (che) goc.dataset.theme = che; else delete goc.dataset.theme;
+    for (const i of document.querySelectorAll("input[name=bo]")) i.checked = i.value === bo;
+    for (const i of document.querySelectorAll("input[name=che]")) i.checked = i.value === che;
+    mauThanh();
+    // Không ghi được (chế độ riêng tư) thì vẫn đổi cho lần mở này.
+    if (luu) try { localStorage.setItem(KHOA, JSON.stringify({ bo, che })); } catch { /* bỏ qua */ }
+  }
+  // Thanh trình duyệt của điện thoại theo nền trang.
+  function mauThanh() {
+    document.querySelector('meta[name="theme-color"]').content = getComputedStyle(document.body).backgroundColor;
+  }
+  function baoDoi(cau) {
+    const nay = doc();
+    document.getElementById("loi-bao").textContent = cau;
+    document.getElementById("hoan-tac").hidden = nay.bo === dau.bo && nay.che === dau.che;
+  }
+  for (const f of ["chon", "chon-bo"]) document.getElementById(f).addEventListener("change", (e) => {
+    const nay = doc();
+    ap({ ...nay, [e.target.name]: e.target.value });
+    const s = doc();
+    baoDoi(`Đang dùng ${ten(s.bo)}, ${CHE[s.che]}. Đã lưu.`);
+  });
+  document.getElementById("hoan-tac").addEventListener("click", () => {
+    ap(dau);
+    baoDoi(`Đã trả về ${ten(dau.bo)}, ${CHE[dau.che]}.`);
+    document.querySelector("input[name=bo]:checked").focus();
+  });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", mauThanh);
+  ap(dau, false);
+</script>
+</body>
+</html>

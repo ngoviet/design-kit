@@ -1,0 +1,406 @@
+[
+ {
+  "id": "neon",
+  "name": "Neon",
+  "about": "Xanh đêm, nhấn lục lam",
+  "font": "viet",
+  "light": {
+   "bg": "#f3fafc",
+   "edge": "#e6f3f7",
+   "surface": "#ffffff",
+   "surface2": "#e8f3f7",
+   "tren": "#ffffff",
+   "border": "#c9dfe6",
+   "text": "#0b1f33",
+   "text2": "#46617a",
+   "accent": "#067a95",
+   "ok": "#14804a",
+   "warn": "#9a5b00",
+   "bad": "#c02f3a",
+   "info": "#1d5fc4"
+  },
+  "dark": {
+   "fixed": {
+    "bg-edge": "oklch(0.146 0.023 265)",
+    "bg": "oklch(0.181 0.036 266)",
+    "surface": "oklch(0.213 0.046 264)",
+    "surface-2": "oklch(0.264 0.062 262)",
+    "border": "oklch(0.330 0.060 265)",
+    "border-strong": "oklch(0.600 0.050 262)",
+    "text": "oklch(0.944 0.015 257)",
+    "text-2": "oklch(0.777 0.051 259)",
+    "accent": "oklch(0.797 0.133 212)",
+    "accent-text": "oklch(0.820 0.125 212)",
+    "on-accent": "oklch(0.146 0.023 265)",
+    "accent-soft": "oklch(0.290 0.050 215)",
+    "ok": "oklch(0.780 0.170 150)",
+    "ok-soft": "oklch(0.285 0.060 150)",
+    "warn": "oklch(0.800 0.150 72)",
+    "warn-soft": "oklch(0.300 0.060 72)",
+    "bad": "oklch(0.800 0.105 22)",
+    "bad-soft": "oklch(0.295 0.055 25)",
+    "info": "oklch(0.780 0.105 258)",
+    "info-soft": "oklch(0.290 0.055 260)",
+    "focus": "oklch(0.820 0.125 212)",
+    "nen-trang": "linear-gradient(160deg, var(--surface-2) 0%, var(--bg) 42%, var(--bg-edge) 100%)",
+    "shadow-1": "0 1px 2px oklch(0 0 0 / 0.45)",
+    "shadow-2": "0 10px 30px -10px oklch(0 0 0 / 0.70)"
+   }
+  },
+  "relax": {
+   "dark info/info-soft": 59
+  }
+ },
+ {
+  "id": "flexoki",
+  "name": "Giấy và mực",
+  "about": "Nền giấy ấm, mực đen",
+  "font": "chan",
+  "source": {
+   "palette": "Flexoki",
+   "author": "Steph Ango",
+   "url": "https://github.com/kepano/flexoki",
+   "license": "MIT"
+  },
+  "light": {
+   "bg": "#fffcf0",
+   "edge": "#f7f3e4",
+   "surface": "#fffefa",
+   "surface2": "#f2f0e5",
+   "tren": "#fffefa",
+   "border": "#dad8ce",
+   "text": "#100f0f",
+   "text2": "#6f6e69",
+   "accent": "#24837b",
+   "ok": "#66800b",
+   "warn": "#ad8301",
+   "bad": "#af3029",
+   "info": "#205ea6"
+  },
+  "dark": {
+   "bg": "#100f0f",
+   "edge": "#0b0a0a",
+   "surface": "#1c1b1a",
+   "surface2": "#282726",
+   "tren": "#1c1b1a",
+   "border": "#403e3c",
+   "text": "#cecdc3",
+   "text2": "#878580",
+   "accent": "#3aa99f",
+   "ok": "#879a39",
+   "warn": "#d0a215",
+   "bad": "#d14d41",
+   "info": "#4385be"
+  }
+ },
+ {
+  "id": "gomlam",
+  "name": "Gốm lam",
+  "about": "Men lam trên nền gốm",
+  "font": "chan",
+  "light": {
+   "bg": "#f5f7f4",
+   "edge": "#e9eeec",
+   "surface": "#fdfefc",
+   "surface2": "#e7edee",
+   "tren": "#fdfefc",
+   "border": "#cad5da",
+   "text": "#14233f",
+   "text2": "#4d5f7a",
+   "accent": "#1d4fa3",
+   "ok": "#2e6e58",
+   "warn": "#8f5f0a",
+   "bad": "#a8382a",
+   "info": "#2c6f9e",
+   "pattern": {
+    "kind": "waves",
+    "color": "#1d4fa3",
+    "opacity": 0.055
+   }
+  },
+  "dark": {
+   "bg": "#0f1a33",
+   "edge": "#0a1224",
+   "surface": "#162444",
+   "surface2": "#20315a",
+   "tren": "#1c2d54",
+   "border": "#334a78",
+   "text": "#eef3f4",
+   "text2": "#b4c4dc",
+   "accent": "#9dc0ff",
+   "ok": "#8fd0b5",
+   "warn": "#e8c27a",
+   "bad": "#f4a08f",
+   "info": "#8fcbe8",
+   "pattern": {
+    "kind": "waves",
+    "color": "#9dc0ff",
+    "opacity": 0.055
+   }
+  }
+ },
+ {
+  "id": "rosepine",
+  "name": "Hồng thông",
+  "about": "Hồng và tím nhạt",
+  "font": "viet",
+  "source": {
+   "palette": "Rosé Pine",
+   "author": "Rosé Pine",
+   "url": "https://github.com/rose-pine/rose-pine-theme",
+   "license": "MIT"
+  },
+  "light": {
+   "bg": "#faf4ed",
+   "edge": "#f2e9e1",
+   "surface": "#fffaf3",
+   "surface2": "#f2e9e1",
+   "tren": "#fffaf3",
+   "border": "#dfdad9",
+   "text": "#464261",
+   "text2": "#797593",
+   "accent": "#b4637a",
+   "ok": "#286983",
+   "warn": "#ea9d34",
+   "bad": "#a8324f",
+   "info": "#907aa9"
+  },
+  "dark": {
+   "bg": "#232136",
+   "edge": "#1b192c",
+   "surface": "#2a273f",
+   "surface2": "#322f4b",
+   "tren": "#2f2c49",
+   "border": "#44415a",
+   "text": "#e0def4",
+   "text2": "#908caa",
+   "accent": "#eb7f9d",
+   "ok": "#9ccfd8",
+   "warn": "#f6c177",
+   "bad": "#ff8e6e",
+   "info": "#c4a7e7"
+  }
+ },
+ {
+  "id": "sanchoi",
+  "name": "Sân chơi",
+  "about": "Vàng nắng, bo tròn",
+  "font": "dam",
+  "radius": [
+   "12px",
+   "18px",
+   "26px"
+  ],
+  "light": {
+   "bg": "#fff6dd",
+   "edge": "#ffe9b0",
+   "surface": "#ffffff",
+   "surface2": "#fff0c7",
+   "tren": "#fffdf4",
+   "border": "#f0d58c",
+   "text": "#2a2140",
+   "text2": "#5d5278",
+   "accent": "#c9430f",
+   "ok": "#1d7a3a",
+   "warn": "#8f5f00",
+   "bad": "#b5195a",
+   "info": "#1268ad"
+  },
+  "dark": {
+   "bg": "#1e1a44",
+   "edge": "#141132",
+   "surface": "#292459",
+   "surface2": "#352f70",
+   "tren": "#352f70",
+   "border": "#4d468f",
+   "text": "#f6f3ff",
+   "text2": "#c9c2ee",
+   "accent": "#ffcb52",
+   "ok": "#7fe0a0",
+   "warn": "#ffb469",
+   "bad": "#ff9bb5",
+   "info": "#8fd0ff",
+   "pattern": {
+    "kind": "dots",
+    "color": "#ffe9a8",
+    "opacity": 0.3
+   }
+  }
+ },
+ {
+  "id": "sonmai",
+  "name": "Sơn mài",
+  "about": "Son, then, vàng quỳ",
+  "font": "chan",
+  "light": {
+   "bg": "#fbf5ea",
+   "edge": "#f3e8d5",
+   "surface": "#fffcf5",
+   "surface2": "#f4e8d4",
+   "tren": "#fffcf5",
+   "border": "#e0cfb4",
+   "text": "#2c1812",
+   "text2": "#6f5142",
+   "accent": "#a5361f",
+   "ok": "#4f6b1f",
+   "warn": "#8f5a06",
+   "bad": "#a01850",
+   "info": "#2b6476",
+   "pattern": {
+    "kind": "dots",
+    "color": "#b07a2a",
+    "opacity": 0.16
+   }
+  },
+  "dark": {
+   "bg": "#1d110d",
+   "edge": "#140a07",
+   "surface": "#281913",
+   "surface2": "#37231b",
+   "tren": "#35201a",
+   "border": "#543a2e",
+   "text": "#f7ecdc",
+   "text2": "#d0baa4",
+   "accent": "#e4b660",
+   "ok": "#a9c47f",
+   "warn": "#f0a35e",
+   "bad": "#f58a72",
+   "info": "#9fbfc9",
+   "pattern": {
+    "kind": "dots",
+    "color": "#e4b660",
+    "opacity": 0.16
+   }
+  }
+ },
+ {
+  "id": "hoian",
+  "name": "Phố Hội",
+  "about": "Tường vàng, cửa gỗ xanh",
+  "font": "viet",
+  "light": {
+   "bg": "#fff7e3",
+   "edge": "#fdebc0",
+   "surface": "#fffdf6",
+   "surface2": "#fcedc4",
+   "tren": "#fffdf6",
+   "border": "#ead49c",
+   "text": "#2f2a20",
+   "text2": "#6a5f47",
+   "accent": "#0f6674",
+   "ok": "#3d7030",
+   "warn": "#97590a",
+   "bad": "#b3261e",
+   "info": "#33589a"
+  },
+  "dark": {
+   "bg": "#102120",
+   "edge": "#0a1716",
+   "surface": "#172c2a",
+   "surface2": "#213b38",
+   "tren": "#1c3532",
+   "border": "#33534f",
+   "text": "#f9f0de",
+   "text2": "#b7c9bf",
+   "accent": "#ffb27a",
+   "ok": "#a9d48f",
+   "warn": "#f5cd6b",
+   "bad": "#ff9a90",
+   "info": "#8fd0e0"
+  }
+ },
+ {
+  "id": "kanagawa",
+  "name": "Sóng lừng",
+  "about": "Xanh sóng, giấy ngà",
+  "font": "viet",
+  "source": {
+   "palette": "Kanagawa",
+   "author": "Tommaso Laurenzi",
+   "url": "https://github.com/rebelot/kanagawa.nvim",
+   "license": "MIT"
+  },
+  "light": {
+   "bg": "#faf6e8",
+   "edge": "#f2ebd2",
+   "surface": "#fffdf6",
+   "surface2": "#f0e9d2",
+   "tren": "#fffdf6",
+   "border": "#dcd3b4",
+   "text": "#26263f",
+   "text2": "#6a6758",
+   "accent": "#3f6bb0",
+   "ok": "#6f894e",
+   "warn": "#cc6d00",
+   "bad": "#c84053",
+   "info": "#4e8ca2",
+   "pattern": {
+    "kind": "waves",
+    "color": "#3f6bb0",
+    "opacity": 0.05
+   }
+  },
+  "dark": {
+   "bg": "#1f1f28",
+   "edge": "#16161d",
+   "surface": "#2a2a37",
+   "surface2": "#363646",
+   "tren": "#223249",
+   "border": "#54546d",
+   "text": "#dcd7ba",
+   "text2": "#c8c093",
+   "accent": "#7e9cd8",
+   "ok": "#98bb6c",
+   "warn": "#e6c384",
+   "bad": "#ff5d62",
+   "info": "#7fb4ca",
+   "pattern": {
+    "kind": "waves",
+    "color": "#7e9cd8",
+    "opacity": 0.05
+   }
+  }
+ },
+ {
+  "id": "everforest",
+  "name": "Rừng thông",
+  "about": "Xanh rừng dịu",
+  "font": "viet",
+  "source": {
+   "palette": "Everforest",
+   "author": "sainnhe",
+   "url": "https://github.com/sainnhe/everforest",
+   "license": "MIT"
+  },
+  "light": {
+   "bg": "#fdf6e3",
+   "edge": "#f4f0d9",
+   "surface": "#fffbef",
+   "surface2": "#efebd4",
+   "tren": "#fffbef",
+   "border": "#dfdac3",
+   "text": "#3f4b52",
+   "text2": "#708089",
+   "accent": "#6b8a00",
+   "ok": "#35a77c",
+   "warn": "#dfa000",
+   "bad": "#f85552",
+   "info": "#3a94c5"
+  },
+  "dark": {
+   "bg": "#2d353b",
+   "edge": "#232a2e",
+   "surface": "#343f44",
+   "surface2": "#3d484d",
+   "tren": "#38444a",
+   "border": "#56635f",
+   "text": "#d3c6aa",
+   "text2": "#9da9a0",
+   "accent": "#a7c080",
+   "ok": "#83c092",
+   "warn": "#dbbc7f",
+   "bad": "#e67e80",
+   "info": "#7fbbb3"
+  }
+ }
+]

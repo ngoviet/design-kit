@@ -1,0 +1,5 @@
+[
+  { "name": "doi-bo", "do": [{ "click": ".the[data-mau=gomlam]" }] },
+  { "name": "ep-toi", "do": [{ "click": ".the[data-mau=sanchoi]" }, { "click": "text=Tối" }] },
+  { "name": "hoan-tac", "do": [{ "click": ".the[data-mau=flexoki]" }, { "click": "label:has(input[value=light])" }, { "click": "#hoan-tac" }] }
+]

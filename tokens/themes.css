@@ -1,0 +1,558 @@
+/* design-kit · bộ màu cho người dùng tự chọn. SINH bằng `node scripts/sinh-themes.mjs` từ data/themes.json; đừng sửa tay
+   (test/themes.test.ts so hai bên). Nạp SAU tokens/<hướng>.css. Chọn bằng <html data-dk="…" data-chu-de="<id>">; bỏ thuộc tính
+   là màu của hướng. Sáng/tối theo máy, hoặc ép bằng data-theme="light|dark" như các hướng. Áp TRƯỚC lần vẽ đầu bằng script ngắn
+   trong <head> (blocks/html/chon-mau.html). Nguồn và giấy phép bảng màu: tokens/NOTICE-themes.txt. */
+
+/* ── Neon (neon) · tự phối ── */
+[data-dk][data-chu-de="neon"] {
+  color-scheme: light;
+  --bg-edge: #e6f3f7; --bg: #f3fafc;
+  --surface: #ffffff; --surface-2: #e8f3f7;
+  --border: #c9dfe6; --border-strong: #46617a;
+  --text: #0b1f33; --text-2: #46617a;
+  --accent: #067a95; --accent-text: #036981;
+  --on-accent: #f7fdff; --accent-soft: #cfe1e7;
+  --ok: #057a44; --ok-soft: #e5efe8;
+  --warn: #965b0d; --warn-soft: #f3ebe3;
+  --bad: #c02f3a; --bad-soft: #fbe7e6;
+  --info: #1d5fc4; --info-soft: #e3ecfa;
+  --focus: #036981;
+  --shadow-1: 0 1px 2px oklch(0.3 0.03 60 / .10);
+  --shadow-2: 0 10px 28px -12px oklch(0.3 0.03 60 / .28);
+  --nen-trang: linear-gradient(160deg, #ffffff 0%, #f3fafc 46%, #e6f3f7 100%);
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  [data-dk][data-chu-de="neon"]:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg-edge: oklch(0.146 0.023 265); --bg: oklch(0.181 0.036 266);
+    --surface: oklch(0.213 0.046 264); --surface-2: oklch(0.264 0.062 262);
+    --border: oklch(0.330 0.060 265); --border-strong: oklch(0.600 0.050 262);
+    --text: oklch(0.944 0.015 257); --text-2: oklch(0.777 0.051 259);
+    --accent: oklch(0.797 0.133 212); --accent-text: oklch(0.820 0.125 212);
+    --on-accent: oklch(0.146 0.023 265); --accent-soft: oklch(0.290 0.050 215);
+    --ok: oklch(0.780 0.170 150); --ok-soft: oklch(0.285 0.060 150);
+    --warn: oklch(0.800 0.150 72); --warn-soft: oklch(0.300 0.060 72);
+    --bad: oklch(0.800 0.105 22); --bad-soft: oklch(0.295 0.055 25);
+    --info: oklch(0.780 0.105 258); --info-soft: oklch(0.290 0.055 260);
+    --focus: oklch(0.820 0.125 212);
+    --shadow-1: 0 1px 2px oklch(0 0 0 / 0.45);
+    --shadow-2: 0 10px 30px -10px oklch(0 0 0 / 0.70);
+    --nen-trang: linear-gradient(160deg, var(--surface-2) 0%, var(--bg) 42%, var(--bg-edge) 100%);
+    --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+  }
+}
+[data-dk][data-chu-de="neon"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg-edge: oklch(0.146 0.023 265); --bg: oklch(0.181 0.036 266);
+  --surface: oklch(0.213 0.046 264); --surface-2: oklch(0.264 0.062 262);
+  --border: oklch(0.330 0.060 265); --border-strong: oklch(0.600 0.050 262);
+  --text: oklch(0.944 0.015 257); --text-2: oklch(0.777 0.051 259);
+  --accent: oklch(0.797 0.133 212); --accent-text: oklch(0.820 0.125 212);
+  --on-accent: oklch(0.146 0.023 265); --accent-soft: oklch(0.290 0.050 215);
+  --ok: oklch(0.780 0.170 150); --ok-soft: oklch(0.285 0.060 150);
+  --warn: oklch(0.800 0.150 72); --warn-soft: oklch(0.300 0.060 72);
+  --bad: oklch(0.800 0.105 22); --bad-soft: oklch(0.295 0.055 25);
+  --info: oklch(0.780 0.105 258); --info-soft: oklch(0.290 0.055 260);
+  --focus: oklch(0.820 0.125 212);
+  --shadow-1: 0 1px 2px oklch(0 0 0 / 0.45);
+  --shadow-2: 0 10px 30px -10px oklch(0 0 0 / 0.70);
+  --nen-trang: linear-gradient(160deg, var(--surface-2) 0%, var(--bg) 42%, var(--bg-edge) 100%);
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+}
+
+/* ── Giấy và mực (flexoki) · Flexoki, Steph Ango, MIT ── */
+[data-dk][data-chu-de="flexoki"] {
+  color-scheme: light;
+  --bg-edge: #f7f3e4; --bg: #fffcf0;
+  --surface: #fffefa; --surface-2: #f2f0e5;
+  --border: #dad8ce; --border-strong: #6f6e69;
+  --text: #100f0f; --text-2: #6c6b66;
+  --accent: #208078; --accent-text: #076c65;
+  --on-accent: #f6fefd; --accent-soft: #d2e2dd;
+  --ok: #5b720e; --ok-soft: #ebefdf;
+  --warn: #866609; --warn-soft: #f5efe1;
+  --bad: #af3029; --bad-soft: #f8e6e0;
+  --info: #205ea6; --info-soft: #e4eaf1;
+  --focus: #076c65;
+  --shadow-1: 0 1px 2px oklch(0.3 0.03 60 / .10);
+  --shadow-2: 0 10px 28px -12px oklch(0.3 0.03 60 / .28);
+  --nen-trang: linear-gradient(160deg, #fffefa 0%, #fffcf0 46%, #f7f3e4 100%);
+  --font-display: "Literata", "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) {
+  [data-dk][data-chu-de="flexoki"]:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg-edge: #0b0a0a; --bg: #100f0f;
+    --surface: #1c1b1a; --surface-2: #282726;
+    --border: #403e3c; --border-strong: #878580;
+    --text: #d8d7cd; --text-2: #bab8b2;
+    --accent: #56c1b6; --accent-text: #64cec3;
+    --on-accent: #001411; --accent-soft: #283936;
+    --ok: #adc262; --ok-soft: #2b2d21;
+    --warn: #e2b434; --warn-soft: #352e20;
+    --bad: #fe9d90; --bad-soft: #362421;
+    --info: #7bbefa; --info-soft: #242a31;
+    --focus: #64cec3;
+    --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+    --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+    --nen-trang: linear-gradient(160deg, #1c1b1a 0%, #100f0f 46%, #0b0a0a 100%);
+    --font-display: "Literata", "Times New Roman", serif;
+  }
+}
+[data-dk][data-chu-de="flexoki"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg-edge: #0b0a0a; --bg: #100f0f;
+  --surface: #1c1b1a; --surface-2: #282726;
+  --border: #403e3c; --border-strong: #878580;
+  --text: #d8d7cd; --text-2: #bab8b2;
+  --accent: #56c1b6; --accent-text: #64cec3;
+  --on-accent: #001411; --accent-soft: #283936;
+  --ok: #adc262; --ok-soft: #2b2d21;
+  --warn: #e2b434; --warn-soft: #352e20;
+  --bad: #fe9d90; --bad-soft: #362421;
+  --info: #7bbefa; --info-soft: #242a31;
+  --focus: #64cec3;
+  --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+  --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+  --nen-trang: linear-gradient(160deg, #1c1b1a 0%, #100f0f 46%, #0b0a0a 100%);
+  --font-display: "Literata", "Times New Roman", serif;
+}
+
+/* ── Gốm lam (gomlam) · tự phối ── */
+[data-dk][data-chu-de="gomlam"] {
+  color-scheme: light;
+  --bg-edge: #e9eeec; --bg: #f5f7f4;
+  --surface: #fdfefc; --surface-2: #e7edee;
+  --border: #cad5da; --border-strong: #4d5f7a;
+  --text: #14233f; --text-2: #4d5f7a;
+  --accent: #1d4fa3; --accent-text: #1d4fa3;
+  --on-accent: #fafcff; --accent-soft: #cedaec;
+  --ok: #2e6e58; --ok-soft: #e4ece7;
+  --warn: #8f5f0a; --warn-soft: #f0eae0;
+  --bad: #a8382a; --bad-soft: #f5e6e1;
+  --info: #2a6e9c; --info-soft: #e4ecf1;
+  --focus: #1d4fa3;
+  --shadow-1: 0 1px 2px oklch(0.3 0.03 60 / .10);
+  --shadow-2: 0 10px 28px -12px oklch(0.3 0.03 60 / .28);
+  --nen-trang: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='36' fill='none' stroke='%231d4fa3' stroke-opacity='0.055'%3E%3Cpath d='M0 36a36 36 0 0 1 72 0M12 36a24 24 0 0 1 48 0M24 36a12 12 0 0 1 24 0M-36 18a36 36 0 0 1 72 0M-24 18a24 24 0 0 1 48 0M36 18a36 36 0 0 1 72 0M48 18a24 24 0 0 1 48 0'/%3E%3C/svg%3E"), linear-gradient(160deg, #fdfefc 0%, #f5f7f4 46%, #e9eeec 100%);
+  --font-display: "Literata", "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) {
+  [data-dk][data-chu-de="gomlam"]:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg-edge: #0a1224; --bg: #0f1a33;
+    --surface: #162444; --surface-2: #20315a;
+    --border: #334a78; --border-strong: #b4c4dc;
+    --text: #eef3f4; --text-2: #b4c4dc;
+    --accent: #9dc0ff; --accent-text: #a8c7fd;
+    --on-accent: #080f1c; --accent-soft: #304369;
+    --ok: #8fd0b5; --ok-soft: #263d56;
+    --warn: #e8c27a; --warn-soft: #333c50;
+    --bad: #fdad9c; --bad-soft: #363851;
+    --info: #8fcbe8; --info-soft: #263c5c;
+    --focus: #a8c7fd;
+    --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+    --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+    --nen-trang: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='36' fill='none' stroke='%239dc0ff' stroke-opacity='0.055'%3E%3Cpath d='M0 36a36 36 0 0 1 72 0M12 36a24 24 0 0 1 48 0M24 36a12 12 0 0 1 24 0M-36 18a36 36 0 0 1 72 0M-24 18a24 24 0 0 1 48 0M36 18a36 36 0 0 1 72 0M48 18a24 24 0 0 1 48 0'/%3E%3C/svg%3E"), linear-gradient(160deg, #1c2d54 0%, #0f1a33 46%, #0a1224 100%);
+    --font-display: "Literata", "Times New Roman", serif;
+  }
+}
+[data-dk][data-chu-de="gomlam"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg-edge: #0a1224; --bg: #0f1a33;
+  --surface: #162444; --surface-2: #20315a;
+  --border: #334a78; --border-strong: #b4c4dc;
+  --text: #eef3f4; --text-2: #b4c4dc;
+  --accent: #9dc0ff; --accent-text: #a8c7fd;
+  --on-accent: #080f1c; --accent-soft: #304369;
+  --ok: #8fd0b5; --ok-soft: #263d56;
+  --warn: #e8c27a; --warn-soft: #333c50;
+  --bad: #fdad9c; --bad-soft: #363851;
+  --info: #8fcbe8; --info-soft: #263c5c;
+  --focus: #a8c7fd;
+  --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+  --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+  --nen-trang: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='36' fill='none' stroke='%239dc0ff' stroke-opacity='0.055'%3E%3Cpath d='M0 36a36 36 0 0 1 72 0M12 36a24 24 0 0 1 48 0M24 36a12 12 0 0 1 24 0M-36 18a36 36 0 0 1 72 0M-24 18a24 24 0 0 1 48 0M36 18a36 36 0 0 1 72 0M48 18a24 24 0 0 1 48 0'/%3E%3C/svg%3E"), linear-gradient(160deg, #1c2d54 0%, #0f1a33 46%, #0a1224 100%);
+  --font-display: "Literata", "Times New Roman", serif;
+}
+
+/* ── Hồng thông (rosepine) · Rosé Pine, Rosé Pine, MIT ── */
+[data-dk][data-chu-de="rosepine"] {
+  color-scheme: light;
+  --bg-edge: #f2e9e1; --bg: #faf4ed;
+  --surface: #fffaf3; --surface-2: #f2e9e1;
+  --border: #dfdad9; --border-strong: #797593;
+  --text: #363250; --text-2: #696582;
+  --accent: #aa5a71; --accent-text: #8f4259;
+  --on-accent: #fffafb; --accent-soft: #edd2d2;
+  --ok: #286983; --ok-soft: #e5e8e5;
+  --warn: #935d03; --warn-soft: #fdefde;
+  --bad: #a8324f; --bad-soft: #f7e2de;
+  --info: #745e8c; --info-soft: #f1eaea;
+  --focus: #8f4259;
+  --shadow-1: 0 1px 2px oklch(0.3 0.03 60 / .10);
+  --shadow-2: 0 10px 28px -12px oklch(0.3 0.03 60 / .28);
+  --nen-trang: linear-gradient(160deg, #fffaf3 0%, #faf4ed 46%, #f2e9e1 100%);
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  [data-dk][data-chu-de="rosepine"]:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg-edge: #1b192c; --bg: #232136;
+    --surface: #2a273f; --surface-2: #322f4b;
+    --border: #44415a; --border-strong: #908caa;
+    --text: #e0def4; --text-2: #bdb9d8;
+    --accent: #fb8dab; --accent-text: #feacc0;
+    --on-accent: #1a090e; --accent-soft: #4d3851;
+    --ok: #9ccfd8; --ok-soft: #3b3f55;
+    --warn: #f6c177; --warn-soft: #463e4b;
+    --bad: #ffae97; --bad-soft: #483749;
+    --info: #d2b5f6; --info-soft: #403957;
+    --focus: #feacc0;
+    --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+    --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+    --nen-trang: linear-gradient(160deg, #2f2c49 0%, #232136 46%, #1b192c 100%);
+    --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+  }
+}
+[data-dk][data-chu-de="rosepine"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg-edge: #1b192c; --bg: #232136;
+  --surface: #2a273f; --surface-2: #322f4b;
+  --border: #44415a; --border-strong: #908caa;
+  --text: #e0def4; --text-2: #bdb9d8;
+  --accent: #fb8dab; --accent-text: #feacc0;
+  --on-accent: #1a090e; --accent-soft: #4d3851;
+  --ok: #9ccfd8; --ok-soft: #3b3f55;
+  --warn: #f6c177; --warn-soft: #463e4b;
+  --bad: #ffae97; --bad-soft: #483749;
+  --info: #d2b5f6; --info-soft: #403957;
+  --focus: #feacc0;
+  --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+  --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+  --nen-trang: linear-gradient(160deg, #2f2c49 0%, #232136 46%, #1b192c 100%);
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+}
+
+/* ── Sân chơi (sanchoi) · tự phối ── */
+[data-dk][data-chu-de="sanchoi"] {
+  color-scheme: light;
+  --bg-edge: #ffe9b0; --bg: #fff6dd;
+  --surface: #ffffff; --surface-2: #fff0c7;
+  --border: #f0d58c; --border-strong: #5d5278;
+  --text: #2a2140; --text-2: #5d5278;
+  --accent: #c9430f; --accent-text: #b43700;
+  --on-accent: #fffbf9; --accent-soft: #f9dbd2;
+  --ok: #197737; --ok-soft: #e5efe6;
+  --warn: #8f5f00; --warn-soft: #f2ebe3;
+  --bad: #b5195a; --bad-soft: #fae6ea;
+  --info: #1268ad; --info-soft: #e4edf6;
+  --focus: #b43700;
+  --shadow-1: 0 1px 2px oklch(0.3 0.03 60 / .10);
+  --shadow-2: 0 10px 28px -12px oklch(0.3 0.03 60 / .28);
+  --nen-trang: linear-gradient(160deg, #fffdf4 0%, #fff6dd 46%, #ffe9b0 100%);
+  --font-display: "Bricolage Grotesque", "Be Vietnam Pro", sans-serif;
+  --r-sm: 12px; --r-md: 18px; --r-lg: 26px;
+}
+@media (prefers-color-scheme: dark) {
+  [data-dk][data-chu-de="sanchoi"]:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg-edge: #141132; --bg: #1e1a44;
+    --surface: #292459; --surface-2: #352f70;
+    --border: #4d468f; --border-strong: #c9c2ee;
+    --text: #f6f3ff; --text-2: #c9c2ee;
+    --accent: #ffcb52; --accent-text: #ffcb52;
+    --on-accent: #150e02; --accent-soft: #453f60;
+    --ok: #7fe0a0; --ok-soft: #354167;
+    --warn: #ffb469; --warn-soft: #463c61;
+    --bad: #feacc0; --bad-soft: #473768;
+    --info: #8fd0ff; --info-soft: #383d72;
+    --focus: #ffcb52;
+    --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+    --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+    --nen-trang: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='190' fill='%23ffe9a8' fill-opacity='0.3'%3E%3Ccircle cx='14' cy='22' r='1.4'/%3E%3Ccircle cx='88' cy='10' r='1'/%3E%3Ccircle cx='140' cy='60' r='1.7'/%3E%3Ccircle cx='52' cy='96' r='1.1'/%3E%3Ccircle cx='176' cy='128' r='1.3'/%3E%3Ccircle cx='104' cy='150' r='1'/%3E%3Ccircle cx='24' cy='168' r='1.6'/%3E%3Ccircle cx='196' cy='30' r='1'/%3E%3C/svg%3E"), linear-gradient(160deg, #352f70 0%, #1e1a44 46%, #141132 100%);
+    --font-display: "Bricolage Grotesque", "Be Vietnam Pro", sans-serif;
+    --r-sm: 12px; --r-md: 18px; --r-lg: 26px;
+  }
+}
+[data-dk][data-chu-de="sanchoi"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg-edge: #141132; --bg: #1e1a44;
+  --surface: #292459; --surface-2: #352f70;
+  --border: #4d468f; --border-strong: #c9c2ee;
+  --text: #f6f3ff; --text-2: #c9c2ee;
+  --accent: #ffcb52; --accent-text: #ffcb52;
+  --on-accent: #150e02; --accent-soft: #453f60;
+  --ok: #7fe0a0; --ok-soft: #354167;
+  --warn: #ffb469; --warn-soft: #463c61;
+  --bad: #feacc0; --bad-soft: #473768;
+  --info: #8fd0ff; --info-soft: #383d72;
+  --focus: #ffcb52;
+  --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+  --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+  --nen-trang: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='190' fill='%23ffe9a8' fill-opacity='0.3'%3E%3Ccircle cx='14' cy='22' r='1.4'/%3E%3Ccircle cx='88' cy='10' r='1'/%3E%3Ccircle cx='140' cy='60' r='1.7'/%3E%3Ccircle cx='52' cy='96' r='1.1'/%3E%3Ccircle cx='176' cy='128' r='1.3'/%3E%3Ccircle cx='104' cy='150' r='1'/%3E%3Ccircle cx='24' cy='168' r='1.6'/%3E%3Ccircle cx='196' cy='30' r='1'/%3E%3C/svg%3E"), linear-gradient(160deg, #352f70 0%, #1e1a44 46%, #141132 100%);
+  --font-display: "Bricolage Grotesque", "Be Vietnam Pro", sans-serif;
+  --r-sm: 12px; --r-md: 18px; --r-lg: 26px;
+}
+
+/* ── Sơn mài (sonmai) · tự phối ── */
+[data-dk][data-chu-de="sonmai"] {
+  color-scheme: light;
+  --bg-edge: #f3e8d5; --bg: #fbf5ea;
+  --surface: #fffcf5; --surface-2: #f4e8d4;
+  --border: #e0cfb4; --border-strong: #6f5142;
+  --text: #2c1812; --text-2: #6f5142;
+  --accent: #a5361f; --accent-text: #a0311a;
+  --on-accent: #fffbfa; --accent-soft: #efd1c5;
+  --ok: #4f6b1f; --ok-soft: #e8eadb;
+  --warn: #8f5a06; --warn-soft: #f2e8da;
+  --bad: #a01850; --bad-soft: #f7e2e0;
+  --info: #2b6476; --info-soft: #e5e9e5;
+  --focus: #a0311a;
+  --shadow-1: 0 1px 2px oklch(0.3 0.03 60 / .10);
+  --shadow-2: 0 10px 28px -12px oklch(0.3 0.03 60 / .28);
+  --nen-trang: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='190' fill='%23b07a2a' fill-opacity='0.16'%3E%3Ccircle cx='14' cy='22' r='1.4'/%3E%3Ccircle cx='88' cy='10' r='1'/%3E%3Ccircle cx='140' cy='60' r='1.7'/%3E%3Ccircle cx='52' cy='96' r='1.1'/%3E%3Ccircle cx='176' cy='128' r='1.3'/%3E%3Ccircle cx='104' cy='150' r='1'/%3E%3Ccircle cx='24' cy='168' r='1.6'/%3E%3Ccircle cx='196' cy='30' r='1'/%3E%3C/svg%3E"), linear-gradient(160deg, #fffcf5 0%, #fbf5ea 46%, #f3e8d5 100%);
+  --font-display: "Literata", "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) {
+  [data-dk][data-chu-de="sonmai"]:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg-edge: #140a07; --bg: #1d110d;
+    --surface: #281913; --surface-2: #37231b;
+    --border: #543a2e; --border-strong: #d0baa4;
+    --text: #f7ecdc; --text-2: #d0baa4;
+    --accent: #e4b660; --accent-text: #e4b660;
+    --on-accent: #160e02; --accent-soft: #463120;
+    --ok: #abc681; --ok-soft: #3b3122;
+    --warn: #f9ab66; --warn-soft: #442c1e;
+    --bad: #fea590; --bad-soft: #442920;
+    --info: #a1c1cb; --info-soft: #3a302c;
+    --focus: #e4b660;
+    --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+    --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+    --nen-trang: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='190' fill='%23e4b660' fill-opacity='0.16'%3E%3Ccircle cx='14' cy='22' r='1.4'/%3E%3Ccircle cx='88' cy='10' r='1'/%3E%3Ccircle cx='140' cy='60' r='1.7'/%3E%3Ccircle cx='52' cy='96' r='1.1'/%3E%3Ccircle cx='176' cy='128' r='1.3'/%3E%3Ccircle cx='104' cy='150' r='1'/%3E%3Ccircle cx='24' cy='168' r='1.6'/%3E%3Ccircle cx='196' cy='30' r='1'/%3E%3C/svg%3E"), linear-gradient(160deg, #35201a 0%, #1d110d 46%, #140a07 100%);
+    --font-display: "Literata", "Times New Roman", serif;
+  }
+}
+[data-dk][data-chu-de="sonmai"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg-edge: #140a07; --bg: #1d110d;
+  --surface: #281913; --surface-2: #37231b;
+  --border: #543a2e; --border-strong: #d0baa4;
+  --text: #f7ecdc; --text-2: #d0baa4;
+  --accent: #e4b660; --accent-text: #e4b660;
+  --on-accent: #160e02; --accent-soft: #463120;
+  --ok: #abc681; --ok-soft: #3b3122;
+  --warn: #f9ab66; --warn-soft: #442c1e;
+  --bad: #fea590; --bad-soft: #442920;
+  --info: #a1c1cb; --info-soft: #3a302c;
+  --focus: #e4b660;
+  --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+  --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+  --nen-trang: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='190' fill='%23e4b660' fill-opacity='0.16'%3E%3Ccircle cx='14' cy='22' r='1.4'/%3E%3Ccircle cx='88' cy='10' r='1'/%3E%3Ccircle cx='140' cy='60' r='1.7'/%3E%3Ccircle cx='52' cy='96' r='1.1'/%3E%3Ccircle cx='176' cy='128' r='1.3'/%3E%3Ccircle cx='104' cy='150' r='1'/%3E%3Ccircle cx='24' cy='168' r='1.6'/%3E%3Ccircle cx='196' cy='30' r='1'/%3E%3C/svg%3E"), linear-gradient(160deg, #35201a 0%, #1d110d 46%, #140a07 100%);
+  --font-display: "Literata", "Times New Roman", serif;
+}
+
+/* ── Phố Hội (hoian) · tự phối ── */
+[data-dk][data-chu-de="hoian"] {
+  color-scheme: light;
+  --bg-edge: #fdebc0; --bg: #fff7e3;
+  --surface: #fffdf6; --surface-2: #fcedc4;
+  --border: #ead49c; --border-strong: #6a5f47;
+  --text: #2f2a20; --text-2: #6a5f47;
+  --accent: #0f6674; --accent-text: #0f6674;
+  --on-accent: #f6fdff; --accent-soft: #e3eae6;
+  --ok: #3d7030; --ok-soft: #e7ebdd;
+  --warn: #97590a; --warn-soft: #f3e9db;
+  --bad: #b3261e; --bad-soft: #f9e4db;
+  --info: #33589a; --info-soft: #e5e8ec;
+  --focus: #0f6674;
+  --shadow-1: 0 1px 2px oklch(0.3 0.03 60 / .10);
+  --shadow-2: 0 10px 28px -12px oklch(0.3 0.03 60 / .28);
+  --nen-trang: linear-gradient(160deg, #fffdf6 0%, #fff7e3 46%, #fdebc0 100%);
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  [data-dk][data-chu-de="hoian"]:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg-edge: #0a1716; --bg: #102120;
+    --surface: #172c2a; --surface-2: #213b38;
+    --border: #33534f; --border-strong: #b7c9bf;
+    --text: #f9f0de; --text-2: #b7c9bf;
+    --accent: #ffb27a; --accent-text: #feb580;
+    --on-accent: #190c03; --accent-soft: #42453a;
+    --ok: #a9d48f; --ok-soft: #2b4439;
+    --warn: #f5cd6b; --warn-soft: #374336;
+    --bad: #fdada5; --bad-soft: #3b3d39;
+    --info: #8fd0e0; --info-soft: #284343;
+    --focus: #feb580;
+    --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+    --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+    --nen-trang: linear-gradient(160deg, #1c3532 0%, #102120 46%, #0a1716 100%);
+    --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+  }
+}
+[data-dk][data-chu-de="hoian"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg-edge: #0a1716; --bg: #102120;
+  --surface: #172c2a; --surface-2: #213b38;
+  --border: #33534f; --border-strong: #b7c9bf;
+  --text: #f9f0de; --text-2: #b7c9bf;
+  --accent: #ffb27a; --accent-text: #feb580;
+  --on-accent: #190c03; --accent-soft: #42453a;
+  --ok: #a9d48f; --ok-soft: #2b4439;
+  --warn: #f5cd6b; --warn-soft: #374336;
+  --bad: #fdada5; --bad-soft: #3b3d39;
+  --info: #8fd0e0; --info-soft: #284343;
+  --focus: #feb580;
+  --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+  --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+  --nen-trang: linear-gradient(160deg, #1c3532 0%, #102120 46%, #0a1716 100%);
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+}
+
+/* ── Sóng lừng (kanagawa) · Kanagawa, Tommaso Laurenzi, MIT ── */
+[data-dk][data-chu-de="kanagawa"] {
+  color-scheme: light;
+  --bg-edge: #f2ebd2; --bg: #faf6e8;
+  --surface: #fffdf6; --surface-2: #f0e9d2;
+  --border: #dcd3b4; --border-strong: #6a6758;
+  --text: #26263f; --text-2: #6a6758;
+  --accent: #3f6bb0; --accent-text: #345fa3;
+  --on-accent: #fafcff; --accent-soft: #d7dfe9;
+  --ok: #556e34; --ok-soft: #edefe1;
+  --warn: #9d5304; --warn-soft: #faecdd;
+  --bad: #bc3449; --bad-soft: #fce7e1;
+  --info: #2f6e83; --info-soft: #eaefec;
+  --focus: #345fa3;
+  --shadow-1: 0 1px 2px oklch(0.3 0.03 60 / .10);
+  --shadow-2: 0 10px 28px -12px oklch(0.3 0.03 60 / .28);
+  --nen-trang: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='36' fill='none' stroke='%233f6bb0' stroke-opacity='0.05'%3E%3Cpath d='M0 36a36 36 0 0 1 72 0M12 36a24 24 0 0 1 48 0M24 36a12 12 0 0 1 24 0M-36 18a36 36 0 0 1 72 0M-24 18a24 24 0 0 1 48 0M36 18a36 36 0 0 1 72 0M48 18a24 24 0 0 1 48 0'/%3E%3C/svg%3E"), linear-gradient(160deg, #fffdf6 0%, #faf6e8 46%, #f2ebd2 100%);
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  [data-dk][data-chu-de="kanagawa"]:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg-edge: #16161d; --bg: #1f1f28;
+    --surface: #2a2a37; --surface-2: #363646;
+    --border: #54546d; --border-strong: #c8c093;
+    --text: #e5e0c2; --text-2: #c8c093;
+    --accent: #90afec; --accent-text: #acc7fd;
+    --on-accent: #090f1c; --accent-soft: #3f455d;
+    --ok: #a9cd7d; --ok-soft: #3a3f41;
+    --warn: #e6c384; --warn-soft: #444044;
+    --bad: #ffa9a6; --bad-soft: #4a343f;
+    --info: #93c9df; --info-soft: #373e4c;
+    --focus: #acc7fd;
+    --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+    --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+    --nen-trang: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='36' fill='none' stroke='%237e9cd8' stroke-opacity='0.05'%3E%3Cpath d='M0 36a36 36 0 0 1 72 0M12 36a24 24 0 0 1 48 0M24 36a12 12 0 0 1 24 0M-36 18a36 36 0 0 1 72 0M-24 18a24 24 0 0 1 48 0M36 18a36 36 0 0 1 72 0M48 18a24 24 0 0 1 48 0'/%3E%3C/svg%3E"), linear-gradient(160deg, #223249 0%, #1f1f28 46%, #16161d 100%);
+    --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+  }
+}
+[data-dk][data-chu-de="kanagawa"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg-edge: #16161d; --bg: #1f1f28;
+  --surface: #2a2a37; --surface-2: #363646;
+  --border: #54546d; --border-strong: #c8c093;
+  --text: #e5e0c2; --text-2: #c8c093;
+  --accent: #90afec; --accent-text: #acc7fd;
+  --on-accent: #090f1c; --accent-soft: #3f455d;
+  --ok: #a9cd7d; --ok-soft: #3a3f41;
+  --warn: #e6c384; --warn-soft: #444044;
+  --bad: #ffa9a6; --bad-soft: #4a343f;
+  --info: #93c9df; --info-soft: #373e4c;
+  --focus: #acc7fd;
+  --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+  --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+  --nen-trang: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='36' fill='none' stroke='%237e9cd8' stroke-opacity='0.05'%3E%3Cpath d='M0 36a36 36 0 0 1 72 0M12 36a24 24 0 0 1 48 0M24 36a12 12 0 0 1 24 0M-36 18a36 36 0 0 1 72 0M-24 18a24 24 0 0 1 48 0M36 18a36 36 0 0 1 72 0M48 18a24 24 0 0 1 48 0'/%3E%3C/svg%3E"), linear-gradient(160deg, #223249 0%, #1f1f28 46%, #16161d 100%);
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+}
+
+/* ── Rừng thông (everforest) · Everforest, sainnhe, MIT ── */
+[data-dk][data-chu-de="everforest"] {
+  color-scheme: light;
+  --bg-edge: #f4f0d9; --bg: #fdf6e3;
+  --surface: #fffbef; --surface-2: #efebd4;
+  --border: #dfdac3; --border-strong: #708089;
+  --text: #2d393f; --text-2: #5b6a73;
+  --accent: #617d0c; --accent-text: #4f650a;
+  --on-accent: #fafdf7; --accent-soft: #d6ddb9;
+  --ok: #0e7654; --ok-soft: #e9f1e1;
+  --warn: #896100; --warn-soft: #fcf0d9;
+  --bad: #c9232b; --bad-soft: #ffeade;
+  --info: #116f9c; --info-soft: #e9efeb;
+  --focus: #4f650a;
+  --shadow-1: 0 1px 2px oklch(0.3 0.03 60 / .10);
+  --shadow-2: 0 10px 28px -12px oklch(0.3 0.03 60 / .28);
+  --nen-trang: linear-gradient(160deg, #fffbef 0%, #fdf6e3 46%, #f4f0d9 100%);
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  [data-dk][data-chu-de="everforest"]:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg-edge: #232a2e; --bg: #2d353b;
+    --surface: #343f44; --surface-2: #3d484d;
+    --border: #56635f; --border-strong: #9da9a0;
+    --text: #fff9ee; --text-2: #bcc9bf;
+    --accent: #a7c080; --accent-text: #bfd897;
+    --on-accent: #0c1204; --accent-soft: #4b5952;
+    --ok: #9cdaab; --ok-soft: #405250;
+    --warn: #e8c98b; --warn-soft: #4c524e;
+    --bad: #feb9b8; --bad-soft: #504a4e;
+    --info: #9ad6ce; --info-soft: #3f5154;
+    --focus: #bfd897;
+    --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+    --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+    --nen-trang: linear-gradient(160deg, #38444a 0%, #2d353b 46%, #232a2e 100%);
+    --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+  }
+}
+[data-dk][data-chu-de="everforest"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg-edge: #232a2e; --bg: #2d353b;
+  --surface: #343f44; --surface-2: #3d484d;
+  --border: #56635f; --border-strong: #9da9a0;
+  --text: #fff9ee; --text-2: #bcc9bf;
+  --accent: #a7c080; --accent-text: #bfd897;
+  --on-accent: #0c1204; --accent-soft: #4b5952;
+  --ok: #9cdaab; --ok-soft: #405250;
+  --warn: #e8c98b; --warn-soft: #4c524e;
+  --bad: #feb9b8; --bad-soft: #504a4e;
+  --info: #9ad6ce; --info-soft: #3f5154;
+  --focus: #bfd897;
+  --shadow-1: 0 1px 2px oklch(0 0 0 / .45);
+  --shadow-2: 0 10px 30px -10px oklch(0 0 0 / .70);
+  --nen-trang: linear-gradient(160deg, #38444a 0%, #2d353b 46%, #232a2e 100%);
+  --font-display: "Be Vietnam Pro", system-ui, sans-serif;
+}
+
+/* Ô màu mẫu trên thẻ chọn: màu của CHÍNH bộ ấy theo sáng/tối đang áp, không theo bộ đang dùng. */
+[data-mau="neon"] { --m-nen: #f3fafc; --m-mat: #ffffff; --m-vien: #46617a; --m-chu: #0b1f33; --m-nhan: #067a95; --m-ok: #057a44; --m-info: #1d5fc4; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) [data-mau="neon"] { --m-nen: oklch(0.181 0.036 266); --m-mat: oklch(0.213 0.046 264); --m-vien: oklch(0.600 0.050 262); --m-chu: oklch(0.944 0.015 257); --m-nhan: oklch(0.797 0.133 212); --m-ok: oklch(0.780 0.170 150); --m-info: oklch(0.780 0.105 258); } }
+:root[data-theme="dark"] [data-mau="neon"] { --m-nen: oklch(0.181 0.036 266); --m-mat: oklch(0.213 0.046 264); --m-vien: oklch(0.600 0.050 262); --m-chu: oklch(0.944 0.015 257); --m-nhan: oklch(0.797 0.133 212); --m-ok: oklch(0.780 0.170 150); --m-info: oklch(0.780 0.105 258); }
+[data-mau="flexoki"] { --m-nen: #fffcf0; --m-mat: #fffefa; --m-vien: #6f6e69; --m-chu: #100f0f; --m-nhan: #208078; --m-ok: #5b720e; --m-info: #205ea6; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) [data-mau="flexoki"] { --m-nen: #100f0f; --m-mat: #1c1b1a; --m-vien: #878580; --m-chu: #d8d7cd; --m-nhan: #56c1b6; --m-ok: #adc262; --m-info: #7bbefa; } }
+:root[data-theme="dark"] [data-mau="flexoki"] { --m-nen: #100f0f; --m-mat: #1c1b1a; --m-vien: #878580; --m-chu: #d8d7cd; --m-nhan: #56c1b6; --m-ok: #adc262; --m-info: #7bbefa; }
+[data-mau="gomlam"] { --m-nen: #f5f7f4; --m-mat: #fdfefc; --m-vien: #4d5f7a; --m-chu: #14233f; --m-nhan: #1d4fa3; --m-ok: #2e6e58; --m-info: #2a6e9c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) [data-mau="gomlam"] { --m-nen: #0f1a33; --m-mat: #162444; --m-vien: #b4c4dc; --m-chu: #eef3f4; --m-nhan: #9dc0ff; --m-ok: #8fd0b5; --m-info: #8fcbe8; } }
+:root[data-theme="dark"] [data-mau="gomlam"] { --m-nen: #0f1a33; --m-mat: #162444; --m-vien: #b4c4dc; --m-chu: #eef3f4; --m-nhan: #9dc0ff; --m-ok: #8fd0b5; --m-info: #8fcbe8; }
+[data-mau="rosepine"] { --m-nen: #faf4ed; --m-mat: #fffaf3; --m-vien: #797593; --m-chu: #363250; --m-nhan: #aa5a71; --m-ok: #286983; --m-info: #745e8c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) [data-mau="rosepine"] { --m-nen: #232136; --m-mat: #2a273f; --m-vien: #908caa; --m-chu: #e0def4; --m-nhan: #fb8dab; --m-ok: #9ccfd8; --m-info: #d2b5f6; } }
+:root[data-theme="dark"] [data-mau="rosepine"] { --m-nen: #232136; --m-mat: #2a273f; --m-vien: #908caa; --m-chu: #e0def4; --m-nhan: #fb8dab; --m-ok: #9ccfd8; --m-info: #d2b5f6; }
+[data-mau="sanchoi"] { --m-nen: #fff6dd; --m-mat: #ffffff; --m-vien: #5d5278; --m-chu: #2a2140; --m-nhan: #c9430f; --m-ok: #197737; --m-info: #1268ad; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) [data-mau="sanchoi"] { --m-nen: #1e1a44; --m-mat: #292459; --m-vien: #c9c2ee; --m-chu: #f6f3ff; --m-nhan: #ffcb52; --m-ok: #7fe0a0; --m-info: #8fd0ff; } }
+:root[data-theme="dark"] [data-mau="sanchoi"] { --m-nen: #1e1a44; --m-mat: #292459; --m-vien: #c9c2ee; --m-chu: #f6f3ff; --m-nhan: #ffcb52; --m-ok: #7fe0a0; --m-info: #8fd0ff; }
+[data-mau="sonmai"] { --m-nen: #fbf5ea; --m-mat: #fffcf5; --m-vien: #6f5142; --m-chu: #2c1812; --m-nhan: #a5361f; --m-ok: #4f6b1f; --m-info: #2b6476; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) [data-mau="sonmai"] { --m-nen: #1d110d; --m-mat: #281913; --m-vien: #d0baa4; --m-chu: #f7ecdc; --m-nhan: #e4b660; --m-ok: #abc681; --m-info: #a1c1cb; } }
+:root[data-theme="dark"] [data-mau="sonmai"] { --m-nen: #1d110d; --m-mat: #281913; --m-vien: #d0baa4; --m-chu: #f7ecdc; --m-nhan: #e4b660; --m-ok: #abc681; --m-info: #a1c1cb; }
+[data-mau="hoian"] { --m-nen: #fff7e3; --m-mat: #fffdf6; --m-vien: #6a5f47; --m-chu: #2f2a20; --m-nhan: #0f6674; --m-ok: #3d7030; --m-info: #33589a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) [data-mau="hoian"] { --m-nen: #102120; --m-mat: #172c2a; --m-vien: #b7c9bf; --m-chu: #f9f0de; --m-nhan: #ffb27a; --m-ok: #a9d48f; --m-info: #8fd0e0; } }
+:root[data-theme="dark"] [data-mau="hoian"] { --m-nen: #102120; --m-mat: #172c2a; --m-vien: #b7c9bf; --m-chu: #f9f0de; --m-nhan: #ffb27a; --m-ok: #a9d48f; --m-info: #8fd0e0; }
+[data-mau="kanagawa"] { --m-nen: #faf6e8; --m-mat: #fffdf6; --m-vien: #6a6758; --m-chu: #26263f; --m-nhan: #3f6bb0; --m-ok: #556e34; --m-info: #2f6e83; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) [data-mau="kanagawa"] { --m-nen: #1f1f28; --m-mat: #2a2a37; --m-vien: #c8c093; --m-chu: #e5e0c2; --m-nhan: #90afec; --m-ok: #a9cd7d; --m-info: #93c9df; } }
+:root[data-theme="dark"] [data-mau="kanagawa"] { --m-nen: #1f1f28; --m-mat: #2a2a37; --m-vien: #c8c093; --m-chu: #e5e0c2; --m-nhan: #90afec; --m-ok: #a9cd7d; --m-info: #93c9df; }
+[data-mau="everforest"] { --m-nen: #fdf6e3; --m-mat: #fffbef; --m-vien: #708089; --m-chu: #2d393f; --m-nhan: #617d0c; --m-ok: #0e7654; --m-info: #116f9c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) [data-mau="everforest"] { --m-nen: #2d353b; --m-mat: #343f44; --m-vien: #9da9a0; --m-chu: #fff9ee; --m-nhan: #a7c080; --m-ok: #9cdaab; --m-info: #9ad6ce; } }
+:root[data-theme="dark"] [data-mau="everforest"] { --m-nen: #2d353b; --m-mat: #343f44; --m-vien: #9da9a0; --m-chu: #fff9ee; --m-nhan: #a7c080; --m-ok: #9cdaab; --m-info: #9ad6ce; }
