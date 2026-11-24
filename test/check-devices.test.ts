@@ -113,6 +113,8 @@ describe("sticky and orientation", () => {
   it("CSS that turns the page back when the device turns is a soft orientation finding (axe css-orientation-lock)", async () => {
     const out = await check("khoa-huong-css", "--viewports", "1280x720");
     expect(rows(out, "orientation").join("\n")).toMatch(/soft,orientation,css-orientation-lock/);
+    // Không có khổ điện thoại vẫn đo: bảng không được ghi là bỏ qua.
+    expect(out).toMatch(/orientation,soft,"?1 soft/);
     expect(out).toContain("axe,hard,ok");
   }, 120_000);
   it("reads the manifest's orientation, also from broken JSON without failing", () => {

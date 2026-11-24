@@ -183,7 +183,7 @@ describe("ids, comparison and recheck: never say fixed without measuring again",
 
   it("recheck measures only the page and sizes of the finding, and falls back to the schemes of the last run", async () => {
     fresh();
-    put("a.html", "@media(max-width:600px){#nho{font-size:10px}} @media(prefers-color-scheme:dark){#mo{color:#111}} #mo{color:#bbb}", '<p id="nho">Chữ nhỏ ở khổ hẹp</p><p id="mo">Chữ mờ ở bản sáng</p>');
+    put("a.html", "@media(max-width:600px){#nho{font-size:10px}} #mo{color:#bbb} @media(prefers-color-scheme:dark){#mo{color:#111}}", '<p id="nho">Chữ nhỏ ở khổ hẹp</p><p id="mo">Chữ mờ ở bản sáng</p>');
     put("b.html", "", "<p>Trang thứ hai không có lỗi.</p>");
     const args = A(["a.html", "b.html"], "--no-copy", "--viewports", "390,1280");
     const first = (await run(args, d)).out;
@@ -194,6 +194,7 @@ describe("ids, comparison and recheck: never say fixed without measuring again",
     expect(re).toMatch(/renders: "?light\+dark × 390 px/);
     expect(re).toMatch(/pages\[1\]/);
     const grey = ids(first, "axe")[0]!;
+    expect(rows(first, "axe").join("\n")).not.toContain("dark/");
     expect((await run([...args, "--schemes", "dark", "--recheck", grey], d)).out).toMatch(new RegExp(`${grey},still there`));
     // Cờ khác lượt trước (ít điểm dừng Tab hơn, ngưỡng chạm khác) thì từ chối, không nói "fixed".
     for (const other of [["--focus", "3"], ["--touch", "24"], ["--fresh"]]) {
@@ -205,13 +206,17 @@ describe("ids, comparison and recheck: never say fixed without measuring again",
 
   it("recheck of a swept size sweeps again; a run without --sweep is not compared with one that had it", async () => {
     fresh();
-    put("a.html", "@media(min-width:700px) and (max-width:800px){#rong{width:900px}}", '<div id="rong">Khối rộng ở khổ giữa</div>');
+    put("a.html", "@media(min-width:700px) and (max-width:800px){#rong{width:900px}} @media(min-width:905px) and (max-width:906px){#rong{width:1100px}}", '<div id="rong">Khối rộng ở khổ giữa</div>');
     const args = A(["a.html"], "--no-copy", "--viewports", "390,1280", "--schemes", "light");
     const first = (await run([...args, "--sweep"], d)).out;
     const wide = ids(first, "overflow");
     expect(wide.length).toBeGreaterThan(0);
     const re = (await run([...args, "--recheck", wide[0]!], d)).out;
     expect(re).toMatch(new RegExp(`${wide[0]},still there`));
+    // Dải 905–906: không khổ định sẵn nào trúng, chỉ khổ sát điểm gãy của trang; đo lại ở khổ rộng nhất vẫn phải quét từ khổ hẹp nhất.
+    const band = rows(first, "overflow").filter((l) => /overflow,90[56]px/.test(l)).map((l) => /,([0-9a-z]{6}),light/.exec(l)?.[1])[0]!;
+    expect(band).toMatch(/^[0-9a-z]{6}$/);
+    expect((await run([...args, "--recheck", band], d)).out).toMatch(new RegExp(`${band},still there`));
     expect((await run(args, d)).out).toMatch(/since_last: "?not compared: options differ/);
     expect((await run([...args, "--focus", "0"], d)).out).toMatch(/not compared: options differ/);
   }, 180_000);

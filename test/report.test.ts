@@ -67,7 +67,7 @@ describe("saveRun and loadRun", () => {
     mkdirSync(dir, { recursive: true });
     const bad = join(dir, "bad.json");
     const ok = R(["a.html"], [F("a.html", "touch", "x")]);
-    for (const text of ["{", "null", "[]", JSON.stringify({ ...ok, v: 2 }), JSON.stringify({ ...ok, pages: "a" }), JSON.stringify({ ...ok, sizes: [1] }), JSON.stringify({ ...ok, findings: [{ id: "x" }] }), JSON.stringify({ ...ok, findings: [null] }), JSON.stringify({ ...ok, skipped: undefined })]) {
+    for (const text of ["{", "null", "[]", JSON.stringify({ ...ok, v: 2 }), JSON.stringify({ ...ok, opts: undefined }), JSON.stringify({ ...ok, opts: 3 }), JSON.stringify({ ...ok, pages: "a" }), JSON.stringify({ ...ok, sizes: [1] }), JSON.stringify({ ...ok, findings: [{ id: "x" }] }), JSON.stringify({ ...ok, findings: [null] }), JSON.stringify({ ...ok, skipped: undefined })]) {
       writeFileSync(bad, text);
       expect(loadRun(bad), text.slice(0, 40)).toBeUndefined();
     }
