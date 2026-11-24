@@ -350,7 +350,11 @@ describe("contrast-px", () => {
     near("Chữ phụ trên hoạ tiết nhạt, ", 5.6, 4.5);
     near("Chữ lớn chỉ cần ba trên một", 3.43, 3);
     near("Ảnh có lớp tối phủ lên", 9.3, 4.5);
-    near("Giấy kẻ ô với chữ phụ ghi ch", 4.95, 4.5);
+    // Chữ rơi lệch ô kẻ khác nhau theo font (4,62 với Arial, 4,93 với Segoe UI): chỉ chặn hai phía, trên mức cần và dưới nền trơn (5,33).
+    const ke = all.get("Giấy kẻ ô với chữ phụ ghi ch")!;
+    expect(ke.need).toBe(4.5);
+    expect(ke.ratio).toBeGreaterThan(4.5);
+    expect(ke.ratio).toBeLessThan(5.2);
     near("gạch chân dày gợi ý gì", 7.4, 4.5);
     near("Nền trôi chậm phía sau", 12.3, 4.5);
     for (const t of ["Nút gradient đậm", "Chọn kho", "Mục hai", "Mục ba", "Chữ ở cuối trang dài.", "Canvas tối đang chạy phía sa"]) expect(all.has(t), t).toBe(true);
