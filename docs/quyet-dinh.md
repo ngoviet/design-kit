@@ -246,12 +246,13 @@ Chủ hỏi "các tri thức từ nghiên cứu có được cập nhật vào d
 - **Mười tám nguồn "từ trí nhớ":** 12 đọc thật (câu trích khớp trang gốc), 1 đã có trong kho (c47), 5 để ngoài (N112–N116).
 - **Phép đo mới đều mềm**, kể cả thứ nghiên cứu đề nghị cứng (NFC, chữ Hán, tự phát tiếng, xin quyền): qua hai đợt 0 báo oan mới xét lên cứng.
 - **Khổ thiết bị là hồ sơ, không đổi mặc định**, để trang đang đạt không đổi kết quả. Cổng toàn bộ 105 trang trước và sau: phán quyết và mọi
-  phát hiện cũ trùng hệt, 138,7 s và 138,5 s; `--profile devices` 178,8 s.
+  phát hiện cũ trùng hệt. Thời gian đo xen kẽ hai vòng trên cùng máy (117 trang, máy đang bận): bản cũ 202 và 209 s, bản mới 208 và 212 s
+  (chậm hơn 1–3%); `--profile devices` bằng 1,3 lần mặc định (279 so với 215 s).
 - **Ba báo oan tìm thấy khi chạy trên khối mẫu, đã sửa trong phép đo:** `text-zoom` đo giữa `transition: all` (11 phát hiện giả), `sticky`
   đo menu vừa mở (6), `touch` bỏ sót nhãn của nút `role="checkbox"`. Thêm một lỗi do test cũ bắt: vòng `auto` của ô tích trong suốt.
 - **Người soát độc lập** (phiên sạch): 13 phát hiện, 0 cứng, sửa hết; 36 đột biến thì 17 còn xanh. Sau khi thêm test, chạy lại 21 đột biến: 20 đỏ,
-  1 xanh là đột biến tương đương (bỏ trả cỡ chữ: `cdp.detach()` tự trả). Một trang nhỏ chạy chậm hơn khoảng một phần ba (33,6 → 45,1 s cho 26
-  trang); cổng toàn bộ chạy 6 việc song song thì không đổi.
+  1 xanh là đột biến tương đương (bỏ trả cỡ chữ: `cdp.detach()` tự trả). Chạy từng trang một thì chậm hơn khoảng một phần ba (33,6 → 45,1 s cho 26
+  trang nhỏ); cổng toàn bộ chạy 6 việc song song chỉ chậm 1–3%.
 - **Trùng một phần với công cụ có sẵn** (thấy khi khảo sát, sau khi đã viết): axe `no-autoplay-audio`, `css-orientation-lock`; Lighthouse
   `geolocation-on-start`, `notification-on-start`. Phần thêm của kit: `play()` từ script, Web Audio, đọc máy, micro, push, manifest.
 - **`motion` nới theo chuẩn:** chỉ cho qua độ mờ và màu; mọi thứ khác vẫn cứng (2.3.3 là AAA, cơ sở AA là 2.2.2). Bản đầu dùng danh sách cấm

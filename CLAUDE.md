@@ -139,7 +139,9 @@ Chuẩn và cổng cho giao diện do agent làm.
   - Trình duyệt headless chặn tự phát tiếng: đọc `paused` sau vài giây thì trang sai và trang đúng giống nhau. Đo ý định (bọc `play()`, `start()`).
   - Người dùng chọn chữ to: CDP `Page.setFontSizes` đúng hơn `html{font-size:200%}` (media query theo em đổi theo; `html{font-size:16px}` lộ ra). Phải chờ hiệu ứng: `transition: all` chạy cả font-size.
   - `outline: auto` (vòng mặc định) có computed width 1px mà vẽ dày hơn; chỉ tính là vòng khi chính phần tử là thứ người dùng thấy.
-  - `net::ERR_ADDRESS_IN_USE` ở một trạng thái là Windows hết cổng tạm, không phải lỗi trang: chạy lại.
+  - `net::ERR_ADDRESS_IN_USE` ở một trạng thái là Windows hết cổng tạm, không phải lỗi trang: chạy lại (bản cũ cũng trượt chập chờn một lượt trên hai).
+  - Đừng so thời gian của hai lượt đo cách xa nhau: máy bận làm cùng một bản từ 139 s thành 205 s. Chạy xen kẽ cũ, mới, cũ, mới.
+  - `lệnh | tail` nuốt mã thoát: đã commit khi còn một test đỏ. Dùng `set -o pipefail` hoặc ghi ra tệp rồi đọc mã thoát.
 
 ## Quy tắc
 
