@@ -77,6 +77,7 @@ ghi kết quả vào báo cáo; không có phát hiện không có nghĩa là đ
 | BC-06 Khung cao bằng màn | Trên điện thoại không `100vh` cho khối gần bằng màn; dùng `100dvh` hoặc `100svh` | đọc CSS | người | chuẩn: MDN (N62) |
 | BC-07 Thanh cuộn | Trang từ ngắn sang dài không làm bố cục nhảy ngang | hai trạng thái steps | người | chuẩn: MDN `scrollbar-gutter` (N81) |
 | BC-08 Thứ tự mã = thứ tự nhìn | Tab hết trang không nhảy ngược | Tab tay | người | chuẩn: WCAG 1.3.2 (N30), 2.4.3 (N21) |
+| BC-09 Điểm gãy theo khung chứa | Thành phần dùng lại (thẻ, bảng, thanh công cụ) đổi bố cục bằng container query, không theo tên máy | đặt thẻ vào cột 300 px ở màn 1920 | người | chuẩn CSS (c4); phần "không theo tên máy" là quy ước |
 | CH-05 Đủ chữ Việt mọi độ đậm | "ẮẰẲẴẶ ỡ ự ĐƯỜNG" ở mỗi độ đậm, kiểu nghiêng đang dùng vẽ từ một font | ảnh chụp, CDP font | người | quy ước (c24, c75) |
 | CH-06 Chữ hoa tiếng Việt | `uppercase` chỉ cho nhãn ngắn; nhiều dòng thì giãn dòng ≥ 1,3 | đọc CSS | người | quy ước, vì dấu chồng (c75) |
 | CH-07 Ngắt dòng | Chữ Việt không `hyphens: auto`, không `break-all` | đọc CSS | người | chuẩn (c76) |
@@ -86,11 +87,15 @@ ghi kết quả vào báo cáo; không có phát hiện không có nghĩa là đ
 | MA-04 Tương phản cao | Với `prefers-contrast: more`: chữ ≥ 7:1, không nền trong mờ sau chữ | giả lập, axe `color-contrast-enhanced` | người | chuẩn: MDN (N63); WCAG 1.4.6 AAA (N37) |
 | MA-05 Màu ép buộc cả trang | Với `forced-colors: active`: nút, ô, thẻ còn viền; đang chọn còn phân biệt được | giả lập, ảnh chụp | người | chuẩn: MDN (N64), c44 |
 | MA-06 Không chỉ dùng màu | Đúng/sai, lỗi, đang chọn có thêm chữ hoặc hình | ảnh thang xám | người | chuẩn: WCAG 1.4.1 A (N08); HIG (N46) |
+| MA-07 Chữ trên ảnh, gradient, hoạ tiết | ≥ 4,5:1 ở vùng xấu nhất. axe không kết luận được chỗ này | xem ảnh chụp; phép đo điểm ảnh chờ chủ chọn | người | chuẩn: WCAG 1.4.3 (s5); c45 |
 | MA-08 Thanh trình duyệt | `theme-color` cho từng theme, khớp nền đầu trang | đọc thẻ | người | chuẩn: MDN (N70) |
 | MA-09 Ảnh trong theme tối | Không mảng sáng lớn do ảnh hay biểu đồ nền trắng | ảnh chụp tối | người | chuẩn nền tảng: HIG (N45) |
+| MA-10 Đủ cặp màu cho mọi trạng thái | hover, nhấn, focus, đang chọn đạt 4,5:1 hoặc 3:1 | steps `hover`, `press` rồi axe | người | chuẩn: WCAG 1.4.3, 1.4.11 (s5, s6) |
 | TB-06 Theo con trỏ, không theo bề rộng | Kiểu hover trong `@media (hover: hover)`; đích lớn theo `(any-pointer: coarse)` | đọc CSS | người | chuẩn: MDN (N68, N69) |
+| TB-07 Máy tính bảng không phải điện thoại kéo giãn | Ở 768 và 1024: cột chữ ≤ 80 ký tự, có hai cột hoặc cột giữa có lề | `--profile devices` rồi xem ảnh | người | chuẩn nền tảng: lớp medium, expanded của Android (N50); s17 |
 | TB-08 Ảnh nét | Ảnh điểm ≥ 2 lần cỡ hiển thị | `check-image --display` | người | chuẩn công cụ: c110; MDN (N75) |
 | TB-10 Bàn phím ảo | Ô đang gõ và nút gửi nằm trong khung nhìn khi bàn phím mở | máy thật, hoặc hạ chiều cao còn 420 | người | chuẩn: MDN (N80) |
+| TB-11 Máy gập | Màn ngoài 344 px không tràn (`--sweep`); gập đôi không nút hay chữ vắt qua nếp gập | `--sweep`, máy thật | người | chuẩn: MDN `device-posture`, còn thử nghiệm (N73) |
 | TB-13 Không đoán thiết bị | Không rẽ nhánh theo user-agent hay "bề rộng = loại máy" | đọc mã | người | chuẩn nền tảng: HIG (N42) |
 | NT-01 Vùng an toàn | Có `viewport-fit=cover` thì thanh sát mép có `env(safe-area-inset-*)` | đọc CSS, máy thật | người | chuẩn: WebKit (N85), MDN (N60) |
 | NT-03 Kéo để tải lại | Đang làm bài, đang thu: `overscroll-behavior-y: contain`, hoặc bài còn sau khi tải lại | steps tải lại | người | chuẩn: MDN (N74) |
@@ -116,6 +121,7 @@ ghi kết quả vào báo cáo; không có phát hiện không có nghĩa là đ
 | TT-17 Bàn phím làm được mọi việc | Không gì bấm được mà Tab không tới; hộp thoại giữ và trả focus, Esc đóng | Tab tay | người | chuẩn: WCAG 2.1.1, 2.1.2 A (N33); MDN (N77) |
 | TT-18 Phím tắt một ký tự | Tắt được, không chạy khi đang gõ | steps | người | chuẩn: WCAG 2.1.4 A (N22) |
 | TT-19 Chọn không đổi ngữ cảnh | Chọn trong danh sách không tự chuyển trang | steps | người | chuẩn: WCAG 3.2.2 A (N20) |
+| TT-20 Cuộn | Không chiếm quyền cuộn; vùng cuộn lồng nhau có `overscroll-behavior: contain` | đọc CSS | người | chuẩn: MDN (N74) |
 | TC-04 Tên, vai, trạng thái | Sau khi bấm, `aria-selected`, `-pressed`, `-expanded`, `-checked` đổi theo | steps | người | chuẩn: WCAG 4.1.2 A (N36) |
 | TC-05 Chữ là chữ | Từ, câu, nút không phải ảnh chứa chữ | ảnh chụp | người | chuẩn: WCAG 1.4.5 AA (N27) |
 | TC-06 Không bắt lắc, nghiêng máy | Mọi việc làm được không cần cảm biến | đọc mã | người | chuẩn: WCAG 2.5.4 A (N29) |
@@ -148,11 +154,12 @@ ghi kết quả vào báo cáo; không có phát hiện không có nghĩa là đ
 | RT-03 HTTPS | Micro, service worker cần ngữ cảnh an toàn | nhật ký mạng | người | chuẩn: MDN (N67) |
 | RT-06 Đăng nhập | Ô mật khẩu cho dán, không chặn trình quản lý mật khẩu | steps | người | chuẩn: WCAG 3.3.8 AA (N06) |
 | QT-06 Tám câu kiểm tay | Chỉ bàn phím; trình đọc; phóng 200%; xoay ngang; tắt tiếng; lỗi form đọc lên; thứ tự đọc; không gì chỉ hiện khi rê chuột | người, 15 phút mỗi luồng | người | chuẩn: WCAG 2.2 AA; axe chỉ thấy khoảng 57% (c46) |
+| QT-07 Miễn trừ có hạn | Mỗi miễn trừ có lý do và ngày, xem lại sau 90 ngày; lỗi cứng không miễn được | đọc `.design-kit/waivers.json` | người | c58; số 90 ngày là quy ước |
 
-**Không nhập** từ bộ 149 quy tắc mở rộng, vì chỉ là quy ước chưa có nguồn hoặc nguồn còn viết từ trí nhớ: BC-02, BC-04, BC-09,
-BC-10, CH-09, CH-11, CH-12, MA-07, MA-10, MA-11, MA-13, TB-07, TB-09, TB-11, TB-12, NT-11, NT-12, TT-03, TT-20, DH-04, DH-07 đến
+**Không nhập** từ bộ 149 quy tắc mở rộng, vì chỉ là quy ước chưa có nguồn, nguồn còn viết từ trí nhớ, hoặc câu trích không đỡ con
+số (TD-04, TE-07): BC-02, BC-04, BC-10, CH-09, CH-11, CH-12, MA-11, MA-13, TB-09, TB-12, NT-11, NT-12, TT-03, DH-04, DH-07 đến
 DH-11, ND-01, ND-04 đến ND-07, AT-03, AT-08, AT-10, TE-04, TE-05, TE-07, TE-10 đến TE-12, TD-04, TD-06, TD-08, TD-10, RT-02, RT-04,
-RT-05, RT-07 đến RT-09, QT-01 đến QT-04, QT-07 đến QT-10. Chờ chủ quyết: NT-02 (engine WebKit trong cổng). Đã nằm trong dòng
+RT-05, RT-07 đến RT-09, QT-01 đến QT-04, QT-08 đến QT-10. Chờ chủ quyết: NT-02 (engine WebKit trong cổng). Đã nằm trong dòng
 khác: BC-01, BC-03, BC-05, CH-01 đến CH-04, CH-08, MA-03, MA-12, TB-01 đến TB-05, TT-01, TT-04, AT-01, AT-06, RT-01, TC-01 đến
 TC-03, TD-01, QT-05.
 

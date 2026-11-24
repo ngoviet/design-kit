@@ -333,6 +333,7 @@ Câu trích đã đối chiếu nguyên văn với trang gốc khi tải lại n
 | N70 | MDN `theme-color` · <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta/name/theme-color> | "a suggested color that user agents should use to customize the display of the page or of the surrounding user interface" |
 | N71 | MDN `display-mode` · <https://developer.mozilla.org/en-US/docs/Web/CSS/@media/display-mode> | "test whether a web app is being displayed in a normal browser tab or in some alternative way" |
 | N72 | MDN `<ruby>` · <https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ruby> | "usually used for showing the pronunciation of East Asian characters" |
+| N73 | MDN `device-posture` · <https://developer.mozilla.org/en-US/docs/Web/CSS/@media/device-posture> | "Foldable devices are folded while used in a book or laptop posture." |
 | N74 | MDN `overscroll-behavior` · <https://developer.mozilla.org/en-US/docs/Web/CSS/overscroll-behavior> | "get rid of unwanted scroll chaining and the browser's \"pull to refresh\"-type behavior" |
 | N75 | MDN `devicePixelRatio` · <https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio> | "the ratio of the resolution in physical pixels to the resolution in CSS pixels" |
 | N76 | MDN `inputmode` · <https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/inputmode> | "This allows a browser to display an appropriate virtual keyboard." |
