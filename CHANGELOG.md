@@ -55,7 +55,7 @@ All notable changes to this project are documented here. The format follows
   the solver `scripts/sinh-themes.mjs` (OKLCH; 774 pairs against WCAG 2 and APCA, plus karaoke text distances) and the picker block
   `chon-mau`.
 - Skill references: `ux-patterns.md`, `multi-screen.md`, `themes.md`, `language-apps.md`. `docs/tieu-chi.md` has the rules with a
-  checked source that the gate does not measure yet, and eleven corrected rows; `docs/nguon.md` lists their 103 sources.
+  checked source that the gate does not measure yet, and eleven corrected rows; `docs/nguon.md` lists their 104 sources.
 
 ### Fixed
 
