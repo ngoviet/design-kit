@@ -282,5 +282,9 @@ Chủ chốt: học để bổ sung, không thay design-kit. Nguồn học chín
   và 159 s, bản mới 165 và 170 s (chậm hơn khoảng 10%).
 - **Bộ màu:** màu nhấn sáng (vàng, chanh, bạc hà) giữ nguyên với chữ đậm thay vì bị kéo tối; cam vẫn chữ trắng vì chữ đậm chỉ đạt Lc 50. Bản tương phản
   cao cho chín bộ; ba hướng chưa có vì token của hướng giữ nguyên.
-- **Mã phát hiện bỏ số trước khi băm**, nên "14,2px" thành "14,4px" vẫn là một lỗi; lượt so chỉ tính trang có ở cả hai lượt và cùng bộ khổ, chế độ màu.
+- **Mã phát hiện bỏ số trước khi băm**, nên "14,2px" thành "14,4px" vẫn là một lỗi; riêng bộ chọn axe ghi ở đầu chi tiết thì giữ nguyên, vì đó là chỗ
+  bị lỗi chứ không phải số đo. Lượt so chỉ tính trang có ở cả hai lượt, cùng bộ khổ, chế độ màu và cùng lựa chọn (quét khổ, số điểm dừng Tab, mức chạm, engine).
+- **Người soát độc lập lượt hai:** 11 phát hiện, 0 cứng, nhưng năm chỗ của phần so với lượt trước và `--recheck` có thể nói "đã sửa" khi chưa đo lại:
+  hai lỗi axe chung một mã, đo lại khổ quét mà không quét, đổi cờ giữa hai lượt, trang hay phép đo không chạy, và trang có service worker được lấy từ
+  bộ đệm. Đã sửa hết; nay đo lại ra "not measured" khi không đo, và từ chối khi cờ khác lượt trước. Ảnh đánh số chụp sau mọi phép đo và xoá ảnh cũ.
 - **Chưa làm:** logo quá to trong ngăn kéo của `thanh-ben` (lỗi có sẵn, đổi giao diện máy chuột nên để riêng); WebKit chưa cài trên PC1 nên chưa chạy thật.

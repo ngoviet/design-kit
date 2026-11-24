@@ -17,7 +17,7 @@ const F = (page: string, check: string, where: string, detail = "d", renders: st
   id: findingId({ page, check, where, detail }), gate, page, check, where, detail, renders,
 });
 const R = (pages: string[], findings: RunFinding[], more: Partial<Run> = {}): Run => ({
-  v: 1, at: "2026-11-24T10:00:00.000Z", sizes: ["320x720", "390x844", "1280x800"], schemes: ["light", "dark"], pages, skipped: [], findings, ...more,
+  v: 1, opts: "x", at: "2026-11-24T10:00:00.000Z", sizes: ["320x720", "390x844", "1280x800"], schemes: ["light", "dark"], pages, skipped: [], findings, ...more,
 });
 
 describe("findingId", () => {
@@ -34,6 +34,14 @@ describe("findingId", () => {
     expect(findingId({ ...base, detail: "chữ ấ".normalize("NFD") })).toBe(findingId({ ...base, detail: "chữ ấ" }));
     expect(findingId({ ...base, where: "+3 more" })).toBe(findingId({ ...base, where: "+11 more" }));
     expect(findingId({ ...base, page: "blocks\\a.html" })).toBe(findingId({ ...base, page: "blocks/a.html" }));
+  });
+  it("two axe violations on one page keep two ids: the selector is not normalized, the measured part is", () => {
+    const ax = (detail: string, check = "axe"): string => findingId({ page: "a.html", check, where: "color-contrast", detail });
+    expect(ax("#nut-1: contrast of 2.32")).not.toBe(ax("#nut-2: contrast of 2.32"));
+    expect(ax("#nut-1: contrast of 2.32")).toBe(ax("#nut-1: contrast of 2.41"));
+    expect(ax(".a > li:nth-child(3): x", "axe-bp")).not.toBe(ax(".a > li:nth-child(4): x", "axe-bp"));
+    // Phép đo khác không có bộ chọn đứng trước dấu hai chấm: số vẫn được bỏ.
+    expect(findingId({ ...base, detail: "cut 12px: text" })).toBe(findingId({ ...base, detail: "cut 13px: text" }));
   });
   it("changes with the page, the check, the place and the words", () => {
     const ids = [base, { ...base, page: "b.html" }, { ...base, check: "touch" }, { ...base, where: "p#y" }, { ...base, where: "390x844" }, { ...base, where: "1280x720" }, { ...base, detail: "text covered" }].map(findingId);
@@ -90,6 +98,10 @@ describe("diffRuns", () => {
     expect(diffRuns(R(["a.html"], [x], { schemes: ["light"] }), R(["a.html"], [])).why).toContain("color schemes differ");
     expect(diffRuns(R(["a.html"], [x], { sizes: ["390x844"] }), R(["a.html"], [])).why).toContain("sizes differ");
     expect(diffRuns(R(["a.html"], [x]), R(["a.html"], [], { schemes: ["dark", "light"], sizes: ["1280x800", "320x720", "390x844"] })).fixed).toEqual([x]);
+  });
+  it("other options are not compared: the sweep, focus stops, the touch size, the engine", () => {
+    const d = diffRuns(R(["a.html"], [x], { opts: "sweep on" }), R(["a.html"], [], { opts: "sweep off" }));
+    expect(d).toEqual({ fixed: [], added: [], same: 0, pages: 0, why: "options differ (sweep on then, sweep off now)" });
   });
   it("a check switched off in either run says nothing", () => {
     expect(diffRuns(R(["a.html"], [x, y]), R(["a.html"], [x], { skipped: ["copy"] }))).toMatchObject({ fixed: [], added: [], same: 1 });

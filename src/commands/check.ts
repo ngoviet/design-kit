@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { basename, dirname, extname, join, relative, resolve } from "node:path";
 import type { Browser, BrowserContext, Page } from "playwright-core";
@@ -38,7 +38,7 @@ flags[25]:
   --no-steps: ignore <page>.steps.json files next to the pages
   --viewports <w,w|WxH>: widths in px, or width x height (default 320,390,1280; every size gets every check)
   --profile devices: real device sizes instead of --viewports (320x568, 390x844, 768x1024, 1280x720, 1920x1080) plus --sweep; about 1.3 times the default time on the kit blocks
-  --engine <chromium|webkit>: browser engine (default chromium). webkit is Playwright's WebKit, closer to Safari but not iOS Safari: only render and errors stay hard there, checks that need Chromium (text-zoom, standalone) are noted as not measured; install it once with npx playwright install webkit
+  --engine <chromium|webkit>: browser engine (default chromium). webkit is Playwright's WebKit, closer to Safari but not iOS Safari: only render, errors and steps stay hard there, checks that need Chromium (text-zoom, standalone) are noted as not measured; install it once with npx playwright install webkit
   --touch <px>: smallest touch target wanted on a touch screen (default 44, 0 to skip)
   --schemes <light,dark>: color schemes to render (default light,dark)
   --shots <dir>: screenshot folder (default .design-kit/shots); --no-shots to skip
@@ -124,6 +124,8 @@ interface PageReport {
    * ≥ 400, "unreadable" khi hỏng). Băm lúc nhận chứ không lúc job xong: tệp sửa giữa lượt đo không được đệm sai.
    */
   deps: Map<string, Array<Promise<string>>>;
+  /** Trang có service worker: tệp của worker không nằm trong sổ phụ thuộc, nên kết quả không được đệm. */
+  noCache?: boolean;
 }
 
 /** Khổ tối đa còn tính là điện thoại (phép đo input-zoom, viewport). */
@@ -406,6 +408,8 @@ interface PageOpts {
   fresh?: boolean;
   /** Chiều cao của từng bề rộng trong `viewports`. */
   heights: Record<number, number>;
+  /** Cận dưới của khổ quét: khi --recheck chỉ đo khổ rộng nhất thì vẫn quét từ khổ hẹp nhất của lượt trước. */
+  sweepFrom?: number;
   /** Khổ trung gian (--sweep): tràn ngang, chữ bị che, phần dính, và độ dài dòng ở màn rộng. */
   sweep?: Size[];
 }
@@ -681,15 +685,15 @@ async function motionPass(L: Loaded, vw: number, scheme: string, actions: StepAc
 
 /**
  * Các phép đo đổi trang tạm thời, chạy sau mọi phép đo khác ở khổ rộng nhất, chế độ màu đầu, ngay trước lượt giảm chuyển động (lượt
- * đó nạp lại trang). Thứ tự có ý: ảnh đánh số trước khi trang bị đổi; bấm Tab; màu ép buộc; giãn chữ; nội dung kéo dài; phóng chữ;
- * dán. Trạng thái sau thao tác chỉ đo màu ép buộc và, cuối cùng, hộp thoại (bấm Esc, đóng hộp).
+ * đó nạp lại trang). Thứ tự có ý: bấm Tab; màu ép buộc; giãn chữ; nội dung kéo dài; phóng chữ; dán; ảnh đánh số. Trạng thái sau thao tác chỉ đo màu ép buộc và, cuối cùng, hộp thoại (bấm Esc, đóng hộp).
  */
 async function wideTail(browser: Browser, L: Loaded, url: string, vw: number, scheme: string, opts: PageOpts, r: PageReport, actions: boolean): Promise<void> {
   const { page, net } = L;
   const at = `${scheme}/${vw}`;
-  await optional(r, "marked screenshot", () => markedShot(page, r, at, opts.shotsDir));
   if (actions) {
     await optional(r, "forced-colors", async () => addSoft(r, await forcedColorsPass(page), at));
+    // Trước dialogFocusPass: phép đó đóng hộp thoại, ảnh phải còn hộp.
+    await optional(r, "marked screenshot", () => markedShot(page, r, at, opts.shotsDir));
     await optional(r, "dialog-focus", async () => addSoft(r, await dialogFocusPass(page), at));
     return;
   }
@@ -702,7 +706,12 @@ async function wideTail(browser: Browser, L: Loaded, url: string, vw: number, sc
   await optional(r, "css paste", async () => {
     for (const h of await page.evaluate(probePaste)) add(r, "soft", "css", h.where, h.detail, at);
   });
-  if (await registersWorker(page).catch(() => false)) await optional(r, "offline", () => checkOffline(browser, url, { w: vw, h: vhOf(opts, vw) }, r, at));
+  // Sau mọi phép đo (mỗi phép đã trả trang về như cũ), để phát hiện của chính chúng cũng có số.
+  await optional(r, "marked screenshot", () => markedShot(page, r, at, opts.shotsDir));
+  if (await registersWorker(page).catch(() => false)) {
+    r.noCache = true;
+    await optional(r, "offline", () => checkOffline(browser, url, { w: vw, h: vhOf(opts, vw) }, r, at));
+  }
 }
 
 /** Như trên ở khổ hẹp có đo focus: chỉ giãn chữ và nội dung kéo dài. */
@@ -821,7 +830,7 @@ async function checkReuse(browser: Browser, url: string, label: string, widths: 
     let swept = opts.sweep ?? [];
     if (swept.length) {
       // Điểm gãy của chính trang: khổ chọn sẵn không trúng mốc riêng của từng trang (ReDeCheck gọi là lỗi dải hẹp, c40).
-      const around = sweepAround(await main.page.evaluate(probeBreakpoints), narrowW, Math.max(widestW, ...swept.map((x) => x.w)), [...widths, ...swept.map((x) => x.w)]);
+      const around = sweepAround(await main.page.evaluate(probeBreakpoints), opts.sweepFrom ?? narrowW, Math.max(widestW, ...swept.map((x) => x.w)), [...widths, ...swept.map((x) => x.w)]);
       swept = [...swept, ...around.map((w) => ({ w, h: heightFor(w) }))];
       if (around.length) r.notes.push(`swept ${around.length} more widths beside the page's own breakpoints: ${around.join(", ")}`);
     }
@@ -914,6 +923,7 @@ async function checkPage(browser: Browser, url: string, label: string, opts: Pag
       r.notes.push(...draft.notes);
       r.shots += draft.shots;
       r.assumed.push(...draft.assumed);
+      if (draft.noCache) r.noCache = true;
       return;
     }
     r.notes.push(`resize in place not used (${why}): every width loaded fresh${opts.sweep?.length ? ", --sweep skipped for this page" : ""}`);
@@ -976,6 +986,14 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const copy = p.bool("no-copy") ? undefined : loadCopyRules();
   const engine = (p.str("engine") ?? "chromium") as Engine;
   if (engine !== "chromium" && engine !== "webkit") fail("--engine: chromium or webkit", "VALIDATION_ERROR");
+  const wantSweep = plan ? plan.items.some((i) => i.sweep) : p.bool("sweep") || profile?.sweep === true;
+  if (wantSweep && p.bool("fresh")) fail("--sweep needs resize in place: drop --fresh", "VALIDATION_ERROR");
+  const optsOf = (swept: boolean): string => `sweep ${swept ? "on" : "off"}, focus ${focusStops}, touch ${touchMin}, ${engine}${p.bool("fresh") ? ", fresh" : ""}`;
+  if (plan) {
+    // Đo ít hơn lượt trước (15 điểm dừng thay vì 30) thì "vắng" không phải là "đã sửa". Khổ quét thì tự bật theo mã.
+    const rest = (o: string): string => o.replace(/^sweep \w+, /, "");
+    if (rest(optsOf(false)) !== rest(prevRun!.opts)) fail(`--recheck: the last run used other flags (${rest(prevRun!.opts)} then, ${rest(optsOf(false))} now)`, "VALIDATION_ERROR", ["Use the same --focus, --touch, --engine and --fresh as that run"]);
+  }
   const { browser, via } = await launchBrowser(rt.env, engine);
   const servers = new Map<string, { origin: string; close: () => void }>();
   const jobsN = Number(p.str("jobs") ?? 3);
@@ -983,9 +1001,8 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const jobs: Array<{ url: string; label: string; r: PageReport; shotsDir?: string; state?: StepState; standalone?: string; mobile?: boolean; served?: { root: string; origin: string } }> = [];
   // Khổ điện thoại để mở trang như máy thật (phép đo viewport): khổ lớn nhất ≤ 480 trong --viewports; không có thì bỏ.
   const phones = viewports.filter((w) => w <= PHONE_MAX);
-  const wantSweep = plan ? plan.items.some((i) => i.sweep) : p.bool("sweep") || profile?.sweep === true;
-  const sweep = wantSweep ? SWEEP_SIZES.filter((s) => s.w > Math.min(...viewports) && !viewports.includes(s.w)) : [];
-  if (wantSweep && p.bool("fresh")) fail("--sweep needs resize in place: drop --fresh", "VALIDATION_ERROR");
+  const sweepFrom = Math.min(...(plan ? prevRun!.sizes.map((z) => parseSize(z)?.w ?? viewports[0]!) : viewports));
+  const sweep = wantSweep ? SWEEP_SIZES.filter((s) => s.w > sweepFrom && !viewports.includes(s.w)) : [];
   const phoneWidth = phones.length ? Math.max(...phones) : undefined;
   // Đích chạm: khổ điện thoại đó, và khổ máy tính bảng lớn nhất (481–1024) nếu có đo.
   const tablets = viewports.filter((w) => w > PHONE_MAX && w <= TABLET_MAX);
@@ -1051,6 +1068,8 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
           return;
         }
       }
+      // Ảnh đánh số của lượt trước: trang đã hết phát hiện thì không được để ảnh cũ nằm lại.
+      if (shotsDir) for (const f of readdirSync(shotsDir)) if (/^marked-.*\.png$/.test(f)) rmSync(join(shotsDir, f), { force: true });
       // Impeccable tự mở trang theo URL, không phát lại được thao tác: chỉ chạy ở trạng thái đầu. Khổ rộng nhất, 390 và
       // 320 (khổ hẹp nhất là nơi bố cục gãy trước: ở 320 nó bắt được ô số tràn 39px của khối hero, 15/11/2026).
       // Mỗi bề rộng một lần: khổ rộng nhất là 390 thì trước kia chạy cả 390x800 lẫn 390x844 (thừa một tiến trình).
@@ -1060,7 +1079,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
         ? Promise.all(impWidths.map(async (vp) => ({ vp, res: await runImpeccable(impBin, url, vp) })))
         : Promise.resolve([]);
       try {
-        await checkPage(browser, url, label, { viewports, heights, schemes, focusStops, axeSource, fresh: p.bool("fresh"), ...(sweep.length ? { sweep } : {}), ...(copy ? { copy } : {}), ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}) }, r);
+        await checkPage(browser, url, label, { viewports, heights, schemes, focusStops, axeSource, fresh: p.bool("fresh"), ...(sweep.length ? { sweep, sweepFrom } : {}), ...(copy ? { copy } : {}), ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}) }, r);
       } catch (e) {
         // Một trang không mở được thì chỉ trang đó trượt; các trang khác vẫn đo. Chờ Impeccable xong để không còn
         // tiến trình con chạy sau khi trình duyệt đã đóng.
@@ -1085,7 +1104,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
       // `errors`/`render` (tài nguyên ngoài máy không tải được lúc này; trang tự sửa xong thì lần sau phải đo lại).
       const transient = r.notes.some((n) => /^impeccable \d|^network still busy|not measured/.test(n))
         || [...r.findings.values()].some((f) => f.gate === "hard" && (f.check === "errors" || f.check === "render"));
-      if (key && served && !transient) {
+      if (key && served && !transient && !r.noCache) {
         // Mỗi URL một nội dung trong cả lượt đo: nhận hai nội dung khác nhau (tệp sửa giữa chừng) hay không đọc được thì
         // không đệm.
         const deps: Array<{ path: string; sha: string }> = [];
@@ -1126,13 +1145,13 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   }
 
   const reports = jobs.map((j) => j.r);
-  // WebKit trên Windows không phải Safari iOS thật: chỉ trang trắng và lỗi script là cứng, còn lại hạ xuống mềm (NT-02).
+  // WebKit trên Windows không phải Safari iOS thật: chỉ trang trắng, lỗi script và trạng thái không tới được là cứng, còn lại hạ xuống mềm (NT-02).
   if (engine === "webkit") {
-    for (const r of reports) for (const f of r.findings.values()) if (f.gate === "hard" && f.check !== "render" && f.check !== "errors") f.gate = "soft";
+    for (const r of reports) for (const f of r.findings.values()) if (f.gate === "hard" && !["render", "errors", "steps"].includes(f.check)) f.gate = "soft";
   }
   const isSkipped = (id: string): boolean =>
     (id === "impeccable" && !impBin) || (id === "standalone" && !jobs.some((j) => j.standalone)) || (id === "copy" && !copy) || (id === "viewport" && !phoneWidth) ||
-    (id === "input-zoom" && !viewports.some((w) => w <= PHONE_MAX)) || (id === "orientation" && !phoneWidth) || (id === "touch" && !touchSizes.length) || (id === "text-zoom" && engine === "webkit");
+    (id === "input-zoom" && !viewports.some((w) => w <= PHONE_MAX)) || (id === "touch" && !touchSizes.length) || (id === "text-zoom" && engine === "webkit");
   const idOf = (r: PageReport, f: Finding): string => findingId({ page: r.target, check: f.check, where: f.where, detail: f.detail });
   // Trước khi gỡ miễn trừ: thêm hay bớt một dòng miễn trừ không phải là "đã sửa".
   const nowRun: Run = {
@@ -1140,6 +1159,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
     at: new Date().toISOString(),
     sizes: given.map((v) => `${v.w}x${v.h}`),
     schemes,
+    opts: optsOf(sweep.length > 0),
     pages: reports.map((r) => r.target),
     skipped: CHECKS.map(([id]) => id).filter(isSkipped),
     findings: reports.flatMap((r) => [...r.findings.values()].map((f) => ({ id: idOf(r, f), gate: f.gate, page: r.target, check: f.check, where: f.where, detail: f.detail, renders: [...f.renders] }))),
@@ -1189,10 +1209,13 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   if (plan) {
     // Đo lại theo mã: mã nào không còn trong phát hiện là đã sửa. Không ghi đè lượt trước, vì lượt này chỉ đo một phần.
     const left = new Set(nowRun.findings.map((f) => f.id));
+    // Trang trắng, không mở được hay không tới được trạng thái thì phát hiện nào cũng biến mất mà chưa ai sửa gì.
+    const lost = new Set(nowRun.findings.filter((f) => f.gate === "hard" && (f.check === "render" || f.check === "steps")).map((f) => f.page));
+    const ran = new Set(nowRun.pages);
     out["recheck"] = recheckIds!.map((raw) => {
       const id = raw.trim().toLowerCase().replace(/^#/, "");
       const was = prevRun!.findings.find((f) => f.id === id);
-      return { id, result: !was ? "unknown id" : left.has(id) ? "still there" : "fixed", page: was?.page ?? "", check: was?.check ?? "", where: was?.where ?? "" };
+      return { id, result: !was ? "unknown id" : left.has(id) ? "still there" : !ran.has(was.page) || lost.has(was.page) || nowRun.skipped.includes(was.check) ? "not measured" : "fixed", page: was?.page ?? "", check: was?.check ?? "", where: was?.where ?? "" };
     });
   } else {
     if (prevRun) {

@@ -36,12 +36,12 @@ ring, motion that ignores reduced-motion, a "Next" button that does not say wher
 - **A gate, not a vibe check.** Without guidance a model picks the most common choice (Inter, a purple gradient,
   identical cards), and models grading UI agree poorly with people. So design-kit splits the work: everything
   measurable is a check in the CLI, and taste is left to a person looking at the screenshots it saves.
-- **26 checks, 6 renders per page plus one as a real phone.** *Hard* failures block "done": a blank page (the gate
+- **50 checks, 6 renders per page plus one as a real phone.** *Hard* failures block "done": a blank page (the gate
   waits up to 5 s for content that arrives late), an uncaught script error or a script/stylesheet that fails to load, a
   page a phone lays out wider than its screen (no viewport meta), overflow at 320 px, axe-core serious/critical,
-  text under 12 px, Vietnamese headings with line height under 1.2, Vietnamese text without `lang="vi"`, animation that
+  text under 12 px, Vietnamese text without `lang="vi"`, animation that
   ignores `prefers-reduced-motion`, a scripted step that cannot be done, Impeccable slop and quality rules. *Soft*
-  findings need a fix or a written reason: body size and line height, line length, web font loaded, focus ring missing,
+  findings need a fix or a written reason: body size and line height, Vietnamese headings under 1.2 line height, line length, web font loaded, focus ring missing,
   hidden or gone in forced-colors mode, a scroll box hiding content, text cut off (an ellipsis or line clamp hiding
   words, overflow cutting letters or Vietnamese accents), text painted over by the next box, typing fields under
   16 px on phones, more than 12 fields on one screen, guidance, copy, LCP, CLS, and a page that loses its CSS (or its
@@ -156,20 +156,20 @@ $ design-kit check test/fixtures/loi.html --limit 4
 status: "fail: 1 of 1 pages have hard failures"
 renders: "light+dark × 320/390/1280 px via msedge, impeccable on"
 pages[1]{page,verdict,hard,soft}:
-  test/fixtures/loi.html,fail,11,10
-checks[26]{check,gate,result}:
+  test/fixtures/loi.html,fail,10,19
+checks[50]{check,gate,result}:
   overflow,hard,2 hard
   axe,hard,2 hard
   text-min,hard,1 hard
   …
   guide,soft,3 soft
-count: 4 of 21 total
-findings[4]{gate,check,where,detail,renders}:
-  hard,overflow,320px,"page is 480px wide, viewport 320px",light/320 dark/320
-  hard,text-min,"topo-card::shadow span.lbl \"Cổng 1 ↓ 12 Mb/s\"",font-size 9.9px,light/320 light/390 light/1280 dark/320 dark/390 dark/1280
-  hard,lang,<html>,"Vietnamese text but lang=\"en\"",light/320 light/390 light/1280 dark/320 dark/390 dark/1280
-  soft,heading-lh,"h1 \"Bảng điều khiển mạng\"",line-height 1.00,light/320 light/390 light/1280 dark/320 dark/390 dark/1280
-help[4]: "17 more findings: add --full","Fix hard failures, then rerun the same command; soft ones need a fix or a written reason",…
+count: 4 of 29 total
+findings[4]{gate,check,where,detail,id,renders}:
+  hard,text-min,"topo-card::shadow span.lbl \"Cổng 1 ↓ 12 Mb/s\"",font-size 9.9px,c6t0r4,light/1280 light/390 …
+  hard,lang,<html>,"Vietnamese text but lang=\"en\"",en462c,light/1280 light/390 …
+  hard,axe,color-contrast,".faint: Element has insufficient color contrast of 2.32 …",5y2qw8,light/1280 light/390 …
+  hard,axe,color-contrast,"[topo-card,span]: Element has insufficient color contrast of 1.55 …",q5qnkp,light/1280 light/390 …
+help[6]: "After a fix: design-kit check <same pages> --recheck <id,id> measures only those findings again","25 more findings: add --full",…
 ```
 
 A block with a steps file (two verdicts: the page as loaded, and the state after turning every filter off; the one

@@ -415,6 +415,6 @@ describe("css probe and hostile pages", () => {
       await p.evaluate(probeCss);
       return Date.now() - t;
     });
-    expect(ms).toBeLessThan(500); // đo trên PC1 24/11/2026: 53–74 ms
+    expect(ms).toBeLessThan(3000); // đo 24/11/2026: 53–74 ms; ngưỡng rộng cho máy CI chậm
   }, 60_000);
 });

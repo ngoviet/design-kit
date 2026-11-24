@@ -470,8 +470,9 @@ describe("check on real pages", () => {
   }, 120_000);
 
   it("--fresh and resize in place give the same findings on a kit block", async () => {
-    const args = ["check", "blocks/html/form-dang-nhap.html", "--query", "dk=giay", "--no-impeccable", "--no-shots", "--no-standalone", "--full"];
-    const findings = (o: string) => o.slice(o.indexOf("findings"), o.indexOf("notes")).replace(/(since_last|new_since_last|fixed_since_last)[\s\S]*$/, "");
+    const args = ["check", "blocks/html/form-dang-nhap.html", "--query", "dk=giay", "--no-impeccable", "--no-shots", "--no-standalone", "--no-cache", "--full"];
+    // Chỉ lấy bảng phát hiện: since_last, notes và help khác nhau giữa hai lượt (có lượt trước hay chưa, có ghi chú hay không).
+    const findings = (o: string) => o.slice(o.indexOf("findings")).replace(/^(since_last|new_since_last|fixed_since_last|notes|help)[\s\S]*/m, "");
     const [a, b] = [await run(args), await run([...args, "--fresh"])];
     expect(a.out).not.toContain("resize in place not used");
     expect(findings(a.out)).toBe(findings(b.out));

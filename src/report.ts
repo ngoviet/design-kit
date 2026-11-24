@@ -28,6 +28,8 @@ export interface Run {
   schemes: string[];
   /** Nhãn từng trang và trạng thái đã đo (`PageReport.target`). */
   pages: string[];
+  /** Lựa chọn quyết định đo những gì (khổ quét, số điểm dừng Tab, mức chạm, engine): khác nhau thì "vắng" không phải là "đã sửa". */
+  opts: string;
   /** Phép đo bị tắt ở lượt này (copy khi --no-copy, impeccable khi thiếu engine…): vắng phát hiện của nó không phải là đã sửa. */
   skipped: string[];
   findings: RunFinding[];
@@ -43,7 +45,10 @@ const ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz";
 export function findingId(f: { page: string; check: string; where: string; detail: string }): string {
   const plain = (s: string): string => s.normalize("NFC").replace(/\d+(?:[.,]\d+)*/g, "#").replace(/\s+/g, " ").trim();
   const where = /^\+\d+ more$/.test(f.where) ? "+# more" : f.where;
-  const bits = createHash("sha256").update([f.page.replace(/\\/g, "/"), f.check, where, plain(f.detail)].join("\n")).digest().readUInt32BE(0);
+  // axe ghi tên luật ở `where` và bộ chọn ở đầu `detail`: bộ chọn là định danh, bỏ số ở đó thì #doan-1 và #doan-2 chung một mã.
+  const cut = /^(axe|axe-bp|orientation)$/.test(f.check) ? f.detail.indexOf(": ") : -1;
+  const detail = cut > 0 ? f.detail.slice(0, cut) + plain(f.detail.slice(cut)) : plain(f.detail);
+  const bits = createHash("sha256").update([f.page.replace(/\\/g, "/"), f.check, where, detail].join("\n")).digest().readUInt32BE(0);
   let id = "";
   for (let i = 0; i < 6; i++) id += ALPHABET[(bits >>> (i * 5)) & 31];
   return id;
@@ -63,7 +68,7 @@ export function loadRun(file: string): Run | undefined {
   try {
     const r = JSON.parse(readFileSync(file, "utf8")) as Partial<Run> | null;
     const lists = [r?.sizes, r?.schemes, r?.pages, r?.skipped];
-    if (r?.v !== 1 || typeof r.at !== "string" || !lists.every((l) => Array.isArray(l) && l.every((x) => typeof x === "string")) || !Array.isArray(r.findings)) return undefined;
+    if (r?.v !== 1 || typeof r.at !== "string" || typeof r.opts !== "string" || !lists.every((l) => Array.isArray(l) && l.every((x) => typeof x === "string")) || !Array.isArray(r.findings)) return undefined;
     const ok = r.findings.every((f) => f && typeof f.id === "string" && typeof f.page === "string" && typeof f.check === "string" && typeof f.where === "string" && typeof f.detail === "string" && Array.isArray(f.renders));
     return ok ? (r as Run) : undefined;
   } catch {
@@ -94,6 +99,7 @@ export function diffRuns(prev: Run, now: Run): RunDiff {
   const none = (why: string): RunDiff => ({ fixed: [], added: [], same: 0, pages: 0, why });
   if (differ(prev.sizes, now.sizes)) return none(`sizes differ (${prev.sizes.join(", ")} then, ${now.sizes.join(", ")} now)`);
   if (differ(prev.schemes, now.schemes)) return none(`color schemes differ (${prev.schemes.join(", ")} then, ${now.schemes.join(", ")} now)`);
+  if (prev.opts !== now.opts) return none(`options differ (${prev.opts} then, ${now.opts} now)`);
   const both = new Set(prev.pages.filter((p) => now.pages.includes(p)));
   if (!both.size) return none("no page in common");
   const off = new Set([...prev.skipped, ...now.skipped]);
