@@ -50,7 +50,7 @@ describe("sizes", () => {
     for (const [args, msg] of [
       [["--profile", "tv"], "unknown profile tv"],
       [["--profile", "devices", "--viewports", "390"], "drop --viewports"],
-      [["--profile", "devices", "--fresh"], "drop --fresh"],
+      [["--profile", "devices", "--fresh"], "--profile devices includes --sweep, which needs resize in place: drop --fresh"],
       [["--viewports", "390x844,390x600"], "each width once"],
       [["--viewports", "390x"], "--viewports: widths between"],
       [["--touch", "500"], "--touch must be"],
@@ -110,6 +110,20 @@ describe("sticky and orientation", () => {
     expect(out).toContain("sticky,soft,ok");
     expect(out).toContain("orientation,soft,ok");
   }, 120_000);
+  it("a sticky bar on a page that does not scroll takes no room; in a shell that scrolls itself, or fixed, it still does (25/11/2026)", async () => {
+    const d = join(root, ".design-kit", "test", "dinh-ngan");
+    mkdirSync(d, { recursive: true });
+    const page = async (name: string, css: string, body: string): Promise<string> => {
+      writeFileSync(join(d, `${name}.html`), `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Dính</title><style>body{margin:0;font:1rem/1.5 system-ui;color:#111;background:#fff}header{height:300px;background:#dde}h1{margin:0}${css}</style></head><body>${body}</body></html>`);
+      return rows((await run(["check", `.design-kit/test/dinh-ngan/${name}.html`, ...BASE, "--viewports", "390x844,1280x720"])).out, "sticky").join("\n");
+    };
+    const bar = "<header><h1>Đăng nhập</h1></header>";
+    expect(await page("ngan", "header{position:sticky;top:0}", `<main>${bar}<p>Trang ngắn hơn một màn.</p></main>`)).toBe("");
+    expect(await page("co-dinh", "header{position:fixed;top:0;left:0;right:0}", `${bar}<main style="padding-top:310px"><p>Trang ngắn hơn một màn.</p></main>`)).toContain("stuck bars take");
+    expect(await page("vo-cuon", "html,body{height:100%}.vo{height:100vh;overflow:auto}header{position:sticky;top:0}", `<main class="vo">${bar}<p style="height:2400px">Vỏ tự cuộn.</p></main>`)).toContain("stuck bars take");
+    // Vỏ app: thanh nằm cạnh khung cuộn, không nằm trong nó, nhưng chiếm chỗ suốt lúc đọc.
+    expect(await page("vo-canh", "html,body{height:100%}body{display:flex;flex-direction:column}header{position:sticky;top:0;flex:none}main{overflow:auto}", `${bar}<main><p style="height:2400px">Khung cuộn riêng.</p></main>`)).toContain("stuck bars take");
+  }, 120_000);
   it("CSS that turns the page back when the device turns is a soft orientation finding (axe css-orientation-lock)", async () => {
     const out = await check("khoa-huong-css", "--viewports", "1280x720");
     expect(rows(out, "orientation").join("\n")).toMatch(/soft,orientation,css-orientation-lock/);
@@ -119,6 +133,8 @@ describe("sticky and orientation", () => {
   }, 120_000);
   it("reads the manifest's orientation, also from broken JSON without failing", () => {
     expect(lockedOrientation('{"orientation":"landscape-primary"}')).toBe("landscape-primary");
+    // Tệp có BOM (PowerShell, Notepad ghi): trình duyệt đọc được thì cổng cũng phải đọc (25/11/2026).
+    expect(lockedOrientation('\uFEFF{"orientation":"portrait"}')).toBe("portrait");
     for (const m of ['{"orientation":"any"}', "{}", "not json", '{"orientation":3}']) expect(lockedOrientation(m)).toBeUndefined();
   }, 120_000);
 });
@@ -142,6 +158,17 @@ describe("autoplay and permission", () => {
     expect(out).toContain("permission,soft,ok");
     // Các bản --fresh (nạp riêng mỗi khổ) đọc cùng một sổ.
     expect(rows(await check("tu-keu-sai", "--viewports", "390,1280", "--fresh"), "permission")).toHaveLength(3);
+  }, 120_000);
+});
+
+describe("autoplay on an element that is not in the page (25/11/2026)", () => {
+  it("reports new Audio(url) with autoplay = true", async () => {
+    const r = rows(await check("tieng-roi-sai", "--viewports", "390"), "autoplay");
+    expect(r).toHaveLength(1);
+    expect(r[0]).toContain('id=\\"nhac-nen\\" autoplay');
+  }, 120_000);
+  it("leaves one muted after, without a file, switched off again, paused at once, at volume 0, or set behind a button", async () => {
+    expect(await check("tieng-roi-dung", "--viewports", "390")).toContain("autoplay,soft,ok");
   }, 120_000);
 });
 
@@ -200,6 +227,12 @@ describe("touch", () => {
   }, 120_000);
   it("leaves 44px targets, ::after that widens the hit area, labels around or for a control, links in a sentence, disabled and hidden ones", async () => {
     expect(await check("cham-dung", "--viewports", "390")).toContain("touch,soft,ok");
+  }, 120_000);
+});
+
+describe("touch: a label over a 1px checkbox (25/11/2026)", () => {
+  it("probes the label's hit area, not the hidden box: the padded label passes, the bare one is reported", async () => {
+    expect(rows(await check("nhan-o-giau", "--viewports", "390"), "touch").map((l) => /#([\w-]+)/.exec(l)?.[1])).toEqual(["khong-dem"]);
   }, 120_000);
 });
 

@@ -147,6 +147,21 @@ async function markListeners(page: Page): Promise<void> {
     }
     // Gốc của React nghe hơn trăm loại sự kiện để phân phát cho cây bên dưới: đó không phải một nút.
     const keep = [...by].filter(([, r]) => r.drop || (r.click && r.types.size <= ROOT_TYPES));
+    // Quá trần: nút và liên kết Tab tới được xếp sau, để vài trăm nút thật không chiếm chỗ của thứ cần tìm (25/11/2026).
+    if (keep.length > LISTENER_CAP) {
+      // Cây quá sâu thì CDP từ chối: giữ thứ tự cũ.
+      const doc = await cdp.send("DOM.getDocument", { depth: -1, pierce: true }).catch(() => undefined);
+      const reach = new Set<number>();
+      const nodes = doc ? [doc.root] : [];
+      for (let n = nodes.pop(); n; n = nodes.pop()) {
+        const at = new Map<string, string>();
+        for (let i = 0; i < (n.attributes?.length ?? 0); i += 2) at.set(n.attributes![i]!, n.attributes![i + 1]!);
+        const ti = parseInt(at.get("tabindex") ?? "", 10);
+        if (!at.has("disabled") && (ti >= 0 || (Number.isNaN(ti) && (/^(BUTTON|SELECT|TEXTAREA|INPUT)$/.test(n.nodeName) || (n.nodeName === "A" && at.has("href")))))) reach.add(n.backendNodeId);
+        nodes.push(...(n.children ?? []), ...(n.shadowRoots ?? []), ...(n.contentDocument ? [n.contentDocument] : []));
+      }
+      keep.sort(([a], [b]) => Number(reach.has(a)) - Number(reach.has(b)));
+    }
     await Promise.all(
       keep.slice(0, LISTENER_CAP).map(async ([backendNodeId, rec]) => {
         try {
@@ -383,17 +398,18 @@ interface TabStop {
   /** 0: focus không ở phần tử nào (Tab vừa đi hết trang). */
   id: number;
   label: string;
+  /** Focus có thể đang đi bên trong mà ngoài này không thấy: iframe, host của shadow root đóng (25/11/2026). */
   frame: boolean;
   editable: boolean;
 }
 
 function tabStop(): TabStop {
-  const w = window as unknown as { __dkKeys: KeyLib; __dkStops?: Element[] };
+  const w = window as unknown as { __dkKeys: KeyLib; __dkStops?: Element[]; __dkClosed?: WeakSet<Element> };
   const stops = (w.__dkStops ??= []);
   const el = w.__dkKeys.active();
   if (!el) return { id: 0, label: "", frame: false, editable: false };
   if (!stops.includes(el)) stops.push(el);
-  return { id: stops.indexOf(el) + 1, label: w.__dkKeys.label(el), frame: el.tagName === "IFRAME", editable: el.matches("textarea, input, [contenteditable]:not([contenteditable=false]), [role=textbox]") };
+  return { id: stops.indexOf(el) + 1, label: w.__dkKeys.label(el), frame: el.tagName === "IFRAME" || !!w.__dkClosed?.has(el), editable: el.matches("textarea, input, [contenteditable]:not([contenteditable=false]), [role=textbox]") };
 }
 
 /** Phần tử đang focus có phải liên kết tới nội dung không. `missing`: trỏ tới chỗ không có. */
@@ -415,8 +431,10 @@ function skipOf(): { label: string; href: string; missing: boolean } | null {
   const all = K.all();
   const main = all.find((e) => e.matches("main, [role=main]") && e.checkVisibility());
   if (main && (K.inside(main, t) || K.inside(t, main))) return { label: K.label(el), href: el.hash, missing: false };
-  // Đích nằm sau nav, trước main (một thẻ neo, tiêu đề trang): vẫn bỏ qua được nav.
-  const navs = all.filter((e) => e.matches("nav, [role=navigation]"));
+  // Đích nằm sau nav, trước main (một thẻ neo, tiêu đề trang): vẫn bỏ qua được nav. Khi đó nav sau main (chân trang) không tính:
+  // không ai phải đi qua nó để tới nội dung (25/11/2026).
+  const end = main && all.indexOf(t) < all.indexOf(main) ? all.indexOf(main) : all.length;
+  const navs = all.slice(0, end).filter((e) => e.matches("nav, [role=navigation]"));
   const after = navs.length > 0 && navs.every((n) => !K.inside(n, t) && all.indexOf(t) > all.indexOf(n));
   return after || worded ? { label: K.label(el), href: el.hash, missing: false } : null;
 }
@@ -505,7 +523,7 @@ export async function tabPass(page: Page): Promise<KeyboardFinding[]> {
       const p = cycleOf(ids);
       if (!p) continue;
       const cycle = [...new Set(ids.slice(-p))];
-      // Khung con: focus đi qua nhiều điều khiển bên trong mà ngoài này chỉ thấy một phần tử.
+      // Khung con hay cây bóng đóng: focus đi qua nhiều điều khiển bên trong mà ngoài này chỉ thấy một phần tử.
       if (p === 1 && s.frame) continue;
       const f = await page.evaluate(trapFacts, cycle);
       if (f.modal || f.ok || !f.others.length) break;
@@ -601,12 +619,15 @@ function dialogState(): DialogState | null {
   }
   w.__dkOpener = opener;
   const by = (d.getAttribute("aria-labelledby") ?? "").split(/\s+/)[0];
+  // Đi bằng up(), không closest(): lời miễn đặt trên host phải tới được hộp trong shadow root (25/11/2026).
+  let exempt = false;
+  for (let a: Element | null = d; a && !exempt; a = K.up(a)) exempt = a.hasAttribute("data-dialog-ok");
   const title = d.getAttribute("aria-label") || (by && (d.getRootNode() as Document | ShadowRoot).getElementById(by)?.textContent) || d.querySelector("h1, h2, h3")?.textContent || "";
   const t = title.trim().replace(/\s+/g, " ").slice(0, 28);
   return {
     where: `${K.name(d)}${t ? ` "${t}"` : ""}`,
     alert: d.getAttribute("role") === "alertdialog",
-    ok: !!d.closest("[data-dialog-ok]"),
+    ok: exempt,
     inside: !!active && K.inside(d, active),
     active: active ? K.label(active) : "the page body",
     opener: opener ? K.label(opener) : null,

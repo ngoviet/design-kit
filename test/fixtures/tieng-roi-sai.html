@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiếng từ thẻ rời</title>
+<style>body { margin: 1rem; font: 400 1rem/1.5 system-ui, sans-serif; background: #fff; color: #111; }</style>
+</head>
+<body>
+<main>
+<h1>Bài nghe số một</h1>
+<p>Trang tạo thẻ audio bằng script, bật autoplay mà không gắn vào trang.</p>
+</main>
+<script>
+// WAV rỗng hợp lệ: không cần tệp tiếng, không có yêu cầu mạng hỏng.
+const a = new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=");
+a.id = "nhac-nen";
+a.autoplay = true;
+window.giu = a;
+</script>
+</body>
+</html>

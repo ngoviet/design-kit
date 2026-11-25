@@ -117,4 +117,68 @@ describe("check-image robustness (rà soát 19/11/2026)", () => {
     expect(slugOf("../logo.svg")).not.toBe(slugOf("logo.svg"));
     expect(slugOf("../../a/b.png")).toBe("up~up~a~b-png");
   }, 60_000);
+
+  it("sheets of Vietnamese file names do not overwrite each other, composed or decomposed (25/11/2026)", async () => {
+    const { slugOf } = await import("../src/commands/check-image.js");
+    expect(slugOf("img/một.svg")).toBe("img~một-svg");
+    for (const form of ["NFC", "NFD"] as const) expect(slugOf("một.svg".normalize(form))).not.toBe(slugOf("mốt.svg".normalize(form)));
+    expect(slugOf("a b_c (1).png")).toBe("a_b_c_1_-png");
+  });
+});
+
+describe("check-image on odd files (25/11/2026)", () => {
+  const svg = (attrs: string, body: string) => `<svg xmlns="http://www.w3.org/2000/svg" ${attrs}>${body}</svg>`;
+  const tmp = async (files: Record<string, string>) => {
+    const { mkdtempSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const d = mkdtempSync(join(tmpdir(), "dk-hinh-"));
+    for (const [f, s] of Object.entries(files)) writeFileSync(join(d, f), s);
+    return d;
+  };
+
+  it("writes one sheet per Vietnamese-named image", async () => {
+    const { readdirSync } = await import("node:fs");
+    const body = "<circle cx='50' cy='50' r='40' fill='#0a4d8c'/>";
+    const d = await tmp({ "một.svg": svg("viewBox='0 0 100 100'", body), "mốt.svg": svg("viewBox='0 0 100 100'", body) });
+    await run(["check-image", d, "--shots", join(d, "to")]);
+    expect(readdirSync(join(d, "to"))).toHaveLength(2);
+  }, 60_000);
+
+  it("does not call a shape under 50% opacity fully transparent", async () => {
+    const d = await tmp({
+      "faint-logo.svg": svg("viewBox='0 0 240 80'", "<g opacity='0.4'><rect x='4' y='4' width='72' height='72'/></g>"),
+      "clear-logo.svg": svg("viewBox='0 0 240 80'", "<rect width='9' height='9' fill='none'/>"),
+    });
+    const faint = (await run(["check-image", join(d, "faint-logo.svg"), "--no-shots"])).out;
+    expect(faint).toMatch(/hard,empty,.*40% opacity/);
+    expect(faint).not.toContain("fully transparent");
+    expect((await run(["check-image", join(d, "clear-logo.svg"), "--no-shots"])).out).toMatch(/hard,empty,.*fully transparent/);
+  }, 60_000);
+
+  it("measures an icon whose width and height disagree with its viewBox undistorted", async () => {
+    const body = "<circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 3'/>";
+    const pen = "fill='none' stroke='currentColor' stroke-width='2'";
+    const d = await tmp({
+      "clock-icon.svg": svg("width='24' height='24' viewBox='0 0 24 24' " + pen, body),
+      "wide-icon.svg": svg("width='48' height='24' viewBox='0 0 24 24' " + pen, body),
+      // Chỉ có viewBox: cỡ tự nhiên 300×295,5 bị làm tròn, lệch tỉ lệ một chút nhưng lưới vẫn là 20 của viewBox.
+      "round-icon.svg": svg("viewBox='0 0 20 19.7' " + pen, "<circle cx='10' cy='10' r='7'/>"),
+    });
+    const stroke = async (f: string) => {
+      const { out } = await run(["check-image", join(d, f), "--no-shots", "--full"]);
+      return { out, px: Number(/stroke or shape thickness ([\d.]+) px/.exec(out)?.[1]) };
+    };
+    const good = await stroke("clock-icon.svg");
+    const wide = await stroke("wide-icon.svg");
+    expect(Math.abs(wide.px - good.px)).toBeLessThanOrEqual(0.2);
+    expect(wide.out).not.toContain("small-size");
+    expect(wide.out).toContain("box is 48×24");
+    expect((await stroke("round-icon.svg")).out).toContain("px at 20 px");
+  }, 60_000);
+
+  it("the help says icons form a set per folder", async () => {
+    const { out } = await run(["check-image", "--help"]);
+    expect(out).not.toContain("images in one run with kind icon form a set");
+    expect(out).toMatch(/icons in the same folder form a set/i);
+  });
 });

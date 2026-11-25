@@ -114,6 +114,34 @@ describe("themes", () => {
     writeFileSync(join(d, "lech.css"), "/* khác */");
     expect(run(join(d, "mau.json"), "--kiem", "--ra", join(d, "lech.css")).code).toBe(1);
   });
+  it("says what is wrong with a radius, a fixed token or a name of the wrong kind, instead of writing undefined or crashing", () => {
+    const d = join(root, ".design-kit", "test", "mau");
+    mkdirSync(d, { recursive: true });
+    const list = JSON.parse(readFileSync(join(root, "data", "themes.json"), "utf8")) as Array<{ dark: { fixed: Tokens }; source?: object }>;
+    const neon = list[0]!;
+    const flexoki = list[1]!;
+    const cases: Array<[string, unknown]> = [
+      ["radius", { ...flexoki, radius: ["4px", "8px"] }],
+      ["radius", { ...flexoki, radius: [4, 8, 16] }],
+      ["radius", { ...flexoki, radius: "4px" }],
+      ["radius", { ...flexoki, radius: ["4px", "8px", "16px; } body { display: none"] }],
+      ["fixed.text", { ...neon, dark: { fixed: { ...neon.dark.fixed, text: 12345 } } }],
+      ["fixed", { ...neon, dark: { fixed: "#fff" } }],
+      ["name", { ...flexoki, name: "Giấy */ body { display: none } /*" }],
+      ["source.palette", { ...flexoki, source: { ...flexoki.source, palette: "x */ body{}" } }],
+    ];
+    for (const [what, seed] of cases) {
+      writeFileSync(join(d, "kieu.json"), JSON.stringify([seed]));
+      const r = run(join(d, "kieu.json"), "--kiem");
+      expect({ what, code: r.code }).toEqual({ what, code: 2 });
+      expect(r.out).toContain("VALIDATION_ERROR");
+      expect(r.out).toContain(what);
+    }
+    // Ba bo góc đủ thì vẫn nhận, và ghi đủ ba.
+    writeFileSync(join(d, "kieu.json"), JSON.stringify([{ ...flexoki, radius: ["4px", "8px", "0"] }]));
+    expect(run(join(d, "kieu.json"), "--ra", join(d, "kieu.css")).code).toBe(0);
+    expect(readFileSync(join(d, "kieu.css"), "utf8")).toContain("--r-sm: 4px; --r-md: 8px; --r-lg: 0;");
+  });
   it("a broken color never counts as passing", () => {
     expect(lib.checkTheme({ ...all[0]!.tokens, "border-strong": "#NaNNaNNaN" }, "light").join(" ")).toMatch(/border-strong/);
   });

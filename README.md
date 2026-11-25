@@ -307,7 +307,7 @@ Flags of `check-mod`:
 | `--widths <n,n>` | Columns to sweep (default `40,52,64,78,100,120,160,200`): `bodyColumns` of AbovePrompt and Pane, `viewport.columns` of every component |
 | `--surfaces <terminal,desktop>` | Surfaces to draw on (default both) |
 | `--languages <a,b\|none>` | Language runs besides the default one (default: every value of the mod's `language` option but `auto`) |
-| `--no-tests` | Skip the mod's tests: only mount each component with default props (usually its empty state) |
+| `--no-tests` | Skip the mod's tests: only mount each AbovePrompt, Pane and ToolUse with default props (usually its empty state) |
 | `--pane-id <id>` | `requestId` for a Pane the mod matches by a computed id (default: the mod's name) |
 | `--term-bg <dark=#hex,light=#hex>` | Terminal backgrounds to measure against (default `#1e1e1e` and `#ffffff`) |
 | `--shots <dir>` / `--no-shots` | Screenshot folder (default `.design-kit/shots/mod-<name>`) / no screenshots |
@@ -316,7 +316,7 @@ Flags of `check-mod`:
 
 Its checks: *hard* are `mount` (the surface refused the tree, so the engine draws its own), `render`, `svg-source`
 (over 131,072 characters or no `alt`), `raster-size`, `ask-rows` (an AskUserQuestion tree over 12 rows on the
-terminal or 48 on desktop at 40 columns), `overflow`, `contrast` (4.5:1 for text, 3:1 for a lone symbol or a bar of
+terminal at 40 columns), `overflow`, `contrast` (4.5:1 for text, 3:1 for a lone symbol or a bar of
 block characters, on both terminals and on desktop; on desktop it is soft when both colors are the app's or a theme
 key's, which the desktop page can only guess), `text-min` (desktop, SVG text measured as drawn), `motion` and
 axe; *soft* are `rows` (a band taller than `maxRows`, or taller when narrow), `text-cut`, `svg-terminal` (an Svg on
@@ -362,7 +362,8 @@ file 30.
 never paints:
 
 1. `claude plugin validate` names the components the mod hooks; the mod is copied to a temporary folder, its tests'
-   `import … from 'claude-code/testing'` point at a shim, and a generic test mounts each component once.
+   `import … from 'claude-code/testing'` point at a shim, and a generic test mounts each hooked AbovePrompt, Pane and ToolUse
+   once (any other component is drawn only by the mod's own tests; no drawing at all is a hard `mount` failure).
 2. `claude plugin test` runs once per language. Each `$.ui.mount` a test makes is first drawn again on both surfaces
    at every width, and `ui.drawn()` is printed; identical trees are measured once.
 3. Terminal trees go through Ink's `renderToString` at the exact column count, with theme keys colored from Claude

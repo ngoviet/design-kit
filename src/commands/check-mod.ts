@@ -59,12 +59,12 @@ const htmlText = (html: string): string => {
 const WIDTHS = [40, 52, 64, 78, 100, 120, 160, 200];
 
 export const CHECK_MOD_HELP = `usage: design-kit check-mod <mod folder> [flags]
-description: Design gate for a Claude Code mod (a plugin whose hooks draw with ui.render: a band above the prompt, a pane, a row under a tool call). A mod has no page to open, so check-mod runs the mod's own tests through Claude Code's test kit (\`claude plugin test\` on a temporary copy; nothing is installed) with a shim that, every time a test mounts a component, also mounts it on the terminal and desktop surfaces at every width and prints the tree the surface is handed (\`ui.drawn()\`). One extra test mounts each component the mod hooks with default props. Each language of the mod's \`language\` option gets a run of its own. The terminal trees are laid out with Ink at the exact column count and measured on a dark and a light terminal; the desktop trees become an HTML page close to the app's renderer and get axe, the text-size probe (SVG text included, as drawn) and the reduced-motion check; the engine's own limits are checked on the trees. Prints one verdict, hard failures block "done"
+description: Design gate for a Claude Code mod (a plugin whose hooks draw with ui.render: a band above the prompt, a pane, a row under a tool call). A mod has no page to open, so check-mod runs the mod's own tests through Claude Code's test kit (\`claude plugin test\` on a temporary copy; nothing is installed) with a shim that, every time a test mounts a component, also mounts it on the terminal and desktop surfaces at every width and prints the tree the surface is handed (\`ui.drawn()\`). One extra test mounts the components the mod hooks with default props (AbovePrompt, Pane and ToolUse; any other component is measured only when a test of the mod mounts it). Each language of the mod's \`language\` option gets a run of its own. The terminal trees are laid out with Ink at the exact column count and measured on a dark and a light terminal; the desktop trees become an HTML page close to the app's renderer and get axe, the text-size probe (SVG text included, as drawn) and the reduced-motion check; the engine's own limits are checked on the trees. Prints one verdict, hard failures block "done"
 flags[10]:
   --widths <n,n>: columns to sweep (default ${WIDTHS.join(",")}); AbovePrompt and Pane get them as bodyColumns, every component as viewport.columns
   --surfaces <terminal,desktop>: surfaces to draw on (default both)
   --languages <a,b|none>: language runs besides the default one (default: every value of the mod's language option except auto)
-  --no-tests: skip the mod's tests, only mount each component with default props
+  --no-tests: skip the mod's tests, only mount AbovePrompt, Pane and ToolUse with default props
   --pane-id <id>: requestId for a Pane the mod matches by a computed id (default: the mod's name)
   --term-bg <dark=#hex,light=#hex>: terminal backgrounds to measure against (default dark=${TERM_BG.dark},light=${TERM_BG.light})
   --shots <dir>: screenshot folder (default .design-kit/shots/mod-<name>); --no-shots to skip
@@ -72,10 +72,11 @@ flags[10]:
   --strict: exit 1 when there is a hard failure
   --keep: keep the temporary copies of the mod (paths in notes)
 gates[3]:
-  hard: mount (the surface refused the tree the mod returned, so the engine draws its own instead), render (Ink could not lay the tree out), svg-source (Svg source over 131072 characters or no alt), raster-size (terminal Image pixels outside 1–2048 inline, 1–4096 from a file), ask-rows (an AskUserQuestion tree over 12 rows on the terminal or 48 on desktop at 40 columns), overflow (a terminal line wider than the columns: the terminal wraps it; desktop content wider than its slot), contrast (text under 4.5:1, a lone symbol under 3:1, on a dark or light terminal or on desktop via axe; APCA Lc printed beside; soft on desktop when both colors are the app's or a theme key's, which the desktop page only guesses), text-min (desktop text under 12px, SVG text measured as drawn), motion (Svg animation that keeps running under prefers-reduced-motion, SMIL always does), axe serious/critical
+  hard: mount (the surface refused the tree the mod returned, so the engine draws its own instead; or the mod hooks ui.render and not one drawing came back, so nothing was measured), render (Ink could not lay the tree out), svg-source (Svg source over 131072 characters or no alt), raster-size (terminal Image pixels outside 1–2048 inline, 1–4096 from a file), ask-rows (an AskUserQuestion tree over ${ASK_ROWS.terminal} rows on the terminal at ${ASK_COLUMNS} columns; the engine's limit of ${ASK_ROWS.desktop} on desktop is not measured), overflow (a terminal line wider than the columns: the terminal wraps it; desktop content wider than its slot), contrast (text under 4.5:1, a lone symbol under 3:1, on a dark or light terminal or on desktop via axe; APCA Lc printed beside; soft on desktop when both colors are the app's or a theme key's, which the desktop page only guesses), text-min (desktop text under 12px, SVG text measured as drawn), motion (Svg animation that keeps running under prefers-reduced-motion, SMIL always does), axe serious/critical
   soft: rows (AbovePrompt taller than maxRows, or taller when narrow: text wraps instead of the band shrinking), text-cut (a Text not shown whole: ellipsis or clipped by overflow hidden), svg-terminal (an Svg on desktop is an empty box on the terminal: give the terminal a Text), hard-color (a hex/rgb color does not follow the person's light/dark theme; the nearest theme key is suggested), tests (a mod test failed while swept), axe moderate/minor
   human: open the screenshots (terminal: dark and light panels, the dashed line is the right edge)
-notes[4]:
+notes[5]:
+  In \`checks\`, skipped means this run could not measure it: its surface is not in --surfaces, or (ask-rows) ${ASK_COLUMNS} is not in --widths
   Theme keys (success, subtle, …) are measured with Claude Code's default dark and light themes, data/claude-themes.json (refresh: node scripts/claude-themes.mjs)
   The desktop page is an approximation of the app's renderer (8px a cell, caption 12px … title 22px, app background #faf9f5 / #262624): verdicts rest on what the mod sets itself (hex colors, SVG font sizes, source length, animation)
   Ink is upstream Ink 6, not Claude Code's fork: wrapping at the very edge can differ by a cell
@@ -104,6 +105,10 @@ const CHECKS: Array<[string, Gate]> = [
   ["contrast", "hard"], ["text-min", "hard"], ["motion", "hard"], ["axe", "hard"],
   ["rows", "soft"], ["text-cut", "soft"], ["svg-terminal", "soft"], ["hard-color", "soft"], ["tests", "soft"],
 ];
+
+/** Phép đo chỉ chạy trên một surface: chạy thiếu surface đó thì in "skipped", không phải "ok" (25/11/2026). */
+const DESKTOP_ONLY = new Set(["svg-source", "text-min", "motion", "axe", "svg-terminal"]);
+const TERMINAL_ONLY = new Set(["render", "ask-rows", "rows", "svg-terminal", "hard-color"]);
 
 interface Finding {
   gate: Gate;
@@ -202,6 +207,12 @@ export async function checkModCommand(args: string[], rt: Runtime): Promise<Reco
   const defaultRun = runs.find((r) => r.run === "default");
   for (const f of defaultRun?.failures ?? []) add("soft", "tests", "-", f.test.slice(0, 80), f.error || "failed", "default run");
   for (const r of runs) if (r.broken) notes.push(`run ${r.run}: no test ran (${r.broken})`);
+  // Mod có ui.render mà không cây nào về: chưa đo gì thì không được báo "pass" (25/11/2026). Cây rỗng (mod trả next(e))
+  // là đã mount được, không tính ở đây.
+  if (!drawings.some((d) => d.tree) && ![...findings.values()].some((f) => f.check === "mount")) {
+    const why = [...hookFailed][0] ?? runs.find((r) => r.broken)?.broken ?? defaultRun?.failures[0]?.error;
+    add("hard", "mount", "-", [...new Set(info.components.map((c) => c.component))].join(", "), `the mod hooks ui.render but no drawing came back, so nothing was measured${why ? ` (${why.slice(0, 160)})` : ""}: write a test that mounts it, or fix what stops the mod from loading`, "all");
+  }
 
   // ---- Gộp cây trùng ----
   const groups = new Map<string, Group>();
@@ -382,12 +393,16 @@ export async function checkModCommand(args: string[], rt: Runtime): Promise<Reco
     const of = (g: Gate) => all.filter((f) => f.check === id && f.gate === g).length;
     const h = of("hard");
     const s = of("soft");
-    const skipped = (id === "text-min" || id === "axe" || id === "motion") && !surfaces.includes("desktop");
+    const skipped = (DESKTOP_ONLY.has(id) && !surfaces.includes("desktop")) || (TERMINAL_ONLY.has(id) && !surfaces.includes("terminal")) || (id === "ask-rows" && !widths.includes(ASK_COLUMNS));
     return { check: id, gate, result: skipped ? "skipped" : h || s ? [h && `${h} hard`, s && `${s} soft`].filter(Boolean).join(", ") : "ok" };
   });
   const shown = all.slice(0, limit).map((f) => ({ gate: f.gate, check: f.check, surface: f.surface, where: f.where, detail: f.detail, renders: compressRenders([...f.renders], widths) }));
   if (shown.length < all.length) out["count"] = `${shown.length} of ${all.length} total`;
   out["findings"] = shown.length ? shown : "0 findings found";
+  if (info.components.some((c) => c.component === "AskUserQuestion") && !(surfaces.includes("terminal") && widths.includes(ASK_COLUMNS))) {
+    const need = [surfaces.includes("terminal") ? "" : "add terminal to --surfaces", widths.includes(ASK_COLUMNS) ? "" : `add ${ASK_COLUMNS} to --widths`].filter(Boolean).join(" and ");
+    notes.push(`ask-rows skipped: it counts rows on the terminal at ${ASK_COLUMNS} columns; ${need}`);
+  }
   if (blank) notes.push(`${blank} drawing(s) showed nothing of the mod (it returned next(e)): not measured`);
   notes.push(`theme colors: ${loadThemes().source}`);
   notes.push(`collected ${drawings.length} drawings in ${(collectMs / 1000).toFixed(1)} s`);

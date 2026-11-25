@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+import { fail } from "./errors.js";
 
 /**
  * Engine ghim: phiên bản và sha256 chép từ các tệp <tên>.sha256 của bản phát hành engine-v<phiên bản> (19/11/2026:
@@ -26,9 +27,9 @@ export function engineAsset(): string {
   const arch = p === "windows" ? "x64" : process.arch;
   return `impeccable-${p}-${arch}${p === "windows" ? ".exe" : ""}`;
 }
-/** Bộ nhớ đệm của design-kit: DK_HOME, mặc định ~/.design-kit. */
+/** Bộ nhớ đệm của design-kit: DK_HOME, mặc định ~/.design-kit (biến rỗng coi như không đặt, không thì thành đường dẫn theo cwd). */
 export const dkCache = (env: Record<string, string | undefined>): string =>
-  join(env["DK_HOME"] ?? join(homedir(), ".design-kit"), "impeccable", ENGINE_VERSION, exeName());
+  join(env["DK_HOME"] || join(homedir(), ".design-kit"), "impeccable", ENGINE_VERSION, exeName());
 
 export interface ImpFinding {
   antipattern: string;
@@ -43,14 +44,17 @@ export interface ImpFinding {
  * Engine Impeccable, theo thứ tự: IMPECCABLE_BIN; bản đã ghim (bộ nhớ đệm của chính Impeccable ~/.impeccable/bin/<ver>,
  * rồi của design-kit, `design-kit setup` tải về và kiểm sha256); cuối cùng bản đi kèm skill impeccable. Trước 19/11/2026
  * bản của skill đứng trước, nên nâng ghim không có tác dụng trên máy đã cài skill (PC1 chạy engine của skill 4.8.1).
- * Không có ⇒ cổng bỏ qua Impeccable.
+ * Không có ⇒ cổng bỏ qua Impeccable. IMPECCABLE_BIN trỏ tệp không có ⇒ báo lỗi như DK_BROWSER, không lặng lẽ dùng engine khác.
  */
 export function findImpeccable(env: Record<string, string | undefined>): string | undefined {
   const fromEnv = env["IMPECCABLE_BIN"];
-  if (fromEnv && existsSync(fromEnv)) return fromEnv;
+  if (fromEnv) {
+    if (!existsSync(fromEnv)) fail(`IMPECCABLE_BIN does not exist: ${fromEnv}`, "VALIDATION_ERROR", ["Unset IMPECCABLE_BIN or point it at an engine binary"]);
+    return fromEnv;
+  }
   const arch = plat() === "windows" ? "x64" : process.arch;
   const candidates = [
-    join(env["IMPECCABLE_HOME"] ?? join(homedir(), ".impeccable"), "bin", ENGINE_VERSION, exeName()),
+    join(env["IMPECCABLE_HOME"] || join(homedir(), ".impeccable"), "bin", ENGINE_VERSION, exeName()),
     dkCache(env),
     join(homedir(), ".claude", "skills", "impeccable", "scripts", "bin", `${plat()}-${arch}`, exeName()),
   ];
@@ -77,7 +81,8 @@ export async function downloadEngine(env: Record<string, string | undefined>): P
 }
 
 /**
- * `detect --json --viewport WxH <url>`. Engine exit 2 = có phát hiện (không phải lỗi); exit 1 = không quét được.
+ * `detect --json --viewport WxH <url>`. Engine exit 2 = có phát hiện (không phải lỗi); exit 1 = không quét được. Mã lạ (hỏng giữa
+ * chừng, bị giết) kèm `[]` không phải trang sạch.
  * Trả undefined khi engine lỗi (ghi lý do vào `error`).
  */
 export function runImpeccable(bin: string, url: string, viewport: string): Promise<{ findings?: ImpFinding[]; error?: string }> {
@@ -91,7 +96,7 @@ export function runImpeccable(bin: string, url: string, viewport: string): Promi
     child.on("close", (code) => {
       try {
         const parsed = JSON.parse(out) as ImpFinding[];
-        if (code === 1 && parsed.length === 0) return done({ error: (err.trim().split("\n").pop() || "scan failed").slice(0, 200) });
+        if (code !== 0 && code !== 2 && parsed.length === 0) return done({ error: (err.trim().split("\n").pop() || (code === 1 ? "scan failed" : `exit ${code} with no findings`)).slice(0, 200) });
         done({ findings: parsed });
       } catch {
         done({ error: `exit ${code}: ${(err.trim().split("\n").pop() || "no JSON").slice(0, 200)}` });

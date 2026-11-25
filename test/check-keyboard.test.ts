@@ -1,7 +1,7 @@
 // Phép đo bàn phím (keyboard, tab-trap, skip-link, dialog-focus), giả lập máy người dùng (contrast-more, forced-colors, offline,
 // aria-state) và so kiểu focus, thêm 24/11/2026. Gọi thẳng các hàm qua trình duyệt, không qua lệnh check. Mỗi phép đo có trang
 // sai và trang đúng trong test/fixtures/: trang đúng gom các ca dễ báo oan.
-import { readFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync } from "node:fs";
 import type { Server } from "node:http";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
@@ -141,6 +141,22 @@ describe("keyboard", () => {
     }, true);
     expect(list).toEqual([]);
   });
+  it("hundreds of real buttons with listeners do not use up the budget of the things that are not buttons", async () => {
+    const list = await on('<main><div id="luoi"></div><div id="mat">Xem chi tiết đơn hàng</div><button type="button" tabindex="-1" id="ngoai-tab">Sao chép</button></main>', async (p) => {
+      await p.evaluate(() => {
+        for (let i = 0; i < 300; i++) {
+          const b = document.createElement(i % 3 ? "button" : "a");
+          if (b instanceof HTMLAnchorElement) b.href = `#${i}`;
+          b.textContent = `Mục ${i}`;
+          b.addEventListener("click", () => window.scrollTo(0, i));
+          document.getElementById("luoi")!.append(b);
+        }
+        for (const id of ["mat", "ngoai-tab"]) document.getElementById(id)!.addEventListener("click", () => window.scrollTo(0, 1));
+      });
+      return keyboardPass(p);
+    }, true);
+    expect(ids(list)).toEqual(["mat", "ngoai-tab"]);
+  });
 });
 
 describe("tab-trap", () => {
@@ -183,6 +199,19 @@ describe("tab-trap", () => {
     }, true);
     expect(hop).toEqual([]);
   });
+  it("a closed shadow root full of buttons is not a trap: focus moves inside where the probe cannot see", async () => {
+    const lich = (dong: boolean): Promise<KeyboardFinding[]> => on('<main><div id="h"></div><p><a href="#x" id="x">Liên kết sau lịch</a></p></main>', async (p) => {
+      await p.evaluate((d) => {
+        const h = document.getElementById("h")!;
+        const r = h.attachShadow({ mode: d ? "closed" : "open" });
+        for (let i = 0; i < 16; i++) r.append(Object.assign(document.createElement("button"), { textContent: `Ngày ${i}` }));
+        (window as unknown as { __dkClosed: WeakSet<Element> }).__dkClosed = new WeakSet(d ? [h] : []);
+      }, dong);
+      return tabPass(p);
+    }, true);
+    expect(await lich(false)).toEqual([]);
+    expect(await lich(true)).toEqual([]);
+  });
   it("puts the page back: no focus, same scroll, nothing on window", async () => {
     await on("ban-phim-bo-qua-dung.html", async (p) => {
       await p.evaluate(() => window.scrollTo(0, 120));
@@ -223,6 +252,13 @@ describe("skip-link", () => {
     // Đích là một neo đứng giữa nav và main.
     expect(await on(`<a href="#neo">Đi tiếp</a>${lk(5)}<span id="neo"></span><main><h1>Bài</h1></main>`, tabPass, true)).toEqual([]);
     expect(await on(`<a href="#truoc">Đi tiếp</a><span id="truoc"></span>${lk(5)}<main><h1>Bài</h1></main>`, tabPass, true)).toHaveLength(1);
+    // Nav ở chân trang đứng sau cả main: liên kết không cần bỏ qua nó.
+    const chan = '<footer><nav aria-label="Chân trang"><a href="/c">Liên hệ</a></nav></footer>';
+    expect(await on(`<a href="#neo">Vào thẳng bài viết</a>${lk(5)}<span id="neo"></span><main><h1>Bài</h1></main>${chan}`, tabPass, true)).toEqual([]);
+    expect(await on(`<a href="#truoc">Đi tiếp</a><span id="truoc"></span>${lk(5)}<main><h1>Bài</h1></main>${chan}`, tabPass, true)).toHaveLength(1);
+    expect(await on(`<a href="#giua">Đi tiếp</a>${lk(5)}<span id="giua"></span>${lk(5)}<main><h1>Bài</h1></main>${chan}`, tabPass, true)).toHaveLength(1);
+    // Nhảy xuống chân trang, trước nav cuối, không phải vào nội dung.
+    expect(await on(`<a href="#cuoi">Đi tiếp</a>${lk(5)}<main><h1>Bài</h1></main><span id="cuoi"></span>${chan}`, tabPass, true)).toHaveLength(1);
   });
 });
 
@@ -292,6 +328,16 @@ describe("dialog-focus", () => {
     });
     expect(list).toEqual([]);
     expect(await on("ban-phim-hop-sai.html", dialogFocusPass)).toEqual([]);
+  });
+  it("data-dialog-ok on the host covers a dialog inside its shadow root", async () => {
+    const hop = (attr: string): Promise<KeyboardFinding[]> => on(`<main><a href="#x">Ngoài</a></main><x-hop id="h" ${attr}></x-hop>`, async (p) => {
+      await p.evaluate(() => {
+        document.getElementById("h")!.attachShadow({ mode: "open" }).innerHTML = '<div role="dialog" aria-modal="true" aria-label="Xác nhận"><button type="button">Đồng ý</button></div>';
+      });
+      return dialogFocusPass(p);
+    }, true);
+    expect((await hop("")).length).toBeGreaterThan(0);
+    expect(await hop('data-dialog-ok="app chủ quản focus"')).toEqual([]);
   });
   it("a plain dialog that is not modal is not measured", async () => {
     expect(await on('<button id="b">Sau</button><div role="dialog" aria-label="Mẹo">Không modal <button>Đóng</button></div>', dialogFocusPass, true)).toEqual([]);
@@ -391,6 +437,35 @@ describe("offline", () => {
       expect(await p.evaluate(() => (window as unknown as { dau?: number }).dau)).toBe(1);
     });
   });
+  it("waits for a worker registered a moment after load, and only where that wait is asked for", async () => {
+    const muon = "may-nguoi-dung-ngoai-tuyen-muon.html?tre=1500";
+    expect(text(await on(muon, offlinePass))).toMatch(/offline may-nguoi-dung-ngoai-tuyen-muon\.html: .*reloading with no network fails \(net::/);
+    // Câu hỏi của mọi trang: trả lời ngay, không chờ.
+    await on("tot.html", async (p) => {
+      const t = Date.now();
+      expect(await registersWorker(p)).toBe(false);
+      expect(Date.now() - t).toBeLessThan(1000);
+    });
+  }, 60_000);
+  it("a worker that is still installing is not measured, not blamed", async () => {
+    await on("may-nguoi-dung-ngoai-tuyen-muon.html?sw=may-nguoi-dung-sw-cham.js", async (p) => {
+      await expect(offlinePass(p)).rejects.toThrow(/service worker is still installing after 3 s/);
+      expect(await p.evaluate(() => navigator.onLine)).toBe(true);
+    });
+  }, 60_000);
+  it("names the page the way its file is named, not percent-encoded", async () => {
+    // Ghi lúc chạy: tên tệp có dấu không nằm trong git.
+    const d = join(root, ".design-kit", "test", "ngoai-tuyen");
+    mkdirSync(d, { recursive: true });
+    copyFileSync(join(root, "test/fixtures/may-nguoi-dung-sw.js"), join(d, "may-nguoi-dung-sw.js"));
+    copyFileSync(join(root, "test/fixtures/may-nguoi-dung-ngoai-tuyen-muon.html"), join(d, "bản tin.html"));
+    const list = await on(encodeURI("../../.design-kit/test/ngoai-tuyen/bản tin.html?sw=may-nguoi-dung-sw.js"), async (p) => {
+      // Phạm vi của trang mẫu là tên cũ của nó: đăng ký lại cho tên mới.
+      await p.evaluate(() => navigator.serviceWorker.register("may-nguoi-dung-sw.js?kieu=qua-mang"));
+      return offlinePass(p);
+    });
+    expect(list.map((f) => f.where)).toEqual(["bản tin.html"]);
+  }, 60_000);
   it("turns the network back on and reloads also after a failure", async () => {
     await on("may-nguoi-dung-ngoai-tuyen-sai.html", async (p) => {
       expect(await registersWorker(p)).toBe(true);
@@ -432,6 +507,36 @@ describe("aria-state", () => {
     const sel = "dong-mo dong-mo muon muon yeu-thich tab-1 tab-2 tab-1 r1 khong-lam-gi hover-js lc nut-dong mien xem-them".split(" ").map((s) => `#${s}`);
     expect(text(await bam("may-nguoi-dung-aria-dung.html", ...sel))).toBe("");
   }, 60_000);
+  it("a region of no height whose menu shows is shown; a collapsed one that clips is not", async () => {
+    const bamHtml = (html: string, dong: string): Promise<EmulateFinding[]> => on(html, async (p, net) => {
+      await p.evaluate((js) => document.getElementById("mo")!.setAttribute("onclick", js), dong);
+      const aria = ariaStateWatch();
+      expect(await runActions(p, [{ click: "#mo" }], net, [aria.watch])).toBeUndefined();
+      return aria.findings;
+    }, true);
+    const nut = '<button id="mo" type="button" aria-expanded="false" aria-controls="vung">Tuỳ chọn</button>';
+    const vung = `${nut}<div id="vung" style="position:relative;height:0"><ul id="ds" hidden style="position:absolute;top:0;left:0;margin:0"><li>Sửa tên</li></ul></div>`;
+    const ca = "ds.hidden=false;this.setAttribute('aria-expanded','true')";
+    expect(text(await bamHtml(vung, ca))).toBe("");
+    expect(text(await bamHtml(vung, "ds.hidden=false"))).toMatch(/aria-expanded stays "false"/);
+    expect(text(await bamHtml(vung, "this.setAttribute('aria-expanded','true')"))).toMatch(/aria-expanded is "true" while the region it controls \(#vung\) is hidden/);
+    expect(text(await bamHtml(vung.replace("height:0", "height:0;overflow:hidden"), ca))).toMatch(/is hidden/);
+    // Nút nằm trong vùng không làm vùng thành hiện.
+    expect(text(await bamHtml(`<div id="vung" style="height:0">${nut}<p id="ds" hidden>Nội dung</p></div>`, "this.setAttribute('aria-expanded','true')"))).toMatch(/is hidden/);
+  }, 60_000);
+  it("data-aria-ok on the host covers a button inside its shadow root", async () => {
+    const list = await on('<x-bat id="h" data-aria-ok="máy chủ giữ trạng thái"></x-bat>', async (p, net) => {
+      await p.evaluate(() => {
+        const r = document.getElementById("h")!.attachShadow({ mode: "open" });
+        r.innerHTML = '<button type="button" aria-pressed="false">Theo dõi</button>';
+        r.querySelector("button")!.addEventListener("click", (e) => ((e.currentTarget as HTMLElement).textContent = "Đang theo dõi"));
+      });
+      const aria = ariaStateWatch();
+      expect(await runActions(p, [{ click: "#h button" }], net, [aria.watch])).toBeUndefined();
+      return aria.findings;
+    }, true);
+    expect(text(list)).toBe("");
+  });
   it("the hooks are optional, see every action in order, and a hook that throws does not break the steps", async () => {
     const log: string[] = [];
     await on("may-nguoi-dung-aria-dung.html", async (p, net) => {

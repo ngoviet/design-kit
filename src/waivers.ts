@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fail } from "./errors.js";
+import { splitState } from "./steps.js";
 
 /**
  * Miễn trừ có lý do cho phát hiện mềm (N8 / P11, 19/11/2026). Phát hiện mềm mà người duyệt đã xét là báo nhầm hay cố ý
@@ -24,7 +25,8 @@ export const WAIVERS_FORMAT =
 export function parseWaivers(text: string, from: string): Waiver[] {
   let raw: unknown;
   try {
-    raw = JSON.parse(text);
+    // BOM: như tệp steps (25/11/2026).
+    raw = JSON.parse(text.replace(/^\uFEFF/, ""));
   } catch (e) {
     fail(`${from}: not valid JSON (${(e as Error).message})`, "VALIDATION_ERROR", [WAIVERS_FORMAT]);
   }
@@ -50,7 +52,7 @@ export function loadWaivers(path: string, label: string, required: boolean): Wai
 }
 
 /** Trang gốc của một nhãn báo cáo: bỏ ` #trạng thái` và `?query`. */
-export const pageOf = (label: string): string => label.replace(/ #[^#]*$/, "").replace(/\?[^ ]*$/, "");
+export const pageOf = (label: string): string => splitState(label).page.replace(/\?[^ ]*$/, "");
 
 export interface WaivableFinding {
   gate: "hard" | "soft";

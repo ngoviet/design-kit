@@ -31,8 +31,8 @@ const HUONG = {
     dung: "tài liệu, báo cáo, bài viết dài, trang hướng dẫn",
     overview:
       "Trang để đọc lâu. Sáng là chế độ chính. Nền gần trắng trung hoà (không dùng nền kem), chữ thân có chân Literata 18px, tiêu đề không chân Be Vietnam Pro. Một màu nhấn xanh mực cho liên kết và điểm nhấn hiếm. Phân cấp đến từ thang chữ và khoảng trắng.",
-    type: "Thân Literata 18px, giãn dòng 1.7, độ dài dòng tối đa 66ch. Tiêu đề Be Vietnam Pro 600–650. Giao diện phụ (nút, nhãn, bảng) dùng Be Vietnam Pro qua `--font-ui`.",
-    layout: "Một cột đọc chính rộng tối đa 66ch, mục lục bên trái trên màn rộng, thu thành hàng chip trên điện thoại. Khoảng cách giữa các mục lớn (`--sp-8`).",
+    type: "Thân Literata 18px, giãn dòng 1.7, độ dài dòng tối đa `var(--measure)` (32em). Tiêu đề Be Vietnam Pro 600–650. Giao diện phụ (nút, nhãn, bảng) dùng Be Vietnam Pro qua `--font-ui`.",
+    layout: "Một cột đọc chính rộng tối đa `var(--measure)` (32em), mục lục bên trái trên màn rộng, thu thành hàng chip trên điện thoại. Khoảng cách giữa các mục lớn (`--sp-8`).",
     dos: [
       "Liên kết có gạch chân, `text-underline-offset: 3px`.",
       "Bảng có viền mảnh, chữ 14px, cột số căn phải.",

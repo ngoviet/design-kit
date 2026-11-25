@@ -23,7 +23,7 @@ import { pixelContrastPass } from "../pixelcontrast.js";
 import { dialogFocusPass, focusLogWatch, keyboardPass, tabPass } from "../keyboard.js";
 import { ariaStateWatch, contrastMorePass, forcedColorsPass, offlinePass, registersWorker } from "../emulate.js";
 import { clearMarks, diffRuns, drawMarks, findingId, labelOf, loadRun, locateLabels, recheckPlan, type Run, saveRun } from "../report.js";
-import { applyWaivers, loadWaivers, WAIVER_MAX_PER_PAGE } from "../waivers.js";
+import { applyWaivers, loadWaivers, pageOf, WAIVER_MAX_PER_PAGE } from "../waivers.js";
 import { cacheKey, depPath, entryValid, fileSha, readEntry, sha, writeEntry } from "../cache.js";
 import { VERSION } from "../version.js";
 import { fileURLToPath } from "node:url";
@@ -71,7 +71,7 @@ notes[5]:
   Local files are served over http://127.0.0.1 from the nearest folder with .git or package.json, so ../ links resolve
   standalone: the Claude app's browser pane opens file:///page.html as data:text/html,… so relative <link>s never load; fix with \`design-kit inline <page>\`
   Exit 0 whenever the pages were checked: read \`status\`. --strict turns hard failures into exit 1
-  Browser: DK_BROWSER, else Edge, else Chrome (channel), else Playwright's Chromium. Impeccable: IMPECCABLE_BIN, else the skill's bundled engine
+  Browser: DK_BROWSER, else Edge, else Chrome (channel), else Playwright's Chromium. Impeccable: IMPECCABLE_BIN, else the pinned engine (~/.impeccable, ~/.design-kit), else the skill's bundled engine
 examples[4]:
   design-kit check index.html
   design-kit check blocks/html --query dk=dem,dk=giay,dk=dam --strict
@@ -189,6 +189,21 @@ function add(r: PageReport, gate: Gate, check: string, where: string, detail: st
   r.findings.set(key, f);
 }
 
+/**
+ * Tên thư mục ảnh của một trang. Giữ chữ của mọi ngôn ngữ, kể cả dấu rời (NFD): "bán" và "bàn" từng cùng ra "b_n" và ghi đè ảnh
+ * của nhau (25/11/2026). Dài quá 240 byte (Linux giới hạn 255) thì cắt, nối băm để hai tên dài vẫn khác nhau.
+ */
+export function shotSlug(stem: string, q: string, state?: string): string {
+  const slug = `${stem}${q ? `-${q}` : ""}${state ? `--${state}` : ""}`.replace(/[\\/]+/g, "~").replace(/[^\p{L}\p{M}\p{N}_.~-]+/gu, "_").replace(/^[._~]+/, "");
+  if (Buffer.byteLength(slug) <= 240) return slug;
+  let head = "";
+  for (const c of slug) {
+    if (Buffer.byteLength(head + c) > 230) break;
+    head += c;
+  }
+  return `${head}~${sha(slug).slice(0, 8)}`;
+}
+
 /** Báo cáo trang dạng JSON được (cho bộ đệm N7): Map, Set đổi thành mảng. */
 interface CachedReport {
   findings: Array<Omit<Finding, "renders"> & { renders: string[] }>;
@@ -275,6 +290,20 @@ async function waitForContent(page: Page, idleAt: number): Promise<number> {
   return -1;
 }
 
+/** Ghi một tài nguyên của máy chủ cục bộ vào sổ phụ thuộc của bộ đệm. */
+function addDep(r: PageReport, u: string, h: Promise<string>): void {
+  if (/^http:\/\/127\.0\.0\.1:\d+\//.test(u)) r.deps.set(u, [...(r.deps.get(u) ?? []), h]);
+}
+
+/**
+ * Ghi mọi tài nguyên trang nhận vào sổ phụ thuộc. Gắn trước goto, ở MỌI lần mở trang có đo: CSS chỉ nạp trên màn chạm từng nằm
+ * ngoài sổ, sửa nó vẫn trúng đệm (25/11/2026).
+ */
+function watchDeps(page: Page, r: PageReport): void {
+  page.on("response", (s) => addDep(r, s.url(), s.status() >= 400 ? Promise.resolve("missing") : s.body().then((b) => sha(b), () => "unreadable")));
+  page.on("requestfailed", (q) => addDep(r, q.url(), Promise.resolve("unreadable")));
+}
+
 /**
  * Mở trang một lần như điện thoại thật (isMobile: trình duyệt đọc thẻ meta viewport) rồi đọc bề rộng dàn trang.
  * Các lượt render khác chỉ đặt bề rộng cửa sổ, nên Playwright bỏ qua thẻ này: trang thiếu nó vẫn dàn ở 390px và qua
@@ -286,6 +315,7 @@ async function checkViewport(browser: Browser, url: string, width: number, heigh
   try {
     const page = await ctx.newPage();
     const net = watchNetwork(page);
+    watchDeps(page, r);
     await page.goto(url, { waitUntil: "load", timeout: 45_000 });
     await settlePage(page, net);
     const v = await page.evaluate(() => {
@@ -307,7 +337,10 @@ async function checkViewport(browser: Browser, url: string, width: number, heigh
     // Tải manifest ngoài trang: CSP `connect-src` của trang không chặn được.
     const href = await page.evaluate(manifestHref);
     const res = href && /^https?:/.test(href) ? await ctx.request.get(href, { timeout: 10_000 }).catch(() => undefined) : undefined;
-    const locked = res?.ok() ? lockedOrientation(await res.text()) : undefined;
+    const body = res?.ok() ? await res.body() : undefined;
+    // Yêu cầu ngoài trang không phát sự kiện "response": ghi tay vào sổ phụ thuộc, không thì sửa manifest vẫn trúng đệm (25/11/2026).
+    if (href) addDep(r, href, Promise.resolve(body ? sha(body) : res ? "missing" : "unreadable"));
+    const locked = body ? lockedOrientation(body.toString("utf8")) : undefined;
     if (locked) add(r, "soft", "orientation", "manifest", `"orientation": "${locked}" locks the installed app to one direction (WCAG 1.3.4): drop it, or use "any"`, `mobile/${width}`);
   } finally {
     await ctx.close();
@@ -323,6 +356,7 @@ async function checkTouch(browser: Browser, url: string, size: Size, min: number
   try {
     const page = await ctx.newPage();
     const net = watchNetwork(page);
+    watchDeps(page, r);
     await page.goto(url, { waitUntil: "load", timeout: 45_000 });
     await settlePage(page, net);
     await waitForContent(page, Date.now());
@@ -436,11 +470,7 @@ async function openPage(browser: Browser, url: string, label: string, vw: number
   try {
     const page = await ctx.newPage();
     const net = watchNetwork(page);
-    const dep = (u: string, h: Promise<string>): void => {
-      if (/^http:\/\/127\.0\.0\.1:\d+\//.test(u)) r.deps.set(u, [...(r.deps.get(u) ?? []), h]);
-    };
-    page.on("response", (s) => dep(s.url(), s.status() >= 400 ? Promise.resolve("missing") : s.body().then((b) => sha(b), () => "unreadable")));
-    page.on("requestfailed", (q) => dep(q.url(), Promise.resolve("unreadable")));
+    watchDeps(page, r);
     await page.addInitScript(installVitals);
     await page.addInitScript(installSchemeWatch);
     await page.addInitScript(installOnload);
@@ -663,7 +693,13 @@ async function focusPass(page: Page, vw: number, scheme: string, focusStops: num
 async function motionPass(L: Loaded, vw: number, scheme: string, actions: StepAction[] | undefined, r: PageReport): Promise<void> {
   const { page, net } = L;
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.reload({ waitUntil: "load" });
+  try {
+    await page.reload({ waitUntil: "load" });
+  } catch (e) {
+    // Máy chủ dev tắt giữa lượt: mọi phép đo khác của trang đã xong, đừng làm đổ cả lệnh (25/11/2026).
+    r.notes.push(`motion: not measured, the page did not reload (${(e as Error).message.split("\n")[0]})`);
+    return;
+  }
   await settlePage(page, net);
   await waitForContent(page, Date.now());
   if (actions) {
@@ -987,7 +1023,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const engine = (p.str("engine") ?? "chromium") as Engine;
   if (engine !== "chromium" && engine !== "webkit") fail("--engine: chromium or webkit", "VALIDATION_ERROR");
   const wantSweep = plan ? plan.items.some((i) => i.sweep) : p.bool("sweep") || profile?.sweep === true;
-  if (wantSweep && p.bool("fresh")) fail("--sweep needs resize in place: drop --fresh", "VALIDATION_ERROR");
+  if (wantSweep && p.bool("fresh")) fail(`${profile?.sweep ? "--profile devices includes --sweep, which" : "--sweep"} needs resize in place: drop --fresh`, "VALIDATION_ERROR");
   const optsOf = (swept: boolean): string => `sweep ${swept ? "on" : "off"}, focus ${focusStops}, touch ${touchMin}, ${engine}${p.bool("fresh") ? ", fresh" : ""}`;
   if (plan) {
     // Đo ít hơn lượt trước (15 điểm dừng thay vì 30) thì "vắng" không phải là "đã sửa". Khổ quét thì tự bật theo mã.
@@ -1042,8 +1078,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
           if (shotsBase) {
             // Tên theo đường dẫn tương đối (không chỉ tên tệp): blocks/html/x.html và blocks/react/dist/x.html không ghi đè nhau.
             const stem = /^https?:/i.test(t) ? t.replace(/^https?:\/\//i, "") : relative(rt.cwd, t).replace(/\.html?$/i, "");
-            const slug = `${stem}${q ? `-${q}` : ""}${state ? `--${state.name}` : ""}`.replace(/[\\/]+/g, "~").replace(/[^\w.~-]+/g, "_").replace(/^[._~]+/, "");
-            shotsDir = join(shotsBase, slug || basename(t, extname(t)));
+            shotsDir = join(shotsBase, shotSlug(stem, q, state?.name) || basename(t, extname(t)));
             mkdirSync(shotsDir, { recursive: true });
           }
           // Mở dạng data: URL không mang query, nên chỉ cần một lần mỗi tệp: trạng thái đầu của query đầu.
@@ -1053,6 +1088,10 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
           jobs.push({ url, label, r, ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}), ...(mobile ? { mobile } : {}), ...(served ? { served } : {}) });
         }
       }
+    }
+    // Trạng thái của mã không còn trong lượt này (tệp steps đã đổi, --no-steps): không có gì để đo, không được in "pass: 0 pages".
+    if (plan && !jobs.length) {
+      fail(`--recheck: not measured by this command: ${plan.items.map((i) => `${i.page}${i.state ? ` #${i.state}` : ""}`).join(", ")}`, "VALIDATION_ERROR", ["The state is gone from the steps file, or --no-steps / --steps hides it: run the same command without --recheck"]);
     }
     const runJob = async ({ url, label, r, shotsDir, state, standalone, mobile, served }: (typeof jobs)[number]): Promise<void> => {
       // Bộ đệm (N7): trang cục bộ không đổi kể từ lần đo trước thì dùng lại kết quả. Khoá gồm mọi thứ quyết định kết quả
@@ -1081,12 +1120,12 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
       try {
         await checkPage(browser, url, label, { viewports, heights, schemes, focusStops, axeSource, fresh: p.bool("fresh"), ...(sweep.length ? { sweep, sweepFrom } : {}), ...(copy ? { copy } : {}), ...(shotsDir ? { shotsDir } : {}), ...(state ? { state } : {}), ...(standalone ? { standalone } : {}) }, r);
       } catch (e) {
-        // Một trang không mở được thì chỉ trang đó trượt; các trang khác vẫn đo. Chờ Impeccable xong để không còn
-        // tiến trình con chạy sau khi trình duyệt đã đóng.
+        // Một trang không mở được thì chỉ trang đó trượt; các trang khác vẫn đo. Lỗi nào cũng chờ Impeccable xong, để không
+        // còn tiến trình con chạy sau khi trình duyệt đã đóng.
+        await imp;
         if (!(e instanceof PageLoadError)) throw e;
         loadFailed.push(e.message);
         add(r, "hard", "render", "page", `page did not load: ${e.message.slice(label.length + 2, label.length + 202)}`, "load");
-        await imp;
         return;
       }
       if (mobile && phoneWidth) await optional(r, "viewport", () => checkViewport(browser, url, phoneWidth, heights[phoneWidth]!, r));
@@ -1241,12 +1280,12 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   // Một mục xuất hiện ở nhiều trạng thái, hay nhiều --query, của cùng trang chỉ ghi một lần.
   const seenAssumed = new Set<string>();
   const assumed = reports.flatMap((r) => {
-    const pageOf = r.target.replace(/ #[^#]*$/, "").replace(/\?[^ ]*$/, "");
+    const page = pageOf(r.target);
     return r.assumed.flatMap((a) => {
-      const k = `${pageOf}|${a.where}|${a.text}`;
+      const k = `${page}|${a.where}|${a.text}`;
       if (seenAssumed.has(k)) return [];
       seenAssumed.add(k);
-      return [{ ...(reports.length > 1 ? { page: pageOf } : {}), where: a.where, text: a.text, note: a.note || "(no reason given)" }];
+      return [{ ...(reports.length > 1 ? { page } : {}), where: a.where, text: a.text, note: a.note || "(no reason given)" }];
     });
   });
   if (assumed.length) out["assumed"] = assumed;

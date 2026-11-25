@@ -70,6 +70,31 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- Full-project review of 25/11/2026 (each bug reproduced by a failing test first):
+  - `check`: the result cache also covers files loaded only on the phone and touch renders and the web app manifest (an edited
+    manifest reused the old result); screenshot folders of pages whose names differ only in Vietnamese accents no longer overwrite each
+    other; `--recheck` with nothing left to measure says so and exits 2 instead of an empty `LOAD_FAILED`; a file name with " #" is not
+    read as a state; two axe violations without a message get two ids (such ids change once); steps, waivers and manifest files with a
+    BOM are read; a page that cannot be reloaded for `motion` or an odd cache file no longer ends the whole run.
+  - `text-min` (hard) measures SVG text by its drawn height, so small text in an SVG whose viewBox and box differ in shape is caught and
+    scaled-up groups are no longer blamed. `body-lh` and `measure` do not count padding as lines. `focus` sees through nested shadow
+    roots. `text-covered` reads the alpha of `oklch()`. `standalone` sees `<style>@import`. `font-unit` no longer stops at a rule on `html`.
+  - `touch`, `sticky`, `autoplay`, `copy`, `tab-trap`, `skip-link`, `safe-area`, `aria-state`, `dialog-focus`, `offline`, `keyboard`,
+    `vh-full` and the `--sweep` breakpoints: false or missed findings, each with a wrong and a right sample.
+  - `inline`: `>` inside a quoted attribute, commented-out `@import`, absolute `@import` in a nested file, `alternate stylesheet`,
+    `100%.css`, `url()` when the page moves to another folder; it counts only what it merged. `--ra` creates its folder (also `doi-mau`).
+  - `IMPECCABLE_BIN` that names a missing file is an error instead of silently running another engine, and an unknown engine exit code
+    is not a clean page. `doi-mau --nhan=` and `kiem-mau --huong` without a file are refused; `doi-mau --trung-tinh` also tints the
+    shadows of `giay` and `dam`.
+  - `check-mod`: a mod that renders but gives no drawing is a hard `mount` failure, not a pass; checks that did not run say `skipped`;
+    wrapped text in a framed box or beside another column is not "cut"; `CLAUDE_BIN` may be a `.cmd`. The 48-row desktop limit in the help
+    was never measured and is gone from it.
+  - `check-image`: sheets of names that differ only in accents, icons whose width/height disagree with the viewBox, and the message for
+    shapes under 50% opacity.
+  - Hook: a gate run counts only for the pages it names (not for `cd app`, `--shots app` or `--help`), naming `claude plugin test` in a
+    commit message no longer counts, globs and `$PWD` do, and suggested commands quote paths with spaces.
+  - Blocks: `trinh-tu` validates the steps in between and cannot be reopened after the last one; `thong-bao` stays while focus is inside;
+    the React blocks apply `dark:` classes when the system is dark. `sinh-themes` refuses a seed that would write broken CSS.
 - Blocks: touch targets of 44 px on devices with touch (mouse layouts unchanged); the current item keeps a mark in forced-colors mode; `thanh-ben`
   has a skip link; a long name wraps in `bang-du-lieu`; the React button no longer uses `transition: all`.
 - `heading-lh` is soft (owner's decision): what has to be stopped is a cut accent, which `text-clip` measures.

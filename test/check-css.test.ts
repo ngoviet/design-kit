@@ -152,6 +152,21 @@ describe("css vh-full", () => {
     expect(await vh("#a{min-height:50vh}#a{min-height:800px}", '<div id="a">x</div>')).toEqual([]);
     expect(await vh("#a{height:calc(100vh - 300px)}#a{height:800px}", '<div id="a">x</div>')).toEqual([]);
   }, 60_000);
+  it("a dvh rule counts as the fix only when it sizes this block: not its pseudo-element, not another px value that lost or is not its height", async () => {
+    expect(await vh('#a{height:100vh}#a::before{content:"";position:absolute;width:4px;height:100dvh}', '<div id="a">x</div>')).toEqual(["div#a"]);
+    expect(await vh('#a{height:100vh}#a:after{content:"";display:block;height:100dvh}', '<div id="a">x</div>')).toEqual(["div#a"]);
+    expect(await vh("#a{height:calc(100dvh - 300px)}div#a{height:100vh}", '<div id="a">x</div>')).toEqual(["div#a"]);
+    expect(await vh("#a{height:100vh;min-height:50dvh}", '<div id="a">x</div>')).toEqual(["div#a"]);
+    // Danh sách có cả chính khối: vẫn là cách sửa của khối.
+    expect(await vh("#a{height:100vh}#a,#a::before{height:100dvh}", '<div id="a">x</div>')).toEqual([]);
+    expect(await vh("div#a{height:100dvh}#a{height:100vh}", '<div id="a">x</div>')).toEqual([]);
+    expect(await vh("#a{height:100vh}#a{max-height:min(100dvh, 100%)}", '<div id="a">x</div>')).toEqual([]);
+    expect(await vh("#a{height:100vh}#a{max-height:-webkit-fill-available}", '<div id="a">x</div>')).toEqual([]);
+    expect(await vh("#a{height:100vh}#a{max-height:stretch}", '<div id="a">x</div>')).toEqual([]);
+    expect(await vh("#a{min-height:100vh}@supports (-webkit-touch-callout: none){#a{min-height:-webkit-fill-available}}", '<div id="a">x</div>')).toEqual([]);
+    // Chiều ngược lại: 100vh của phần tử giả không phải chiều cao của khối.
+    expect(await vh('#a{height:844px}#a::before{content:"";position:absolute;height:100vh}', '<div id="a">x</div>')).toEqual([]);
+  }, 60_000);
   it("ignores rules that do not apply: print sheet, unmet @media and @supports, @starting-style, disabled sheet", async () => {
     expect(await vh("@media (min-width:900px){#a{height:100vh}}", '<div id="a" style="height:844px">x</div>')).toEqual([]);
     expect(await probe('<style media="print">#a{height:100vh}</style><style>@supports (display: nope){#a{height:100vh}}@starting-style{#a{height:100vh}}</style>', '<div id="a" style="height:844px">x</div>').then((l) => places(l, "vh-full"))).toEqual([]);
@@ -305,6 +320,11 @@ describe("css safe-area", () => {
     expect(await sa(BAR, '<nav class="day" style="padding-bottom:env(safe-area-inset-bottom)">Trang chủ</nav>')).toEqual([]);
     expect(await sa(`:root{--a:env(safe-area-inset-bottom);--b:calc(var(--a) + 8px)}${BAR}.day{padding-bottom:var(--b)}`)).toEqual([]);
     expect(await sa(`${BAR}.day{padding-bottom:var(--ion-safe-area-bottom)}`)).toEqual([]);
+    // Biến khai ngay trên thẻ html hay trên thanh.
+    const inl = await probe(`${COVER}<style>${BAR}.day{padding-bottom:calc(12px + var(--sab))}</style>`, '<nav class="day">Trang chủ</nav>', { html: ' style="--sab: env(safe-area-inset-bottom)"' });
+    expect(places(inl, "safe-area")).toEqual([]);
+    expect(await sa(`${BAR}.day{padding-bottom:var(--x)}`, '<nav class="day" style="--x:env(safe-area-inset-bottom)">Trang chủ</nav>')).toEqual([]);
+    expect(await sa(`${BAR}.day{padding-bottom:var(--x)}`, '<nav class="day" style="--x:8px">Trang chủ</nav>')).toEqual(["nav.day"]);
   }, 60_000);
   it("a declared but unused variable, the other edge, or the body's padding do not protect the bar", async () => {
     expect(await sa(`:root{--a:env(safe-area-inset-bottom)}${BAR}`)).toEqual(["nav.day"]);

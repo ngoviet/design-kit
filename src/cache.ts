@@ -54,7 +54,12 @@ export function readEntry<R>(dir: string, key: string): CacheEntry<R> | undefine
   const f = join(dir, `${key}.json`);
   if (!existsSync(f)) return undefined;
   try {
-    return JSON.parse(readFileSync(f, "utf8")) as CacheEntry<R>;
+    const e = JSON.parse(readFileSync(f, "utf8")) as { deps?: unknown; shots?: unknown; report?: Record<string, unknown> | null } | null;
+    // JSON hợp lệ mà sai hình (tệp sửa tay, ghi dở rồi nối): coi như không có, không làm đổ cả lượt kiểm (25/11/2026).
+    const ok = Array.isArray(e?.deps) && (e.deps as Array<Partial<{ path: unknown; sha: unknown }> | null>).every((d) => typeof d?.path === "string" && typeof d.sha === "string")
+      && Array.isArray(e.shots) && e.shots.every((s) => typeof s === "string")
+      && ["findings", "notes", "assumed"].every((k) => Array.isArray(e.report?.[k]));
+    return ok ? (e as unknown as CacheEntry<R>) : undefined;
   } catch {
     return undefined;
   }

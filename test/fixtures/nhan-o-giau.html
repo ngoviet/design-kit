@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ô tích giấu 1px</title>
+<style>
+body { margin: 1rem; font: 400 1rem/1.5 system-ui, sans-serif; background: #fff; color: #111; }
+/* Hộp nhãn 30px, vùng bấm thật 46px nhờ ::after. Ô thật 1px trong suốt đứng trước nhãn. */
+label { position: relative; display: inline-block; height: 30px; line-height: 30px; padding: 0 12px; border: 1px solid #555; border-radius: 6px; margin: 24px 0; }
+.dem::after { content: ""; position: absolute; inset: -8px 0; }
+input { position: absolute; width: 1px; height: 1px; opacity: 0; margin: 0; }
+input:focus-visible + label { outline: 3px solid #06c; outline-offset: 2px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Cài đặt thông báo</h1>
+<p>Chọn cách nhận tin từ hệ thống.</p>
+<div><input type="checkbox" id="co-dem"><label class="dem" for="co-dem">Nhận thông báo qua email</label></div>
+<div><input type="checkbox" id="khong-dem"><label for="khong-dem">Nhận thông báo qua tin nhắn</label></div>
+</main>
+</body>
+</html>

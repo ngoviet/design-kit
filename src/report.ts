@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { splitState } from "./steps.js";
 
 /**
  * Cách báo (K9, 24/11/2026): mã ngắn ổn định cho mỗi phát hiện, so với lượt trước, đo lại đúng chỗ theo mã, và ảnh chụp đánh số.
@@ -47,7 +48,8 @@ export function findingId(f: { page: string; check: string; where: string; detai
   const where = /^\+\d+ more$/.test(f.where) ? "+# more" : f.where;
   // axe ghi tên luật ở `where` và bộ chọn ở đầu `detail`: bộ chọn là định danh, bỏ số ở đó thì #doan-1 và #doan-2 chung một mã.
   const cut = /^(axe|axe-bp|orientation)$/.test(f.check) ? f.detail.indexOf(": ") : -1;
-  const detail = cut > 0 ? f.detail.slice(0, cut) + plain(f.detail.slice(cut)) : plain(f.detail);
+  // axe không kèm lời báo (kiểm tra hỏng nằm ở "none", "all"): cả detail là bộ chọn (25/11/2026).
+  const detail = cut > 0 ? f.detail.slice(0, cut) + plain(f.detail.slice(cut)) : /^axe(-bp)?$/.test(f.check) ? f.detail : plain(f.detail);
   const bits = createHash("sha256").update([f.page.replace(/\\/g, "/"), f.check, where, detail].join("\n")).digest().readUInt32BE(0);
   let id = "";
   for (let i = 0; i < 6; i++) id += ALPHABET[(bits >>> (i * 5)) & 31];
@@ -135,10 +137,7 @@ export function recheckPlan(run: Run, ids: string[]): { items: RecheckItem[]; un
     const found = run.findings.filter((f) => f.id === raw);
     if (!found.length) unknown.push(raw);
     for (const f of found) {
-      // Nhãn trạng thái là " #tên" ở cuối; "#" trong địa chỉ (định tuyến kiểu /#/trang) không có dấu cách trước nó.
-      const m = /^(.*) #([^#]*)$/.exec(f.page);
-      const page = m ? m[1]! : f.page;
-      const item = items.get(f.page) ?? { page, ...(m ? { state: m[2]! } : {}), widths: [], schemes: [] };
+      const item = items.get(f.page) ?? { ...splitState(f.page), widths: [], schemes: [] };
       for (const r of f.renders) {
         const at = /^(light|dark|mobile|touch)\/(\d+)$/.exec(r);
         // "load" hay dạng lạ: không biết ở đâu thì đo lại đủ.

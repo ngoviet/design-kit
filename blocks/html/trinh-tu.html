@@ -181,7 +181,16 @@
     }
     document.getElementById("tiep").addEventListener("click", () => { if (!valid(step)) return; save(); if (step === 4) { try { sessionStorage.removeItem(KEY); } catch { /* bỏ qua */ } go(5); } else go(step + 1); });
     document.getElementById("lui").addEventListener("click", () => go(step - 1));
-    document.addEventListener("click", (e) => { const a = e.target.closest("[data-to]"); if (!a) return; e.preventDefault(); const t = Number(a.dataset.to); if (t <= maxStep) go(t); });
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest("[data-to]"); if (!a) return;
+      e.preventDefault();
+      const t = Number(a.dataset.to);
+      // pointer-events chỉ chặn chuột: Enter trên liên kết aria-disabled vẫn tới đây.
+      if (a.getAttribute("aria-disabled") === "true" || t > maxStep) return;
+      // Đi tới thì mọi bước đứng giữa phải hợp lệ, như khi bấm nút Tiếp; dừng ở bước sai và chỉ chỗ sai.
+      for (let s = step; s < t; s++) if (!valid(s)) { go(s, false); valid(s); return; }
+      go(t);
+    });
     form.addEventListener("change", save);
     load();
     // ?buoc=N mở thẳng bước N với dữ liệu mẫu, để cổng kiểm đo từng bước.

@@ -126,11 +126,12 @@ export interface GenericTarget {
   requestId?: string;
 }
 
+/** Component mount được trong test chung: chỉ những component có props mặc định. */
+export const mountable = (targets: GenericTarget[]): GenericTarget[] => targets.filter((t) => Object.hasOwn(DEFAULT_PROPS, t.component));
+
 /** Test chung: mỗi component mod hook, mount một lần với props mặc định (lớp chặn lo phần quét). */
 export function genericSource(plugin: string, targets: GenericTarget[], shimImport: string): string {
-  const list = targets
-    .filter((t) => DEFAULT_PROPS[t.component])
-    .map((t) => ({ plugin, surface: "terminal", component: t.component, ...(t.requestId ? { requestId: t.requestId } : {}), props: DEFAULT_PROPS[t.component] }));
+  const list = mountable(targets).map((t) => ({ plugin, surface: "terminal", component: t.component, ...(t.requestId ? { requestId: t.requestId } : {}), props: DEFAULT_PROPS[t.component] }));
   return `// Sinh bởi design-kit check-mod: cảnh chung, mỗi component mod hook mount một lần, không dựng trạng thái.
 import { test } from '${shimImport}'
 

@@ -6,7 +6,14 @@
 @import "../../../tokens/dam.css";
 @import "tailwindcss";
 
-@custom-variant dark (&:is([data-theme="dark"] *));
+/* Cùng điều kiện với token: ép tối bằng data-theme, hoặc tối theo máy khi không ép sáng. Trước 25/11/2026 chỉ có vế đầu,
+   nên máy ở chế độ tối thì nền tối mà mọi lớp dark: của shadcn không áp (viền nút oklch 0.33 thay vì 0.55). */
+@custom-variant dark {
+  &:is([data-theme="dark"] *) { @slot; }
+  @media (prefers-color-scheme: dark) {
+    &:not([data-theme="light"] *) { @slot; }
+  }
+}
 
 @theme inline {
   --color-background: var(--bg);

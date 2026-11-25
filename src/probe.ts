@@ -167,8 +167,10 @@ export function probePage(): ProbeResult {
     const tag = el.tagName;
     if (fs * k < 12) out.textMin.push({ where: label(el), value: px(fs, k) });
     const isBody = tag === "P" || tag === "LI" || tag === "DD" || tag === "BLOCKQUOTE";
-    // Hộp bao đã co theo k, dòng chữ khai báo thì chưa: quy về cùng một hệ.
-    const lines = Math.round(el.getBoundingClientRect().height / (lhRaw * k));
+    // Hộp bao đã co theo k, dòng chữ khai báo thì chưa: quy về cùng một hệ. Trừ đệm và viền: `li` một dòng có padding 14px
+    // từng thành "hai dòng" và bị báo body-lh, measure (25/11/2026).
+    const edges = [cs.paddingTop, cs.paddingBottom, cs.borderTopWidth, cs.borderBottomWidth].reduce((s, v) => s + (parseFloat(v) || 0), 0);
+    const lines = Math.round((el.getBoundingClientRect().height / k - edges) / lhRaw);
     // Chữ phụ (gợi ý dưới ô, chú thích) có màu khác chữ thân: 14px là đúng thang, không tính là thân chữ nhỏ.
     const secondary = cs.color !== bodyColor;
     if (isBody && !secondary && text.length > 40 && fs * k < 16) out.bodySmall.push({ where: label(el), value: px(fs, k) });
@@ -231,7 +233,23 @@ export function probePage(): ProbeResult {
     const vb = svg.viewBox?.baseVal;
     const cs = getComputedStyle(el);
     if (!vb || !vb.width || !visible(svg, getComputedStyle(svg)) || !(el.textContent || "").trim()) continue;
-    const eff = parseFloat(cs.fontSize) * (svg.getBoundingClientRect().width / vb.width);
+    // Chiều cao chữ trên màn là bề dày dòng chữ của chính nó: hệ số bề ngang của hình sai khi viewBox khác tỉ lệ
+    // khung, có preserveAspectRatio, hay chữ nằm trong nhóm co giãn, svg lồng (25/11/2026). Chữ không được vẽ (ẩn, trong defs,
+    // scale(0)) hay đang co giãn vô hạn thì ma trận không nói cỡ người đọc thấy: giữ hệ số bề ngang.
+    let k = svg.getBoundingClientRect().width / vb.width;
+    const r = el.getBoundingClientRect();
+    const m = r.width > 1 && r.height > 1 && el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }) ? (el as SVGTextElement).getScreenCTM() : null;
+    let pulsing = false;
+    for (let a: Element | null = el; a && a !== svg && !pulsing; a = a.parentElement) {
+      pulsing = a.getAnimations().some((x) => x.playState === "running" && x.effect instanceof KeyframeEffect && x.effect.getTiming().iterations === Infinity &&
+        x.effect.getKeyframes().some((f) => "transform" in f || "scale" in f));
+    }
+    if (m && !pulsing) {
+      // Vuông góc với dòng chữ: chữ nghiêng (skewX) không cao hơn vì nét chéo dài hơn.
+      k = Math.abs(m.a * m.d - m.b * m.c) / (Math.hypot(m.a, m.b) || 1);
+      if (Math.abs(k - 1) < 0.005) k = 1;
+    }
+    const eff = Math.round(parseFloat(cs.fontSize) * k * 100) / 100;
     if (eff < 12) out.textMin.push({ where: `svg ${label(el)}`, value: `${eff.toFixed(1)}px rendered` });
   }
 
@@ -517,6 +535,9 @@ export function probeCovered(): ProbeHit[] {
     return false;
   };
   const alpha = (c: string): number => {
+    // Hàm màu kiểu mới (oklch, lab, color(...)) ghi độ đục sau dấu "/".
+    const slash = /\/\s*([\d.]+%?|none)\s*\)/.exec(c)?.[1];
+    if (slash) return slash === "none" ? 0 : parseFloat(slash) / (slash.endsWith("%") ? 100 : 1);
     const m = /rgba?\(([^)]+)\)/.exec(c);
     if (!m) return c && c !== "transparent" ? 1 : 0;
     const parts = m[1]!.split(/[,/\s]+/).filter(Boolean);
@@ -822,7 +843,10 @@ export function probeFocus(): { where: string; indicator: boolean; thin: boolean
     const hit = document.elementFromPoint(tr.left + tr.width / 2, tr.top + tr.height / 2);
     // Trúng chính nó, con của nó, hoặc host chứa nó ⇒ không bị che.
     const mine = (n: Element): boolean => n === el || el.contains(n) || n.contains(el) || n === target || target.contains(n) || n.contains(target);
-    obscured = !!hit && !mine(hit) && !(hit.shadowRoot && hit.shadowRoot.contains(el));
+    // document.elementFromPoint chỉ trả host ngoài cùng: đi ngược qua mọi tầng shadow (thẻ Lit, HA lồng nhau).
+    let host: Element | null = el;
+    while (host && host !== hit) host = (host.getRootNode() as ShadowRoot).host ?? null;
+    obscured = !!hit && !mine(hit) && host !== hit;
   }
   // Hình người dùng thấy: hình thay thế nếu ô thật trong suốt (viền mặc định của ô thật cũng vô hình), không thì chính nó.
   const seen = proxies.length ? proxies.map((p) => getComputedStyle(p)) : [cs];
@@ -920,7 +944,7 @@ export const STANDALONE_TOKENS = ["--accent", "--bg", "--text", "--font-body", "
 export interface StandaloneProbe {
   /** Giá trị các token trong STANDALONE_TOKENS, rỗng nếu không có. */
   tokens: Record<string, string>;
-  /** Mỗi `<link rel=stylesheet>` có href (đúng chuỗi trong thẻ): đã nạp chưa, có phải chỉ khai báo font. */
+  /** Mỗi `<link rel=stylesheet>` có href và mỗi @import tương đối của `<style>` (đúng chuỗi trong trang): đã nạp chưa, có phải chỉ khai báo font. */
   sheets: Array<{ href: string; loaded: boolean; fonts: boolean }>;
   /** `<script src>` theo đường dẫn (tương đối hoặc từ gốc "/"): mở dạng data: URL thì không chạy. */
   scripts: string[];
@@ -936,9 +960,7 @@ export function probeStandalone(tokenNames: string[]): StandaloneProbe {
   const tokens: Record<string, string> = {};
   for (const t of tokenNames) tokens[t] = cs.getPropertyValue(t).trim();
   const fontUrl = /font/i;
-  const sheets = Array.from(document.querySelectorAll<HTMLLinkElement>("link[rel~=stylesheet][href]")).map((l) => {
-    const href = l.getAttribute("href") ?? "";
-    const sheet = l.sheet;
+  const read = (href: string, sheet: CSSStyleSheet | null): StandaloneProbe["sheets"][number] => {
     let fonts = false;
     if (sheet) {
       try {
@@ -950,7 +972,24 @@ export function probeStandalone(tokenNames: string[]): StandaloneProbe {
       }
     }
     return { href, loaded: sheet !== null, fonts };
-  });
+  };
+  const sheets = Array.from(document.querySelectorAll<HTMLLinkElement>("link[rel~=stylesheet][href]")).map((l) => read(l.getAttribute("href") ?? "", l.sheet));
+  // <style>@import "site.css"</style> mất y như <link>. Mở dạng data: thì styleSheet là null; tệp thiếu (404) qua http thì là
+  // tờ rỗng, vốn không có gì để mất (đo trên Edge 25/11/2026).
+  for (const st of Array.from(document.querySelectorAll("style"))) {
+    for (const r of Array.from(st.sheet?.cssRules ?? [])) {
+      if (!(r instanceof CSSImportRule) || /^([a-z][a-z0-9+.-]*:|\/\/)/i.test(r.href)) continue;
+      const s = read(r.href, r.styleSheet);
+      if (s.loaded && r.styleSheet) {
+        try {
+          s.loaded = r.styleSheet.cssRules.length > 0;
+        } catch {
+          /* khác nguồn (chuyển hướng): không đọc được luật nhưng đã nạp */
+        }
+      }
+      sheets.push(s);
+    }
+  }
   const scripts = Array.from(document.querySelectorAll("script[src]"))
     .map((s) => s.getAttribute("src") ?? "")
     .filter((s) => s && !/^([a-z][a-z0-9+.-]*:|\/\/)/i.test(s));

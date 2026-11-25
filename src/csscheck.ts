@@ -202,7 +202,7 @@ export function probeCss(): CssHit[] {
     const PROPS = ["height", "min-height", "max-height", "block-size", "min-block-size", "max-block-size"];
     const VH = /\dv[hb](?![a-z])/i;
     const FIXED = /\d[sld]v[hb](?![a-z])|fill-available|stretch/i;
-    const safe = new Set<Element>();
+    const fixed: Array<{ el: Element; prop: string; v: string; ios: boolean }> = [];
     const cand: Array<{ el: Element; prop: string; v: string }> = [];
     const see = (style: CSSStyleDeclaration, els: () => Element[], ios: boolean): void => {
       for (const prop of PROPS) {
@@ -210,28 +210,47 @@ export function probeCss(): CssHit[] {
         if (!raw || !(VH.test(raw) || FIXED.test(raw) || raw.includes("var("))) continue;
         for (const el of els()) {
           const v = resolve(raw, el);
-          if (FIXED.test(v)) safe.add(el);
+          if (FIXED.test(v)) fixed.push({ el, prop, v, ios });
           else if (!ios && VH.test(v)) cand.push({ el, prop, v });
         }
       }
     };
-    for (const d of decls) see(d.style, () => elsOf(d), d.ios);
+    // Chiều cao của phần tử giả không phải chiều cao của khối: chỉ giữ phần bộ chọn trỏ tới chính khối (25/11/2026).
+    const ownEls = (d: Decl): Element[] => {
+      const own = parts(d.sel).filter((s) => {
+        let flat = s;
+        while (/\([^()]*\)/.test(flat)) flat = flat.replace(/\([^()]*\)/g, "");
+        return flat.search(ATTACHED) < 0;
+      });
+      return elsOf(own.length === parts(d.sel).length ? d : { ...d, sel: own.join(", ") });
+    };
+    for (const d of decls) see(d.style, () => ownEls(d), d.ios);
     for (const el of all) if ((el as HTMLElement).style?.length) see((el as HTMLElement).style, () => [el], false);
+    // Luật quyết định chiều cao: giá trị đã tính đúng bằng số px của nó (không phải `100%` hay một luật khác), và chiều cao của khối
+    // đúng bằng số đó. undefined: giá trị đã tính không phải px nên không so được.
+    const pxSaid = (el: Element, prop: string): number | undefined => {
+      const px = /^(-?[\d.]+)px$/.exec(typed(el, prop))?.[1];
+      return px === undefined ? undefined : Number(px);
+    };
+    const decides = (el: Element, prop: string, v: string): boolean | undefined => {
+      const px = pxSaid(el, prop);
+      return px === undefined ? undefined : Math.abs(px - pxOf(v, el)) <= 0.6 && Math.abs(parseFloat(getComputedStyle(el).height) - px) <= 1.5;
+    };
+    // Hai luật cùng ra một số px (100dvh thua 100vh) thì ở đây không phân biệt được: vẫn coi là đã sửa (25/11/2026).
+    // Đã sửa khi luật dvh/svh thật sự cho ra chiều cao này. Không so được (luật chỉ iOS áp, fill-available, min(…, 100%),
+    // biến lồng quá sâu) thì coi là đã sửa.
+    const safe = (el: Element): boolean => fixed.some((f) => f.el === el && (f.ios || f.v.includes("var(") || Number.isNaN(pxOf(f.v, el)) || decides(el, f.prop, f.v) !== false));
     const hits = new Map<Element, { where: string; text: string }>();
     for (const { el, prop, v } of cand) {
-      if (safe.has(el) || hits.has(el) || !shown(el) || hidden(el) || okd(el, "vh-full")) continue;
+      if (hits.has(el) || !shown(el) || hidden(el) || okd(el, "vh-full")) continue;
       const cs = getComputedStyle(el);
       // Lớp nền trang trí dài quá đáy không che ai.
       if (cs.pointerEvents === "none" || (cs.zIndex !== "auto" && Number(cs.zIndex) < 0)) continue;
       const r = el.getBoundingClientRect();
       // Bố cục làm tròn tới 1/64 px: 90vh của 844 là 759,594.
       if (!(r.height >= H * 0.9 - 0.5) || r.right <= 1 || r.left >= W - 1) continue;
-      // Luật thắng khi giá trị đã tính là đúng số px của nó (không phải `100%` hay một luật khác), và chính nó quyết định chiều
-      // cao: khối dài hơn min-height thì cao vì nội dung.
-      const px = /^(-?[\d.]+)px$/.exec(typed(el, prop))?.[1];
-      // Cao hơn màn (120vh) là cố ý cho cuộn, không phải khối vừa khít màn.
-      if (px === undefined || Number(px) > H + 1 || !(Math.abs(Number(px) - pxOf(v, el)) <= 0.6)) continue;
-      if (!(Math.abs(parseFloat(cs.height) - Number(px)) <= 1.5)) continue;
+      // Khối dài hơn min-height thì cao vì nội dung. Cao hơn màn (120vh) là cố ý cho cuộn, không phải khối vừa khít màn.
+      if (!decides(el, prop, v) || pxSaid(el, prop)! > H + 1 || safe(el)) continue;
       hits.set(el, { where: label(el), text: `${prop}: ${v.slice(0, 40)} on a block that fills the phone screen: the address bar covers its bottom edge. Write the same value in dvh (or svh) after it` });
     }
     push("vh-full", [...hits.values()], 4);
@@ -454,7 +473,9 @@ export function probeCss(): CssHit[] {
         const NAME = new RegExp(`safe-?area[\\w-]*-${side}`, "i");
         const vars = new Set<string>();
         const uses = (text: string): boolean => NAME.test(text) || Array.from(text.matchAll(/var\(\s*(--[\w-]+)/g)).some((m) => vars.has(m[1]!));
-        const custom = decls.flatMap((d) => Array.from(d.style).filter((p) => p.startsWith("--")).map((p) => ({ p, text: d.style.getPropertyValue(p) })));
+        // Cả biến khai trong thuộc tính style (framework hay đặt ngay trên thẻ html; 25/11/2026).
+        const styles = [...decls.map((d) => d.style), ...all.flatMap((el) => (el as HTMLElement).style ?? [])];
+        const custom = styles.flatMap((st) => Array.from(st).filter((p) => p.startsWith("--")).map((p) => ({ p, text: st.getPropertyValue(p) })));
         for (let grew = true, i = 0; grew && i < 5; i++) {
           grew = false;
           for (const { p, text } of custom) {

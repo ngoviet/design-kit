@@ -59,11 +59,13 @@ export function parseCopyRules(json: string, file: string): CopyRules {
   } catch (e) {
     fail(`${file}: not valid JSON (${(e as Error).message})`, "VALIDATION_ERROR");
   }
-  const o = raw as Record<string, unknown>;
   const bad = (what: string): never => fail(`${file}: ${what}`, "VALIDATION_ERROR", [`Fix ${file}; the format is described in its $comment`]);
+  const isObj = (x: unknown): x is Record<string, unknown> => typeof x === "object" && x !== null;
+  const o: Record<string, unknown> = isObj(raw) ? raw : bad("must be an object");
   if (!Array.isArray(o.categories) || !o.categories.length) bad("categories must be a non-empty list");
   const ids = new Set<string>();
-  const categories = (o.categories as Array<Record<string, unknown>>).map((c, i) => {
+  const categories = (o.categories as unknown[]).map((entry, i) => {
+    const c: Record<string, unknown> = isObj(entry) ? entry : bad(`category ${i + 1} must be an object`);
     const id = typeof c.id === "string" && c.id ? c.id : bad(`category ${i + 1} has no id`);
     if (ids.has(id)) bad(`duplicate category id "${id}"`);
     ids.add(id);
@@ -97,8 +99,10 @@ export function parseCopyRules(json: string, file: string): CopyRules {
       res.push({ src: start ? `^${body}` : body, flags: "iu" });
     }
     for (const r of regex) {
-      const src = typeof r === "string" ? r : (r as { re?: unknown })?.re;
-      const flags = typeof r === "string" ? "iu" : String((r as { flags?: unknown }).flags ?? "iu");
+      const src = typeof r === "string" ? r : isObj(r) ? r.re : undefined;
+      // Cờ g giữ lastIndex từ khối chữ này sang khối sau nên sót cụm ở khối sau: bỏ. Cờ y cũng vậy, nhưng bỏ thì mất neo: từ chối.
+      const flags = (isObj(r) ? String(r.flags ?? "iu") : "iu").replace(/g/g, "");
+      if (flags.includes("y")) bad(`${id}: flag y is not supported, use at: "start" or ^`);
       if (typeof src !== "string" || !src) bad(`${id}: every regex must be a string or {"re": "...", "flags": "u"}`);
       try {
         new RegExp(src as string, flags);
@@ -278,6 +282,9 @@ export function probeCopy(rules: CopyRules): CopyResult {
     const t = norm(el.textContent ?? "");
     const parts = t.split(/(?<=\.)\s+/);
     if (parts.length < fh.minParts || parts.length > fh.maxParts) continue;
+    // "Bước 1. Chọn gói cước." là tiêu đề đánh số: số thứ tự không tính là một mảnh (25/11/2026).
+    if (/^(?:\p{L}+ )?\d+\.$/u.test(parts[0]!)) parts.shift();
+    if (parts.length < fh.minParts) continue;
     if (parts.every((p) => /^[^.!?…]+\.$/u.test(p) && p.split(" ").length <= fh.maxWords)) {
       out.copy.push({ where: label(el), value: `${fh.label}: "${t.slice(0, 60)}"` });
     }

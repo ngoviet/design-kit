@@ -21,10 +21,11 @@ export function installOnload(): void {
   interface Rec {
     gestured: boolean;
     calls: Array<{ kind: "sound" | "permission"; what: string; at: number }>;
+    media: HTMLMediaElement[];
   }
   const w = window as unknown as { __dkOnload?: Rec } & Record<string, unknown>;
   if (w.__dkOnload) return;
-  const rec: Rec = { gestured: false, calls: [] };
+  const rec: Rec = { gestured: false, calls: [], media: [] };
   w.__dkOnload = rec;
   for (const t of ["pointerdown", "mousedown", "touchstart", "keydown"]) {
     addEventListener(t, (e) => {
@@ -57,6 +58,22 @@ export function installOnload(): void {
     const m = self as HTMLMediaElement;
     if (!m.muted && m.volume > 0) note("sound", `${m.tagName.toLowerCase()}${m.id ? `#${m.id}` : ""}.play()`);
   });
+  // Thẻ rời trang (new Audio) bật autoplay vẫn tự phát, mà lượt đi qua cây không thấy: nhớ thẻ, readOnload xét sau, vì muted, src
+  // thường đặt sau autoplay. pause() huỷ tự phát (25/11/2026).
+  const media = g["HTMLMediaElement"]?.prototype as HTMLMediaElement | undefined;
+  const auto = media ? Object.getOwnPropertyDescriptor(media, "autoplay") : undefined;
+  if (media && auto?.set && auto.configurable) {
+    Object.defineProperty(media, "autoplay", {
+      ...auto,
+      set(this: HTMLMediaElement, on: boolean) {
+        auto.set!.call(this, on);
+        if (on && !rec.gestured && rec.media.length < 40 && !rec.media.includes(this)) rec.media.push(this);
+      },
+    });
+  }
+  wrap(media, "pause", (self) => {
+    rec.media = rec.media.filter((m) => m !== self);
+  });
   // Nút nguồn của Web Audio chỉ kêu khi start(). Tạo sẵn AudioContext lúc nạp là chuyện thường, không tính. Bỏ qua
   // OfflineAudioContext (phân tích) và đệm ngắn dưới 50 ms (mẹo mở khoá tiếng trên iOS).
   const startOf = (self: unknown): void => {
@@ -79,19 +96,23 @@ export function installOnload(): void {
   wrap(g["Geolocation"]?.prototype, "watchPosition", () => note("permission", "geolocation.watchPosition()"));
 }
 
-/** Đọc sổ của một khung, cộng các thẻ audio/video có `autoplay` mà không tắt tiếng (đi xuyên open shadow root). */
+/** Đọc sổ của một khung, cộng các thẻ audio/video, trong trang hay rời trang, có `autoplay` mà không tắt tiếng (đi xuyên open shadow root). */
 export function readOnload(): OnloadCall[] {
-  const rec = (window as unknown as { __dkOnload?: { calls: OnloadCall[] } }).__dkOnload;
+  const rec = (window as unknown as { __dkOnload?: { calls: OnloadCall[]; media: HTMLMediaElement[] } }).__dkOnload;
   const out: OnloadCall[] = rec ? [...rec.calls] : [];
+  const look = (el: Element): void => {
+    if (!(el instanceof HTMLMediaElement) || !el.autoplay || el.muted || el.volume === 0) return;
+    if (!el.currentSrc && !el.getAttribute("src") && !el.srcObject && !el.querySelector("source[src]")) return;
+    out.push({ kind: "sound", what: `<${el.tagName.toLowerCase()}${el.id ? ` id="${el.id}"` : ""} autoplay> without muted`, at: 0 });
+  };
   const walk = (root: Document | ShadowRoot): void => {
     for (const el of Array.from(root.querySelectorAll("*"))) {
       if (el.shadowRoot) walk(el.shadowRoot);
-      if (!(el instanceof HTMLMediaElement) || !el.autoplay || el.muted || el.volume === 0) continue;
-      if (!el.currentSrc && !el.getAttribute("src") && !el.srcObject && !el.querySelector("source[src]")) continue;
-      out.push({ kind: "sound", what: `<${el.tagName.toLowerCase()}${el.id ? ` id="${el.id}"` : ""} autoplay> without muted`, at: 0 });
+      look(el);
     }
   };
   walk(document);
+  for (const m of rec?.media ?? []) if (!m.isConnected) look(m);
   return out;
 }
 

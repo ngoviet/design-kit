@@ -64,9 +64,10 @@ export function resolveColor(v: unknown, scheme: Scheme): Resolved {
   if (typeof v !== "string" || !v.trim() || v === "transparent") return { kind: "none" };
   const value = v.trim();
   const theme = loadThemes()[scheme];
-  if (theme[value]) return { kind: "theme", css: theme[value], value };
+  // hasOwn: "constructor", "toString" là thành viên của Object.prototype, từng được coi là khoá theme (25/11/2026).
+  if (Object.hasOwn(theme, value)) return { kind: "theme", css: theme[value]!, value };
   if (RAW.test(value)) return { kind: "raw", css: value, value };
-  if (ANSI[value]) return { kind: "named", css: ANSI[value], value };
+  if (Object.hasOwn(ANSI, value)) return { kind: "named", css: ANSI[value]!, value };
   return { kind: "unknown", value };
 }
 

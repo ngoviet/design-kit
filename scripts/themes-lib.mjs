@@ -337,7 +337,16 @@ export function loadSeeds(file = join(root, "data", "themes.json")) {
   for (const s of list) {
     if (!/^[a-z][a-z0-9-]*$/.test(s.id ?? "")) throw new Error(`themes: id không hợp lệ: ${JSON.stringify(s.id)}`);
     if (list.filter((x) => x?.id === s.id).length > 1) throw new Error(`themes: id dùng hai lần: ${s.id}`);
+    // Ba thứ dưới đây chép thẳng vào CSS mà không cặp màu nào nhìn tới (25/11/2026: radius thiếu từng ghi "--r-lg: undefined" và báo đạt).
+    if (s.radius && !(Array.isArray(s.radius) && s.radius.length === 3 && s.radius.every((r) => typeof r === "string" && /^[^;{}]+$/.test(r)))) throw new Error(`themes: bộ ${s.id}: radius cần đúng ba chuỗi [nhỏ, vừa, lớn], vd ["6px", "10px", "16px"]`);
+    for (const [k, v] of [["name", s.name], ...["palette", "author", "license"].map((x) => [`source.${x}`, s.source?.[x]])]) {
+      if (String(v).includes("*/")) throw new Error(`themes: bộ ${s.id}: ${k} không được chứa "*/" (đóng chú thích CSS)`);
+    }
     for (const m of ["light", "dark"]) {
+      const fx = s[m]?.fixed;
+      if (fx && (typeof fx !== "object" || Array.isArray(fx))) throw new Error(`themes: bộ ${s.id}, bản ${m}: fixed cần một đối tượng {vai trò: giá trị}`);
+      const notText = Object.entries(fx ?? {}).filter(([, v]) => typeof v !== "string").map(([k]) => `fixed.${k}`);
+      if (notText.length) throw new Error(`themes: bộ ${s.id}, bản ${m}: không phải chuỗi: ${notText.join(", ")}`);
       const need = s[m]?.fixed ? [] : ["bg", "surface", "surface2", "border", "text", "text2", "accent", "ok", "warn", "bad", "info"];
       // Khoá tuỳ chọn có ghi thì cũng phải đúng: border2 sai từng cho ra "#NaNNaNNaN" mà vẫn báo đạt.
       const opt = ["edge", "border2", "tren"].filter((k) => s[m]?.[k] !== undefined);

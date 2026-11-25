@@ -290,3 +290,18 @@ Chủ chốt: học để bổ sung, không thay design-kit. Nguồn học chín
   Chạy lại chín đột biến còn xanh của lượt soát cùng mười bảy đột biến cho phần vừa sửa: 25 đỏ, 1 xanh tương đương (gỡ lớp phủ ảnh đánh số, vì ảnh
   chụp cuối và trang được nạp lại ngay sau).
 - **Chưa làm:** logo quá to trong ngăn kéo của `thanh-ben` (lỗi có sẵn, đổi giao diện máy chuột nên để riêng); WebKit chưa cài trên PC1 nên chưa chạy thật.
+
+## 25/11/2026: soát toàn dự án, sửa lỗi
+
+Chủ yêu cầu "kiểm tra lại toàn bộ dự án, fix bugs, fix lint". Lúc nhận: tsc, eslint sạch, 435 test đạt, cổng 117 trang 0 cứng; nên phần lint không có gì phải sửa
+ngoài một tham số thừa, phần lỗi đến từ sáu lượt soát độc lập theo vùng (khoảng 55 phát hiện đã tái hiện). Danh sách đã sửa: `CHANGELOG.md`.
+
+- **Mỗi lỗi có test đỏ trước khi sửa**; không thêm phép đo, không đổi ngưỡng. Cổng trên khối mẫu trước và sau: cùng 23 phát hiện mềm, 0 cứng.
+- **Hai chỗ cứng chặt hơn, theo đúng luật đã có:** `text-min` đo chữ SVG theo bề dày dòng chữ trên màn (47 trang thật trong D:\code: 0 đổi, đo trước khi chỉnh thêm cho chữ nghiêng), và `check-mod`
+  coi mod có `ui.render` mà không vẽ được cây nào là lỗi `mount` (trước là "pass" với 0 cây).
+- **Để lại có lý do:** phím Tab của chính cổng làm `autoplay`/`permission` ngừng ghi từ lúc đó (sửa theo gợi ý thì báo oan trang mở khoá tiếng ở phím đầu);
+  `vh-full` khi `100dvh` bị `100vh` đè ở cùng số px (phải tính cascade); `offline` với worker đăng ký sau khi trang chính đã đo xong (chờ thì chậm mọi trang);
+  hình dưới 50% độ mờ vẫn là `empty`, chỉ sửa câu báo; hook không tính lệnh nằm trong chuỗi (`bash -lc "…"`).
+- **Người soát độc lập bản sửa:** 0 chặn, 1 nên sửa (hook Stop quá 10 s ở phiên nặng, đã sửa), mấy mục nhẹ đã sửa; 50 đột biến, 42 đỏ, 2 tương đương, 6 sống;
+  đã thêm test, chạy lại cả 6 đều đỏ.
+- **`hookTimeout` của vitest 60 s:** 18 tệp cùng mở trình duyệt thì đóng trình duyệt có lúc quá 10 s mặc định (chạy riêng 9 s cả hai tệp, 3/3 lượt xanh).

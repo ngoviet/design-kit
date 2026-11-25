@@ -5,7 +5,7 @@ import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, sta
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative } from "node:path";
 import { fail } from "../errors.js";
-import { GENERIC_FILE, genericSource, LINE_TAG, rewriteTestImports, SHIM_FILE, shimSource, type GenericTarget } from "./shim.js";
+import { GENERIC_FILE, genericSource, LINE_TAG, mountable, rewriteTestImports, SHIM_FILE, shimSource, type GenericTarget } from "./shim.js";
 import type { Drawing } from "./tree.js";
 
 export interface ModInfo {
@@ -32,10 +32,15 @@ export interface RunResult {
 
 export const claudeBin = (env: Record<string, string | undefined>): string => env["CLAUDE_BIN"] ?? "claude";
 
+/**
+ * Windows: `claude` cài qua npm là claude.cmd, CreateProcess không chạy được tệp .cmd khi không qua shell. Tên trần thì
+ * ENOENT; ghi thẳng đường dẫn .cmd thì Node trả EINVAL (25/11/2026, trước kia thành "validate refused: exit null").
+ */
+const needsShell = (e: unknown): boolean => process.platform === "win32" && ["ENOENT", "EINVAL"].includes((e as NodeJS.ErrnoException | undefined)?.code ?? "");
+
 function runSync(bin: string, args: string[]): { status: number | null; out: string; missing: boolean } {
   let r = spawnSync(bin, args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024, timeout: 120_000 });
-  // Windows: `claude` cài qua npm là claude.cmd, CreateProcess không chạy được tệp .cmd khi không qua shell.
-  if (r.error && (r.error as NodeJS.ErrnoException).code === "ENOENT" && process.platform === "win32") {
+  if (needsShell(r.error)) {
     r = spawnSync(shellLine(bin, args), { encoding: "utf8", maxBuffer: 64 * 1024 * 1024, timeout: 120_000, shell: true });
     const out = `${r.stdout ?? ""}${r.stderr ?? ""}`;
     return { status: r.status, out, missing: r.status !== 0 && /is not recognized|not found/i.test(out) && !/Validating/.test(out) };
@@ -64,7 +69,15 @@ export function inspectMod(dir: string, env: Record<string, string | undefined>)
   if (!existsSync(manifest)) {
     fail(`check-mod: ${dir} has no .claude-plugin/plugin.json`, "VALIDATION_ERROR", ["Point check-mod at the mod's own folder, the one holding .claude-plugin/ and hooks/"]);
   }
-  const m = JSON.parse(readFileSync(manifest, "utf8")) as { name?: string; version?: string; userConfig?: Record<string, { options?: unknown }> };
+  type Manifest = { name?: string; version?: string; userConfig?: Record<string, { options?: unknown }> };
+  let m: Manifest;
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(manifest, "utf8"));
+    if (typeof parsed !== "object" || parsed === null) throw new Error("not a JSON object");
+    m = parsed as Manifest;
+  } catch (e) {
+    fail(`check-mod: cannot read ${manifest}: ${(e as Error).message}`, "VALIDATION_ERROR", ["Fix plugin.json: plain UTF-8 JSON without a byte order mark"]);
+  }
   const name = m.name ?? basename(dir);
   const bin = claudeBin(env);
   const v = runSync(bin, ["plugin", "validate", dir]);
@@ -121,12 +134,21 @@ export function parseTestOutput(out: string): Omit<RunResult, "run" | "ms"> & { 
 
 export function runAsync(bin: string, args: string[], timeoutMs: number): Promise<{ out: string; code: number | null; missing: boolean }> {
   return new Promise((done) => {
+    const launch = (shell: boolean) => (shell ? spawn(shellLine(bin, args), { shell: true, windowsHide: true }) : spawn(bin, args, { windowsHide: true }));
     const go = (shell: boolean) => {
       const chunks: Buffer[] = [];
       // Lần chạy đầu hỏng (ENOENT với claude.cmd trên Windows) vẫn phát "close" một nhịp sau "error". Không chặn thì
       // "close" đó trả kết quả rỗng trước khi lần chạy qua shell xong: cổng báo "pass" mà không test nào chạy.
       let settled = false;
-      const p = shell ? spawn(shellLine(bin, args), { shell: true, windowsHide: true }) : spawn(bin, args, { windowsHide: true });
+      let p: ReturnType<typeof launch>;
+      try {
+        p = launch(shell);
+      } catch (e) {
+        // EINVAL (tệp .cmd) bị ném ngay lúc gọi, không phát "error".
+        if (shell || !needsShell(e)) throw e;
+        go(true);
+        return;
+      }
       const timer = setTimeout(() => killTree(p), timeoutMs);
       p.stdout.on("data", (d: Buffer) => chunks.push(d));
       p.stderr.on("data", (d: Buffer) => chunks.push(d));
@@ -134,7 +156,7 @@ export function runAsync(bin: string, args: string[], timeoutMs: number): Promis
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        if (e.code === "ENOENT" && !shell && process.platform === "win32") go(true);
+        if (!shell && needsShell(e)) go(true);
         else done({ out: String(e.message), code: null, missing: e.code === "ENOENT" });
       });
       p.on("close", (code) => {
@@ -198,7 +220,10 @@ function prepareCopy(info: ModInfo, cfg: Parameters<typeof shimSource>[0], o: Co
     component: c.component,
     ...(c.requestId ? { requestId: c.requestId === "?" ? (o.paneId ?? info.name) : c.requestId } : {}),
   }));
-  writeFileSync(join(hooksDir, GENERIC_FILE), genericSource(info.name, targets, importFrom(hooksDir)));
+  // Tệp test chung rỗng bị tính là một test hỏng của mod ("it declares no test()"): không có gì để mount thì không ghi.
+  if (mountable(targets).length) writeFileSync(join(hooksDir, GENERIC_FILE), genericSource(info.name, targets, importFrom(hooksDir)));
+  const bare = [...new Set(targets.filter((t) => !mountable([t]).length).map((t) => t.component))];
+  if (bare.length && cfg.run === "default") notes.push(`no default props for ${bare.join(", ")}: measured only when a test of the mod mounts it`);
   return { root, notes };
 }
 
