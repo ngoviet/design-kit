@@ -65,6 +65,19 @@ describe("copy rules file", () => {
     expect(() => parseCopyRules(rule([{ id: "a", unless: [3], phrases: ["x"] }]), "x.json")).toThrow(/every unless must be/);
     expect(() => parseCopyRules(rule([{ id: "a", unless: "x", phrases: ["x"] }]), "x.json")).toThrow(/must be lists/);
   });
+
+  it("says where a null or a wrong type sits instead of a TypeError", () => {
+    for (const j of ["null", "3", '"x"', "[]"]) expect(() => parseCopyRules(j, "x.json")).toThrow(/x\.json: (must be an object|categories must be)/);
+    expect(() => parseCopyRules(rule([null]), "x.json")).toThrow(/category 1 must be an object/);
+    expect(() => parseCopyRules(rule([{ id: "a", regex: [null] }]), "x.json")).toThrow(/a: every regex must be/);
+    expect(() => parseCopyRules(rule([{ id: "a", regex: [3] }]), "x.json")).toThrow(/a: every regex must be/);
+  });
+
+  it("drops the g flag (it keeps a position between blocks) and refuses y", () => {
+    const r = parseCopyRules(rule([{ id: "a", regex: [{ re: "TODO", flags: "gu" }, { re: "x", flags: "giu" }] }]), "x.json").categories[0]!.res;
+    expect(r.map((x) => x.flags)).toEqual(["u", "iu"]);
+    expect(() => parseCopyRules(rule([{ id: "a", regex: [{ re: "x", flags: "uy" }] }]), "x.json")).toThrow(/flag y/);
+  });
 });
 
 // Trình duyệt thật, một khổ, một chế độ (như check.test.ts).
@@ -192,6 +205,16 @@ describe("raw values and invented proof", () => {
     for (const fine of ["Khi gọi hàm thiếu tên thì nhận undefined.", "Biến này là undefined.", "Một exception kiểu TypeError."]) {
       expect(rowsOf(await measure(`<p>${fine}</p>`)), fine).toEqual([]);
     }
+  }, 60_000);
+  it("a numbered heading with a full stop is not a clipped slogan; a slogan behind a number still is", async () => {
+    for (const fine of ["Bước 1. Chọn gói cước.", "2. Điền thông tin.", "Phần 10. Kết quả đo."]) {
+      expect(rowsOf(await measure("<h2>" + fine + "</h2>")), fine).toEqual([]);
+    }
+    for (const bad of ["Nhanh. Gọn.", "1. Nhanh. Gọn.", "Nhanh gấp 2. Gọn.", "Built for speed. Made for you."]) {
+      expect(rowsOf(await measure("<h2>" + bad + "</h2>")), bad).toHaveLength(1);
+    }
+    // Số phần vẫn đếm cả số thứ tự: tiêu đề bốn mảnh trước nay không báo thì vẫn không báo.
+    expect(rowsOf(await measure("<h2>1. Nhanh. Gọn. Rẻ.</h2>"))).toEqual([]);
   }, 60_000);
   it("a bare code needs three words of explanation in the line or right next to it; a hidden neighbour does not count", async () => {
     const code = (b: string): Promise<number> => measure(b).then((r) => r.copy.length);

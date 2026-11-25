@@ -51,9 +51,11 @@ export function probeBreakpoints(): number[] {
       const plain = query.replace(/calc\(([^()]*)\)/gi, (_m, e: string) => `${sum(e)}px`);
       for (const m of plain.matchAll(/\(([^()]*)\)/g)) {
         const g = m[1]!.trim();
-        const old = /^(min|max)-width\s*:\s*(.+)$/i.exec(g);
+        // `width: 700px` không có min, max là đúng bề rộng đó (như `width = 700px`; 25/11/2026).
+        const old = /^(?:(min|max)-)?width\s*:\s*(.+)$/i.exec(g);
         if (old) {
-          out.push(...edges(old[1]!.toLowerCase() === "min" ? ">=" : "<=", len(old[2]!)));
+          const side = old[1]?.toLowerCase();
+          out.push(...edges(side === "min" ? ">=" : side === "max" ? "<=" : "=", len(old[2]!)));
           continue;
         }
         const range = /^(?:([^\s<>=]+)\s*(<=|>=|<|>|=)\s*)?width(?:\s*(<=|>=|<|>|=)\s*([^\s<>=]+))?$/i.exec(g);
@@ -118,7 +120,8 @@ export function probeBreakpoints(): number[] {
 
 /**
  * Hai bề rộng sát hai bên mỗi mốc (mốc - 1 và mốc), tăng dần, trong [min, max], bỏ khổ đã đo (`skip`), tối đa AROUND_CAP. Quá
- * mức thì giữ mốc nhiều luật: mốc lặp lại nhiều lần trong `bps` trước, rồi tới thứ tự trong `bps` (probeBreakpoints đã xếp).
+ * mức thì giữ mốc nhiều luật: mốc lặp lại nhiều lần trong `bps` trước, rồi tới thứ tự trong `bps` (probeBreakpoints đã xếp). Mốc
+ * không còn đủ chỗ cho mọi bề rộng nó cần thì bỏ cả mốc: đo một bên không thấy được chỗ đổi (25/11/2026).
  */
 export function sweepAround(bps: number[], min: number, max: number, skip: number[]): number[] {
   const times = new Map<number, number>();
@@ -126,12 +129,10 @@ export function sweepAround(bps: number[], min: number, max: number, skip: numbe
   const known = new Set(skip);
   const out = new Set<number>();
   for (const [b] of [...times].sort((a, c) => c[1] - a[1])) {
-    for (const w of [b - 1, b]) {
-      if (out.size >= AROUND_CAP) break;
-      // `!(…)`: NaN không lọt vào danh sách khổ.
-      if (!(w >= min && w <= max) || known.has(w)) continue;
-      out.add(w);
-    }
+    // So kiểu "nằm trong khoảng" để NaN không lọt vào danh sách khổ.
+    const need = [b - 1, b].filter((w) => w >= min && w <= max && !known.has(w) && !out.has(w));
+    if (out.size + need.length > AROUND_CAP) continue;
+    for (const w of need) out.add(w);
   }
   return [...out].sort((a, b) => a - b);
 }

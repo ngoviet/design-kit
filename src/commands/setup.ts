@@ -24,7 +24,9 @@ export async function setupCommand(args: string[], rt: Runtime): Promise<Record<
   const p = parseCommandArgs("setup", args, FLAGS);
   const tilde = (s: string) => (s.toLowerCase().startsWith(homedir().toLowerCase()) ? `~${s.slice(homedir().length).replace(/\\/g, "/")}` : s);
   const out: Record<string, unknown> = {};
-  let engine = p.bool("download") ? undefined : findImpeccable(rt.env);
+  // Tìm cả khi --download: IMPECCABLE_BIN trỏ sai thì tải xong cổng vẫn hỏng, đừng báo "ready".
+  const found = findImpeccable(rt.env);
+  let engine = p.bool("download") ? undefined : found;
   if (engine) out["impeccable"] = `found: ${tilde(engine)}`;
   else {
     try {

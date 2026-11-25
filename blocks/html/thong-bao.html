@@ -82,10 +82,11 @@
       x.addEventListener("click", () => close());
       tools.append(x);
       box.append(li);
-      let left = 6000, t0 = Date.now(), timer;
+      let left = 6000, t0 = Date.now(), timer = 0;
       const close = () => { clearTimeout(timer); li.remove(); };
-      const start = () => { if (kind === "bad") return; t0 = Date.now(); timer = setTimeout(close, left); };
-      const pause = () => { clearTimeout(timer); left -= Date.now() - t0; };
+      // Chuột rời mà focus còn ở trong (hay ngược lại) thì vẫn dừng; đang dừng thì không trừ giờ lần nữa.
+      const start = () => { if (kind === "bad" || timer || li.matches(":hover, :focus-within")) return; t0 = Date.now(); timer = setTimeout(close, left); };
+      const pause = () => { if (!timer) return; clearTimeout(timer); timer = 0; left -= Date.now() - t0; };
       li.addEventListener("mouseenter", pause); li.addEventListener("mouseleave", start);
       li.addEventListener("focusin", pause); li.addEventListener("focusout", start);
       start();

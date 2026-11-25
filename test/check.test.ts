@@ -1,13 +1,15 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createServer } from "node:http";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "../src/cli.js";
-import { impGate } from "../src/commands/check.js";
+import { readEntry, writeEntry } from "../src/cache.js";
+import { impGate, shotSlug } from "../src/commands/check.js";
 import { inputZoomFinding } from "../src/zoom.js";
 import { isFontSheet, tagAttrs } from "../src/commands/inline.js";
 import { pageWeight, paneUrl, weightDetail } from "../src/standalone.js";
 import { parseSteps } from "../src/steps.js";
-import { applyWaivers, parseWaivers } from "../src/waivers.js";
+import { applyWaivers, pageOf, parseWaivers } from "../src/waivers.js";
 
 const root = join(__dirname, "..");
 
@@ -20,6 +22,8 @@ async function run(argv: string[]): Promise<{ out: string; code: number | undefi
   process.exitCode = prev;
   return { out, code };
 }
+
+const FAST = ["--no-impeccable", "--no-shots", "--viewports", "390", "--schemes", "light"];
 
 describe("impGate", () => {
   it("slop rules are hard, user-facing quality rules are hard, the rest soft", () => {
@@ -55,6 +59,18 @@ describe("waivers (N8)", () => {
     expect(applyWaivers(reports(), many).tooMany).toEqual(["a.html"]);
     expect(() => parseWaivers('[{"page":"a.html","check":"guide","where":"b","reason":"ok"}]', "w.json")).toThrow(/shorter than 12/);
     expect(() => parseWaivers('{"page":"a.html"}', "w.json")).toThrow(/JSON array/);
+  });
+  it("pageOf drops ?query and a real state name, not a ' #' inside the file name (25/11/2026)", () => {
+    for (const [label, want] of [
+      ["a.html?dk=dem #loi", "a.html"], ["a.html #buoc_2-x", "a.html"], ["bao cao #2.html", "bao cao #2.html"],
+      ["bao cao #2.html?dk=dem #loi", "bao cao #2.html"], ["http://localhost:5173/#/trang", "http://localhost:5173/#/trang"], ["http://x/a #b/c.html", "http://x/a #b/c.html"],
+    ]) expect(pageOf(label!), label).toBe(want);
+    const rs = [{ target: "bao cao #2.html", findings: new Map([["1", f("soft", "guide", "button")]]) }];
+    expect(applyWaivers(rs, [w("guide", "button", "bao cao #2.html")]).used).toHaveLength(1);
+  });
+  it("a waivers or steps file with a BOM (PowerShell 5.1, Notepad) is read (25/11/2026)", () => {
+    expect(parseWaivers('\uFEFF[{"page":"a.html","check":"guide","where":"b","reason":"khối mẫu không có bước kế"}]', "w.json")).toHaveLength(1);
+    expect(parseSteps('\uFEFF[{"name":"mo","do":[{"click":"#a"}]}]', "s.json")).toHaveLength(1);
   });
   it("check lists waived findings and drops them from the counts", async () => {
     const file = join(root, ".design-kit", "test", "mien-tru.json");
@@ -111,6 +127,151 @@ describe("cache (N7)", () => {
     const after = await run(args);
     // Tương tự: trúng đệm của cùng nội dung là đúng; không được là lỗi 404 cũ.
     expect(after.out).toContain("errors,hard,ok");
+  }, 120_000);
+});
+
+describe("cache: files only the phone and touch renders load (25/11/2026)", () => {
+  const O = [...FAST, "--no-standalone", "--full"];
+  const page = (dir: string, head: string): { d: string; args: string[] } => {
+    const d = join(root, ".design-kit", "test", dir);
+    rmSync(d, { recursive: true, force: true });
+    mkdirSync(d, { recursive: true });
+    // Dấu thời gian: không trúng mục đệm của lượt chạy test trước.
+    writeFileSync(join(d, "a.html"), `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Đệm</title><!-- ${Date.now()} --><style>body{margin:24px;font:16px/1.6 system-ui;color:#111;background:#fff}.b{min-height:48px;min-width:48px;font-size:16px}</style>${head}</head><body><main><h1>Trang đệm</h1><p>Đoạn chữ thử bộ đệm của cổng.</p><button class="b">Gửi</button></main></body></html>`);
+    return { d, args: ["check", `.design-kit/test/${dir}/a.html`, ...O] };
+  };
+  it("a manifest that changes, or is removed, is seen", async () => {
+    const { d, args } = page(`dem-manifest-${process.pid}`, '<link rel="manifest" href="m.json">');
+    writeFileSync(join(d, "m.json"), '{"orientation":"any"}');
+    expect((await run(args)).out).toContain("orientation,soft,ok");
+    expect((await run(args)).out).toContain("1 of 1 pages unchanged");
+    writeFileSync(join(d, "m.json"), '{"orientation":"portrait"}');
+    expect((await run(args)).out).toMatch(/soft,orientation,manifest/);
+    rmSync(join(d, "m.json"));
+    expect((await run(args)).out).toContain("orientation,soft,ok");
+    // Manifest 404 cũng được đệm: tạo tệp sau đó thì đo lại.
+    expect((await run(args)).out).toContain("1 of 1 pages unchanged");
+    writeFileSync(join(d, "m.json"), '{"orientation":"landscape"}');
+    expect((await run(args)).out).toMatch(/soft,orientation,manifest/);
+    rmSync(d, { recursive: true, force: true });
+  }, 240_000);
+  it("a stylesheet loaded only on a touch screen is part of the result", async () => {
+    // Thêm khổ máy tính bảng: chỉ lượt đo chạm mở trang ở đó, còn khổ điện thoại thì lượt viewport cũng ghi sổ.
+    const { d, args: phone } = page(`dem-cham-${process.pid}`, "<script>if(matchMedia('(any-pointer: coarse)').matches){const l=document.createElement('link');l.rel='stylesheet';l.href='touch.css';document.head.append(l);}</script>");
+    const args = phone.map((a) => (a === "390" ? "768" : a));
+    expect(args).toContain("768");
+    writeFileSync(join(d, "touch.css"), ".b{min-height:48px}");
+    expect((await run(args)).out).toContain("touch,soft,ok");
+    expect((await run(args)).out).toContain("1 of 1 pages unchanged");
+    writeFileSync(join(d, "touch.css"), ".b{min-height:0;min-width:0;width:26px;height:26px;padding:0}");
+    expect((await run(args)).out).toMatch(/soft,touch,.*26×26/);
+    rmSync(d, { recursive: true, force: true });
+  }, 240_000);
+  it("an entry that is valid JSON of the wrong shape is no entry, not a crash", () => {
+    const d = join(root, ".design-kit", "test", "dem-hinh");
+    mkdirSync(d, { recursive: true });
+    const ok = { deps: [{ path: "a", sha: "b" }], shots: [], report: { findings: [], notes: [], shots: 0, assumed: [] } };
+    for (const bad of [{}, null, [], 3, { ...ok, deps: {} }, { ...ok, deps: [null] }, { ...ok, deps: [{ path: 1, sha: "x" }] }, { ...ok, shots: "a" }, { ...ok, shots: [1] }, { ...ok, report: null }, { ...ok, report: {} }, { ...ok, report: { ...ok.report, notes: "x" } }]) {
+      writeFileSync(join(d, "k.json"), JSON.stringify(bad));
+      expect(readEntry(d, "k"), JSON.stringify(bad)).toBeUndefined();
+    }
+    writeEntry(d, "k", ok.deps, ok.shots, ok.report);
+    expect(readEntry(d, "k")).toEqual(ok);
+  });
+});
+
+describe("recheck and shots: odd page names (25/11/2026)", () => {
+  const html = (body: string): string => `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Trang</title><style>body{margin:24px;font:16px/1.6 system-ui;color:#111;background:#fff}button{min-height:48px;font-size:16px}</style></head><body><main><h1>Trang thử</h1><p>Đoạn chữ đủ dài để đo.</p>${body}</main></body></html>`;
+  const dir = (name: string): string => {
+    const d = join(root, ".design-kit", "test", name);
+    rmSync(d, { recursive: true, force: true });
+    mkdirSync(d, { recursive: true });
+    return d;
+  };
+  const O = [...FAST, "--no-standalone", "--no-cache", "--full"];
+  const idOf = (out: string, check: string): string => new RegExp(`,${check},.*,([0-9a-z]{6}),light/390`).exec(out)![1]!;
+  it("--recheck works on a page whose file name has ' #'", async () => {
+    writeFileSync(join(dir("ten-thang"), "bao cao #2.html"), html('<p style="font-size:13px">Chữ nhỏ mà dài hơn ba mươi ký tự để phép đo tính là chữ thân.</p>'));
+    const args = ["check", ".design-kit/test/ten-thang/bao cao #2.html", ...O];
+    const id = idOf((await run(args)).out, "body-size");
+    const { out } = await run([...args, "--recheck", id]);
+    expect(out).toContain(`${id},still there,`);
+  }, 120_000);
+  it("--recheck of a state that is no longer measured says so, not an empty LOAD_FAILED", async () => {
+    const d = dir("ten-mat");
+    writeFileSync(join(d, "a.html"), html('<button id="gui" onclick="loi.hidden=false">Gửi</button><p id="loi" hidden style="font-size:13px">Vui lòng nhập địa chỉ thư điện tử hợp lệ trước khi gửi biểu mẫu này.</p>'));
+    writeFileSync(join(d, "a.steps.json"), '[{"name":"loi","do":[{"click":"#gui"}]}]');
+    const args = ["check", ".design-kit/test/ten-mat/a.html", ...O];
+    const id = idOf((await run(args)).out, "body-size");
+    const { out, code } = await run([...args, "--recheck", id, "--no-steps"]);
+    expect(out).not.toContain("LOAD_FAILED");
+    expect(out).toContain("a.html #loi");
+    expect(out).toContain("--recheck: not measured by this command");
+    expect(code).toBe(2);
+  }, 120_000);
+  it("shot folders of names that differ only by accents, or only by Unicode form, stay apart; ASCII names are as before", () => {
+    const s = (stem: string, q = "", state?: string): string => shotSlug(stem, q, state);
+    expect(s("blocks\\html\\hero", "dk=dem", "mo")).toBe("blocks~html~hero-dk_dem--mo");
+    expect(s("../x/a b(1)")).toBe("x~a_b_1_");
+    const four = ["bán", "bàn", "bán".normalize("NFD"), "bàn".normalize("NFD")].map((x) => s(x));
+    expect(new Set(four).size).toBe(4);
+    for (const x of [...four, s("trang: \"a\" <b>|c?*"), s("bài 你好 😀")]) expect(x).not.toMatch(/[<>:"/\\|?*\s]/);
+    // Tên thư mục dài: Linux giới hạn 255 byte, một chữ Việt tới 3 byte.
+    const dai = s("ế".repeat(120) + "1");
+    expect(Buffer.byteLength(dai)).toBeLessThanOrEqual(240);
+    expect(dai).not.toBe(s("ế".repeat(120) + "2"));
+  });
+  it("two pages that differ only by accents keep their own screenshots", async () => {
+    const d = dir("ten-dau");
+    const shots = dir("ten-dau-anh");
+    for (const n of ["bán", "bàn"]) writeFileSync(join(d, `${n}.html`), html(""));
+    await run(["check", ".design-kit/test/ten-dau", "--no-impeccable", "--no-standalone", "--no-cache", "--viewports", "390", "--schemes", "light", "--shots", shots]);
+    expect(readdirSync(shots)).toHaveLength(2);
+    for (const s of readdirSync(shots)) expect(existsSync(join(shots, s, "light-390.png"))).toBe(true);
+  }, 120_000);
+});
+
+describe("a page that fails halfway (25/11/2026)", () => {
+  it("a reload that fails leaves motion not measured, not the whole run broken", async () => {
+    let n = 0;
+    const server = createServer((req, res) => {
+      if (req.url !== "/" || ++n > 1) return void res.socket?.destroy();
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end('<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Một lần</title></head><body style="font:16px/1.6 system-ui"><main><h1>Trang một lần</h1><p>Máy chủ tắt sau lần nạp đầu.</p></main></body></html>');
+    });
+    await new Promise<void>((ok) => server.listen(0, "127.0.0.1", ok));
+    try {
+      const { out } = await run(["check", `http://127.0.0.1:${(server.address() as { port: number }).port}/`, ...FAST, "--touch", "0", "--full"]);
+      expect(out).toMatch(/^status: /m);
+      expect(out).toMatch(/motion: not measured, the page did not reload/);
+      // Phép đo trước đó của trang vẫn còn.
+      expect(out).toContain("text-min,hard,ok");
+    } finally {
+      server.close();
+    }
+  }, 120_000);
+  it("the Impeccable process is finished before the command returns, also on an unexpected error", async () => {
+    const d = join(root, ".design-kit", "test", "imp-cham");
+    rmSync(d, { recursive: true, force: true });
+    const shots = join(d, "anh");
+    // Ảnh chụp trùng tên một thư mục: lỗi bất ngờ, không phải PageLoadError.
+    mkdirSync(join(shots, "test~fixtures~mo-dan", "light-390.png"), { recursive: true });
+    const done = join(d, "xong.txt");
+    // Engine giả: chính node, nạp sẵn tệp này qua NODE_OPTIONS; chỉ nhận lượt gọi "detect".
+    writeFileSync(join(d, "gia.cjs"), `if (/detect$/.test(process.argv[1] ?? "")) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 9000); require("node:fs").writeFileSync(${JSON.stringify(done)}, "x"); console.log("[]"); process.exit(0); }`);
+    const old = process.env["NODE_OPTIONS"];
+    process.env["NODE_OPTIONS"] = `--require "${join(d, "gia.cjs").replace(/\\/g, "/")}"`;
+    let out = "";
+    const prev = process.exitCode;
+    try {
+      await main({ argv: ["check", "test/fixtures/mo-dan.html", "--no-standalone", "--no-cache", "--no-copy", "--viewports", "390", "--schemes", "light", "--shots", shots], stdout: { write: (c: string) => (out += c) }, runtime: { env: { ...process.env, IMPECCABLE_BIN: process.execPath }, home: "", cwd: root } });
+    } finally {
+      if (old === undefined) delete process.env["NODE_OPTIONS"];
+      else process.env["NODE_OPTIONS"] = old;
+      process.exitCode = prev;
+    }
+    expect(out).toMatch(/^error: /m);
+    expect(out).toContain("light-390.png");
+    expect(existsSync(done)).toBe(true);
   }, 120_000);
 });
 
@@ -263,8 +424,6 @@ describe("inline", () => {
 });
 
 // Chạy trình duyệt thật (Edge/Chrome). Chậm nên chỉ một khổ, một chế độ.
-const FAST = ["--no-impeccable", "--no-shots", "--viewports", "390", "--schemes", "light"];
-
 describe("check on real pages", () => {
   it("finds the planted failures, including inside a shadow root", async () => {
     const { out, code } = await run(["check", "test/fixtures/loi.html", ...FAST, "--strict", "--full"]);

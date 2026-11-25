@@ -13,13 +13,16 @@ const KEEP = new Set(["latin", "vietnamese"]);
 // API trả woff2 (và bản biến thiên cho trục opsz) khi user-agent là trình duyệt hiện đại.
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
 
-const css = await (await fetch(CSS_URL, { headers: { "user-agent": UA } })).text();
+const get = async (url, init) => {
+  const res = await fetch(url, init);
+  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+  return res;
+};
+const css = await (await get(CSS_URL, { headers: { "user-agent": UA } })).text();
 const blocks = [...css.matchAll(/\/\*\s*([\w-]+)\s*\*\/\s*(@font-face\s*\{[^}]*\})/g)].filter((m) => KEEP.has(m[1]));
 if (!blocks.length) throw new Error("Google Fonts không trả @font-face nào: kiểm URL hoặc mạng");
 
 const dir = join(root, "tokens", "fonts");
-rmSync(dir, { recursive: true, force: true });
-mkdirSync(dir, { recursive: true });
 const faces = blocks.map(([, subset, face]) => ({
   subset,
   face,
@@ -31,18 +34,25 @@ const faces = blocks.map(([, subset, face]) => ({
 // Font biến thiên: nhiều @font-face (mỗi độ đậm một khối) dùng chung một tệp ⇒ đặt tên theo dải độ đậm.
 const weightsOf = (url) => faces.filter((f) => f.url === url).map((f) => f.weight);
 const files = new Map(); // url → tên tệp
+const data = []; // [tên tệp, nội dung]
 const out = [];
 for (const { subset, face, family, style, url } of faces) {
   if (!files.has(url)) {
     const w = weightsOf(url);
     const weight = Math.min(...w) === Math.max(...w) ? `${w[0]}` : `${Math.min(...w)}-${Math.max(...w)}`;
     const name = `${family.toLowerCase().replace(/\s+/g, "-")}-${style}-${weight}-${subset}.woff2`;
-    const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
-    writeFileSync(join(dir, name), buf);
+    const buf = Buffer.from(await (await get(url)).arrayBuffer());
+    if (buf.toString("latin1", 0, 4) !== "wOF2") throw new Error(`${url}: không phải tệp woff2`);
+    data.push([name, buf]);
     files.set(url, name);
   }
   out.push(`/* ${subset} */\n${face.replace(url, `fonts/${files.get(url)}`)}`);
 }
+
+// Tải đủ rồi mới thay thư mục: mạng lỗi giữa chừng thì bộ font đang có còn nguyên.
+rmSync(dir, { recursive: true, force: true });
+mkdirSync(dir, { recursive: true });
+for (const [name, buf] of data) writeFileSync(join(dir, name), buf);
 
 const header = `/* design-kit · font tự host (thay cho tokens/fonts.css khi không muốn gọi Google Fonts: mạng nội bộ, card Home Assistant,
    trang chạy offline, riêng tư). Sinh bằng: node scripts/tai-font.mjs, không sửa tay.

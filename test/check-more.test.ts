@@ -3,6 +3,8 @@
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { AROUND_CAP, probeBreakpoints, sweepAround } from "../src/breakpoints.js";
+import { launchBrowser } from "../src/browser.js";
 import { main } from "../src/cli.js";
 
 const root = join(__dirname, "..");
@@ -39,6 +41,8 @@ describe("wired into check, always soft", () => {
     ["contrast-px", "tuong-phan-anh-dung", ["--viewports", "1280"]],
     ["keyboard", "ban-phim-dung", ["--viewports", "1280"]],
     ["tab-trap", "ban-phim-bay-dung", ["--viewports", "1280"]],
+    // Sổ shadow root đóng (installVitals) có tới được phép đo Tab.
+    ["tab-trap", "ban-phim-bay-dong", ["--viewports", "1280"]],
     ["skip-link", "ban-phim-bo-qua-dung", ["--viewports", "1280"]],
     ["css", "doc-css-dung", ["--viewports", "390,1280"]],
   ] as Array<[string, string, string[]]>)("%s leaves %s.html", async (id, page, extra) => {
@@ -57,6 +61,40 @@ describe("wired into check, always soft", () => {
     const ok = await check("diem-gay-dung", "--viewports", "390,1280", "--sweep");
     expect(ok).toContain("overflow,hard,ok");
   }, 120_000);
+
+  it("offline: a worker registered late is measured, one still installing is said to be not measured", async () => {
+    const trang = (q: string): Promise<string> => check("may-nguoi-dung-ngoai-tuyen-muon", "--viewports", "390,1280", "--query", q);
+    expect(rows(await trang("tre=700"), "offline").join("\n")).toMatch(/reloading with no network fails/);
+    const cham = await trang("sw=may-nguoi-dung-sw-cham.js");
+    expect(cham).toMatch(/offline: not measured \(its service worker is still installing after 3 s/);
+    expect(rows(cham, "offline")).toEqual([]);
+  }, 120_000);
+});
+
+describe("sweep: breakpoints", () => {
+  it("never measures only one side of a breakpoint because the cap ran out", () => {
+    // 1280 đã đo một bên, nên còn một chỗ lẻ ở cuối.
+    const bps = [1280, ...Array.from({ length: 13 }, (_, i) => 400 + i * 50)];
+    const got = sweepAround(bps, 320, 2560, [320, 390, 1280]);
+    for (const b of bps.slice(1)) expect(got.includes(b - 1), String(b)).toBe(got.includes(b));
+    expect(got).toEqual([...Array.from({ length: 11 }, (_, i) => 400 + i * 50).flatMap((b) => [b - 1, b]), 1279]);
+    // Chỗ lẻ còn lại dành cho mốc chỉ cần một bề rộng.
+    const le = sweepAround([...bps, 2561], 320, 2560, [320, 390, 1280]);
+    expect(le).toHaveLength(AROUND_CAP);
+    expect(le).toContain(2560);
+  });
+  it("an exact width in @media is a breakpoint on both its sides", async () => {
+    const { browser } = await launchBrowser(process.env);
+    try {
+      const p = await browser.newPage();
+      await p.setContent("<style>@media (width: 700px){p{color:#222}}@media (device-width: 333px){p{color:#222}}@media (min-device-width: 334px){p{color:#222}}</style><p>Chữ</p>");
+      const got = await p.evaluate(probeBreakpoints);
+      expect(got).toEqual([700, 701]);
+      expect(sweepAround(got, 320, 1280, [])).toEqual([699, 700, 701]);
+    } finally {
+      await browser.close();
+    }
+  });
 });
 
 describe("focus: an indicator drawn with border or background counts (q5)", () => {

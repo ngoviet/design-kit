@@ -1,5 +1,5 @@
-import { existsSync, writeFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { type FlagSpec, parseCommandArgs } from "../args.js";
 import { fail } from "../errors.js";
@@ -49,7 +49,8 @@ const DOI_FLAGS: Record<string, FlagSpec> = {
 const hue = (raw: string | undefined, flag: string): number | undefined => {
   if (raw === undefined) return undefined;
   const n = Number(raw);
-  if (!Number.isFinite(n) || n < 0 || n > 360) fail(`--${flag} must be a hue between 0 and 360`, "VALIDATION_ERROR");
+  // Number("") là 0: "--nhan=" từng thành sắc 0 và ghi tệp.
+  if (!raw.trim() || !Number.isFinite(n) || n < 0 || n > 360) fail(`--${flag} must be a hue between 0 and 360`, "VALIDATION_ERROR");
   return n;
 };
 
@@ -66,6 +67,7 @@ export async function doiMauCommand(args: string[], rt: Runtime): Promise<Record
   const r = m.doiMau({ huong, nhan, ...(trungTinh !== undefined ? { trungTinh } : {}) });
   const out = resolve(rt.cwd, ra);
   const existed = existsSync(out);
+  mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, r.css);
   const rel = relative(rt.cwd, out).replace(/\\/g, "/") || out;
   if (r.check.fails.length) process.exitCode = 1;
@@ -84,6 +86,7 @@ export async function kiemMauCommand(args: string[], rt: Runtime): Promise<Recor
   const file = p.positionals[0];
   const huong = p.str("huong") ?? "dem";
   if (!m.HUONG.includes(huong)) fail("--huong must be dem, giay or dam", "VALIDATION_ERROR");
+  if (!file && p.str("huong") !== undefined) fail("--huong needs a file (without one all three kit directions are checked)", "VALIDATION_ERROR", [`Example: design-kit kiem-mau tokens/${huong}.css --huong ${huong}`, "Run `design-kit kiem-mau` for the kit's three token files"]);
   if (file && !existsSync(resolve(rt.cwd, file))) fail(`not found: ${file}`, "VALIDATION_ERROR");
   let r: ReturnType<typeof m.kiemMau>;
   try {

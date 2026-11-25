@@ -1,7 +1,8 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { main } from "../src/cli.js";
 import { dkCache, downloadEngine, engineAsset } from "../src/impeccable.js";
@@ -96,6 +97,89 @@ describe("plugin hook", () => {
       "echo nho chay design-kit check a.html",
     ];
     for (const c of mentions) expect([c, stopAfter(c)]).toEqual([c, "block"]);
+  });
+
+  describe("which page a gate run covers", () => {
+    const line = (content: unknown[]) => JSON.stringify({ type: "assistant", message: { content } });
+    const proj = mkdtempSync(join(tmpdir(), "dk-trang-"));
+    const page = join(proj, "app", "index.html");
+    const css = join(proj, "app", "a.css");
+    beforeAll(() => {
+      for (const f of [page, css, join(proj, "app", "other.html"), join(proj, "khac", "x.html"), join(proj, "khac", "index.html"), join(proj, "du an", "trang chu.html")]) {
+        mkdirSync(dirname(f), { recursive: true });
+        writeFileSync(f, "x");
+      }
+    });
+    const stopAfter = (cmd: string, file = page) => {
+      const tr = join(tmp, `${sid()}.jsonl`);
+      writeFileSync(tr, [line([{ type: "tool_use", id: "e", name: "Edit", input: { file_path: file } }]), line([{ type: "tool_use", id: "b", name: "Bash", input: { command: cmd } }])].join("\n"));
+      const out = runHook({ hook_event_name: "Stop", session_id: sid(), cwd: proj, transcript_path: tr });
+      return out ? (JSON.parse(out) as { decision: string }).decision : "allow";
+    };
+
+    // Trước 25/11/2026 hook quét mọi từ của cả lệnh: đối số của cd, ls, giá trị cờ, URL của lệnh khác đều tính là trang đã kiểm.
+    it.each([
+      "cd app && design-kit check other.html --strict", "design-kit check khac/x.html --shots app", "ls app; design-kit check khac/x.html",
+      "design-kit check khac/x.html && start app/index.html", "curl -s http://localhost:3000; design-kit check khac/x.html",
+      "cd app; design-kit check --help", "design-kit check app/index.html --help", "cd khac && design-kit check index.html",
+      "design-kit check khac/*.html", 'design-kit check "$PWD/khac/x.html"', "design-kit check $ROOT/khac/x.html", "design-kit check khac/x.html > app/index.html",
+      "cd app; for f in other.html; do design-kit check $f; done",
+    ])("blocks: %s", (c) => expect(stopAfter(c)).toBe("block"));
+
+    it.each([
+      "design-kit check app/*.html --strict", "design-kit check **/*.html", "design-kit check app/{index,other}.html", "cd app && design-kit check *.html", "(cd khac && ls); design-kit check app/*.html",
+      "env FORCE_COLOR=0 design-kit check app/index.html", "env -u CI $BO A=1 design-kit check app/index.html", "if ! design-kit check app/index.html --strict; then echo hong; fi", "! design-kit check app/index.html",
+      'design-kit check "$PWD/app/index.html" --strict', 'design-kit check "${PWD}/app"', 'design-kit check "$(pwd)/app/index.html"', 'design-kit check "$ROOT/app/index.html"',
+      "design-kit check --shots out app/index.html", "design-kit check khac/x.html app", "design-kit check khac/x.html; design-kit check app/index.html",
+      "cd app && design-kit check index.html", "(cd khac && ls); design-kit check app/index.html", "cd khac && design-kit check ../app/index.html",
+      "design-kit check \\\n  app/index.html --strict", "design-kit check app/index.html --strict 2>&1 | tail -20", "design-kit check --strict > ra.txt app/index.html",
+      'for f in app/index.html khac/x.html; do design-kit check "$f"; done', 'F=app/index.html; design-kit check "$F"', 'chay() { design-kit check "$@" --strict; }; chay app/index.html',
+      'design-kit check "http://localhost:3000/a?x=1&y=2" --strict', "U=http://localhost:3000; design-kit check $U",
+    ])("allows: %s", (c) => expect(stopAfter(c)).toBe("allow"));
+
+    // Soát lại bản sửa 25/11/2026.
+    it.each([
+      ["design-kit check app/index.html # --help", "allow"], ["design-kit check khac/x.html # app/index.html", "block"],
+      ['DIR=khac; design-kit check "$DIR/index.html"', "block"], ['DIR=app; design-kit check "$DIR/index.html"', "allow"], ["$d = 'khac'; design-kit check \"$d/index.html\"", "block"],
+      ['cd "$ROOT/app" && design-kit check index.html', "allow"], ["cd app; (cd ../khac; ls); design-kit check index.html", "allow"], ['cd khac; cd "$ROOT/app" && design-kit check index.html', "allow"],
+    ])("%s: %s", (c, want) => expect(stopAfter(c)).toBe(want));
+    it("stays fast on heavy sessions: the hook is killed after 10 s and then blocks nothing", () => {
+      for (const c of [`${"env a=b ".repeat(20000)}`, `${"x=1 ".repeat(3000)}\n${'design-kit check "$f"\n'.repeat(300)}`]) {
+        const t0 = Date.now();
+        expect(stopAfter(c)).toBe("block");
+        expect(Date.now() - t0).toBeLessThan(5000);
+      }
+      const pages = Array.from({ length: 30 }, (_, i) => join(proj, "nhieu", `t${i}.html`));
+      mkdirSync(join(proj, "nhieu"), { recursive: true });
+      for (const p of pages) writeFileSync(p, "x");
+      const cmd = `${Array.from({ length: 60 }, (_, i) => `echo a${i} b${i} c${i} d${i} e${i} f${i} g${i} h${i} i${i}`).join("\n")}\nfor f in dist/*.html; do design-kit check "$f"; done`;
+      const tr = join(tmp, `${sid()}.jsonl`);
+      writeFileSync(tr, [...pages.map((p, i) => line([{ type: "tool_use", id: `e${i}`, name: "Edit", input: { file_path: p } }])), ...Array.from({ length: 20 }, (_, i) => line([{ type: "tool_use", id: `b${i}`, name: "Bash", input: { command: cmd } }]))].join("\n"));
+      const t0 = Date.now();
+      expect(runHook({ hook_event_name: "Stop", session_id: sid(), cwd: proj, transcript_path: tr })).toContain("block");
+      expect(Date.now() - t0).toBeLessThan(5000);
+    });
+
+    it("--help does not count as a run for a source file either, and env or ! in front of the gate does", () => {
+      expect(stopAfter("design-kit check --help", css)).toBe("block");
+      expect(stopAfter("env FORCE_COLOR=0 design-kit check khac/x.html", css)).toBe("allow");
+      expect(stopAfter("design-kit check --help; design-kit check khac/x.html", css)).toBe("allow");
+    });
+    it("check-image covers what it was given, not what other commands name", () => {
+      const icon = join(proj, "icons", "nha.svg");
+      mkdirSync(dirname(icon), { recursive: true });
+      writeFileSync(icon, "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'/>");
+      for (const c of ["ls icons; design-kit check-image khac/a.svg", "design-kit check-image khac --shots icons", "design-kit check-image icons --help"]) expect([c, stopAfter(c, icon)]).toEqual([c, "block"]);
+      for (const c of ["design-kit check-image icons/*.svg", "design-kit check-image --kind icon icons"]) expect([c, stopAfter(c, icon)]).toEqual([c, "allow"]);
+    });
+    it("the command the reminder suggests runs as written, also with spaces in the path", () => {
+      const file = join(proj, "du an", "trang chu.html");
+      const ctx = JSON.parse(runHook({ hook_event_name: "PostToolUse", session_id: sid(), cwd: proj, tool_input: { file_path: file } })).hookSpecificOutput.additionalContext as string;
+      expect(ctx).toContain('`design-kit check "du an/trang chu.html" --strict`');
+      expect(stopAfter('design-kit check "du an/trang chu.html" --strict', file)).toBe("allow");
+      const img = JSON.parse(runHook({ hook_event_name: "PostToolUse", session_id: sid(), cwd: proj, tool_input: { file_path: join(proj, "du an", "logo.svg") } })).hookSpecificOutput.additionalContext as string;
+      expect(img).toContain('design-kit check-image "du an/logo.svg" --strict');
+    });
   });
 
   it("a project inside a folder named build or dist is still a UI project", () => {
@@ -304,6 +388,43 @@ describe("plugin hook: Claude Code mods", () => {
     expect(stop([use("c", "Bash", { command: "claude plugin test plugins/khung-mod" }, t0 + 500), result("c", t0 + 800), edit])?.decision).toBe("block");
   });
 
+  it("naming the mod's check in a commit message or a grep is not running it", () => {
+    // Trước 25/11/2026 chỉ lệnh design-kit check phải đứng đầu đoạn lệnh; claude plugin test và tools/check.sh còn so chuỗi thô.
+    const edit = use("e1", "Edit", { file_path: khung }, t0 + 1000);
+    const after = (cmd: string) => stop([edit, use("c", "Bash", { command: cmd }, t0 + 2000), result("c", t0 + 3000)])?.decision ?? "allow";
+    for (const c of [
+      'git commit -m "todo: chua chay claude plugin test"', 'grep -r "claude plugin test" docs', "grep -rn 'x; claude plugin test plugins' docs",
+      "git commit -F - <<EOF\nclaude plugin test plugins/khung-mod\nEOF", 'echo "bash tools/check.sh"', "echo bash tools/check.sh", 'grep -n "bash tools/check.sh" README.md',
+      'git commit -m "x; design-kit check-mod plugins/khung-mod"', "echo chay claude plugin test plugins/khung-mod",
+    ]) expect([c, after(c)]).toEqual([c, "block"]);
+    for (const c of [
+      "FORCE_COLOR=0 claude plugin test plugins/khung-mod", "timeout 600 claude plugin test plugins/khung-mod", "env A=1 claude plugin test plugins/khung-mod", "if ! claude plugin test plugins; then exit 1; fi",
+      "$ra = claude plugin test plugins/khung-mod", "RA=$(claude plugin test plugins/khung-mod 2>&1)", "~/.local/bin/claude.exe plugin test plugins/khung-mod", "cd plugins && claude plugin test ./khung-mod",
+      "claude plugin test 'plugins/khung-mod'", "claude plugin validate plugins && claude plugin test \\\n plugins/khung-mod",
+      "cd . && ./tools/check.sh", 'bash "tools/check.sh"', 'bash "$ROOT/tools/check.sh"', "set -o pipefail; sh ./tools/check.sh 2>&1 | tail -5",
+    ]) expect([c, after(c)]).toEqual([c, "allow"]);
+  });
+
+  it("suggests a command that runs when the mod's path has spaces, and accepts it", () => {
+    const r = mkdtempSync(join(tmpdir(), "dk-mod-"));
+    const m = join(r, "mod cua toi");
+    for (const [f, text] of [[join(m, ".claude-plugin", "plugin.json"), "{}"], [join(m, "hooks", "hooks.json"), "{}"], [join(m, "hooks", "ui.tsx"), "export {}"], [join(r, ".git", "x"), ""]] as const) {
+      mkdirSync(dirname(f), { recursive: true });
+      writeFileSync(f, text);
+    }
+    const file = join(m, "hooks", "ui.tsx");
+    const ctx = JSON.parse(runHook({ hook_event_name: "PostToolUse", session_id: sid(), cwd: r, tool_input: { file_path: file } })).hookSpecificOutput.additionalContext as string;
+    expect(ctx).toContain('`claude plugin test "mod cua toi"`');
+    const stopIn = (lines: string[]) => {
+      writeFileSync(join(r, "t.jsonl"), lines.join("\n"));
+      const out = runHook({ hook_event_name: "Stop", session_id: sid(), transcript_path: join(r, "t.jsonl"), cwd: r });
+      return out ? (JSON.parse(out) as { reason: string }).reason : "";
+    };
+    const edit = use("e", "Edit", { file_path: file }, t0 + 1000);
+    expect(stopIn([edit])).toContain('`claude plugin test "mod cua toi"`');
+    expect(stopIn([edit, use("c", "Bash", { command: 'claude plugin test "mod cua toi"' }, t0 + 2000)])).toBe("");
+  });
+
   it("Stop skips files that no longer exist and sees mod files changed through the shell", () => {
     // Sửa ở thư mục cũ rồi đổi tên mod: tệp cũ không còn, không nêu, không chặn.
     const gone = use("e0", "Write", { file_path: join(repo, "plugins", "ten-cu", "hooks", "pane.tsx") }, t0 + 1000);
@@ -330,6 +451,49 @@ describe("engine download", () => {
   });
 });
 
+describe("DESIGN.md", () => {
+  it("measures line length the way the tokens do, never in ch (wrong for Vietnamese)", () => {
+    for (const h of ["dem", "giay", "dam"]) expect(readFileSync(join(root, "design", h, "DESIGN.md"), "utf8")).not.toMatch(/\d+ch\b/);
+    const giay = readFileSync(join(root, "design", "giay", "DESIGN.md"), "utf8");
+    const measure = /--measure:\s*([^;]+);/.exec(readFileSync(join(root, "tokens", "core.css"), "utf8"))![1];
+    expect(giay.split(`\`var(--measure)\` (${measure})`)).toHaveLength(3);
+  });
+});
+
+describe("font download script", () => {
+  // Chạy bản chép của script trong thư mục tạm (nó ghi theo chỗ nó nằm), với fetch giả: không đụng tokens/fonts thật, không cần mạng.
+  const FACE = (n: number) => `/* latin */\n@font-face { font-family: 'Phong ${n}'; font-style: normal; font-weight: 400; src: url(https://f.invalid/${n}.woff2) format('woff2'); }\n`;
+  const go = (fetchBody: string) => {
+    const d = mkdtempSync(join(tmpdir(), "dk-font-"));
+    mkdirSync(join(d, "scripts"));
+    mkdirSync(join(d, "tokens", "fonts"), { recursive: true });
+    writeFileSync(join(d, "tokens", "fonts", "cu.woff2"), "cũ");
+    writeFileSync(join(d, "tokens", "fonts-local.css"), "/* cũ */");
+    writeFileSync(join(d, "scripts", "tai-font.mjs"), readFileSync(join(root, "scripts", "tai-font.mjs")));
+    writeFileSync(join(d, "gia.mjs"), `const FACES = ${JSON.stringify(FACE(1) + FACE(2))};\nglobalThis.fetch = async (u) => { ${fetchBody} };\n`);
+    const r = spawnSync(process.execPath, ["--import", pathToFileURL(join(d, "gia.mjs")).href, join(d, "scripts", "tai-font.mjs")], { encoding: "utf8" });
+    return { code: r.status, out: r.stdout + r.stderr, files: readdirSync(join(d, "tokens", "fonts")).sort(), css: readFileSync(join(d, "tokens", "fonts-local.css"), "utf8"), tokens: readdirSync(join(d, "tokens")).sort() };
+  };
+  const WOFF = 'new Response(Buffer.from("wOF2" + u))';
+  const CSS_OK = 'if (String(u).includes("googleapis")) return new Response(FACES);';
+
+  it("replaces the folder once every file has arrived", () => {
+    const r = go(`${CSS_OK} return ${WOFF};`);
+    expect(r.out).toContain("2 tệp woff2");
+    expect(r).toMatchObject({ code: 0, files: ["OFL.txt", "phong-1-normal-400-latin.woff2", "phong-2-normal-400-latin.woff2"], tokens: ["fonts", "fonts-local.css"] });
+    expect(r.css).toContain("url(fonts/phong-2-normal-400-latin.woff2)");
+  });
+  it.each([
+    ["the network drops halfway", `${CSS_OK} if (String(u).includes("2.woff2")) throw new TypeError("fetch failed"); return ${WOFF};`],
+    ["a font answers with an error page", `${CSS_OK} if (String(u).includes("2.woff2")) return new Response("<html>429</html>", { status: 429 }); return ${WOFF};`],
+    ["a font answers 200 with something that is not a font", `${CSS_OK} if (String(u).includes("2.woff2")) return new Response("<html>đăng nhập wifi</html>"); return ${WOFF};`],
+    ["the stylesheet answers with an error", "return new Response(FACES, { status: 500 });"],
+  ])("leaves the fonts that are there alone when %s", (_n, body) => {
+    const r = go(body);
+    expect({ code: r.code, files: r.files, css: r.css, tokens: r.tokens }).toEqual({ code: 1, files: ["cu.woff2"], css: "/* cũ */", tokens: ["fonts", "fonts-local.css"] });
+  });
+});
+
 describe("color commands", () => {
   async function run(argv: string[]): Promise<{ out: string; code: number | undefined }> {
     let out = "";
@@ -346,6 +510,14 @@ describe("color commands", () => {
     expect(readFileSync(join(tmp, "dem.css"), "utf8")).toContain("--trung-tinh 60");
     const b = await run(["kiem-mau", "dem.css", "--huong", "dem"]);
     expect(b.out).toContain("pass: 42 pairs");
+  });
+  it.each([["dem", 250], ["giay", 240], ["dam", 40]] as const)("doi-mau --trung-tinh also moves the shadows of %s (hue %i)", async (huong, goc) => {
+    const shadows = (css: string) => [...css.matchAll(/--shadow-\d:[^;]*oklch\(([^)]*)\)/g)].map((m) => m[1]!);
+    const old = shadows(readFileSync(join(root, "tokens", `${huong}.css`), "utf8"));
+    expect(old.filter((s) => s.includes(` ${goc} /`))).toHaveLength(2);
+    await run(["doi-mau", "--huong", huong, "--nhan", "145", "--trung-tinh", "60", "--ra", `bong-${huong}.css`]);
+    // Bóng đen của bản tối không có sắc: giữ nguyên.
+    expect(shadows(readFileSync(join(tmp, `bong-${huong}.css`), "utf8"))).toEqual(old.map((s) => s.replace(` ${goc} /`, " 60 /")));
   });
   it("doi-mau stays inside sRGB at hues where rounding used to push chroma out (dem 20, 250)", async () => {
     for (const h of ["20", "250"]) {

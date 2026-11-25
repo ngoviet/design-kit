@@ -62,7 +62,7 @@ Chuẩn và cổng cho giao diện do agent làm.
 - CLI: `npm run check` (tsc, eslint, vitest; test chạy Edge thật), sau đó `npx tsup`. Lệnh toàn cục đi qua `npm link`.
 - Plugin: `claude plugin validate .`. Kiểm gói npm: `npm pack --dry-run --json --ignore-scripts`. Thêm thư mục mới mà gói cần thì phải ghi vào `files`.
 - Cổng cho mọi khối:
-  - `design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6`: gồm cả trạng thái trong các tệp `.steps.json`, 105 trang và trạng thái, khoảng 2 phút trên PC1 (132 s, 19/11/2026, nạp một lần rồi đổi khổ tại chỗ; `--fresh` nạp mới mọi lượt: 178 s, cùng phán quyết và phát hiện; còn 22 phát hiện mềm có lý do: 17 `standalone` vì khối liên kết token theo đường dẫn, 5 straggler của Impeccable).
+  - `design-kit check blocks/html blocks/react/dist --query dk=dem,dk=giay,dk=dam --strict --jobs 6`: gồm cả trạng thái trong các tệp `.steps.json`, 117 trang và trạng thái, khoảng 3 phút trên PC1 (25/11/2026; nạp một lần rồi đổi khổ tại chỗ, `--fresh` nạp mới mọi lượt; còn 23 phát hiện mềm có lý do: 18 `standalone` vì khối liên kết token theo đường dẫn, 5 straggler của Impeccable).
   - Trạng thái mở bằng URL: `design-kit check blocks/html/hop-thoai.html blocks/html/thong-bao.html --no-steps --query "dk=dem&mo=1,dk=giay&mo=1,dk=dam&mo=1"`. Làm tương tự với `bat-dau` (`lan-dau=1`) và `trinh-tu` (`buoc=2..5`).
 
 - Đổi màu nhấn theo thương hiệu: `design-kit doi-mau --huong dem --nhan 45 --trung-tinh 60 --ra <tệp>`. Lệnh giữ cấu trúc, chỉ đổi sắc rồi dò lại độ sáng để 42 cặp vẫn đạt. Muốn kiểm riêng một tệp: `design-kit kiem-mau <tệp> --huong <hướng>`. Các script trong `scripts/` vẫn chạy tay được.

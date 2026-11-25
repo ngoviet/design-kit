@@ -14,7 +14,7 @@ import { shootSetSheet, shootSheet } from "../image/sheet.js";
 import type { Runtime } from "../runtime.js";
 
 export const CHECK_IMAGE_HELP = `usage: design-kit check-image <file|dir>... [flags]
-description: Score logos, icons and symbols, and illustrations (SVG, PNG, JPEG, WebP, AVIF, GIF, ICO, BMP) from what can be measured: each image is drawn in the browser at a reference size and at the small sizes it is used at, then the pixels and the SVG source are measured. Each criterion gets 0–100 and the image a weighted score with a grade (good ≥ 85, fair ≥ 70, weak ≥ 50, poor); hard failures block "done" and cap the score at 49. A contact sheet per image (sizes on light and dark, grayscale, one color, pixel grid, detail lost at 16 px) is saved for the human pass: taste, meaning and fit with the brand are not scored. Icons checked together are also compared as a set
+description: Score logos, icons and symbols, and illustrations (SVG, PNG, JPEG, WebP, AVIF, GIF, ICO, BMP) from what can be measured: each image is drawn in the browser at a reference size and at the small sizes it is used at, then the pixels and the SVG source are measured. Each criterion gets 0–100 and the image a weighted score with a grade (good ≥ 85, fair ≥ 70, weak ≥ 50, poor); hard failures block "done" and cap the score at 49. A contact sheet per image (sizes on light and dark, grayscale, one color, pixel grid, detail lost at 16 px) is saved for the human pass: taste, meaning and fit with the brand are not scored. Icons in the same folder are also compared as a set
 flags[9]:
   --kind <auto|logo|icon|illustration>: what the image is (default auto: file name, then size and colors); symbols and pictograms are icons
   --display <px>: size it is shown at (CSS px; logo: height, icon and illustration: longest side): bitmaps need 2×
@@ -35,7 +35,7 @@ gates[3]:
   human: open the contact sheets: is it recognisable at 16 px, does it mean the right thing, does it fit the brand and the other icons
 notes[3]:
   Scores rest on measurements, not on a vision model judging taste (the kit's research found such judges pass broken visuals); thresholds and sources: docs/tieu-chi.md
-  Folders are read one level deep; images in one run with kind icon form a set when there are at least 3
+  Folders are read one level deep; icons in the same folder form a set when there are at least 3
   Exit 0 whenever the images were checked: read \`status\`. --strict and --min-score turn failures into exit 1; usage errors exit 2
 examples[4]:
   design-kit check-image assets/logo.svg
@@ -132,8 +132,11 @@ async function measure(page: Page, file: string, label: string, opts: { kind?: K
     return { file, label, src, m: { ...base, decodeError: nat.error ?? "zero size" }, kindWhy: opts.kind ? "--kind" : "unknown", seeThrough: false };
   }
   const vs = viewSize(svg);
-  const aw = vs ? vs[0] : nat.nw;
-  const ah = vs ? vs[1] : nat.nh;
+  // width/height khác tỉ lệ viewBox: trình duyệt đặt hình vào khung của width/height, vẽ theo tỉ lệ viewBox là bóp méo
+  // rồi đo nét trên hình méo (25/11/2026). Lệch trong mức làm tròn cỡ tự nhiên về số nguyên thì vẫn theo viewBox.
+  const reshaped = vs && Math.abs((nat.nw * vs[1]) / (nat.nh * vs[0]) - 1) > 1 / nat.nw + 1 / nat.nh;
+  const aw = vs && !reshaped ? vs[0] : nat.nw;
+  const ah = vs && !reshaped ? vs[1] : nat.nh;
   // Ảnh tham chiếu: véc-tơ (và ảnh điểm nhỏ hơn 128) vẽ với cạnh NGẮN 512, để nét mảnh của logo dài 3:1 vẫn rộng hơn
   // một điểm (vẽ theo cạnh dài, vòng nét 0,6 của logo 480×160 chỉ còn 0,6 điểm và lọt khỏi mặt nạ); cạnh dài tối đa
   // 2048. Ảnh điểm khác giữ cỡ thật, cạnh dài tối đa 1024.
@@ -180,7 +183,11 @@ async function measure(page: Page, file: string, label: string, opts: { kind?: K
   for (let p = 3; p < ref.data.length && !clear; p += 4) if (ref.data[p]! < 250) clear = true;
   const item: Item = { file, label, src, m, kindWhy: k.why, seeThrough: clear };
   if (ink.mode === "plain" || ink.mode === "tile") item.figure = { w: ref.w, h: ref.h, mask: Uint8Array.from(ink.cov, (c) => Math.round(c * 255)) };
-  if (!visible) return item;
+  if (!visible) {
+    // Hình có vẽ nhưng mờ dưới nửa: nói đúng độ mờ thay vì "trong suốt hoàn toàn".
+    if (ink.mode === "alpha") m.peak = ink.cov.reduce((a, c) => Math.max(a, c), 0);
+    return item;
+  }
 
   if (ink.mode !== "full" && box) {
     const short = Math.min(ref.w, ref.h);
@@ -394,5 +401,6 @@ export const slugOf = (label: string): string => {
   const ext = extname(label);
   // "../" đầu đường dẫn thành "up~": trước kia bị cắt đi, nên ../logo.svg và logo.svg ghi đè cùng một tờ.
   const stem = (ext ? `${label.slice(0, -ext.length)}-${ext.slice(1).toLowerCase()}` : label).replace(/^(\.\.[\\/]?)+/, (m) => "up~".repeat(m.split("..").length - 1));
-  return stem.replace(/[\\/]+/g, "~").replace(/[^\w.~-]+/g, "_").replace(/^[._~]+/, "") || "image";
+  // Giữ chữ có dấu (\p{M}: dấu tách rời của NFD): \w làm "một" và "mốt" cùng thành "m_t", hai tờ ghi đè nhau (25/11/2026).
+  return stem.replace(/[\\/]+/g, "~").replace(/[^\p{L}\p{N}\p{M}_.~-]+/gu, "_").replace(/^[._~]+/, "") || "image";
 };

@@ -78,7 +78,9 @@ export function probeTouch(min: number): { total: number; small: TouchHit[] } {
     if (w >= min - 0.5 && h >= min - 0.5) continue;
     if (inSentence(el)) continue;
     // Hộp nhỏ: thử vùng bấm thật. Nhãn của ô tích và phần tử giả mở rộng đều trả về chính đích này.
-    const target = labels[0] && boxes.length > 1 ? labels[0] : el;
+    // Ô thật giấu 1px không có hộp trong `boxes`: nhãn là thứ người dùng thấy, thử quanh tâm nhãn (25/11/2026).
+    const own = el.getBoundingClientRect();
+    const target = labels[0] && (boxes.length > 1 || own.width <= 1 || own.height <= 1) ? labels[0] : el;
     target.scrollIntoView({ block: "center", inline: "center", behavior: "instant" });
     const r = target.getBoundingClientRect();
     const cx = (r.left + r.right) / 2;

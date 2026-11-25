@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thẻ rời không tự kêu</title>
+<style>body { margin: 1rem; font: 400 1rem/1.5 system-ui, sans-serif; background: #fff; color: #111; }</style>
+</head>
+<body>
+<main>
+<h1>Bài nghe số hai</h1>
+<p>Tắt tiếng sau khi bật autoplay, chưa có tệp, tắt lại autoplay, dừng ngay, tắt tiếng trước; bật autoplay chỉ sau khi bấm.</p>
+<button type="button" id="nghe" style="min-height:44px;font:inherit">Nghe bài</button>
+</main>
+<script>
+const WAV = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
+const tatSau = new Audio(WAV); tatSau.autoplay = true; tatSau.muted = true;
+const khongTep = new Audio(); khongTep.autoplay = true;
+const boLai = new Audio(WAV); boLai.autoplay = true; boLai.autoplay = false;
+const dungNgay = new Audio(WAV); dungNgay.autoplay = true; dungNgay.pause();
+const nhoTieng = new Audio(WAV); nhoTieng.volume = 0; nhoTieng.autoplay = true;
+// Cấu hình sẵn rồi gắn vào trang, đã tắt tiếng: lượt đi qua cây đã lo, không được tính lần hai.
+const phim = document.createElement("video"); phim.muted = true; phim.autoplay = true; phim.src = WAV; phim.hidden = true; document.body.append(phim);
+document.getElementById("nghe").addEventListener("click", () => { const b = new Audio(WAV); b.autoplay = true; window.b = b; });
+window.giu = [tatSau, khongTep, boLai, dungNgay, nhoTieng];
+</script>
+</body>
+</html>

@@ -34,6 +34,8 @@ export interface Measures {
   inkMode: InkMode;
   /** Có gì để thấy không (độ phủ ≥ 0,5 ở đâu đó). */
   visible: boolean;
+  /** Độ đục cao nhất (0–1) của ảnh nền trong suốt mà không điểm nào đạt 0,5; chỉ có khi không `visible`. */
+  peak?: number;
   /** Chi tiết mất theo cỡ (cạnh ngắn). */
   loss: DetailLoss[];
   /** Cỡ gốc của icon (px) và độ dày nét ở cỡ đó (px). */
@@ -112,7 +114,7 @@ export function scoreImage(m: Measures): Scored {
     return { dims: [], findings, notes, score: 0, grade: grade(0) };
   }
   if (!m.visible) {
-    hard("empty", "nothing visible: the image is fully transparent or one flat color");
+    hard("empty", m.peak ? `nothing is drawn at 50% opacity or more (the strongest pixel has ${pct(Math.max(0.01, m.peak))} opacity): too faint or too thin to measure as a shape; draw it opaque, in the color it should have` : "nothing visible: the image is fully transparent or one flat color");
     return { dims: [], findings, notes, score: 0, grade: grade(0) };
   }
 
@@ -272,7 +274,7 @@ export function scoreImage(m: Measures): Scored {
       const best = Math.max(...on.map((o) => o.credit));
       const worst = Math.min(...on.map((o) => o.credit));
       const credit = own ? on[0]!.credit : 0.6 * best + 0.4 * worst;
-      dim("contrast", credit, on.filter((o, i) => !own || i === 0).map((o) => `${pct(o.strong)} of the outline ≥ 3:1 on ${o.bg} (median ${ratioTxt(o.median)})`).join("; "));
+      dim("contrast", credit, (own ? on.slice(0, 1) : on).map((o) => `${pct(o.strong)} of the outline ≥ 3:1 on ${o.bg} (median ${ratioTxt(o.median)})`).join("; "));
       // WCAG 1.4.11: icon một màu là đối tượng đồ hoạ, phải đạt 3:1; logo được miễn, nên với logo chỉ là cổng mềm.
       if (best < 0.3) {
         const at = pct(Math.max(...on.map((o) => o.strong)));

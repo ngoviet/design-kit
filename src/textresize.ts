@@ -94,7 +94,9 @@ export function probeFontUnit(): ProbeHit[] {
   // Luật có thật sự thắng không: đặt một phần tử thử cạnh nó với đúng giá trị đó, cỡ tính ra phải bằng cỡ của phần tử. Luật bị
   // luật sau đè thì cỡ khác.
   const wins = (el: Element, v: string): boolean => {
-    const host = el.parentNode;
+    // <html>: cha là document, không nhận <span>; lỗi ném ra bị nuốt cùng mọi luật sau trong tệp (25/11/2026). Đặt ngay trong <html>,
+    // giá trị theo khung nhìn (không có phần em hay %) tính ra như nhau.
+    const host = el === document.documentElement ? el : el.parentNode;
     if (!host) return false;
     const probe = document.createElement("span");
     probe.style.cssText = "position:absolute!important;visibility:hidden!important;transition:none!important";

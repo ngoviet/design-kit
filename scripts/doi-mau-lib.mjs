@@ -61,7 +61,9 @@ export function doiMau({ huong, nhan: H, trungTinh: N }) {
   css = css.replace(lightRe, (_, a1, body, a3) => a1 + rewrite(body, orig.light, next.light) + a3);
   const darkRe = new RegExp(`(\\[data-dk="${huong}"\\](?::not\\(\\[data-theme="light"\\]\\)|\\[data-theme="dark"\\])\\s*\\{)([^}]*)(\\})`, "g");
   css = css.replace(darkRe, (_, a1, body, a3) => a1 + rewrite(body, orig.dark, next.dark) + a3);
-  if (N !== undefined) css = css.replace(/oklch\(([\d.]+) ([\d.]+) 250 \//g, `oklch($1 $2 ${N} /`);
+  // Bóng nhuốm sắc trung tính của hướng (dem 250, giay 240, dam 40); bóng đen của bản tối không có sắc nên giữ nguyên.
+  const goc = parse(orig.light.bg)[2];
+  if (N !== undefined) css = css.replace(new RegExp(`oklch\\(([\\d.]+) ([\\d.]+) ${goc} /`, "g"), `oklch($1 $2 ${N} /`);
   css = `/* Sinh bằng: design-kit doi-mau --huong ${huong} --nhan ${H}${N !== undefined ? ` --trung-tinh ${N}` : ""}\n   Từ tokens/${huong}.css: giữ cấu trúc, đổi sắc màu nhấn${N !== undefined ? " và trung tính" : ""}, dò lại độ sáng để giữ tương phản. */\n` + css;
 
   return { css, check: checkPairs(blocks(css, huong)), accent: { light: next.light.accent, dark: next.dark.accent } };

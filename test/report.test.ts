@@ -40,6 +40,9 @@ describe("findingId", () => {
     expect(ax("#nut-1: contrast of 2.32")).not.toBe(ax("#nut-2: contrast of 2.32"));
     expect(ax("#nut-1: contrast of 2.32")).toBe(ax("#nut-1: contrast of 2.41"));
     expect(ax(".a > li:nth-child(3): x", "axe-bp")).not.toBe(ax(".a > li:nth-child(4): x", "axe-bp"));
+    // axe không kèm lời báo (luật list: kiểm tra hỏng nằm ở "none"): cả detail là bộ chọn (25/11/2026).
+    expect(ax("#ds-1")).not.toBe(ax("#ds-2"));
+    expect(ax("#ds-1", "axe-bp")).not.toBe(ax("#ds-2", "axe-bp"));
     // Phép đo khác không có bộ chọn đứng trước dấu hai chấm: số vẫn được bỏ.
     expect(findingId({ ...base, detail: "cut 12px: text" })).toBe(findingId({ ...base, detail: "cut 13px: text" }));
   });
@@ -138,6 +141,14 @@ describe("recheckPlan", () => {
   it("a finding with no size means every size; a swept size means the sweep", () => {
     expect(recheckPlan(run, [e.id]).items).toEqual([{ page: "a.html", widths: [320, 390, 1280], schemes: ["light", "dark"] }]);
     expect(recheckPlan(run, [s.id]).items).toEqual([{ page: "b.html", widths: [1280], schemes: ["light"], sweep: true }]);
+  });
+  it("a file name with ' #' is not a state: only a name steps files allow is cut off (25/11/2026)", () => {
+    const f = F("bao cao #2.html", "touch", "button#x");
+    const g = F("bao cao #2.html?dk=dem #mo-ra", "touch", "button#x");
+    expect(recheckPlan(R(["bao cao #2.html"], [f, g]), [f.id, g.id]).items).toEqual([
+      { page: "bao cao #2.html", widths: [390], schemes: ["light"] },
+      { page: "bao cao #2.html?dk=dem", state: "mo-ra", widths: [390], schemes: ["light"] },
+    ]);
   });
   it("takes ids as people type them and lists the unknown ones once", () => {
     expect(recheckPlan(run, [` #${a.id.toUpperCase()} `, "zzzzzz", "zzzzzz", ""])).toMatchObject({ items: [{ widths: [390] }], unknown: ["zzzzzz"] });

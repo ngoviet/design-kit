@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cây bóng đóng nhiều nút, Tab vẫn ra được</title>
+<style>body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; } main { padding: 24px 16px; } a, button { display: inline-block; padding: 12px; }</style>
+</head>
+<body>
+<main><h1>Lịch</h1><x-lich></x-lich><p><a href="#x">Liên kết sau lịch</a> <button type="button">Nút khác</button></p></main>
+<script>
+customElements.define("x-lich", class extends HTMLElement {
+  constructor() {
+    super();
+    const r = this.attachShadow({ mode: "closed" });
+    for (let i = 1; i <= 16; i++) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = `Ngày ${i}`;
+      b.style.cssText = "padding:12px;margin:2px";
+      r.append(b);
+    }
+  }
+});
+</script>
+</body>
+</html>

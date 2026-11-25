@@ -69,6 +69,12 @@ function show(p, cwd) {
   return (!rel.startsWith("..") && !isAbsolute(rel) ? rel : abs).replace(/\\/g, "/");
 }
 
+/** Đường dẫn trong câu lệnh gợi ý: có dấu cách hay ký tự của shell thì bọc nháy, không thì chép ra chạy là hỏng (25/11/2026). */
+const arg = (p, cwd) => {
+  const s = show(p, cwd);
+  return /[\s()&;'$`,!]/.test(s) ? `"${s}"` : s;
+};
+
 /** Thư mục cha gần nhất có `tools/check.sh` (kiểm cả repo), dừng ở gốc repo git. */
 function repoCheck(dir) {
   for (let d = dir; ; d = dirname(d)) {
@@ -106,7 +112,7 @@ if (input.hook_event_name === "PostToolUse") {
     save({ ...s, lastRemindImg: now });
     const msg = [
       `design-kit: vừa sửa hình ${basename(file)} (logo, icon, ký hiệu hay minh hoạ). Trước khi báo xong:`,
-      `1. Chạy \`design-kit check-image ${show(file, cwd)} --strict\` (bộ icon: chạy trên cả thư mục để so với nhau).`,
+      `1. Chạy \`design-kit check-image ${arg(file, cwd)} --strict\` (bộ icon: chạy trên cả thư mục để so với nhau).`,
       "2. Mở tờ soát trong .design-kit/shots/images và tự xem: nhận ra được ở 16 px không, bản một màu và bản đảo trên nền tối, icon có lệch khỏi bộ không.",
       "3. Logo, icon giao diện nên là SVG: chữ chuyển thành nét, có viewBox, không script; icon một màu dùng currentColor.",
     ].join("\n");
@@ -123,8 +129,8 @@ if (input.hook_event_name === "PostToolUse") {
   save({ ...s, [key]: now });
   let msg;
   if (mod) {
-    const dir = show(mod.root, cwd);
-    const repo = mod.check ? ` (hoặc \`bash ${show(mod.check, cwd)}\` kiểm cả repo)` : "";
+    const dir = arg(mod.root, cwd);
+    const repo = mod.check ? ` (hoặc \`bash ${arg(mod.check, cwd)}\` kiểm cả repo)` : "";
     msg = [
       `design-kit: vừa sửa ${basename(file)}, giao diện của mod Claude Code ${dir} (vẽ bằng ui.render trong terminal và app desktop, không có trang HTML nên không chạy \`design-kit check\`). Trước khi báo xong:`,
       `1. Chạy \`claude plugin validate ${dir}\` và \`claude plugin test ${dir}\`${repo}.`,
@@ -133,7 +139,7 @@ if (input.hook_event_name === "PostToolUse") {
     ].join("\n");
   } else {
     const gate = /\.html?$/i.test(file)
-      ? `2. Chạy \`design-kit check ${show(file, cwd)} --strict\``
+      ? `2. Chạy \`design-kit check ${arg(file, cwd)} --strict\``
       : "2. Chạy `design-kit check <trang .html, URL dev server hoặc dist/*.html hiển thị tệp này> --strict` (không kiểm thẳng tệp nguồn)";
     msg = [
       `design-kit: vừa sửa tệp giao diện ${basename(file)}. Trước khi báo xong:`,
@@ -154,54 +160,141 @@ const norm = (p) => p.replace(/\\/g, "/").toLowerCase();
 // Lệnh phải ĐƯỢC CHẠY: đứng đầu một đoạn lệnh (đầu dòng, sau ; & | ( hay `time`), có thể qua npx hay node <đường dẫn>.
 // Trước 19/11/2026 chỉ cần chuỗi xuất hiện, nên `grep "design-kit check" README.md` hay một lời commit nhắc lệnh cũng
 // được tính là đã chạy cổng.
-// Đầu đoạn lệnh có thể kèm: biến môi trường (FORCE_COLOR=0), timeout/nice, cmd /c, npx/npm exec/pnpm exec/yarn/bunx
-// (kèm cờ, `--`, `@phiên-bản`), node (kèm cờ), đường dẫn tới design-kit(.js/.cmd), kể cả trong nháy có dấu cách.
-const RUN_AT = String.raw`(?:^|[;&|({\n]|\b(?:do|then|else|time|if|elif|while|until)\b)\s*(?:\w+=\S*\s+)*(?:(?:timeout|nice)\s+\S+\s+)?(?:cmd(?:\.exe)?\s+\/c\s+)?(?:(?:npx|bunx|yarn|pnpm\s+exec|npm\s+exec)\s+(?:-\S+\s+)*(?:--\s+)?)?(?:node(?:\.exe)?\s+(?:-\S+\s+)*)?(?:"[^"]*[\\/]|'[^']*[\\/]|[^\s"';&|]*[\\/])?design-kit(?:@[^\s"']+)?(?:\.js|\.mjs|\.cmd)?["']?\s+`;
-const GATE = new RegExp(`${RUN_AT}check(?![\\w-])`);
-const IMG_GATE = new RegExp(`${RUN_AT}check-image\\b`);
-/**
- * Phần lệnh thật sự chạy: bỏ thân heredoc và chuỗi trong nháy (trừ chuỗi là đường dẫn tới design-kit), để lời commit
- * hay `echo "…; design-kit check a.html"` không được tính là đã chạy cổng (reviewer 19/11/2026).
- */
-const runText = (cmd) => cmd
-  .replace(/<<-?\s*(['"]?)(\w+)\1[\s\S]*?\n\s*\2\b/g, "<<H")
-  .replace(/"[^"]*"|'[^']*'/g, (m) => (/design-kit(?:\.js|\.mjs|\.cmd)?["']$/.test(m) ? m : "Q"));
-const ran = (re, cmd) => re.test(runText(cmd));
-const PLUGIN_TEST = /claude(?:\.exe)?\s+plugin\s+test\b([^;&|\r\n]*)/g;
+// Đầu đoạn lệnh có thể kèm: !, gán biến PowerShell ($ra =), env và biến môi trường (FORCE_COLOR=0), timeout/nice, cmd /c;
+// trước design-kit còn có npx/npm exec/pnpm exec/yarn/bunx (kèm cờ, `--`, `@phiên-bản`), node (kèm cờ), đường dẫn tới
+// design-kit(.js/.cmd), kể cả trong nháy có dấu cách.
+const START = String.raw`(?:^|[;&|({\n]|\b(?:do|then|else|time|if|elif|while|until)\b)\s*(?:!\s+)?(?:\$\w+\s*=\s*)?(?:env\s+(?:[^\s;&|]+\s+){0,8}?)?(?:\w+=\S*\s+)*(?:(?:timeout|nice)\s+\S+\s+)?(?:cmd(?:\.exe)?\s+\/c\s+)?`;
+const RUN_AT = `${START}${String.raw`(?:(?:npx|bunx|yarn|pnpm\s+exec|npm\s+exec)\s+(?:-\S+\s+)*(?:--\s+)?)?(?:node(?:\.exe)?\s+(?:-\S+\s+)*)?(?:"[^"]*[\\/]|'[^']*[\\/]|[^\s"';&|]*[\\/])?design-kit(?:@[^\s"']+)?(?:\.js|\.mjs|\.cmd)?["']?\s+`}`;
+const GATE = new RegExp(`${RUN_AT}check(?![\\w-])`, "g");
+const IMG_GATE = new RegExp(`${RUN_AT}check-image\\b`, "g");
 // Cổng mod của chính design-kit cũng chạy `claude plugin test` trên mod (kèm phép đo), nên tính như lệnh đó.
-const MOD_GATE = new RegExp(`${RUN_AT}check-mod\\b([^;&|\\r\\n]*)`, "g");
-const REPO_CHECK = /(?:^|[\s;&|(])(?:bash\s+|sh\s+|\.\/)[^\s;&|]*tools[\\/]check\.sh\b/;
-/** Lệnh có thể là một lần kiểm: cổng design-kit, chấm hình, `claude plugin test`, hoặc `tools/check.sh` của repo chứa mod. */
-const isCheck = (cmd) => ran(GATE, cmd) || ran(IMG_GATE, cmd) || /claude(?:\.exe)?\s+plugin\s+test\b/.test(cmd) || ran(new RegExp(`${RUN_AT}check-mod\\b`), cmd) || REPO_CHECK.test(cmd);
+const MOD_GATE = new RegExp(`${RUN_AT}check-mod\\b`, "g");
+// Hai lệnh này cũng phải đứng đầu đoạn lệnh: trước 25/11/2026 so chuỗi thô, nên lời commit hay grep nhắc tới lệnh là xoá nợ kiểm.
+const PLUGIN_TEST = new RegExp(`${START}${String.raw`(?:[^\s"';&|]*[\\/])?claude(?:\.exe|\.cmd)?\s+plugin\s+test\b`}`, "g");
+const REPO_CHECK = new RegExp(`${START}${String.raw`(?:(?:ba)?sh\s+|\.\/)(?:"[^"]*|'[^']*|[^\s"';&|]*)tools[\\/]check\.sh\b`}`, "g");
+/** Dòng lệnh nối bằng `\` (hay dấu huyền của PowerShell) cuối dòng thành một dòng; `$(pwd)` viết thành `${PWD}`. Giữ nguyên độ dài. */
+const joinLines = (cmd) => cmd.replace(/(?<=\s)[\\`]\r?\n/g, (m) => " ".repeat(m.length)).replace(/\$\(pwd\)/gi, () => "${PWD}");
+/**
+ * Phần lệnh thật sự chạy: che thân heredoc và chuỗi trong nháy (trừ chuỗi là đường dẫn tới design-kit hay tools/check.sh),
+ * để lời commit hay `echo "…; design-kit check a.html"` không được tính là đã chạy cổng (reviewer 19/11/2026). Che mà giữ
+ * độ dài: vị trí tìm thấy ở đây dùng được trên lệnh gốc, nơi đối số trong nháy còn nguyên.
+ */
+const mask = (text) => text
+  .replace(/<<-?\s*(['"]?)(\w+)\1[\s\S]*?\n\s*\2\b/g, (m) => "<<".padEnd(m.length, "H"))
+  .replace(/"[^"]*"|'[^']*'/g, (m) => (/design-kit(?:\.js|\.mjs|\.cmd)?["']$/.test(m) || /^["'][^\s;&|()]*tools[\\/]check\.sh["']$/.test(m) ? m : "Q".repeat(m.length)));
+/** Tách từ của một đoạn lệnh; đường dẫn trong nháy (có dấu cách) là một từ. */
+const words = (s) => [...s.matchAll(/"([^"]*)"|'([^']*)'|([^\s;&|()]+)/g)].map((m) => m[1] ?? m[2] ?? m[3] ?? "");
+// Cờ có giá trị của check, check-image, check-mod: giá trị đứng sau nó không phải trang.
+const VALUE_FLAG = /^--(query|steps|viewports|profile|engine|touch|schemes|shots|focus|jobs|waivers|recheck|limit|fields|kind|display|bg|min-score|widths|surfaces|languages|pane-id|term-bg)$/;
+/**
+ * Mọi lượt chạy thật của một lệnh trong chuỗi lệnh: {args, before, text}. `args`: đối số không phải cờ, không phải giá trị cờ hay đích
+ * chuyển hướng, chỉ tới dấu ngắt lệnh kế hay chú thích `#`. `before`: phần đứng trước, để đọc cd. Lượt chỉ in trợ giúp (--help) không tính.
+ */
+const runCache = new Map(); // re → Map(lệnh → lượt): mỗi trang đã sửa hỏi lại cùng các lệnh
+function runsOf(re, cmd) {
+  if (!runCache.has(re)) runCache.set(re, new Map());
+  const known = runCache.get(re);
+  if (!known.has(cmd)) known.set(cmd, findRuns(re, cmd));
+  return known.get(cmd);
+}
+function findRuns(re, cmd) {
+  const text = joinLines(cmd);
+  const masked = mask(text);
+  return [...masked.matchAll(re)].flatMap((m) => {
+    const from = m.index + m[0].length;
+    const len = masked.slice(from).search(/[;|\r\n)]|(?<![<>])&(?!>)|(?<=\s)#/);
+    const toks = words(text.slice(from, len < 0 ? undefined : from + len));
+    if (toks.some((t) => t === "-h" || t === "--help")) return [];
+    const args = toks.filter((t, i) => t && !t.startsWith("-") && !/^\d*[<>]/.test(t) && !/^\d*[<>]+$/.test(toks[i - 1] ?? "") && !VALUE_FLAG.test(toks[i - 1] ?? ""));
+    return [{ args, before: text.slice(0, from), text }];
+  });
+}
+/** Lệnh có thể là một lần kiểm: cổng design-kit, chấm hình, cổng mod, `claude plugin test`, hoặc `tools/check.sh` của repo chứa mod. */
+const isCheck = (cmd) => [GATE, IMG_GATE, MOD_GATE, PLUGIN_TEST, REPO_CHECK].some((re) => runsOf(re, cmd).length > 0);
+
+/** Mẫu tên tệp (*, **, ?, {a,b}, [..]) của shell → regex trên đường dẫn đã chuẩn hoá. */
+const globRe = (p) => {
+  const esc = (s) => s.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
+  return new RegExp(`^${p.replace(/\*\*\/|\*+|\?|\{[^{}]+\}|\[[^\]]+\]|[^\w/]/g, (c) => {
+    if (c === "**/") return "(?:.*/)?";
+    if (c[0] === "*") return c.length > 1 ? ".*" : "[^/]*";
+    if (c === "?" || (c[0] === "[" && c.length > 1)) return "[^/]";
+    if (c[0] === "{" && c.length > 1) return `(?:${c.slice(1, -1).split(",").map(esc).join("|")})`;
+    return esc(c);
+  })}$`);
+};
+const seen = new Map(); // existsSync nhớ kết quả: hook có 10 s, phiên nặng hỏi hàng trăm nghìn lần (25/11/2026)
+const exists = (p) => {
+  if (!seen.has(p)) seen.set(p, existsSync(p));
+  return seen.get(p);
+};
+/** Biến gán chuỗi thường ngay trong phần lệnh đứng trước: `DIR=khac`, `$d = "khac"`; lần gán cuối thắng. */
+const ASSIGN = /(?:^|[\s;&|({])\$?(\w+)\s*=\s*("[^"$`]*"|'[^']*'|[^\s;&|$`"'()]+)(?=[\s;&|)]|$)/g;
+const VAR = /\$\{[^}]*\}|\$\([^)]*\)|\$[\w.:]+|\$[@*]|%\w+%/g;
 
 /**
- * Lệnh nêu tệp này: một đối số trỏ đúng tệp hay thư mục chứa nó (tuyệt đối, hoặc tương đối với cwd), hoặc đúng tên tệp
- * đứng trơn (lệnh chạy sau `cd` vào thư mục đó). Trước 19/11/2026 hàm so chuỗi con, nên kiểm `old/footer-logo.svg` được
- * tính là đã kiểm `brand/logo.svg`, và `check khac/index.html` phủ cả `app/index.html`.
+ * Lượt chạy nêu tệp này: một đối số trỏ đúng tệp hay thư mục chứa nó (tuyệt đối, hoặc tương đối với cwd hay thư mục `cd` đứng
+ * trước), hoặc một mẫu *.html khớp nó. Trước 19/11/2026 hàm so chuỗi con, nên kiểm `old/footer-logo.svg` được tính là đã kiểm
+ * `brand/logo.svg`; trước 25/11/2026 hàm quét mọi từ của cả lệnh, nên `cd app` hay `--shots app` được tính là đã kiểm cả app/.
  */
-function names(cmd, file, cwd) {
+function names(run, file, cwd) {
   const f = norm(file);
   const d = norm(dirname(file));
   const base = norm(basename(file));
-  // Đường dẫn tương đối tính từ cwd hoặc từ thư mục `cd` gần nhất trong cùng lệnh; giữ nguyên đường dẫn trong nháy
-  // (có dấu cách).
-  const bases = [cwd, ...cdDirs(cmd, cwd)];
-  return [...cmd.matchAll(/"([^"]*)"|'([^']*)'|([^\s;&|()]+)/g)].some((m) => {
-    const t = unshell(m[1] ?? m[2] ?? m[3] ?? "");
-    if (!t || t.startsWith("-")) return false;
-    if (!/[\\/]/.test(t) && norm(t) === base) return true;
-    return bases.some((b) => {
-      const abs = norm(resolve(b, t)).replace(/\/+$/, "");
-      return abs === f || abs === d;
-    });
-  });
+  // Thư mục gần lệnh nhất trước. Nhóm (cd …; …) đã đóng không đổi thư mục của lệnh đứng sau nó.
+  // Tính một lần mỗi lượt chạy: cùng lượt được hỏi cho mọi trang đã sửa, mọi đối số.
+  if (!run.ctx) {
+    const before = run.before.replace(/\(\s*(?:cd|pushd|Set-Location|Push-Location)\s[^()]*\)/gi, " ");
+    const vars = new Map([...before.matchAll(ASSIGN)].map((m) => [m[1], m[2].replace(/^["']|["']$/g, "")]));
+    const around = (s) => [...new Set(words(s.replace(CD, " ")).filter((w) => !onlyVar(w)).map((w) => w.replace(/^\$?\w+=["']?/, "")))];
+    run.ctx = {
+      bases: [...new Set([cwd, ...cdDirs(before, cwd)].reverse())],
+      lost: CD_VAR.test(before), // cd vào thư mục nằm trong biến: không biết đang ở đâu
+      vars,
+      args: [...new Set(run.args)],
+      before: run.args.some(onlyVar) ? around(before) : [],
+      text: run.args.some((t) => /^\$[\d@*]/.test(t)) ? around(run.text) : [],
+    };
+  }
+  const { bases, lost, vars } = run.ctx;
+  const at = (b, p) => norm(resolve(b, p)).replace(/\/+$/, "");
+  const hit = (word) => {
+    const t = unshell(word).replace(/^\$(?:\{PWD\}|PWD\b)(?=[\\/]|$)/i, ".").replace(/\$(?:\{(\w+)\}|(\w+))/g, (m, a, b) => vars.get(a ?? b) ?? m);
+    if (!t) return false;
+    // Biến không ánh xạ được: phần còn lại phải khớp đuôi đường dẫn (`$ROOT/app/index.html`).
+    if (t.search(VAR) >= 0) {
+      const re = globRe(`**/${norm(t.replace(VAR, "**")).replace(/^(\*\*\/?)+/, "").replace(/\/+$/, "")}`);
+      return re.test(f) || re.test(d);
+    }
+    // Chỗ gần nhất có tệp hay thư mục ấy là chỗ lệnh đọc: `cd khac && … check index.html` không phủ `app/index.html`.
+    const b = bases.find((x) => exists(resolve(x, t)));
+    if (b !== undefined && !lost) return at(b, t) === f || at(b, t) === d;
+    if (lost && (at(cwd, t) === f || at(cwd, t) === d || f.endsWith(`/${norm(t).replace(/^\.\//, "")}`))) return true;
+    const g = /[*?]|\{[^{}]+\}|\[[^\]]+\]/.exec(t);
+    if (g) {
+      const stem = t.slice(0, g.index).replace(/[^\\/]*$/, "");
+      const gb = bases.find((x) => exists(resolve(x, stem || ".")));
+      if (gb === undefined) return false;
+      const re = globRe(`${at(gb, stem || ".")}/${norm(t.slice(stem.length)).replace(/\/+$/, "")}`);
+      return re.test(f) || re.test(d);
+    }
+    return !/[\\/]/.test(t) && norm(t) === base;
+  };
+  return run.ctx.args.some((t) => hit(t) || (onlyVar(t) && (/^\$[\d@*]/.test(t) ? run.ctx.text : run.ctx.before).some(hit)));
 }
+/** Từ chỉ gồm biến: giá trị của `"$f"` (vòng lặp, phép gán) nằm ở phần lệnh đứng trước, của `"$@"` (hàm bọc) ở chỗ gọi hàm. */
+const onlyVar = (t) => t !== "" && t.replace(VAR, "") === "";
+/** Lượt chạy mở một URL (kể cả qua biến gán ngay trước đó). */
+const opensUrl = (run) => run.args.some((t) => /^https?:\/\//.test(t) || (onlyVar(t) && /https?:\/\//.test(run.before)));
 
+const CD_AT = String.raw`(?:^|[;&|(\n]\s*)(?:cd|pushd|Set-Location|Push-Location)\s+(?:-\w+\s+)*`;
+const CD = new RegExp(`${CD_AT}("[^"]*"|'[^']*'|[^\\s;&|)]+)`, "gi");
+const CD_VAR = new RegExp(`${CD_AT}[^;&|\\n]*[$%~]`, "i");
 /** Các thư mục mà lệnh `cd` (hay Set-Location…) trong lệnh chuyển tới, nối tiếp nhau từ cwd. */
 function cdDirs(cmd, cwd) {
   const out = [];
   let base = cwd;
-  for (const cd of cmd.matchAll(/(?:^|[;&|(\n]\s*)(?:cd|pushd|Set-Location|Push-Location)\s+(?:-\w+\s+)*("[^"]*"|'[^']*'|[^\s;&|)]+)/gi)) {
+  for (const cd of cmd.matchAll(CD)) {
     base = resolve(base, unshell(cd[1]));
     out.push(base);
   }
@@ -221,18 +314,10 @@ function unshell(t) {
  * trong vòng lặp) không ánh xạ được, tính là phủ.
  */
 function coversMod(cmd, mod, cwd) {
-  if (mod.check && REPO_CHECK.test(cmd)) return true;
+  if (mod.check && runsOf(REPO_CHECK, cmd).length) return true;
   const root = norm(mod.root);
-  for (const m of [...cmd.matchAll(PLUGIN_TEST), ...cmd.matchAll(MOD_GATE)]) {
-    if (/(^|\s)(-h|--help)(?=\s|$)/.test(m[1])) continue; // chỉ in trợ giúp, không chạy test
-    let base = cwd;
-    for (const cd of cmd.slice(0, m.index).matchAll(/(?:^|[;&|(\n]\s*)(?:cd|pushd|Set-Location|Push-Location)\s+(?:-\w+\s+)*("[^"]*"|'[^']*'|[^\s;&|)]+)/gi)) {
-      base = resolve(base, unshell(cd[1]));
-    }
-    // Mọi đối số không phải cờ, bỏ giá trị của cờ có giá trị đứng trước (`check-mod --shots out <mod>`): trước kia chỉ
-    // lấy đối số đầu, nên "out" bị coi là thư mục mod.
-    const toks = m[1].trim().split(/\s+/);
-    const args = toks.filter((t, i) => t && !t.startsWith("-") && !/^\d*[<>]/.test(t) && !/^--(shots|widths|surfaces|languages|pane-id|term-bg|limit|fields)$/.test(toks[i - 1] ?? ""));
+  for (const { args, before } of [...runsOf(PLUGIN_TEST, cmd), ...runsOf(MOD_GATE, cmd)]) {
+    const base = cdDirs(before, cwd).at(-1) ?? cwd;
     if (args.some((a) => /[$%]/.test(a))) return true;
     for (const a of args.length ? args : ["."]) {
       const dir = norm(resolve(base, unshell(a)));
@@ -251,10 +336,10 @@ function coversMod(cmd, mod, cwd) {
 function covers(cmd, file, cwd, mod, img) {
   if (mod) return coversMod(cmd, mod, cwd);
   // Hình: `check-image` nêu đúng tệp hay thư mục chứa nó (lệnh chỉ đọc ảnh nằm ngay trong thư mục được nêu).
-  if (img) return ran(IMG_GATE, cmd) && names(cmd, file, cwd);
-  if (!ran(GATE, cmd)) return false;
-  if (!/\.html?$/i.test(file)) return true;
-  return /https?:\/\//.test(cmd) || names(cmd, file, cwd);
+  if (img) return runsOf(IMG_GATE, cmd).some((r) => names(r, file, cwd));
+  const runs = runsOf(GATE, cmd);
+  if (!/\.html?$/i.test(file)) return runs.length > 0;
+  return runs.some((r) => opensUrl(r) || names(r, file, cwd));
 }
 
 /** Tệp git thấy đã đổi hoặc mới (chưa theo dõi, không bị .gitignore), đường dẫn tuyệt đối. Không phải repo git ⇒ rỗng. */
@@ -339,8 +424,8 @@ if (input.hook_event_name === "Stop") {
     );
   }
   if (mods.length) {
-    const roots = [...new Set(mods.map((p) => show(p.mod.root, cwd)))];
-    const repo = [...new Set(mods.map((p) => p.mod.check).filter(Boolean))].map((f) => `\`bash ${show(f, cwd)}\``);
+    const roots = [...new Set(mods.map((p) => arg(p.mod.root, cwd)))];
+    const repo = [...new Set(mods.map((p) => p.mod.check).filter(Boolean))].map((f) => `\`bash ${arg(f, cwd)}\``);
     parts.push(
       `${web.length || imgs.length ? "Phiên cũng" : "phiên này"} đã sửa giao diện mod Claude Code ${list(mods.map((p) => show(p.file, cwd)))} nhưng chưa có lần \`claude plugin test\` nào trên mod đó sau lần sửa. ` +
         `Chạy ${roots.map((r) => `\`claude plugin test ${r}\``).join(", ")}${repo.length ? ` (hoặc ${repo.join(", ")})` : ""} và xem cây vẽ bằng \`ui.drawn()\` trong test; mod không có trang HTML nên không cần \`design-kit check\`.`,

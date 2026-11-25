@@ -107,11 +107,14 @@ export function probeSticky(): { share: number; parts: Array<{ where: string; he
     const p = m[1]!.split(/[,/\s]+/).filter(Boolean);
     return p.length >= 4 ? parseFloat(p[3]!) : 1;
   };
-  const bars: Array<{ el: Element; top: number; bottom: number }> = [];
+  // Không có gì cuộn (cả trang lẫn khung cuộn rộng trong trang) thì phần tử sticky chỉ là một khối trong trang ngắn (25/11/2026).
+  let scrolls = max > 0;
+  let bars: Array<{ el: Element; top: number; bottom: number; sticky: boolean }> = [];
   const walk = (root: Document | ShadowRoot): void => {
     for (const el of Array.from(root.querySelectorAll("*"))) {
       if (el.shadowRoot) walk(el.shadowRoot);
       const cs = getComputedStyle(el);
+      if (!scrolls && /^(auto|scroll)$/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 1 && el.clientWidth >= W * 0.6) scrolls = true;
       if (cs.position !== "fixed" && cs.position !== "sticky") continue;
       if (cs.visibility === "hidden" || cs.display === "none" || Number(cs.opacity) < 0.05) continue;
       const r = el.getBoundingClientRect();
@@ -128,10 +131,11 @@ export function probeSticky(): { share: number; parts: Array<{ where: string; he
       // Nền trang trí trải hết màn, nằm sau nội dung hoặc không bấm được, không chiếm chỗ đọc.
       if (cs.pointerEvents === "none" || Number(cs.zIndex) < 0) continue;
       if (exempt(el)) continue;
-      bars.push({ el, top: Math.max(0, r.top), bottom: Math.min(H, r.bottom) });
+      bars.push({ el, top: Math.max(0, r.top), bottom: Math.min(H, r.bottom), sticky: cs.position === "sticky" });
     }
   };
   walk(document);
+  if (!scrolls) bars = bars.filter((b) => !b.sticky);
   window.scrollTo({ top: sy, left: sx, behavior: "instant" });
   // Gộp các đoạn chồng nhau (thanh dính nằm trong thanh dính) để không tính hai lần.
   const spans = bars.map((b) => [b.top, b.bottom] as [number, number]).sort((a, b) => a[0] - b[0]);
@@ -160,7 +164,8 @@ export function manifestHref(): string | undefined {
 /** Hướng màn bị khoá trong manifest (WCAG 1.3.4, N02): giá trị `orientation`, hoặc undefined. */
 export function lockedOrientation(manifest: string): string | undefined {
   try {
-    const m = JSON.parse(manifest) as { orientation?: unknown };
+    // Trình duyệt giải mã UTF-8 nên bỏ BOM; JSON.parse thì không (25/11/2026).
+    const m = JSON.parse(manifest.replace(/^\uFEFF/, "")) as { orientation?: unknown };
     return typeof m.orientation === "string" && /^(portrait|landscape)/.test(m.orientation) ? m.orientation : undefined;
   } catch {
     return undefined;

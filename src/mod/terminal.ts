@@ -171,6 +171,55 @@ export function renderTerm(tree: DrawNode, columns: number, scheme: Scheme, k: I
 
 const norm = (s: string): string => s.replace(/\s+/g, " ").trim();
 
+/** Một dòng thành các ô: ký tự hai ô (chữ Hán, emoji) chiếm ô của nó và một ô rỗng "" theo sau. */
+function cellsOf(line: string): string[] {
+  const out: string[] = [];
+  for (const { segment } of new Intl.Segmenter().segment(line)) {
+    out.push(segment);
+    for (let i = stringWidth(segment); i > 1; i--) out.push("");
+  }
+  return out;
+}
+
+/**
+ * Chữ có hiện đủ qua các dòng xuống hàng không: mỗi đoạn nằm ở hàng kế tiếp, bắt đầu cùng một cột. Nối cả dòng của lưới
+ * (joined) không đủ khi có khung viền, có cột khác bên cạnh, hay Ink bẻ giữa một từ dài (25/11/2026).
+ */
+function wrapsWhole(raw: string, grid: string[][]): boolean {
+  const lines = raw.replace(/^(\s*\n)+/, "").trimEnd().split("\n").map((l) => cellsOf(l.trimEnd()));
+  const first = lines[0]?.[0];
+  if (first === undefined) return false;
+  for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid[y]!.length; x++) {
+      if (grid[y]![x] !== first) continue;
+      const failed = new Set<string>();
+      const rest = (li: number, p: number, r: number): boolean => {
+        if (li === lines.length) return true;
+        const key = `${li},${p},${r}`;
+        const row = grid[r];
+        if (!row || failed.has(key)) return false;
+        const line = lines[li]!;
+        if (!line.length && (row[x] ?? " ") === " " && rest(li + 1, 0, r + 1)) return true;
+        let n = 0;
+        while (p + n < line.length && row[x + n] === line[p + n]) n++;
+        if (n && p + n === line.length && rest(li + 1, 0, r + 1)) return true;
+        for (let k = n; k > 0; k--) {
+          // Dấu cách ở chỗ ngắt có thể ở cuối hàng này hoặc đầu hàng sau.
+          let q = p + k;
+          if (q >= line.length || line[q] === "") continue;
+          if (rest(li, q, r + 1)) return true;
+          while (line[q] === " ") q++;
+          if (q > p + k && rest(li, q, r + 1)) return true;
+        }
+        failed.add(key);
+        return false;
+      };
+      if (rest(0, 0, y)) return true;
+    }
+  }
+  return false;
+}
+
 export interface Cut {
   node: DrawNode;
   text: string;
@@ -182,11 +231,15 @@ export interface Cut {
  */
 export function textCuts(tree: DrawNode, r: TermRender): Cut[] {
   const joined = norm(r.plain.join(" "));
+  let grid: string[][] | undefined;
   const out: Cut[] = [];
   const visit = (n: DrawNode) => {
     if (n.type === "Text" || n.type === "Button") {
-      const t = norm(n.type === "Button" ? leafText(n) : textOf(n));
-      if (t.length >= 2 && !r.plain.some((l) => l.includes(t)) && !joined.includes(t)) {
+      const raw = n.type === "Button" ? leafText(n) : textOf(n);
+      const t = norm(raw);
+      // Chữ đặt wrap khác "wrap" (truncate, end…) không bao giờ xuống hàng: hàng dưới khớp phần thiếu chỉ là tình cờ.
+      const wraps = n.type === "Button" || (n.props?.["wrap"] ?? "wrap") === "wrap";
+      if (t.length >= 2 && !r.plain.some((l) => l.includes(t)) && !joined.includes(t) && !(wraps && wrapsWhole(raw, (grid ??= r.plain.map(cellsOf))))) {
         let len = t.length - 1;
         while (len > 0 && !joined.includes(t.slice(0, len))) len--;
         out.push({ node: n, text: t, shown: t.slice(0, len) });

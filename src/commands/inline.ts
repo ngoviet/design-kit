@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { type FlagSpec, parseCommandArgs } from "../args.js";
@@ -32,10 +32,21 @@ const NOT_PATH = /^([a-z][a-z0-9+.-]*:|\/\/|#)/i;
 const IMPORT = /@import\s+(?:url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]*))\s*\)|"([^"]*)"|'([^']*)')([^;]*);/gi;
 const URL_FN = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s"']*))\s*\)/gi;
 const COMMENT = /\/\*[\s\S]*?\*\//g;
+/** Chú thích, hoặc thứ có thể chứa "/*" mà không phải chú thích (chuỗi, url() không nháy). */
+const COMMENT_OR_STRING = /(\/\*[\s\S]*?\*\/)|"(?:\\[\s\S]|[^"\\\n])*"|'(?:\\[\s\S]|[^'\\\n])*'|url\(\s*[^"'\s)][^)]*\)/gi;
+/** Thuộc tính của thẻ mở: dấu ">" trong nháy (media="(width >= 600px)") không đóng thẻ (25/11/2026). */
+const ATTRS = "(?:\"[^\"]*\"|'[^']*'|[^>\"'])*";
+const LINK_TAG = new RegExp("<link\\b" + ATTRS + ">", "gi");
+/**
+ * Một lượt theo thứ tự trong trang: chú thích và script để nguyên, rồi <style>, rồi <link>. Một lượt nên khối <style> vừa
+ * sinh từ <link> không bị viết lại url() lần hai, còn khối của lần gộp trước thì được viết lại khi đổi thư mục.
+ */
+const PARTS = new RegExp("<!--[\\s\\S]*?-->|<script\\b" + ATTRS + ">[\\s\\S]*?</script>|(<style\\b" + ATTRS + ">)([\\s\\S]*?)(</style>)|<link\\b" + ATTRS + ">", "gi");
 
 const kb = (n: number): number => Math.round(n / 1024);
 const slash = (p: string): string => p.split(sep).join("/");
-const escAttr = (s: string): string => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+/** Giá trị lấy từ nguồn HTML nên đã mã hoá sẵn (`&gt;`): chỉ còn dấu nháy phải đổi, mã hoá lại `&` thì hỏng điều kiện media. */
+const escAttr = (s: string): string => s.replace(/"/g, "&quot;");
 
 /** Thuộc tính của một thẻ mở (`<link rel=stylesheet href="a.css">`), tên viết thường. */
 export function tagAttrs(tag: string): Map<string, string> {
@@ -65,7 +76,12 @@ export function isFontSheet(css: string): boolean {
 
 /** Đường dẫn tệp mà `ref` (tương đối với `fromDir`, hoặc từ gốc "/") trỏ tới; bỏ ?query và #hash. */
 function refFile(ref: string, fromDir: string, root: string): string {
-  const clean = decodeURIComponent(ref.replace(/[?#].*$/, ""));
+  let clean = ref.replace(/[?#].*$/, "");
+  try {
+    clean = decodeURIComponent(clean);
+  } catch {
+    /* "100%.css": không phải mã phần trăm hợp lệ, đọc nguyên văn */
+  }
   return clean.startsWith("/") ? join(root, clean) : resolve(fromDir, clean);
 }
 
@@ -82,43 +98,56 @@ interface CssCtx {
   outDir: string;
   root: string;
   warnings: string[];
+  /** Số @import đã gộp thật (không tính cái để nguyên). */
+  merged: number;
+}
+
+/** Thay mỗi chú thích bằng một dấu giữ chỗ (ký tự U+E000), nội dung cất vào `notes`. */
+function hideComments(css: string, notes: string[]): string {
+  return css.replace(COMMENT_OR_STRING, (whole, note: string | undefined) => (note === undefined ? whole : `dk-note-${notes.push(note) - 1}`));
 }
 
 /**
  * Nội dung CSS của `file` (đường dẫn `fromDir`), sẵn để đặt vào trang ở `ctx.outDir`: @import tương đối được gộp
  * vào chỗ (đệ quy), url() được viết lại theo vị trí trang, @import còn lại (tuyệt đối) dồn lên đầu vì @import
- * đứng sau luật khác bị bỏ qua.
+ * đứng sau luật khác bị bỏ qua. `outer`: chỗ dồn của tệp ngoài cùng; dồn trong từng tệp thì dòng @import font của tệp nhập
+ * thứ hai nằm sau luật của tệp thứ nhất và trình duyệt bỏ nó (25/11/2026).
  */
-function inlineCss(css: string, fromDir: string, ctx: CssCtx, chain: string[]): string {
-  const hoisted: string[] = [];
+function inlineCss(css: string, fromDir: string, ctx: CssCtx, chain: string[], outer?: string[]): string {
+  const hoisted = outer ?? [];
+  // @import nằm trong chú thích không phải @import: gộp nó vào thì nhãn của tệp gộp đóng sớm chú thích (25/11/2026).
+  const notes: string[] = [];
+  const showComments = (s: string): string => s.replace(/dk-note-(\d+)/g, (_, i: string) => notes[Number(i)]!);
   // Nội dung gộp từ @import đã được viết lại url() theo vị trí trang; chèn thẳng vào rồi mới viết lại url() của tệp
   // này thì nó bị viết lại lần hai theo thư mục tệp ngoài ("css/css/sub/img.png", 19/11/2026). Giữ chỗ trước, chèn sau.
   const imported: string[] = [];
-  let body = css.replace(/@charset[^;]*;/gi, "");
-  body = body.replace(IMPORT, (stmt, d: string | undefined, s: string | undefined, u: string | undefined, d2: string | undefined, s2: string | undefined, cond: string) => {
+  let body = hideComments(css, notes).replace(/@charset[^;]*;/gi, "");
+  body = body.replace(IMPORT, (stmt, d: string | undefined, s: string | undefined, u: string | undefined, d2: string | undefined, s2: string | undefined, rawCond: string) => {
     const ref = (d ?? s ?? u ?? d2 ?? s2 ?? "").trim();
+    const cond = rawCond.replace(/dk-note-\d+/g, "").trim();
     if (NOT_PATH.test(ref)) {
-      hoisted.push(stmt);
+      hoisted.push(showComments(stmt));
       return "";
     }
     const file = refFile(ref, fromDir, ctx.root);
-    if (cond.trim() || !existsSync(file) || chain.includes(file)) {
-      const why = cond.trim() ? `has a condition (${cond.trim()})` : !existsSync(file) ? "file not found" : "imports itself";
+    if (cond || !existsSync(file) || chain.includes(file)) {
+      const why = cond ? `has a condition (${cond})` : !existsSync(file) ? "file not found" : "imports itself";
       ctx.warnings.push(`@import ${ref} left as is: ${why}`);
-      hoisted.push(stmt.replace(ref, rebase(ref, fromDir, ctx.outDir, ctx.root)));
+      hoisted.push(showComments(stmt).replace(ref, rebase(ref, fromDir, ctx.outDir, ctx.root)));
       return "";
     }
-    imported.push(`/* ---- @import ${ref} ---- */\n${inlineCss(readFileSync(file, "utf8"), dirname(file), ctx, [...chain, file])}\n`);
+    ctx.merged++;
+    imported.push(`/* ---- @import ${ref} ---- */\n${inlineCss(readFileSync(file, "utf8"), dirname(file), ctx, [...chain, file], hoisted)}\n`);
     return `dk-import-${imported.length - 1}`;
   });
-  body = body.replace(URL_FN, (whole, d: string | undefined, s: string | undefined, u: string | undefined) => {
+  body = showComments(body).replace(URL_FN, (whole, d: string | undefined, s: string | undefined, u: string | undefined) => {
     const ref = (d ?? s ?? u ?? "").trim();
     if (!ref || NOT_PATH.test(ref)) return whole;
     return `url("${rebase(ref, fromDir, ctx.outDir, ctx.root)}")`;
   });
   // Ký tự vùng dùng riêng U+E000 (không phải ký tự điều khiển: eslint no-control-regex) làm dấu giữ chỗ.
   body = body.replace(/dk-import-(\d+)/g, (_, i: string) => imported[Number(i)]!);
-  return [...hoisted, body.trim()].join("\n");
+  return outer ? body.trim() : [...hoisted, body.trim()].join("\n");
 }
 
 export async function inlineCommand(args: string[], rt: Runtime): Promise<Record<string, unknown>> {
@@ -137,18 +166,22 @@ export async function inlineCommand(args: string[], rt: Runtime): Promise<Record
   const show = (f: string): string => slash(relative(rt.cwd, f)) || f;
 
   const html = readFileSync(page, "utf8");
-  const comments = [...html.matchAll(/<!--[\s\S]*?-->/g)].map((m) => [m.index, m.index + m[0].length] as const);
-  const inComment = (i: number): boolean => comments.some(([a, b]) => i >= a && i < b);
-  const ctx: CssCtx = { outDir, root, warnings: [] };
+  const ctx: CssCtx = { outDir, root, warnings: [], merged: 0 };
   const inlined: Array<{ href: string; kb: number }> = [];
   const kept: Array<{ href: string; why: string }> = [];
   const missing: string[] = [];
 
-  let next = html.replace(/<link\b[^>]*>/gi, (tag: string, at: number) => {
-    if (inComment(at)) return tag;
+  const moveLink = (tag: string, href: string): string => {
+    const moved = rebase(href, pageDir, outDir, root);
+    return moved === href ? tag : tag.replace(href, escAttr(moved));
+  };
+  const inlineLink = (tag: string): string => {
     const a = tagAttrs(tag);
     const href = a.get("href");
-    if (!(a.get("rel") ?? "").toLowerCase().split(/\s+/).includes("stylesheet") || !href || NOT_PATH.test(href) || a.has("disabled")) return tag;
+    const rel = (a.get("rel") ?? "").toLowerCase().split(/\s+/);
+    if (!rel.includes("stylesheet") || !href || NOT_PATH.test(href) || a.has("disabled")) return tag;
+    // Bộ kiểu thay thế chỉ bật khi người đọc chọn: gộp vào thì nó luôn bật (25/11/2026).
+    if (rel.includes("alternate")) return moveLink(tag, href);
     const file = refFile(href, pageDir, root);
     if (!existsSync(file) || statSync(file).isDirectory()) {
       missing.push(href);
@@ -157,32 +190,40 @@ export async function inlineCommand(args: string[], rt: Runtime): Promise<Record
     const css = readFileSync(file, "utf8");
     if (isFontSheet(css)) {
       kept.push({ href, why: "font stylesheet: loads with a server, the font stack's fallback shows when opened as a file" });
-      const moved = rebase(href, pageDir, outDir, root);
-      return moved === href ? tag : tag.replace(href, escAttr(moved));
+      return moveLink(tag, href);
     }
     const body = inlineCss(css, dirname(file), ctx, [file]).replace(/<\/style/gi, "<\\/style");
     inlined.push({ href, kb: Math.max(1, kb(Buffer.byteLength(body))) });
     const media = a.get("media");
     return `<style data-dk-inline="${escAttr(href)}"${media && media !== "all" ? ` media="${escAttr(media)}"` : ""}>\n${body}\n</style>`;
-  });
-  // <style> của chính trang: gộp @import tương đối; đổi thư mục (--ra) thì viết lại url() theo chỗ mới.
-  next = next.replace(/(<style\b(?![^>]*data-dk-inline)[^>]*>)([\s\S]*?)(<\/style>)/gi, (whole, open: string, css: string, close: string) => {
-    const relImport = [...css.matchAll(IMPORT)].some((m) => !NOT_PATH.test((m[1] ?? m[2] ?? m[3] ?? m[4] ?? m[5] ?? "").trim()));
+  };
+  // <style> của chính trang: gộp @import tương đối; đổi thư mục (--ra) thì viết lại url() theo chỗ mới, kể cả khối của lần
+  // gộp trước (data-dk-inline). Cùng thư mục thì khối đã gộp để nguyên: chạy lại không đổi gì.
+  const inlineStyle = (whole: string, open: string, css: string, close: string): string => {
+    if (outDir === pageDir && tagAttrs(open).has("data-dk-inline")) return whole;
+    const relImport = [...hideComments(css, []).matchAll(IMPORT)].some((m) => !NOT_PATH.test((m[1] ?? m[2] ?? m[3] ?? m[4] ?? m[5] ?? "").trim()));
     if (!relImport && outDir === pageDir) return whole;
-    const before = inlined.length;
-    if (relImport) inlined.push({ href: "<style> @import", kb: 0 });
+    const before = ctx.merged;
     const body = inlineCss(css, pageDir, ctx, [page]);
-    if (relImport) inlined[before]!.kb = Math.max(1, kb(Buffer.byteLength(body)));
+    if (ctx.merged > before) inlined.push({ href: "<style> @import", kb: Math.max(1, kb(Buffer.byteLength(body))) });
+    else if (outDir === pageDir) return whole;
     return `${open}\n${body.replace(/<\/style/gi, "<\\/style")}\n${close}`;
+  };
+  const next = html.replace(PARTS, (whole: string, open: string | undefined, css: string | undefined, close: string | undefined) => {
+    if (open !== undefined) return inlineStyle(whole, open, css ?? "", close ?? "");
+    return /^<link/i.test(whole) ? inlineLink(whole) : whole;
   });
-  if (outDir !== pageDir && /\s(src|href)\s*=\s*["']?(?![a-z][a-z0-9+.-]*:|\/\/|#)[^"'\s>]/i.test(next.replace(/<link\b[^>]*>/gi, ""))) {
+  if (outDir !== pageDir && /\s(src|href)\s*=\s*["']?(?![a-z][a-z0-9+.-]*:|\/\/|#)[^"'\s>]/i.test(next.replace(LINK_TAG, ""))) {
     ctx.warnings.push("the page has other relative paths (img, script, a): they were not rebased for the new folder");
   }
 
   const before = Buffer.byteLength(html);
   const { bytes, fontBytes } = pageWeight(next);
   const changed = next !== html || out !== page;
-  if (changed && !dry) writeFileSync(out, next, "utf8");
+  if (changed && !dry) {
+    mkdirSync(outDir, { recursive: true });
+    writeFileSync(out, next, "utf8");
+  }
   const weight = weightDetail(bytes, fontBytes);
   if (weight) ctx.warnings.push(weight);
 

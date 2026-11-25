@@ -303,7 +303,7 @@ Cờ của `check-mod`:
 | `--widths <n,n>` | Số cột cần quét (mặc định `40,52,64,78,100,120,160,200`): `bodyColumns` của AbovePrompt và Pane, `viewport.columns` của mọi component |
 | `--surfaces <terminal,desktop>` | Surface cần vẽ (mặc định cả hai) |
 | `--languages <a,b\|none>` | Các lượt ngôn ngữ ngoài lượt mặc định (mặc định: mọi giá trị của tuỳ chọn `language` trừ `auto`) |
-| `--no-tests` | Bỏ test của mod: chỉ mount mỗi component với props mặc định (thường là màn trống) |
+| `--no-tests` | Bỏ test của mod: chỉ mount mỗi AbovePrompt, Pane, ToolUse với props mặc định (thường là màn trống) |
 | `--pane-id <id>` | `requestId` cho Pane mà mod khớp bằng id tính lúc chạy (mặc định: tên mod) |
 | `--term-bg <dark=#hex,light=#hex>` | Nền terminal để đo (mặc định `#1e1e1e` và `#ffffff`) |
 | `--shots <thư mục>` / `--no-shots` | Thư mục ảnh (mặc định `.design-kit/shots/mod-<tên>`) / không chụp |
@@ -311,8 +311,8 @@ Cờ của `check-mod`:
 | `--keep` | Giữ các bản sao tạm của mod (đường dẫn ở `notes`) |
 
 Các phép kiểm: *cứng* gồm `mount` (surface từ chối cây, nên engine vẽ bản của nó), `render`, `svg-source` (quá
-131.072 ký tự hoặc thiếu `alt`), `raster-size`, `ask-rows` (cây cho AskUserQuestion quá 12 hàng terminal hay 48
-hàng desktop ở 40 cột), `overflow`, `contrast` (4,5:1 cho chữ, 3:1 cho một ký hiệu đơn hay một dải ký tự khối, trên
+131.072 ký tự hoặc thiếu `alt`), `raster-size`, `ask-rows` (cây cho AskUserQuestion quá 12 hàng terminal ở 40
+cột), `overflow`, `contrast` (4,5:1 cho chữ, 3:1 cho một ký hiệu đơn hay một dải ký tự khối, trên
 cả hai terminal và desktop; trên desktop thành mềm khi cả hai màu là của app hay của khoá theme, thứ trang desktop chỉ
 đoán được), `text-min` (desktop, chữ SVG đo theo cỡ đã vẽ), `motion` và axe; *mềm* gồm `rows` (thanh
 cao hơn `maxRows`, hoặc cao lên khi hẹp), `text-cut`, `svg-terminal` (Svg trên desktop thành hộp rỗng trên terminal),
@@ -355,7 +355,8 @@ chấm: nghiên cứu không tìm ra mức tối ưu cho logo); **icon** thu nh�
 vẽ ra điểm ảnh:
 
 1. `claude plugin validate` cho biết mod hook những component nào; mod được chép sang thư mục tạm, dòng
-   `import … from 'claude-code/testing'` trong test được trỏ sang lớp chặn, và một test chung mount mỗi component một lần.
+   `import … from 'claude-code/testing'` trong test được trỏ sang lớp chặn, và một test chung mount mỗi AbovePrompt, Pane, ToolUse được hook
+   một lần (component khác chỉ được vẽ bởi test của mod; không có cây nào là lỗi cứng `mount`).
 2. `claude plugin test` chạy mỗi ngôn ngữ một lượt. Mỗi lần test gọi `$.ui.mount`, lớp chặn vẽ lại trên cả hai
    surface ở mọi bề rộng rồi in `ui.drawn()`; cây giống nhau chỉ đo một lần.
 3. Cây terminal đi qua `renderToString` của Ink ở đúng số cột; khoá theme lấy màu theo theme tối và sáng mặc định của

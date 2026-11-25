@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Service worker đăng ký muộn, hay cài lâu</title>
+<style>body { margin: 0; font: 400 1rem/1.6 system-ui, sans-serif; background: #fff; color: #1a1a1a; } main { padding: 24px 16px; }</style>
+</head>
+<body>
+<main><h1>Bản tin</h1><p>?tre= số mili giây sau load mới đăng ký; ?sw= tệp service worker.</p></main>
+<script>
+const q = new URLSearchParams(location.search);
+addEventListener("load", () => setTimeout(() => {
+  navigator.serviceWorker.register(q.get("sw") || "may-nguoi-dung-sw.js?kieu=qua-mang", { scope: "./may-nguoi-dung-ngoai-tuyen-muon.html" });
+}, Number(q.get("tre") || 0)));
+</script>
+</body>
+</html>

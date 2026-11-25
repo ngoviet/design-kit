@@ -476,33 +476,44 @@ const ACTIVE_MS = 3_000;
 const RELOAD_MS = 8_000;
 
 /**
- * Đợi service worker của chính trang này chạy; trả có hay không. Hỏi theo địa chỉ trang, không hỏi mọi đăng ký của gốc: một ứng
- * dụng khác cùng gốc có service worker không phải lời hứa của trang này. Trang không đăng ký thì trả lời ngay.
+ * Service worker của chính trang này: chưa có, đang cài, hay đã chạy. Hỏi theo địa chỉ trang, không hỏi mọi đăng ký của gốc: một
+ * ứng dụng khác cùng gốc có service worker không phải lời hứa của trang này. `ms` là 0 thì trả lời ngay; lớn hơn thì chờ tới ngần
+ * ấy cho nó chạy, kể cả khi trang đăng ký muộn (sau load, lúc rảnh): `ready` đợi cả lượt đăng ký chưa có (25/11/2026).
  */
-async function workerReady(ms: number): Promise<boolean> {
+async function workerReady(ms: number): Promise<"none" | "installing" | "active"> {
   try {
     const sw = navigator.serviceWorker as ServiceWorkerContainer | undefined;
-    if (!sw || !(await sw.getRegistration())) return false;
-    await Promise.race([sw.ready, new Promise<void>((ok) => setTimeout(ok, ms))]);
-    return true;
+    if (!sw) return "none";
+    if (ms) await Promise.race([sw.ready, new Promise<void>((ok) => setTimeout(ok, ms))]);
+    const reg = await sw.getRegistration();
+    if (!reg) return "none";
+    return reg.active ? "active" : "installing";
   } catch {
     /* khung cách ly, địa chỉ data: không được dùng service worker */
-    return false;
+    return "none";
   }
 }
 
-/** Trang có đăng ký service worker không; không đổi gì. Dùng để quyết định có mở trang riêng cho `offlinePass` hay không. */
-export const registersWorker = (page: Page): Promise<boolean> => page.evaluate(workerReady, 0);
+/** Trang có đăng ký service worker không; không đổi gì, không chờ. Dùng để quyết định có mở trang riêng cho `offlinePass` hay không. */
+export const registersWorker = async (page: Page): Promise<boolean> => (await page.evaluate(workerReady, 0)) !== "none";
 
 /**
  * `offline`: nạp lại trang hai lần, nên CHẠY TRÊN MỘT TRANG RIÊNG (hoặc cuối cùng): các yêu cầu hỏng lúc mất mạng sẽ lẫn vào sổ lỗi
- * và sổ tệp phụ thuộc của trang đang đo. Luôn bật mạng lại rồi nạp lại. Trang không có service worker thì trả mảng rỗng ngay,
- * không nạp lại.
+ * và sổ tệp phụ thuộc của trang đang đo. Luôn bật mạng lại rồi nạp lại. Chỉ gọi khi `registersWorker` đã nói có: nó chờ
+ * worker tới 3 giây. Hết giờ mà trang vẫn không có worker thì trả mảng rỗng, không nạp lại; còn đang cài thì ném lỗi, vì worker chưa
+ * nắm trang, ngắt mạng lúc đó không nói gì về trang ngoại tuyến của nó.
  */
 export async function offlinePass(page: Page): Promise<EmulateFinding[]> {
-  if (!(await page.evaluate(workerReady, ACTIVE_MS))) return [];
+  const state = await page.evaluate(workerReady, ACTIVE_MS);
+  if (state === "none") return [];
+  if (state === "installing") throw new Error(`its service worker is still installing after ${ACTIVE_MS / 1000} s`);
   const ctx = page.context();
-  const where = new URL(page.url()).pathname.split("/").pop() || "page";
+  let where = new URL(page.url()).pathname.split("/").pop() || "page";
+  try {
+    where = decodeURIComponent(where);
+  } catch {
+    /* "%" viết sai trong địa chỉ: dùng nguyên văn */
+  }
   const bad = (detail: string): EmulateFinding[] => [{ check: "offline", where, detail }];
   try {
     await ctx.setOffline(true);
@@ -550,7 +561,11 @@ export function installAria(): void {
   const target = (e: Element): Element | null => {
     let t: Element | null = e;
     for (let i = 0; t && i < 4; i++, t = K.up(t)) {
-      if (ATTRS.some((a) => t!.hasAttribute(a))) return t.closest("[data-aria-ok]") ? null : t;
+      if (ATTRS.some((a) => t!.hasAttribute(a))) {
+        // Đi bằng up(), không closest(): lời miễn đặt trên host phải tới được nút trong shadow root (25/11/2026).
+        for (let a: Element | null = t; a; a = K.up(a)) if (a.hasAttribute("data-aria-ok")) return null;
+        return t;
+      }
       // Nút đóng nằm trong một tab: bấm nó không phải bấm tab.
       if (t.matches("a[href], button, input, select, textarea, [role=button], [role=link]")) return null;
     }
@@ -570,6 +585,11 @@ export function installAria(): void {
     };
     roots.forEach(walk);
     return out.sort();
+  };
+  // Vùng không có kích thước (height: 0, display: contents) mà nội dung định vị tuyệt đối vẫn hiện. Bản thân nút không tính (25/11/2026).
+  const regionOn = (r: Element, t: Element): boolean => {
+    const on = (e: Element): boolean => e !== t && ((!K.inside(e, t) && K.shown(e)) || [...Array.from(e.shadowRoot?.children ?? []), ...Array.from(e.children)].some(on));
+    return K.shown(r) || on(r);
   };
   const shot = (t: Element): AriaShot => {
     const root = t.getRootNode() as Document | ShadowRoot;
@@ -599,7 +619,7 @@ export function installAria(): void {
     return {
       attrs: Object.fromEntries(ATTRS.filter((a) => t.hasAttribute(a)).map((a) => [a, t.getAttribute(a)])),
       regions,
-      regionShown: regions.some((e) => K.shown(e)),
+      regionShown: regions.some((e) => regionOn(e, t)),
       texts: visible(regions.length ? [] : scope, t),
       own: {
         text: (t instanceof HTMLElement ? t.innerText : (t.textContent ?? "")).replace(/\d+/g, "#").trim(),

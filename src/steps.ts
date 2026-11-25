@@ -27,6 +27,15 @@ export interface StepState {
 export const STEPS_FORMAT =
   'Format: [{"name":"loi","do":[{"click":"#gui"}]}], optional "viewports":[320,390] for controls that exist only at some widths. Actions: click <sel>, fill [sel,text], check <sel>, select [sel,value], press <key>|[sel,key], hover <sel>, wait <ms>';
 
+/**
+ * Nhãn báo cáo của một trạng thái: trang, rồi " #tên". Chỉ nhận tên mà parseSteps cho phép: tệp "bao cao #2.html" và địa chỉ
+ * "/#/trang" không phải trạng thái (25/11/2026, --recheck và miễn trừ từng cắt nhầm tên tệp).
+ */
+export function splitState(label: string): { page: string; state?: string } {
+  const m = /^(.*) #([\w-]{1,40})$/.exec(label);
+  return m ? { page: m[1]!, state: m[2]! } : { page: label };
+}
+
 const KINDS = ["click", "fill", "check", "select", "press", "hover", "wait"] as const;
 const isSel = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
 const isPair = (v: unknown): v is [string, string] => Array.isArray(v) && v.length === 2 && isSel(v[0]) && typeof v[1] === "string";
@@ -35,7 +44,8 @@ const isPair = (v: unknown): v is [string, string] => Array.isArray(v) && v.leng
 export function parseSteps(raw: string, from: string): StepState[] {
   let data: unknown;
   try {
-    data = JSON.parse(raw);
+    // BOM: PowerShell 5.1 và Notepad ghi vào đầu tệp UTF-8, JSON.parse không nhận (25/11/2026).
+    data = JSON.parse(raw.replace(/^\uFEFF/, ""));
   } catch (e) {
     fail(`${from}: not valid JSON (${(e as Error).message.split("\n")[0]})`, "VALIDATION_ERROR", [STEPS_FORMAT]);
   }

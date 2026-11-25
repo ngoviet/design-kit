@@ -187,13 +187,13 @@ Bản tối (khi `prefers-color-scheme: dark` hoặc `data-theme="dark"`):
 
 ## Typography
 
-Thân Literata 18px, giãn dòng 1.7, độ dài dòng tối đa 66ch. Tiêu đề Be Vietnam Pro 600–650. Giao diện phụ (nút, nhãn, bảng) dùng Be Vietnam Pro qua `--font-ui`.
+Thân Literata 18px, giãn dòng 1.7, độ dài dòng tối đa `var(--measure)` (32em). Tiêu đề Be Vietnam Pro 600–650. Giao diện phụ (nút, nhãn, bảng) dùng Be Vietnam Pro qua `--font-ui`.
 
 Thang tỉ lệ 1.25: 12 · 14 · 16 · 20 · 25 · 31 · 39 px, các bậc lớn co giãn bằng `clamp()` (xem `--fs-*` trong `tokens/core.css`). Tiêu đề giãn dòng ≥ 1.2 để dấu tiếng Việt không chạm dòng trên. Luôn đặt `lang="vi"`.
 
 ## Layout
 
-Một cột đọc chính rộng tối đa 66ch, mục lục bên trái trên màn rộng, thu thành hàng chip trên điện thoại. Khoảng cách giữa các mục lớn (`--sp-8`).
+Một cột đọc chính rộng tối đa `var(--measure)` (32em), mục lục bên trái trên màn rộng, thu thành hàng chip trên điện thoại. Khoảng cách giữa các mục lớn (`--sp-8`).
 
 Bề rộng tối thiểu phải chạy được: 320px, không cuộn ngang. Vùng bấm ≥ 24×24px, nút chính ≥ 44px.
 
