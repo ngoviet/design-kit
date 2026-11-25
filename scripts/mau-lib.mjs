@@ -1,10 +1,9 @@
 // Thư viện màu dùng chung: đọc khối token theo chế độ, kiểm cặp tương phản, kẹp gamut.
-import { join, dirname } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const colorjsPath = process.env.DK_COLORJS ?? join(root, "node_modules/colorjs.io/dist/color.js");
-export const { default: Color } = await import(pathToFileURL(colorjsPath).href);
+// Tên gói, không phải đường dẫn: npm đưa gói phụ thuộc lên node_modules của nơi cài (25/11/2026).
+const colorjs = process.env.DK_COLORJS ? pathToFileURL(process.env.DK_COLORJS).href : "colorjs.io";
+export const { default: Color } = await import(colorjs);
 
 // [chữ/thành phần, nền, ngưỡng WCAG]
 export const PAIRS = [

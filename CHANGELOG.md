@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-25
+
 ### Changed
 
 - Impeccable engine pinned to 0.1.27 (was 0.1.19), and the gate now prefers the pinned engine
@@ -83,6 +85,7 @@ All notable changes to this project are documented here. The format follows
     the suggested `cp` command are right for folders with a shared prefix or spaces.
   - `check-mod`: a run stopped at the time limit and drawing lines that came back cut are in `notes`; `overflowX="scroll"` is drawn as the
     app does, so it is not called overflow.
+  - `kiem-mau` and `doi-mau` work when the package is installed in a project (npm puts `colorjs.io` beside it), not only globally.
   - `scripts/tao-trang-ab.py` takes a folder with a trailing slash. The React `dark:` variant has a regression test.
 - Full-project review of 25/11/2026 (each bug reproduced by a failing test first):
   - `check`: the result cache also covers files loaded only on the phone and touch renders and the web app manifest (an edited

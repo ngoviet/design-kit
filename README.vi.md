@@ -103,7 +103,7 @@ Yêu cầu:
 Từ bản phát hành mới nhất (không cần clone):
 
 ```bash
-npm install -g https://github.com/ngoviet/design-kit/releases/download/v0.3.0/design-kit-0.3.0.tgz
+npm install -g https://github.com/ngoviet/design-kit/releases/download/v0.4.0/design-kit-0.4.0.tgz
 design-kit setup
 ```
 

@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -671,5 +671,20 @@ describe("color commands", () => {
     const { out, code } = await run(["doi-mau", "--huong", "dem", "--nhan", "45"]);
     expect(out).toContain("--ra is required");
     expect(code).toBe(2);
+  });
+});
+
+describe("installed next to other packages", () => {
+  it("finds colorjs.io where npm hoisted it, not only in its own node_modules", () => {
+    const d = mkdtempSync(join(tmpdir(), "dk-hoist-"));
+    const pkg = join(d, "node_modules", "design-kit");
+    mkdirSync(pkg, { recursive: true });
+    for (const f of ["scripts", "tokens"]) cpSync(join(root, f), join(pkg, f), { recursive: true });
+    // Chép thật, không liên kết: Node lần theo đường dẫn thật của liên kết thì phép thử không còn nói gì.
+    cpSync(join(root, "node_modules", "colorjs.io"), join(d, "node_modules", "colorjs.io"), { recursive: true });
+    const r = spawnSync(process.execPath, [join(pkg, "scripts", "kiem-cap-mau.mjs")], { encoding: "utf8", cwd: d, env: { ...process.env, DK_COLORJS: undefined } });
+    rmSync(d, { recursive: true, force: true });
+    expect(r.stderr).toBe("");
+    expect(r.stdout).toContain("126 cặp");
   });
 });
