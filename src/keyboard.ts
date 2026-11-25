@@ -272,10 +272,21 @@ export function probeClickable(): ClickHit[] {
     }
     return false;
   };
+  // Chính khối là nút, và nút đang khoá bên trong chỉ là một phần: khối có chữ của mình, và nghe click cho cả khối (onclick không xét
+  // `event`, hay trình nghe kèm bàn tay). Trình nghe không có bàn tay thường là uỷ quyền cho các nút con; ô đang khoá thì chữ quanh nó
+  // là nhãn (25/11/2026).
+  const ownAct = (e: Element, why: string): boolean => {
+    if (why === "onclick" ? /\bevent\b/.test(e.getAttribute("onclick") ?? "") : why !== "listener" || cur(e) !== "pointer") return false;
+    const off = Array.from(e.querySelectorAll(":disabled, [aria-disabled=true]"));
+    if (!off.every((x) => x.matches("button, a, [role=button], [role=link], input[type=button], input[type=submit]") || off.some((o) => o !== x && o.contains(x)))) return false;
+    const walk = document.createTreeWalker(e, NodeFilter.SHOW_TEXT);
+    for (let t = walk.nextNode(); t; t = walk.nextNode()) if (/[\p{L}\p{N}]/u.test(t.textContent ?? "") && !off.some((o) => o.contains(t))) return true;
+    return false;
+  };
   // Chỉ chứa điều khiển đang khoá: cả cụm đang khoá. Khung có con trỏ chữ, hay khung cạnh ô gõ, chỉ nghe click mà không có bàn tay:
   // bấm là đưa con trỏ vào ô, việc Tab làm được. Có bàn tay (kính lúp, nút xoá chữ) thì là nút.
   const idle = (e: Element, why: string): boolean => {
-    if (e.querySelector(":disabled, [aria-disabled=true]")) return true;
+    if (e.querySelector(":disabled, [aria-disabled=true]")) return !ownAct(e, why);
     if (why !== "listener" || cur(e) === "pointer" || e.matches("button, a, summary, [role=button], [role=link], [role=checkbox], [role=switch], [role=tab], [role=menuitem], [role=option]")) return false;
     const p = K.up(e);
     const tight = (t: Element): boolean => p!.getBoundingClientRect().height <= t.getBoundingClientRect().height * 2 + 16;

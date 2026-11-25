@@ -274,14 +274,18 @@ function paintText(color: string | null): void {
   };
   walk(document);
   const still = "transition: none !important; caret-color: transparent !important;";
+  // Trúng mọi phần tử như `*` mà độ đặc hiệu bằng bốn id: trang tự đặt màu tô !important thì khối đó từng không có nét nào và lặng lẽ
+  // không được đo (25/11/2026). Thuộc tính style !important và !important trong @layer thì vẫn thắng.
+  const any = ":is(*, #dk#dk#dk#dk)";
+  const every = `${any}, ${any}::before, ${any}::after`;
   if (color === null) {
-    px.sheet.replaceSync(`*, *::before, *::after { ${still} }`);
+    px.sheet.replaceSync(`${every} { ${still} }`);
     for (const r of roots) void (r instanceof Document ? r.documentElement : r.firstElementChild)?.getBoundingClientRect();
     for (const el of px.list) void getComputedStyle(el.el).webkitTextFillColor;
     for (const r of roots) r.adoptedStyleSheets = r.adoptedStyleSheets.filter((s) => s !== px.sheet);
     return;
   }
-  px.sheet.replaceSync(`*, *::before, *::after { ${still} -webkit-text-fill-color: ${color} !important; text-decoration-color: transparent !important; text-emphasis-color: transparent !important; }`);
+  px.sheet.replaceSync(`${every} { ${still} -webkit-text-fill-color: ${color} !important; text-decoration-color: transparent !important; text-emphasis-color: transparent !important; }`);
   for (const r of roots) if (!r.adoptedStyleSheets.includes(px.sheet)) r.adoptedStyleSheets = [...r.adoptedStyleSheets, px.sheet];
 }
 

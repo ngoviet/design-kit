@@ -26,7 +26,7 @@ export interface CssHit {
   detail: string;
 }
 
-/** Đọc, không đổi trang (có gắn rồi gỡ một phần tử thử ẩn). Chạy trong trang đã yên, đang ở đầu trang. Hàm tự chứa. */
+/** Đọc, không đổi trang (có gắn rồi gỡ một phần tử thử ẩn, và đổi rồi trả ngay một khai báo khi phải biết luật nào thắng). Chạy trong trang đã yên, đang ở đầu trang. Hàm tự chứa. */
 export function probeCss(): CssHit[] {
   const out: CssHit[] = [];
   const IDS = ["vh-full", "transition-all", "vi-hyphen", "scheme", "safe-area", "img-size", "theme-color", "paste"];
@@ -169,6 +169,16 @@ export function probeCss(): CssHit[] {
     matched.set(d, list);
     return list;
   };
+  // Luật của phần tử giả không nói về chính khối: chỉ lấy những phần của danh sách bộ chọn trỏ tới đúng thứ đang hỏi (25/11/2026).
+  const elsFor = (d: Decl, pseudo: string): Element[] => {
+    const list = parts(d.sel);
+    const own = list.filter((s) => {
+      let flat = s;
+      while (/\([^()]*\)/.test(flat)) flat = flat.replace(/\([^()]*\)/g, "");
+      return pseudo ? new RegExp(`:${pseudo.slice(2)}(?![\\w-])`).test(flat) : flat.search(ATTACHED) < 0;
+    });
+    return elsOf(own.length === list.length ? d : { ...d, sel: own.join(", ") });
+  };
   // Biến CSS: lấy giá trị trên phần tử, lần theo tối đa ba tầng.
   const resolve = (value: string, el: Element): string => {
     let v = value;
@@ -202,7 +212,7 @@ export function probeCss(): CssHit[] {
     const PROPS = ["height", "min-height", "max-height", "block-size", "min-block-size", "max-block-size"];
     const VH = /\dv[hb](?![a-z])/i;
     const FIXED = /\d[sld]v[hb](?![a-z])|fill-available|stretch/i;
-    const fixed: Array<{ el: Element; prop: string; v: string; ios: boolean }> = [];
+    const fixed: Array<{ el: Element; prop: string; v: string; ios: boolean; style: CSSStyleDeclaration }> = [];
     const cand: Array<{ el: Element; prop: string; v: string }> = [];
     const see = (style: CSSStyleDeclaration, els: () => Element[], ios: boolean): void => {
       for (const prop of PROPS) {
@@ -210,21 +220,12 @@ export function probeCss(): CssHit[] {
         if (!raw || !(VH.test(raw) || FIXED.test(raw) || raw.includes("var("))) continue;
         for (const el of els()) {
           const v = resolve(raw, el);
-          if (FIXED.test(v)) fixed.push({ el, prop, v, ios });
+          if (FIXED.test(v)) fixed.push({ el, prop, v, ios, style });
           else if (!ios && VH.test(v)) cand.push({ el, prop, v });
         }
       }
     };
-    // Chiều cao của phần tử giả không phải chiều cao của khối: chỉ giữ phần bộ chọn trỏ tới chính khối (25/11/2026).
-    const ownEls = (d: Decl): Element[] => {
-      const own = parts(d.sel).filter((s) => {
-        let flat = s;
-        while (/\([^()]*\)/.test(flat)) flat = flat.replace(/\([^()]*\)/g, "");
-        return flat.search(ATTACHED) < 0;
-      });
-      return elsOf(own.length === parts(d.sel).length ? d : { ...d, sel: own.join(", ") });
-    };
-    for (const d of decls) see(d.style, () => ownEls(d), d.ios);
+    for (const d of decls) see(d.style, () => elsFor(d, ""), d.ios);
     for (const el of all) if ((el as HTMLElement).style?.length) see((el as HTMLElement).style, () => [el], false);
     // Luật quyết định chiều cao: giá trị đã tính đúng bằng số px của nó (không phải `100%` hay một luật khác), và chiều cao của khối
     // đúng bằng số đó. undefined: giá trị đã tính không phải px nên không so được.
@@ -236,10 +237,32 @@ export function probeCss(): CssHit[] {
       const px = pxSaid(el, prop);
       return px === undefined ? undefined : Math.abs(px - pxOf(v, el)) <= 0.6 && Math.abs(parseFloat(getComputedStyle(el).height) - px) <= 1.5;
     };
-    // Hai luật cùng ra một số px (100dvh thua 100vh) thì ở đây không phân biệt được: vẫn coi là đã sửa (25/11/2026).
+    // Hai luật cùng ra một số px (trình duyệt đo có 100dvh bằng 100vh) thì hỏi chính trình duyệt luật nào thắng: đổi tạm khai báo
+    // dvh sang từ khoá, giá trị đã tính đổi theo là nó thắng, rồi trả lại ngay. Nhờ vậy độ đặc hiệu, thứ tự, !important, @layer,
+    // :is/:where, cây bóng đều đúng mà không phải tự tính. Từ khoá không nội suy được với px nên không chuyển tiếp nào chạy; trang cho
+    // chuyển tiếp rời rạc thì không thử. Khai báo lặp trục logic trong cùng luật cũng không: trả lại có thể sai thứ tự (25/11/2026).
+    const wins = (f: (typeof fixed)[number]): boolean => {
+      const cs = getComputedStyle(f.el);
+      const pair = f.prop.endsWith("height") ? f.prop.replace("height", "block-size") : f.prop.replace("block-size", "height");
+      // Thuộc tính style: đổi là trang (MutationObserver) thấy, và nó chỉ thua !important.
+      if (f.style === (f.el as HTMLElement).style || f.style.getPropertyValue(pair) || cs.getPropertyValue("interpolate-size") === "allow-keywords" || /allow-discrete/.test(cs.getPropertyValue("transition-behavior"))) return true;
+      const [was, mark] = [f.style.getPropertyValue(f.prop), f.style.getPropertyPriority(f.prop)];
+      const before = typed(f.el, f.prop);
+      f.style.setProperty(f.prop, f.prop.startsWith("max") ? "none" : "auto", mark);
+      const won = typed(f.el, f.prop) !== before;
+      f.style.setProperty(f.prop, was, mark);
+      void typed(f.el, f.prop);
+      return won;
+    };
     // Đã sửa khi luật dvh/svh thật sự cho ra chiều cao này. Không so được (luật chỉ iOS áp, fill-available, min(…, 100%),
     // biến lồng quá sâu) thì coi là đã sửa.
-    const safe = (el: Element): boolean => fixed.some((f) => f.el === el && (f.ios || f.v.includes("var(") || Number.isNaN(pxOf(f.v, el)) || decides(el, f.prop, f.v) !== false));
+    const safe = (el: Element): boolean =>
+      fixed.some((f) => {
+        if (f.el !== el) return false;
+        if (f.ios || f.v.includes("var(") || Number.isNaN(pxOf(f.v, el))) return true;
+        const same = decides(el, f.prop, f.v);
+        return same === undefined || (same && wins(f));
+      });
     const hits = new Map<Element, { where: string; text: string }>();
     for (const { el, prop, v } of cand) {
       if (hits.has(el) || !shown(el) || hidden(el) || okd(el, "vh-full")) continue;
@@ -277,7 +300,7 @@ export function probeCss(): CssHit[] {
       const dur = d.style.getPropertyValue("transition-duration");
       if (!short && !prop && !dur) continue;
       for (const pseudo of ["", ...(/:before\b/.test(d.sel) ? ["::before"] : []), ...(/:after\b/.test(d.sel) ? ["::after"] : [])]) {
-        for (const el of elsOf(d)) {
+        for (const el of elsFor(d, pseudo)) {
           if (!shown(el) || okd(el, "transition-all")) continue;
           const cs = getComputedStyle(el, pseudo || null);
           if (pseudo && (cs.content === "none" || cs.content === "normal")) continue;
@@ -418,7 +441,8 @@ export function probeCss(): CssHit[] {
           for (const i of [0, 1, 2] as const) acc[i] += (1 - a) * c[3] * c[i];
           a += (1 - a) * c[3];
         };
-        for (const e of stack(document, x, 1)) {
+        const under = stack(document, x, 1);
+        for (const e of under) {
           // Ảnh, video, hình vẽ ở mép trên: không biết màu thật.
           if (/^(IMG|VIDEO|CANVAS|IFRAME|OBJECT|EMBED)$/.test(e.tagName) || e.closest("svg")) return undefined;
           const cs = getComputedStyle(e);
@@ -436,8 +460,9 @@ export function probeCss(): CssHit[] {
           lay(c);
           if (a > 0.99) return acc;
         }
-        // Nền của body lan ra cả khung nhìn khi html trong suốt; cuối cùng là nền mặc định của trình duyệt.
-        for (const e of [de, document.body]) if (e && a <= 0.99) lay(rgba(getComputedStyle(e).backgroundColor));
+        // Nền của body lan ra cả khung nhìn khi html trong suốt; cuối cùng là nền mặc định của trình duyệt. html, và body nằm ngay
+        // dưới điểm này, đã tính trong vòng trên (25/11/2026).
+        if (document.body && !under.includes(document.body) && rgba(getComputedStyle(de).backgroundColor)[3] === 0) lay(rgba(getComputedStyle(document.body).backgroundColor));
         if (a <= 0.99) lay(schemeOf(de).used === "dark" ? [18, 18, 18, 1] : [255, 255, 255, 1]);
         return acc;
       };

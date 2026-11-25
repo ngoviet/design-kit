@@ -1,5 +1,6 @@
 // Phần check-mod chạy không cần Claude Code: đọc kết quả test, lớp chặn, màu, dựng terminal, trang desktop, luật engine.
 import { describe, expect, it } from "vitest";
+import { launchBrowser } from "../src/browser.js";
 import { parseTestOutput } from "../src/mod/collect.js";
 import { contrast, nearestThemeKey, resolveColor } from "../src/mod/colors.js";
 import { desktopHtml, scrubSvg, svgMotionIssue } from "../src/mod/desktop.js";
@@ -69,6 +70,7 @@ describe("parseTestOutput", () => {
     expect(r.pass).toBe(1);
     expect(r.fail).toBe(1);
     expect(r.failures[0]).toEqual({ test: "b", error: "error: expected 1 to be 2" });
+    expect(r.cutLines).toBe(1);
   });
 });
 
@@ -133,6 +135,25 @@ describe("terminal (Ink)", () => {
     const cell = (s: string) => B({ width: 4 }, T({ wrap: "truncate-end" }, s));
     expect(cuts(B({ flexDirection: "column" }, cell("abc…def"), cell("def")))).toEqual(["abc…def"]);
   });
+  it("overflowX scroll: the terminal cuts each line at the Box's edge instead of wrapping it (25/11/2026)", async () => {
+    const k = await loadInk();
+    const long = "Mon 12 | Tue 14 | Wed 18 | Thu 20 | Fri 22 | Sat 24";
+    const at = (tree: DrawNode, columns: number) => {
+      const r = renderTerm(tree, columns, "dark", k);
+      return { rows: r.rows, plain: r.plain.map((l) => l.trimEnd()), cuts: textCuts(tree, r).map((c) => c.text) };
+    };
+    const chart = B({ overflowX: "scroll", flexDirection: "column" }, T({}, long), T({}, "second row"));
+    expect(at(chart, 20)).toEqual({ rows: 2, plain: ["Mon 12 | Tue 14 | W…", "second row"], cuts: [long] });
+    expect(at(chart, 80)).toMatchObject({ rows: 2, cuts: [] });
+    // Nhiều dòng trong một Text: mỗi dòng tự cắt.
+    expect(at(B({ overflowX: "scroll" }, T({}, long + "\nshort")), 20).plain).toEqual(["Mon 12 | Tue 14 | W…", "short"]);
+    expect(at(B({ overflowX: "scroll" }, T({}, "a", T({ bold: true }, "b\n\nc" + long))), 20).plain).toEqual(["ab", "", "cMon 12 | Tue 14 | …"]);
+    // Text đã tự cắt, và Box bên trong có width riêng, giữ như mod viết.
+    expect(at(B({ overflowX: "scroll" }, T({ wrap: "truncate-start" }, long)), 20).plain[0]).toMatch(/^….*Sat 24$/);
+    expect(at(B({ overflowX: "scroll" }, B({ width: 12 }, T({}, "aaaa bbbb cccc dddd"))), 40).plain).toEqual(["aaaa bbbb", "cccc dddd"]);
+    // Không cuộn thì vẫn xuống dòng.
+    expect(at(B({ flexDirection: "column" }, T({}, long)), 20)).toMatchObject({ rows: 3, cuts: [] });
+  });
   it("fails a fixed hex on a light terminal, passes a theme key; a lone symbol or a bar needs 3:1", () => {
     const tree = B({}, T({ color: "#4caf6e" }, "$0.50"), T({ color: "success" }, "ok"), T({ color: "#8b8cf8" }, "⚡"), T({ color: "#888780" }, "████░░"));
     const hits = termContrast(tree, "light", "#ffffff");
@@ -170,6 +191,24 @@ describe("desktop page", () => {
     expect(html).toContain('<template shadowrootmode="open">');
     expect(html).toContain("width:640px");
   });
+  it("overflowX scroll: the Box scrolls sideways, what it holds does not spill out of the slot (25/11/2026)", async () => {
+    const tree = B({ overflowX: "scroll", flexDirection: "column" }, T({}, "Mon 12 | Tue 14 | Wed 18 | ".repeat(8)), B({ width: 130, flexShrink: 0 }, T({}, "row")));
+    const { browser } = await launchBrowser(process.env);
+    try {
+      const page = await browser.newPage();
+      await page.setContent(desktopHtml(tree, { columns: 40, scheme: "light", lang: "en", title: "t" }));
+      const m = await page.evaluate(() => {
+        const slot = document.querySelector(".slot")!;
+        const box = slot.firstElementChild as HTMLElement;
+        return { spill: slot.scrollWidth - slot.clientWidth, scrolls: box.scrollWidth - box.clientWidth, focus: box.tabIndex, h: document.querySelector(".t")!.getBoundingClientRect().height };
+      });
+      expect(m).toMatchObject({ spill: 0, focus: 0 });
+      expect(m.scrolls).toBeGreaterThan(700);
+      expect(m.h).toBeLessThan(30);
+    } finally {
+      await browser.close();
+    }
+  }, 60_000);
   it("marks text whose colors are only the app's or a theme key's as guessed, not text the mod colored", () => {
     const html = (t: DrawNode) => desktopHtml(t, { columns: 80, scheme: "light", lang: "en", title: "t" });
     expect(html(T({ color: "warning" }, "52%"))).toContain("data-dk-guess");

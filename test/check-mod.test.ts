@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { main } from "../src/cli.js";
+import { collectDrawings, inspectMod } from "../src/mod/collect.js";
 
 const root = join(__dirname, "..");
 const bin = process.env["CLAUDE_BIN"] ?? "claude";
@@ -45,7 +46,7 @@ describe("check-mod arguments", () => {
  * Claude giả và một mod rỗng: validate nêu các component, test in sẵn các dòng cho trước. Tệp test chung rỗng thì trả lời
  * như claude thật: một dòng (fail) "declares no test()".
  */
-function fakeMod(components: string[], testLines: string[]): { dir: string; env: Record<string, string | undefined> } {
+function fakeMod(components: string[], testLines: string[], hang = false): { dir: string; env: Record<string, string | undefined> } {
   const d = mkdtempSync(join(tmpdir(), "dk-gia-"));
   const dir = join(d, "mod-gia");
   mkdirSync(join(dir, ".claude-plugin"), { recursive: true });
@@ -65,6 +66,7 @@ function fakeMod(components: string[], testLines: string[]): { dir: string; env:
       '    if (fs.readFileSync(path.join(hooks, f), "utf8").includes("any[] = []")) console.log("(fail) hooks/" + f + "\\n  error: it declares no test()");',
       "  }",
       "  for (const l of " + JSON.stringify(testLines) + ") console.log(l);",
+      ...(hang ? ["  setTimeout(() => {}, 60000);"] : []),
       "}",
     ].join("\n"),
   );
@@ -133,6 +135,25 @@ describe("check-mod with a stand-in claude (25/11/2026)", () => {
     const d = await run(["check-mod", desk.dir, "--no-shots", "--surfaces", "desktop", "--languages", "none", "--widths", "40"], desk.env);
     for (const id of ["render", "ask-rows", "rows", "svg-terminal", "hard-color"]) expect(result(d.out, id), id).toBe("skipped");
     for (const id of ["svg-source", "text-min", "axe", "overflow"]) expect(result(d.out, id), id).toBe("ok");
+  });
+
+  it("says so when the tests were stopped at the time limit: what came back before is only part of the mod", async () => {
+    const { dir, env } = fakeMod(["AbovePrompt"], ["(pass) t [1ms]", drawing("AbovePrompt", 80, { type: "Text", children: ["xin chào"] })], true);
+    const t0 = Date.now();
+    const r = await collectDrawings(inspectMod(dir, env), { widths: [80], surfaces: ["terminal"], languages: [], useTests: true, env, timeoutMs: 3000 });
+    expect(Date.now() - t0).toBeLessThan(30_000);
+    expect(r.drawings).toHaveLength(1);
+    expect(r.notes.join("\n")).toContain("run default: stopped after 3 s, the tests had not finished: only the 1 drawing(s)");
+  }, 60_000);
+
+  it("counts drawing lines that came back cut off, instead of dropping them without a word", async () => {
+    const ok = drawing("AbovePrompt", 80, { type: "Text", children: ["xin chào"] });
+    const { dir, env } = fakeMod(["AbovePrompt"], ["(pass) t [1ms]", ok, ok.slice(0, 60)]);
+    const { out } = await run(["check-mod", dir, ...terminal], env);
+    expect(out).toContain("run default: 1 drawing line(s) came back cut off and were dropped, not measured");
+    const whole = fakeMod(["AbovePrompt"], ["(pass) t [1ms]", ok]);
+    const b = (await run(["check-mod", whole.dir, ...terminal], whole.env)).out;
+    expect(b).not.toMatch(/cut off and were dropped|stopped after/);
   });
 
   it("the help says where ask-rows is measured and which components get default props", async () => {

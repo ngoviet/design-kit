@@ -70,6 +70,20 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- Follow-up of the same review (suspicions that were only read before, now reproduced):
+  - `check --recheck` measures the color schemes of the findings whatever `--schemes` says (a dark-only finding was called "fixed" after a
+    light-only run) and says when `--schemes`, `--viewports` or `--profile` is ignored. Pages outside the working folder no longer share a
+    screenshot folder with pages inside it (such folders, and names starting with `_` or `.`, change once).
+  - `css`: `vh-full` asks the browser which rule wins when `100dvh` and `100vh` come to the same px; `transition-all` names the right
+    selector; `theme-color` counts a translucent page background once. `keyboard`: a disabled button inside a clickable block no longer
+    excuses the block. `contrast-more` counts rules on pseudo-elements. `contrast-px` measures text whose own `!important` fill color
+    beat the gate's. `sticky` sees a bar inside an app shell whose page does not scroll. `guide` sees the button right after an empty
+    message placed directly under `body`. `body-lh` and `measure` count lines of text, not a row made tall by `min-height` or a button.
+  - `setup`: two downloads at the same time do not break each other, and an engine that is running and already correct is fine. `~` and
+    the suggested `cp` command are right for folders with a shared prefix or spaces.
+  - `check-mod`: a run stopped at the time limit and drawing lines that came back cut are in `notes`; `overflowX="scroll"` is drawn as the
+    app does, so it is not called overflow.
+  - `scripts/tao-trang-ab.py` takes a folder with a trailing slash. The React `dark:` variant has a regression test.
 - Full-project review of 25/11/2026 (each bug reproduced by a failing test first):
   - `check`: the result cache also covers files loaded only on the phone and touch renders and the web app manifest (an edited
     manifest reused the old result); screenshot folders of pages whose names differ only in Vietnamese accents no longer overwrite each

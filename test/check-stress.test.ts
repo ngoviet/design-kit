@@ -375,6 +375,16 @@ describe("contrast-px", () => {
       }
     }
   });
+  it("measures text whose own !important fill color has a stronger selector (25/11/2026)", async () => {
+    const style = "#hero{background:linear-gradient(#fff,#f4f4f4)}#hero #chu.to p,#hero #chu.to p::first-line{-webkit-text-fill-color:#999 !important;text-decoration-color:#000 !important;transition:all 3s !important}";
+    const o = await write(`<style>${style}</style><main id="hero"><div id="chu" class="to"><p>Chữ xám trên dải trắng</p></div><p style="color:#666">Đoạn thường</p></main>`);
+    const all = new Map((await measurePixelText(o.page)).map((x) => [x.where.split('"')[1]!, x.ratio]));
+    expect([...all.keys()].sort()).toEqual(["Chữ xám trên dải trắng", "Đoạn thường"]);
+    expect(all.get("Chữ xám trên dải trắng")).toBeGreaterThan(2.4);
+    expect(all.get("Chữ xám trên dải trắng")).toBeLessThan(2.9);
+    expect(await o.page.evaluate(() => [getComputedStyle(document.querySelector("#chu p")!).webkitTextFillColor, document.getAnimations().length, document.adoptedStyleSheets.length])).toEqual(["rgb(153, 153, 153)", 0, 0]);
+    await close(o);
+  });
   it("puts text over images before text over gradients when there is too much to measure", async () => {
     const grad = Array.from({ length: PX_BLOCKS + 6 }, (_, i) => `<p style="margin:0;color:rgb(${60 + i},60,60)">Dòng gradient ${i}</p>`).join("");
     const img = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Crect width='8' height='8' fill='%23e8e2d0'/%3E%3C/svg%3E";

@@ -194,7 +194,10 @@ function add(r: PageReport, gate: Gate, check: string, where: string, detail: st
  * của nhau (25/11/2026). Dài quá 240 byte (Linux giới hạn 255) thì cắt, nối băm để hai tên dài vẫn khác nhau.
  */
 export function shotSlug(stem: string, q: string, state?: string): string {
-  const slug = `${stem}${q ? `-${q}` : ""}${state ? `--${state}` : ""}`.replace(/[\\/]+/g, "~").replace(/[^\p{L}\p{M}\p{N}_.~-]+/gu, "_").replace(/^[._~]+/, "");
+  const full = `${stem}${q ? `-${q}` : ""}${state ? `--${state}` : ""}`.replace(/[\\/]+/g, "~").replace(/[^\p{L}\p{M}\p{N}_.~-]+/gu, "_");
+  // Đầu tên không để dấu chấm (thư mục ẩn, "..") hay ~; bỏ rồi thì nối băm, không thì ../x/trang và x/trang cùng một thư mục.
+  const cut = full.replace(/^[._~]+/, "");
+  const slug = cut === full || !cut ? cut : `${cut}~${sha(full).slice(0, 8)}`;
   if (Buffer.byteLength(slug) <= 240) return slug;
   let head = "";
   for (const c of slug) {
@@ -992,14 +995,25 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const prevRun = loadRun(runFile);
   const recheckIds = listFlag(p, "recheck");
   let plan: ReturnType<typeof recheckPlan> | undefined;
+  const ignored: string[] = [];
   if (recheckIds) {
     if (!prevRun) fail("--recheck: no earlier run of these pages here", "VALIDATION_ERROR", ["Run the same `design-kit check` command without --recheck first"]);
     plan = recheckPlan(prevRun, recheckIds);
     if (!plan.items.length) fail(`--recheck: not in the last run: ${plan.unknown.join(", ")}`, "VALIDATION_ERROR", ["Ids are in the `id` column of the last run of the same pages"]);
     const want = new Set(plan.items.flatMap((i) => i.widths));
+    const asked = given.map((v) => `${v.w}x${v.h}`);
+    const others = asked.length !== prevRun.sizes.length || asked.some((s) => !prevRun.sizes.includes(s));
     given = prevRun.sizes.map((z) => parseSize(z)).filter((z): z is Size => !!z && want.has(z.w));
-    schemes = schemes.filter((x) => plan!.items.some((i) => i.schemes.includes(x)));
+    // Chế độ màu lấy từ lượt trước, không từ --schemes: lỗi ở bản tối mà chỉ đo bản sáng thì vắng không phải là đã sửa (25/11/2026).
+    const askedSchemes = schemes;
+    schemes = prevRun.schemes.filter((x) => plan!.items.some((i) => i.schemes.includes(x)));
     if (!schemes.length) schemes = prevRun.schemes;
+    if (p.str("schemes") !== undefined && (askedSchemes.length !== prevRun.schemes.length || askedSchemes.some((s) => !prevRun.schemes.includes(s)))) {
+      ignored.push(`--schemes (${askedSchemes.join(", ")}) ignored: --recheck measures the color schemes of these findings in the last run (${schemes.join(", ")})`);
+    }
+    if (others && (profile || p.str("viewports") !== undefined)) {
+      ignored.push(`${profile ? "--profile" : "--viewports"} (${asked.join(", ")}) ignored: --recheck measures the sizes of these findings in the last run (${given.map((v) => `${v.w}x${v.h}`).join(", ")}); to measure other sizes run without --recheck`);
+    }
   }
   const viewports = given.map((v) => v.w);
   const heights: Record<number, number> = Object.fromEntries(given.map((v) => [v.w, v.h]));
@@ -1275,7 +1289,7 @@ export async function checkCommand(args: string[], rt: Runtime): Promise<Record<
   const notes = reports.length === 1
     ? reports[0]!.notes
     : [...new Set(reports.flatMap((r) => r.notes.filter((n) => !n.startsWith("lab vitals") && !n.startsWith("focus stops") && !n.startsWith("screenshots")).map((n) => (perPage(n) ? `${r.target}: ${n}` : n))))];
-  if (notes.length) out["notes"] = notes;
+  if (notes.length || ignored.length) out["notes"] = [...ignored, ...notes];
   // Dữ kiện agent tự điền (data-assumed): không phải lỗi, nhưng chủ phải duyệt từng mục trước khi trang ra ngoài.
   // Một mục xuất hiện ở nhiều trạng thái, hay nhiều --query, của cùng trang chỉ ghi một lần.
   const seenAssumed = new Set<string>();

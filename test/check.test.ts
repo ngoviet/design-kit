@@ -212,7 +212,9 @@ describe("recheck and shots: odd page names (25/11/2026)", () => {
   it("shot folders of names that differ only by accents, or only by Unicode form, stay apart; ASCII names are as before", () => {
     const s = (stem: string, q = "", state?: string): string => shotSlug(stem, q, state);
     expect(s("blocks\\html\\hero", "dk=dem", "mo")).toBe("blocks~html~hero-dk_dem--mo");
-    expect(s("../x/a b(1)")).toBe("x~a_b_1_");
+    // Bỏ phần đầu "..~", "_" thì nối băm: ../x/trang và x/trang từng cùng một thư mục ảnh (25/11/2026).
+    expect(s("../x/a b(1)")).toMatch(/^x~a_b_1_~[0-9a-f]{8}$/);
+    expect(new Set(["../x/a", "../../x/a", "x/a", "_x/a", ".x/a", "..\\..\\y\\..\\x\\a"].map((x) => s(x))).size).toBe(6);
     const four = ["bán", "bàn", "bán".normalize("NFD"), "bàn".normalize("NFD")].map((x) => s(x));
     expect(new Set(four).size).toBe(4);
     for (const x of [...four, s("trang: \"a\" <b>|c?*"), s("bài 你好 😀")]) expect(x).not.toMatch(/[<>:"/\\|?*\s]/);
@@ -221,6 +223,43 @@ describe("recheck and shots: odd page names (25/11/2026)", () => {
     expect(Buffer.byteLength(dai)).toBeLessThanOrEqual(240);
     expect(dai).not.toBe(s("ế".repeat(120) + "2"));
   });
+  it("a page outside the working folder keeps its own screenshots", async () => {
+    const d = dir("ten-ngoai");
+    const shots = dir("ten-ngoai-anh");
+    for (const f of [join(d, "x"), join(d, "trong", "x")]) {
+      mkdirSync(f, { recursive: true });
+      writeFileSync(join(f, "a.html"), html(""));
+    }
+    let out = "";
+    await main({ argv: ["check", "../x/a.html", "x/a.html", "--no-impeccable", "--no-standalone", "--no-cache", "--viewports", "390", "--schemes", "light", "--shots", shots], stdout: { write: (c: string) => (out += c) }, runtime: { env: process.env, home: "", cwd: join(d, "trong") } });
+    expect(out).toMatch(/pages\[2\]/);
+    expect(readdirSync(shots)).toHaveLength(2);
+  }, 120_000);
+  it("--recheck with other --viewports says they are ignored, and which sizes it measured", async () => {
+    writeFileSync(join(dir("ten-kho"), "a.html"), html('<p style="font-size:13px">Chữ nhỏ mà dài hơn ba mươi ký tự để phép đo tính là chữ thân.</p>'));
+    const args = ["check", ".design-kit/test/ten-kho/a.html", ...O];
+    const id = idOf((await run(args)).out, "body-size");
+    const other = await run([...args.map((a) => (a === "390" ? "1280,700x500" : a)), "--recheck", id]);
+    expect(other.out).toContain(`${id},still there,`);
+    expect(other.out).toContain("--viewports (1280x800, 700x500) ignored: --recheck measures the sizes of these findings in the last run (390x844)");
+    expect((await run(["check", ".design-kit/test/ten-kho/a.html", ...O.filter((a) => a !== "--viewports" && a !== "390"), "--profile", "devices", "--recheck", id])).out).toContain("--profile (320x568");
+    // Cùng bộ khổ với lượt trước, hay không nêu khổ: không có gì để nói.
+    expect((await run([...args, "--recheck", id])).out).not.toContain("ignored:");
+    expect((await run(["check", ".design-kit/test/ten-kho/a.html", ...O.filter((a) => a !== "--viewports" && a !== "390"), "--recheck", id])).out).not.toContain("ignored:");
+  }, 180_000);
+  it("--recheck measures the color schemes of the finding even when --schemes names others, and says so", async () => {
+    // Một lỗi chỉ ở bản sáng, một lỗi chỉ ở bản tối: đo lại cả hai mà chỉ chạy bản sáng thì lỗi bản tối "vắng" chứ chưa được sửa.
+    const p = (c: string): string => `<p class="${c}">Chữ nhỏ mà dài hơn ba mươi ký tự để phép đo tính là chữ thân ${c}.</p>`;
+    writeFileSync(join(dir("ten-mau"), "a.html"), html(`<style>.sang{font-size:13px}@media (prefers-color-scheme: dark){.sang{font-size:16px}.toi{font-size:13px}}</style>${p("sang")}${p("toi")}`));
+    const args = ["check", ".design-kit/test/ten-mau/a.html", ...O.map((a) => (a === "light" ? "light,dark" : a))];
+    const out = (await run(args)).out;
+    const id = (scheme: string): string => new RegExp(`,body-size,.*,([0-9a-z]{6}),${scheme}/390`).exec(out)![1]!;
+    const again = await run([...args.map((a) => (a === "light,dark" ? "light" : a)), "--recheck", `${id("light")},${id("dark")}`]);
+    expect(again.out).toContain(`${id("light")},still there,`);
+    expect(again.out).toContain(`${id("dark")},still there,`);
+    expect(again.out).toContain("--schemes (light) ignored: --recheck measures the color schemes of these findings in the last run (light, dark)");
+    expect((await run([...args, "--recheck", id("dark")])).out).not.toContain("ignored:");
+  }, 180_000);
   it("two pages that differ only by accents keep their own screenshots", async () => {
     const d = dir("ten-dau");
     const shots = dir("ten-dau-anh");

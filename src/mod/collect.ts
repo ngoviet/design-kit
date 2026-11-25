@@ -102,11 +102,12 @@ export function inspectMod(dir: string, env: Record<string, string | undefined>)
 }
 
 /** Kết quả `claude plugin test`: các dòng `(pass)`/`(fail)`, dòng lỗi ngay sau `(fail)`. */
-export function parseTestOutput(out: string): Omit<RunResult, "run" | "ms"> & { drawings: Drawing[] } {
+export function parseTestOutput(out: string): Omit<RunResult, "run" | "ms"> & { drawings: Drawing[]; cutLines: number } {
   const drawings: Drawing[] = [];
   const failures: RunResult["failures"] = [];
   let pass = 0;
   let failN = 0;
+  let cutLines = 0;
   const lines = out.split(/\r?\n/);
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
@@ -115,7 +116,8 @@ export function parseTestOutput(out: string): Omit<RunResult, "run" | "ms"> & { 
       try {
         drawings.push(JSON.parse(line.slice(at + LINE_TAG.length)) as Drawing);
       } catch {
-        // Dòng bị cắt (stdout quá dài): bỏ, phần còn lại vẫn dùng được.
+        // Dòng bị cắt (stdout quá dài, tiến trình bị dừng giữa chừng): bỏ, phần còn lại vẫn dùng được; số dòng bỏ vào ghi chú.
+        cutLines++;
       }
       continue;
     }
@@ -129,10 +131,10 @@ export function parseTestOutput(out: string): Omit<RunResult, "run" | "ms"> & { 
       failures.push({ test: fm[1]!, error: next.slice(0, 200) });
     }
   }
-  return { pass, fail: failN, failures, drawings };
+  return { pass, fail: failN, failures, drawings, cutLines };
 }
 
-export function runAsync(bin: string, args: string[], timeoutMs: number): Promise<{ out: string; code: number | null; missing: boolean }> {
+export function runAsync(bin: string, args: string[], timeoutMs: number): Promise<{ out: string; code: number | null; missing: boolean; timedOut?: boolean }> {
   return new Promise((done) => {
     const launch = (shell: boolean) => (shell ? spawn(shellLine(bin, args), { shell: true, windowsHide: true }) : spawn(bin, args, { windowsHide: true }));
     const go = (shell: boolean) => {
@@ -149,7 +151,11 @@ export function runAsync(bin: string, args: string[], timeoutMs: number): Promis
         go(true);
         return;
       }
-      const timer = setTimeout(() => killTree(p), timeoutMs);
+      let timedOut = false;
+      const timer = setTimeout(() => {
+        timedOut = true;
+        killTree(p);
+      }, timeoutMs);
       p.stdout.on("data", (d: Buffer) => chunks.push(d));
       p.stderr.on("data", (d: Buffer) => chunks.push(d));
       p.on("error", (e: NodeJS.ErrnoException) => {
@@ -163,7 +169,7 @@ export function runAsync(bin: string, args: string[], timeoutMs: number): Promis
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        done({ out: Buffer.concat(chunks).toString("utf8"), code, missing: false });
+        done({ out: Buffer.concat(chunks).toString("utf8"), code, missing: false, timedOut });
       });
     };
     go(false);
@@ -188,6 +194,8 @@ export interface CollectOptions {
   env: Record<string, string | undefined>;
   /** Giữ thư mục tạm để xem lại (DK_KEEP=1). */
   keep?: boolean;
+  /** Hạn giờ mỗi lượt `claude plugin test` (mặc định 600 s; test đặt ngắn). */
+  timeoutMs?: number;
 }
 
 /** Chép mod, gắn lớp chặn cho một lượt chạy, trả thư mục tạm. */
@@ -239,12 +247,15 @@ export async function collectDrawings(info: ModInfo, o: CollectOptions): Promise
       const { root, notes: n } = prepareCopy(info, { run: p.run, language: p.language, soft: p.soft, widths: o.widths, surfaces: o.surfaces }, o);
       notes.push(...n);
       const t0 = Date.now();
-      const r = await runAsync(bin, ["plugin", "test", root], 600_000);
+      const limitMs = o.timeoutMs ?? 600_000;
+      const r = await runAsync(bin, ["plugin", "test", root], limitMs);
       const ms = Date.now() - t0;
       if (!o.keep) rmSync(dirname(root), { recursive: true, force: true });
       else notes.push(`kept the copy for run ${p.run}: ${root}`);
       if (r.missing) fail(`check-mod: \`${bin}\` not found`, "VALIDATION_ERROR", ["Install Claude Code, or set CLAUDE_BIN"]);
       const parsed = parseTestOutput(r.out);
+      if (r.timedOut) notes.push(`run ${p.run}: stopped after ${limitMs / 1000} s, the tests had not finished: only the ${parsed.drawings.length} drawing(s) printed before that are measured`);
+      if (parsed.cutLines) notes.push(`run ${p.run}: ${parsed.cutLines} drawing line(s) came back cut off and were dropped, not measured`);
       const res: RunResult = { run: p.run, pass: parsed.pass, fail: parsed.fail, failures: parsed.failures, ms };
       if (!parsed.drawings.length && !parsed.pass && !parsed.fail) res.broken = r.out.split(/\r?\n/).filter(Boolean).slice(-3).join(" | ").slice(0, 300) || `no output, exit code ${r.code}`;
       return { res, drawings: parsed.drawings };
