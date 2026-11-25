@@ -259,7 +259,8 @@ function names(run, file, cwd) {
   const { bases, lost, vars } = run.ctx;
   const at = (b, p) => norm(resolve(b, p)).replace(/\/+$/, "");
   const hit = (word) => {
-    const t = unshell(word).replace(/^\$(?:\{PWD\}|PWD\b)(?=[\\/]|$)/i, ".").replace(/\$(?:\{(\w+)\}|(\w+))/g, (m, a, b) => vars.get(a ?? b) ?? m);
+    const t = unshell(word).replace(/^\$(?:\{PWD\}|PWD\b)(?=[\\/]|$)/i, ".").replace(/\$(?:\{(\w+)\}|(\w+))/g, (m, a, b) => vars.get(a ?? b) ?? m)
+      .replace(/\\/g, "/"); // đường dẫn kiểu Windows của lệnh PowerShell: Linux không coi "\" là dấu phân cách
     if (!t) return false;
     // Biến không ánh xạ được: phần còn lại phải khớp đuôi đường dẫn (`$ROOT/app/index.html`).
     if (t.search(VAR) >= 0) {
