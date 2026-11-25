@@ -117,11 +117,35 @@ function leafText(n: DrawNode): string {
   }
 }
 
-function toInk(c: Child, k: InkKit, scheme: Scheme, inText: boolean, key: number): unknown {
-  if (typeof c === "string") return inText ? c : k.h(k.Text, { key }, c);
+/**
+ * Trong Box overflowX="scroll", terminal không cuộn ngang được: mỗi Text bị cắt ở mép Box như truncate-end (trừ khi `wrap` của nó
+ * đã cắt), không xuống dòng. Box bên trong có `width` riêng giữ nguyên thứ nó chứa. (Kiểu của claude-code 2.1.332, BoxProps.overflowX.)
+ */
+const scrolls = (p: Record<string, unknown>, outer: boolean): boolean => p["overflowX"] === "scroll" || (outer && p["width"] === undefined);
+
+/** Các dòng của một Text, giữ Text lồng bên trong: Ink cắt (truncate) cả chuỗi nhiều dòng thành một dòng. */
+function textLines(n: DrawNode): DrawNode[] {
+  const lines: Child[][] = [[]];
+  for (const c of kids(n)) {
+    const parts: Child[] = typeof c === "string" ? c.split("\n") : c.type === "Text" ? textLines(c) : [c];
+    parts.forEach((x, i) => (i ? lines.push([x]) : lines.at(-1)!.push(x)));
+  }
+  return lines.map((children) => ({ ...n, children }));
+}
+
+function toInk(c: Child, k: InkKit, scheme: Scheme, inText: boolean, key: number, scroll = false): unknown {
+  if (typeof c === "string") return inText ? c : k.h(k.Text, { key, ...(scroll ? { wrap: "truncate-end" } : {}) }, c);
   const p = c.props ?? {};
-  const children = (inside: boolean) => kids(c).map((x, i) => toInk(x, k, scheme, inside, i));
-  if (c.type === "Text") return k.h(k.Text, { key, ...textProps(p, scheme) }, ...children(true));
+  const inner = c.type === "Box" ? scrolls(p, scroll) : scroll;
+  const children = (inside: boolean) => kids(c).map((x, i) => toInk(x, k, scheme, inside, i, inner));
+  if (c.type === "Text") {
+    const tp = textProps(p, scheme);
+    if (scroll && !inText && (tp["wrap"] ?? "wrap") === "wrap") {
+      const lines = textLines(c).map((l, i) => k.h(k.Text, { key: key + i, ...tp, wrap: "truncate-end" }, ...(textOf(l) ? kids(l).map((x, j) => toInk(x, k, scheme, true, j)) : [" "])));
+      return lines.length > 1 ? k.h(k.Box, { key, flexDirection: "column" }, ...lines) : lines[0];
+    }
+    return k.h(k.Text, { key, ...tp }, ...children(true));
+  }
   if (inText) return leafText(c); // Ink không cho Box nằm trong Text: lấy chữ của nó.
   if (c.type === "Box") return k.h(k.Box, { key, ...boxProps(p, scheme) }, ...children(false));
   if (c.type === "Svg" || c.type === "Client" || c.type === "Raster" || c.type === "Image") {
@@ -233,12 +257,12 @@ export function textCuts(tree: DrawNode, r: TermRender): Cut[] {
   const joined = norm(r.plain.join(" "));
   let grid: string[][] | undefined;
   const out: Cut[] = [];
-  const visit = (n: DrawNode) => {
+  const visit = (n: DrawNode, scroll: boolean) => {
     if (n.type === "Text" || n.type === "Button") {
       const raw = n.type === "Button" ? leafText(n) : textOf(n);
       const t = norm(raw);
       // Chữ đặt wrap khác "wrap" (truncate, end…) không bao giờ xuống hàng: hàng dưới khớp phần thiếu chỉ là tình cờ.
-      const wraps = n.type === "Button" || (n.props?.["wrap"] ?? "wrap") === "wrap";
+      const wraps = n.type === "Button" || (!scroll && (n.props?.["wrap"] ?? "wrap") === "wrap");
       if (t.length >= 2 && !r.plain.some((l) => l.includes(t)) && !joined.includes(t) && !(wraps && wrapsWhole(raw, (grid ??= r.plain.map(cellsOf))))) {
         let len = t.length - 1;
         while (len > 0 && !joined.includes(t.slice(0, len))) len--;
@@ -246,9 +270,10 @@ export function textCuts(tree: DrawNode, r: TermRender): Cut[] {
       }
       return; // Text lồng trong Text: đo ở Text ngoài cùng.
     }
-    for (const c of kids(n)) if (isNode(c)) visit(c);
+    const inner = n.type === "Box" ? scrolls(n.props ?? {}, scroll) : scroll;
+    for (const c of kids(n)) if (isNode(c)) visit(c, inner);
   };
-  visit(tree);
+  visit(tree, false);
   return out;
 }
 

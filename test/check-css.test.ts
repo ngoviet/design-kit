@@ -167,6 +167,61 @@ describe("css vh-full", () => {
     // Chiều ngược lại: 100vh của phần tử giả không phải chiều cao của khối.
     expect(await vh('#a{height:844px}#a::before{content:"";position:absolute;height:100vh}', '<div id="a">x</div>')).toEqual([]);
   }, 60_000);
+  it("when 100dvh and 100vh come to the same px, only the rule that wins the cascade is the fix (25/11/2026)", async () => {
+    const lost: Array<[string, string, string?]> = [
+      ["class", ".hero{height:100dvh}.hero.to{height:100vh}", '<div id="a" class="hero to">x</div>'],
+      ["id", "#a{height:100vh}.hero.to{height:100dvh}"],
+      ["attribute and pseudo-class", "div[id]:first-child{height:100vh}.hero{height:100dvh}"],
+      ["order", ".hero{height:100dvh}.to{height:100vh}"],
+      ["!important", ".to{height:100vh!important}#a{height:100dvh}"],
+      ["@layer, unlayered wins", ".to{height:100vh}@layer x{#a{height:100dvh}}"],
+      ["@layer order", "@layer a,b;@layer b{.to{height:100vh}}@layer a{#a{height:100dvh}}"],
+      ["@layer, !important turns the order round", "@layer a,b;@layer a{.to{height:100vh!important}}@layer b{#a{height:100dvh!important}}"],
+      [":is takes its strongest argument", ":is(#z,.to){height:100vh}.hero.to{height:100dvh}"],
+      [":where counts nothing", "div{height:100vh}:where(#a){height:100dvh}"],
+      [":not takes its argument", "div:not(#z){height:100vh}.hero.to{height:100dvh}"],
+      ["nesting", "main{.to&,& #a{height:100vh}}.hero.to{height:100dvh}", '<main><div id="a" class="hero to">x</div></main>'],
+      ["@media after", ".to{height:100dvh}@media (max-width:500px){.to{height:100vh}}"],
+      ["style attribute", "#a{height:100dvh}", '<div id="a" class="hero to" style="height:100vh">x</div>'],
+      ["min-height", ".hero{min-height:100dvh}.hero.to{min-height:100vh}"],
+      ["max-height", ".hero{max-height:100dvh}.hero.to{max-height:100vh;overflow:auto}#a>p{height:2000px}", '<div id="a" class="hero to"><p>x</p></div>'],
+      ["a running transition: all", "#a{transition:all 1s}.hero{height:100dvh}.hero.to{height:100vh}"],
+    ];
+    const won: Array<[string, string, string?]> = [
+      ["class", ".hero{height:100vh}.hero.to{height:100dvh}"],
+      ["order", ".hero{height:100vh}.to{height:100dvh}"],
+      ["!important", ".to{height:100dvh!important}#a{height:100vh}"],
+      ["@layer", ".to{height:100dvh}@layer x{#a{height:100vh}}"],
+      ["@layer order", "@layer a,b;@layer b{.to{height:100dvh}}@layer a{#a{height:100vh}}"],
+      [":is", ":is(#z,.to){height:100dvh}.hero.to{height:100vh}"],
+      [":where", "div{height:100dvh}:where(#a){height:100vh}"],
+      ["style attribute", "#a{height:100vh}", '<div id="a" class="hero to" style="height:100dvh">x</div>'],
+      ["!important over the style attribute", "#a{height:100dvh!important}", '<div id="a" class="hero to" style="height:100vh">x</div>'],
+      ["another property", ".hero{max-height:100dvh}.hero.to{height:100vh}"],
+      // Đổi thử sang auto sẽ chạy chuyển tiếp: không so được, vẫn coi là đã sửa.
+      ["discrete transition", "#a{transition:all 1s allow-discrete}.hero{height:100dvh}.hero.to{height:100vh}"],
+    ];
+    for (const [list, want] of [[lost, ["div#a"]], [won, []]] as const) {
+      for (const [name, css, body] of list) expect([name, await vh(css, body ?? '<div id="a" class="hero to">x</div>')]).toEqual([name, want]);
+    }
+  }, 120_000);
+  it("puts back the rule it tried, starts no transition and leaves the style attribute alone", async () => {
+    const css = ".hero{color:red;height:100dvh!important;margin:0}.hero.to{height:100vh!important}#a{transition:all 1s}" +
+      ".c{height:100dvh;block-size:100dvh}div.c{height:100vh}.d{height:100vh}";
+    await withPage({}, async (p) => {
+      await p.setContent(doc(`<style>${css}</style>`, '<div id="a" class="hero to">x</div><div class="c">x</div><div class="d" style="height:100dvh">x</div>'));
+      const state = (): Promise<unknown> => p.evaluate(() => [Array.from(document.styleSheets[0]!.cssRules).map((r) => r.cssText), getComputedStyle(document.getElementById("a")!).height, document.getAnimations().length, document.documentElement.outerHTML]);
+      const before = await state();
+      await p.evaluate(() => {
+        const w = window as unknown as { seen: number };
+        w.seen = 0;
+        new MutationObserver((l) => (w.seen += l.length)).observe(document.body, { attributes: true, subtree: true });
+      });
+      expect(places(await p.evaluate(probeCss), "vh-full")).toEqual(["div#a"]);
+      expect(await state()).toEqual(before);
+      expect(await p.evaluate(() => (window as unknown as { seen: number }).seen)).toBe(0);
+    });
+  }, 60_000);
   it("ignores rules that do not apply: print sheet, unmet @media and @supports, @starting-style, disabled sheet", async () => {
     expect(await vh("@media (min-width:900px){#a{height:100vh}}", '<div id="a" style="height:844px">x</div>')).toEqual([]);
     expect(await probe('<style media="print">#a{height:100vh}</style><style>@supports (display: nope){#a{height:100vh}}@starting-style{#a{height:100vh}}</style>', '<div id="a" style="height:844px">x</div>').then((l) => places(l, "vh-full"))).toEqual([]);
@@ -199,6 +254,14 @@ describe("css transition-all", () => {
     expect((await tr(":root{--t:.2s}.goc{transition:all .2s}.bien{transition:var(--t)}", '<p class="goc bien">a</p>')).map((h) => h.where)).toEqual([".goc"]);
     // Chỉ đặt thời lượng, không ai viết all: lớp duration-200 của hộp thoại shadcn.
     expect(await tr(".nhanh{transition-duration:.1s}", '<p class="nhanh">a</p><p style="transition-duration:.1s">b</p>')).toEqual([]);
+  }, 60_000);
+  it("a rule for the pseudo-element is not named as the rule of the element, nor the other way round (25/11/2026)", async () => {
+    const rows = async (css: string, body = '<p class="x y">a</p>'): Promise<string[]> => (await tr(css, body)).map((h) => `${h.where} ${/of (\d+)/.exec(h.detail)![1]}`).sort();
+    expect(await rows('.x{transition:all .2s}.x::before{content:"";transition:all .3s}')).toEqual([".x 1", ".x::before 1"]);
+    expect(await rows('.x:after{content:"";transition:all .3s}.x{transition:all .2s}')).toEqual([".x 1", ".x::after 1"]);
+    expect(await rows('.x{transition:all .2s;&::before{content:"";transition:all .3s}}')).toEqual([".x 1", ":is(.x)::before 1"]);
+    // Danh sách: mỗi phần chỉ nói về thứ nó trỏ tới.
+    expect(await rows('.x::before{content:"";transition:all .2s}.y,.z::before{transition:all .3s}', '<p class="x y">a</p>')).toEqual([".x::before 1", ".y, .z::before 1"]);
   }, 60_000);
   it("leaves zero duration, a pseudo-element with no content, invisible elements, and pairs durations with properties", async () => {
     expect(await tr(".x::after{transition:all .2s}", '<p class="x">a</p>')).toEqual([]);
@@ -275,6 +338,17 @@ describe("css theme-color", () => {
       return p.evaluate(probeCss);
     });
     expect(of(inShadow, "theme-color")).toHaveLength(1);
+  }, 60_000);
+  it("a translucent page background counts once, and the body's only when it is the canvas (25/11/2026)", async () => {
+    // Làm tròn 8 bit có thể lệch một: so theo bậc 4.
+    const at = async (css: string, body = "<div>Chữ</div>"): Promise<number> => Math.round(Number(/rgb (\d+)/.exec((await tc(M("#00ff00"), css, body))[0]!.detail)![1]) / 4) * 4;
+    expect(await at("body{background:rgb(0 0 0 / 50%)}")).toBe(128);
+    expect(await at("html{background:rgb(0 0 0 / 50%)}")).toBe(128);
+    expect(await at("html{background:rgb(0 0 0 / 50%)}body{background:rgb(0 0 0 / 50%)}")).toBe(64);
+    // Lề của đoạn đầu đẩy hộp body xuống: nền body lan ra màn khi html trong suốt, còn html có nền thì không.
+    expect(await at("body{background:rgb(0 0 0 / 50%)}", "<p>Chữ</p>")).toBe(128);
+    expect(await at("html{background:rgb(0 0 0 / 50%)}body{background:#000}", "<p>Chữ</p>")).toBe(128);
+    expect(await tc(M("#808080"), "body{background:rgb(0 0 0 / 50%)}", "<div>Chữ</div>")).toEqual([]);
   }, 60_000);
   it("says nothing without the tag, with an invalid color, over an image or gradient, after scrolling, or when waived", async () => {
     expect(await tc("", "body{background:#111}:root{color-scheme:dark}")).toEqual([]);

@@ -65,6 +65,22 @@ describe("keyboard", () => {
   it("leaves labels, cards with a link, hidden things, delegated listeners, stopPropagation, drop zones, arrow-key widgets, helper buttons, backdrops, canvas and data-keyboard-ok", async () => {
     expect(text(await on("ban-phim-dung.html", (p) => keyboardPass(p, 30)))).toBe("");
   });
+  it("a disabled button inside does not excuse a block that is a button itself (25/11/2026)", async () => {
+    const go = async (body: string): Promise<string> => text(await on(`<main>${body}</main>`, (p) => keyboardPass(p), true));
+    expect(await go('<div id="a" onclick="mo()">Đơn hàng 12 <button disabled>Xoá</button></div>')).toMatch(/div#a .*has onclick/);
+    expect(await go('<div id="a" onclick="mo()">Đơn hàng 12 <a role="button" aria-disabled="true">Xoá</a></div>')).toMatch(/div#a .*has onclick/);
+    expect(await go('<div id="a" style="cursor:pointer">Đơn hàng 12 <button disabled>Xoá</button></div><script>a.addEventListener("click",()=>{document.title="mở"})</script>')).toMatch(/div#a .*click listener/);
+    // Cả cụm đang khoá: vỏ bọc nút, ô và nhãn, cụm tăng giảm, trình nghe uỷ quyền.
+    for (const quiet of [
+      '<div id="a" onclick="mo()"><button disabled>Xoá</button></div>',
+      '<div id="a" onclick="mo()">Ngày nhận <input disabled></div>',
+      '<div id="a" onclick="mo()"><span role="checkbox" aria-disabled="true">✓</span> Nhận thư</div>',
+      '<div id="a" onclick="lam(event)">1 <button disabled>+</button></div>',
+      '<div id="a">Trang 1 <button disabled>Sau</button></div><script>a.addEventListener("click",(e)=>{document.title=e.target.id})</script>',
+      '<div id="a" style="cursor:pointer">Gói năm <button disabled>Đã chọn</button></div>',
+      '<div id="a" onclick="mo()" aria-disabled="true">Đơn hàng 12 <button disabled>Xoá</button></div>',
+    ]) expect([quiet, await go(quiet)]).toEqual([quiet, ""]);
+  });
   it("leaves nothing behind on the page", async () => {
     await on("ban-phim-sai.html", async (p) => {
       await keyboardPass(p);
@@ -372,6 +388,10 @@ describe("contrast-more", () => {
     // Khai bằng thuộc tính media của thẻ style, và trong cây bóng.
     expect(await on(`${nhat("")}<style media="(prefers-contrast: more)">main{outline-color:#000}</style>`, (p) => contrastMorePass(p, axeSource), true)).toHaveLength(1);
     expect(await on(`${nhat("")}<style media="(prefers-contrast: more)">[data-chu-de=x]{color:#000}</style>`, (p) => contrastMorePass(p, axeSource), true)).toEqual([]);
+    // Khối chỉ có luật cho phần tử giả cũng là lời hứa, khi trang có vẽ phần tử giả đó (25/11/2026).
+    const VE = 'p::before{content:"•"}';
+    for (const sel of ["p::before", "p:before", "main>p::first-line", ".khong-co, p::before"]) expect([sel, await on(nhat(`${VE}@media (prefers-contrast: more) { ${sel} { color: #000 } }`), (p) => contrastMorePass(p, axeSource), true)]).toEqual([sel, [expect.objectContaining({ where: 'p#p "Chữ thân còn nhạt so với nền"' })]]);
+    for (const sel of [".khong-co::before", "p::after", "dialog::backdrop", "p::-webkit-scrollbar", "p::selection"]) expect([sel, await on(nhat(`${VE}@media (prefers-contrast: more) { ${sel} { color: #000 } }`), (p) => contrastMorePass(p, axeSource), true)]).toEqual([sel, []]);
     const bong = await on(`${nhat("")}<the-x id="x"></the-x>`, async (p) => {
       await p.evaluate(() => {
         document.getElementById("x")!.attachShadow({ mode: "open" }).innerHTML = "<style>@media (prefers-contrast: more) { b { color: #000 } }</style><b></b>";

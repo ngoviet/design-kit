@@ -51,11 +51,24 @@ export function contrastMedia(): Array<[string, boolean]> {
   };
   // Khối @media chỉ là lời hứa khi có luật trúng một phần tử của trang. Tệp bộ màu dùng chung khai tương phản cao cho chín bộ;
   // trang đang dùng màu của hướng thì không luật nào trúng, đòi 7:1 ở đó là báo oan (khối chon-mau, 24/11/2026).
+  // Luật cho phần tử giả mang chữ: trúng khi bỏ phần tử giả đi thì bộ chọn trúng một phần tử, và ::before, ::after có được vẽ.
+  // ::backdrop, ::selection, thanh cuộn không phải nội dung đang đọc (25/11/2026).
+  const pseudo = (sel: string, root: Document | ShadowRoot): boolean =>
+    sel.split(/,(?![^(]*\))/).some((part) => {
+      const m = /^(.*?)::?(before|after|first-line|first-letter|marker|placeholder)$/.exec(part.trim());
+      if (!m) return false;
+      const drawn = (el: Element): boolean => !/^(before|after)$/.test(m[2]!) || !/^(none|normal)$/.test(getComputedStyle(el, `::${m[2]}`).content);
+      try {
+        return Array.from(root.querySelectorAll(/(^|[\s>+~])$/.test(m[1]!) ? `${m[1]}*` : m[1]!)).some(drawn);
+      } catch {
+        return false;
+      }
+    });
   const used = (list: CSSRuleList, root: Document | ShadowRoot): boolean =>
     Array.from(list).some((r) => {
       if (r instanceof CSSStyleRule) {
         try {
-          if (root.querySelector(r.selectorText) || (root instanceof ShadowRoot && /:host/.test(r.selectorText))) return true;
+          if (root.querySelector(r.selectorText) || (root instanceof ShadowRoot && /:host/.test(r.selectorText)) || pseudo(r.selectorText, root)) return true;
         } catch {
           return true; // bộ chọn lạ: coi như có dùng
         }

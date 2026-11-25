@@ -107,6 +107,18 @@ export function probeSticky(): { share: number; parts: Array<{ where: string; he
     const p = m[1]!.split(/[,/\s]+/).filter(Boolean);
     return p.length >= 4 ? parseFloat(p[3]!) : 1;
   };
+  // Mép mà phần tử sticky dính vào: khung cuộn gần nhất (vùng trong đệm, như trình duyệt tính), hoặc màn. Chỉ tính khung khi trang không
+  // cuộn: khung trong một trang cuộn đi theo trang nên thanh của nó không giữ chỗ (25/11/2026).
+  const edges = (el: Element): [number, number] => {
+    for (let a = up(el); a && a !== de && a !== document.body && max === 0; a = up(a)) {
+      const cs = getComputedStyle(a);
+      if (cs.overflowY === "visible" || cs.overflowY === "clip") continue;
+      if (a.scrollHeight <= a.clientHeight + 1) break;
+      const top = a.getBoundingClientRect().top + a.clientTop;
+      return [top + parseFloat(cs.paddingTop), top + a.clientHeight - parseFloat(cs.paddingBottom)];
+    }
+    return [0, H];
+  };
   // Không có gì cuộn (cả trang lẫn khung cuộn rộng trong trang) thì phần tử sticky chỉ là một khối trong trang ngắn (25/11/2026).
   let scrolls = max > 0;
   let bars: Array<{ el: Element; top: number; bottom: number; sticky: boolean }> = [];
@@ -123,8 +135,9 @@ export function probeSticky(): { share: number; parts: Array<{ where: string; he
       // vẫn được xét vì vẫn đi tiếp xuống cây con.
       if (r.height >= H * 0.7) continue;
       if (cs.position === "sticky") {
-        const stuckTop = cs.top !== "auto" && Math.abs(r.top - parseFloat(cs.top)) <= 1.5;
-        const stuckBottom = cs.bottom !== "auto" && Math.abs(H - r.bottom - parseFloat(cs.bottom)) <= 1.5;
+        const [top, bottom] = edges(el);
+        const stuckTop = cs.top !== "auto" && Math.abs(r.top - top - parseFloat(cs.top)) <= 1.5;
+        const stuckBottom = cs.bottom !== "auto" && Math.abs(bottom - r.bottom - parseFloat(cs.bottom)) <= 1.5;
         if (!stuckTop && !stuckBottom) continue;
       }
       if (alpha(cs.backgroundColor) < 0.05 && cs.backgroundImage === "none" && !(el.textContent ?? "").trim()) continue;

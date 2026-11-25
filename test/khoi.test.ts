@@ -1,5 +1,9 @@
 // Hành vi (JS) của khối mẫu, trong trình duyệt thật. Bố cục, màu, chữ do cổng đo; ở đây là thao tác mà cổng không bấm tới.
+import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import type { Browser, Page } from "playwright-core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { launchBrowser, startServer } from "../src/browser.js";
@@ -30,6 +34,38 @@ const open = async (path: string, fn: (page: Page) => Promise<void>, clock = fal
     await page.close();
   }
 };
+
+// CI chạy npm ci ở blocks/react trước bước test; máy chưa cài thì bỏ qua.
+describe.skipIf(!existsSync(join(root, "blocks", "react", "node_modules", "vite")) && !process.env["CI"])("react: the dark: variant", () => {
+  it("applies when forced dark and when the machine is dark, not when forced light on a dark machine", async () => {
+    // Biên dịch index.css thật bằng Vite và Tailwind của blocks/react, kết quả để trong bộ nhớ (không đụng dist). Lớp thử nêu
+    // thẳng bằng @source inline, không phụ thuộc khối nào đang dùng dark:.
+    const react = join(root, "blocks", "react");
+    const load = async (id: string): Promise<Record<string, unknown>> => (await import(pathToFileURL(createRequire(join(react, "package.json")).resolve(id)).href)) as Record<string, unknown>;
+    const build = (await load("vite"))["build"] as (o: unknown) => Promise<{ output: Array<{ fileName: string; source?: string }> }>;
+    const tailwind = (await load("@tailwindcss/vite"))["default"] as () => unknown;
+    const tmp = mkdtempSync(join(tmpdir(), "dk-react-"));
+    writeFileSync(join(tmp, "thu.css"), `@import "${join(react, "src", "index.css").replace(/\\/g, "/")}";\n@source inline("dark:line-through");\n`);
+    const out = await build({ root: tmp, configFile: false, logLevel: "silent", plugins: [tailwind()], build: { write: false, rollupOptions: { input: join(tmp, "thu.css") } } });
+    const css = out.output.filter((f) => f.fileName.endsWith(".css")).map((f) => String(f.source)).join("\n");
+    expect(css).toContain("line-through");
+    const page = await browser.newPage();
+    try {
+      const at = async (machine: "light" | "dark", theme?: string): Promise<boolean> => {
+        await page.emulateMedia({ colorScheme: machine });
+        await page.setContent(`<!doctype html><html${theme ? ` data-theme="${theme}"` : ""}><head><style>${css}</style></head><body><p class="dark:line-through">chữ</p></body></html>`);
+        return page.evaluate(() => getComputedStyle(document.querySelector("p")!).textDecorationLine === "line-through");
+      };
+      expect({
+        "máy sáng": await at("light"), "máy tối": await at("dark"),
+        "máy sáng, ép tối": await at("light", "dark"), "máy tối, ép tối": await at("dark", "dark"),
+        "máy sáng, ép sáng": await at("light", "light"), "máy tối, ép sáng": await at("dark", "light"),
+      }).toEqual({ "máy sáng": false, "máy tối": true, "máy sáng, ép tối": true, "máy tối, ép tối": true, "máy sáng, ép sáng": false, "máy tối, ép sáng": false });
+    } finally {
+      await page.close();
+    }
+  });
+});
 
 describe("trinh-tu: the step links", () => {
   const at = (page: Page) =>

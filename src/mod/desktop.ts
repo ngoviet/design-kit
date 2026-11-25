@@ -69,6 +69,7 @@ function boxCss(p: Record<string, unknown>, scheme: Scheme): string {
     ["border-radius", border === "round" ? "8px" : undefined],
     ["background", resolveColor(p["backgroundColor"], scheme).css],
     ["overflow", p["overflow"] === "hidden" ? "hidden" : undefined],
+    ["overflow-x", p["overflowX"] === "scroll" ? "auto" : undefined],
     ["display", p["display"] === "none" ? "none" : undefined],
     ["position", p["position"] === "absolute" ? "absolute" : undefined],
     ["top", px(p["top"], ROW_PX)],
@@ -123,7 +124,9 @@ function render(c: Child, scheme: Scheme, ctx: Ctx): string {
   const modBg = ctx.modBg || modColor(p["backgroundColor"], scheme);
   switch (c.type) {
     case "Box":
-      return `<div class="b"${boxCss(p, scheme)}>${inner({ ...ctx, inText: false, modBg })}</div>`;
+      // overflowX="scroll" (kiểu của claude-code 2.1.332): các dòng giữ nguyên bề rộng và cuộn ngang cùng nhau. Vùng cuộn do app vẽ nên
+      // nhận bàn phím được (tabindex), không để axe quy lỗi đó cho mod.
+      return `<div ${p["overflowX"] === "scroll" ? 'class="b sx" tabindex="0"' : `class="b${p["width"] === undefined ? "" : " own"}"`}${boxCss(p, scheme)}>${inner({ ...ctx, inText: false, modBg })}</div>`;
     case "Text": {
       const wrap = typeof p["wrap"] === "string" ? (p["wrap"] as string) : "wrap";
       const cls = ctx.inText ? "" : wrap === "wrap" ? "t" : "t cut";
@@ -212,6 +215,8 @@ body{font:14px/1.45 "Segoe UI",system-ui,-apple-system,sans-serif;padding:12px}
 .b{display:flex;flex-direction:row;flex-shrink:1;min-width:0;box-sizing:border-box;position:relative}
 .t{white-space:pre-wrap;overflow-wrap:anywhere;min-width:0}
 .t.cut{white-space:pre;overflow:hidden;text-overflow:ellipsis}
+.sx .t:not(.cut){white-space:pre}
+.sx .own .t:not(.cut){white-space:pre-wrap}
 .svg{flex:none}
 .btn{font:inherit;color:inherit;background:transparent;border:1px solid ${c.line};border-radius:6px;padding:2px 10px;min-height:24px;cursor:pointer}
 .btn.plain{border:0;padding:0 2px}

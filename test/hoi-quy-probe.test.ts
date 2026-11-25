@@ -92,10 +92,63 @@ describe("body-lh and measure: padding is not a line of text", () => {
     expect(await probe("li{padding:14px 0;line-height:1.3;border-bottom:1px solid}", "<ul><li>Phòng khách</li></ul>")).toEqual({ lh: 0, measure: 0 });
     expect(await probe("p{padding:20px 0;line-height:1.3;transform:scale(1.5);transform-origin:0 0}", "<p>Phòng khách</p>")).toEqual({ lh: 0, measure: 0 });
   });
+  it("a single line in a tall row is not reported: min-height, a tall control, a big icon", async () => {
+    expect(await probe("li{min-height:56px;line-height:1.3}", "<ul><li>Phòng khách</li></ul>")).toEqual({ lh: 0, measure: 0 });
+    expect(await probe("li{display:flex;align-items:center;gap:12px;line-height:1.3}button{height:64px}", "<ul><li><span>Đèn</span> Phòng khách <button>Bật</button></li></ul>")).toEqual({ lh: 0, measure: 0 });
+    expect(await probe("li{line-height:1.3}img{height:60px;width:60px}", '<ul><li><img alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACw="> Phòng khách, H<sub>2</sub>O, x<sup>2</sup> <b style="font-size:28px">24°</b></li></ul>')).toEqual({ lh: 0, measure: 0 });
+    expect(await probe("li{height:56px;line-height:1.3;transform:scale(.6);transform-origin:0 0}", "<ul><li>Phòng khách</li></ul>")).toEqual({ lh: 0, measure: 0 });
+  });
+  it("two real lines in a tall row still are, however they come about", async () => {
+    const two = [
+      ["li{min-height:90px;line-height:1.3;width:120px}", "<ul><li>Phòng khách tầng một</li></ul>"],
+      ["li{min-height:90px;line-height:1.3}", "<ul><li>Phòng khách<br>Đang bật</li></ul>"],
+      ["li{min-height:90px;line-height:1.3}small{display:block}", "<ul><li>Phòng khách <small>Đang bật</small></li></ul>"],
+      ["li{display:flex;align-items:center;min-height:90px;line-height:1.3}span{width:90px}", "<ul><li><span>Phòng khách tầng một</span> Bật</li></ul>"],
+      ["p{line-height:.8;width:150px}", "<p>Phòng khách tầng một của nhà mình</p>"],
+      ["p{line-height:1.3;width:150px;transform:rotate(90deg);margin:150px}", "<p>Phòng khách tầng một của nhà mình</p>"],
+      ["p{line-height:1.3;width:150px;transform:scale(.4)}", "<p>Phòng khách tầng một của nhà mình</p>"],
+    ] as const;
+    for (const [css, body] of two) expect([css, (await probe(css, body)).lh]).toEqual([css, 1]);
+    // Chữ đi vào bằng slot không nằm trong cây của khối.
+    const slot = await on("the-x{display:block;width:120px}", "<the-x>Phòng khách tầng một của nhà</the-x>", async (p) => {
+      await p.evaluate(() => {
+        document.querySelector("the-x")!.attachShadow({ mode: "open" }).innerHTML = '<p style="line-height:1.3;margin:0">Ở <slot></slot></p>';
+      });
+      return (await p.evaluate(probePage)).bodyTight.length;
+    });
+    expect(slot).toBe(1);
+  });
   it("a padded paragraph of several lines still is", async () => {
     expect(await probe("p{padding:30px;border:4px solid;line-height:1.3;width:1100px}", "<p>" + LONG + "</p>")).toEqual({ lh: 1, measure: 1 });
     expect(await probe("p{padding:30px;line-height:1.3;width:300px}", "<p>Hai dòng chữ nằm trong một khung hẹp có đệm rộng</p>")).toEqual({ lh: 1, measure: 0 });
     expect(await probe("p{padding:30px;box-sizing:border-box;line-height:1.3;width:1100px;transform:scale(.8)}", "<p>" + LONG + "</p>")).toEqual({ lh: 1, measure: 1 });
+  });
+});
+
+describe("guide: an empty message at the top of the page", () => {
+  const dead = async (body: string, root = "body"): Promise<string[]> => {
+    const p = await browser.newPage();
+    try {
+      await p.setContent('<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>t</title></head><body>' + (root === "body" ? body : "<the-x></the-x>") + "</body></html>");
+      if (root !== "body") await p.evaluate((h) => (document.querySelector("the-x")!.attachShadow({ mode: "open" }).innerHTML = h), body);
+      return (await p.evaluate(probePage)).emptyDeadEnd.map((h) => h.where);
+    } finally {
+      await p.close();
+    }
+  };
+  it("is not a dead end when a button stands next to it, directly or in a block", async () => {
+    for (const root of ["body", "shadow"]) {
+      expect(await dead("<p>Chưa có dữ liệu</p><button>Thêm phòng</button>", root)).toEqual([]);
+      expect(await dead('<h2>Phòng</h2><p>Chưa có dữ liệu</p><p>Thêm phòng đầu tiên để xem nhiệt độ.</p><div><a href="#x">Thêm phòng</a></div>', root)).toEqual([]);
+    }
+  });
+  it("is one when the only actions are in the page frame, or far from it", async () => {
+    expect(await dead("<p>Chưa có dữ liệu</p>")).toEqual(["p \"Chưa có dữ liệu\""]);
+    expect(await dead('<header><a href="/">Trang chủ</a></header><nav><a href="/b">Bài</a></nav><p>Chưa có dữ liệu</p><footer><a href="/c">Liên hệ</a></footer>')).toHaveLength(1);
+    expect(await dead('<header><a href="/">Trang chủ</a></header><main><p>Chưa có dữ liệu</p></main>')).toHaveLength(1);
+    expect(await dead("<p>Chưa có dữ liệu</p><p>" + "Nội dung khác của trang. ".repeat(30) + "</p><button>Thêm phòng</button>")).toHaveLength(1);
+    expect(await dead("<button>Tiếp</button><p>Chưa có dữ liệu</p><div>Khối khác</div><button>Sắp xếp</button>")).toHaveLength(1);
+    expect(await dead("<p>Chưa có dữ liệu</p><button hidden>Thêm phòng</button>")).toHaveLength(1);
   });
 });
 

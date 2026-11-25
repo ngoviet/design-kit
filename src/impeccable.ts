@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { chmodSync, existsSync, mkdirSync, renameSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fail } from "./errors.js";
@@ -70,13 +70,22 @@ export async function downloadEngine(env: Record<string, string | undefined>): P
   const res = await fetch(url);
   if (!res.ok) throw new Error(`download failed: HTTP ${res.status} ${url}`);
   const buf = Buffer.from(await res.arrayBuffer());
-  const got = createHash("sha256").update(buf).digest("hex");
+  const sha256 = (b: Buffer): string => createHash("sha256").update(b).digest("hex");
+  const got = sha256(buf);
   if (got !== want) throw new Error(`checksum mismatch for ${asset}: got ${got.slice(0, 12)}…, pinned ${want.slice(0, 12)}…; nothing was installed`);
   const path = dkCache(env);
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(`${path}.tmp`, buf);
-  if (process.platform !== "win32") chmodSync(`${path}.tmp`, 0o755);
-  renameSync(`${path}.tmp`, path);
+  // Tên riêng mỗi tiến trình: hai setup chạy cùng lúc dùng chung một tệp .tmp thì setup sau mất tệp trước khi đổi tên.
+  const tmp = `${path}.${process.pid}.tmp`;
+  try {
+    writeFileSync(tmp, buf);
+    if (process.platform !== "win32") chmodSync(tmp, 0o755);
+    renameSync(tmp, path);
+  } catch (e) {
+    rmSync(tmp, { force: true });
+    // Windows không cho thay tệp exe đang chạy (EPERM). Tệp tại chỗ đã đúng bản ghim thì không cần thay.
+    if (!existsSync(path) || sha256(readFileSync(path)) !== want) throw e;
+  }
   return { path, bytes: buf.length, url };
 }
 

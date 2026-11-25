@@ -121,6 +121,15 @@ describe("sticky and orientation", () => {
     expect(await page("ngan", "header{position:sticky;top:0}", `<main>${bar}<p>Trang ngắn hơn một màn.</p></main>`)).toBe("");
     expect(await page("co-dinh", "header{position:fixed;top:0;left:0;right:0}", `${bar}<main style="padding-top:310px"><p>Trang ngắn hơn một màn.</p></main>`)).toContain("stuck bars take");
     expect(await page("vo-cuon", "html,body{height:100%}.vo{height:100vh;overflow:auto}header{position:sticky;top:0}", `<main class="vo">${bar}<p style="height:2400px">Vỏ tự cuộn.</p></main>`)).toContain("stuck bars take");
+    // Vỏ app có thanh tiêu đề: thanh dính ở mép khung cuộn (kể cả đệm và viền của nó), không phải ở mép màn.
+    const SHELL = "html,body{height:100%}body{display:flex;flex-direction:column}nav{height:56px;flex:none}main{overflow:auto;flex:1;padding:16px 0;border-top:3px solid}header{position:sticky;top:0}";
+    const pane = (inner: string): string => `<nav>Ứng dụng</nav><main>${inner}</main>`;
+    expect(await page("khung", SHELL, pane(`${bar}<p style="height:2400px">Khung cuộn dưới thanh tiêu đề.</p>`))).toMatch(/header 300px/);
+    expect(await page("khung-day", `${SHELL}header{top:auto;bottom:0}`, pane(`<p style="height:2400px">Ô nhắn ở đáy khung.</p>${bar}`))).toMatch(/header 300px/);
+    expect(await page("khung-long", SHELL, pane(`<div style="overflow:hidden auto">${bar}</div><p style="height:2400px">Khung không cuộn nằm trong khung cuộn.</p>`))).toBe("");
+    // Chưa dính, hay khung nằm trong một trang tự cuộn (cuộn trang thì khung đi theo): không chiếm chỗ.
+    expect(await page("khung-chua-dinh", SHELL, pane(`<p style="height:200px">Đoạn đầu.</p>${bar}<p style="height:2400px">Khung cuộn.</p>`))).toBe("");
+    expect(await page("khung-trong-trang", ".bang{margin:1000px 0;height:400px;overflow:auto}header{position:sticky;top:0}", `<main><div class="bang">${bar}<p style="height:900px">Bảng dài.</p></div></main>`)).toBe("");
     // Vỏ app: thanh nằm cạnh khung cuộn, không nằm trong nó, nhưng chiếm chỗ suốt lúc đọc.
     expect(await page("vo-canh", "html,body{height:100%}body{display:flex;flex-direction:column}header{position:sticky;top:0;flex:none}main{overflow:auto}", `${bar}<main><p style="height:2400px">Khung cuộn riêng.</p></main>`)).toContain("stuck bars take");
   }, 120_000);

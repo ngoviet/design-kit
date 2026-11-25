@@ -305,3 +305,16 @@ ngoài một tham số thừa, phần lỗi đến từ sáu lượt soát độ
 - **Người soát độc lập bản sửa:** 0 chặn, 1 nên sửa (hook Stop quá 10 s ở phiên nặng, đã sửa), mấy mục nhẹ đã sửa; 50 đột biến, 42 đỏ, 2 tương đương, 6 sống;
   đã thêm test, chạy lại cả 6 đều đỏ.
 - **`hookTimeout` của vitest 60 s:** 18 tệp cùng mở trình duyệt thì đóng trình duyệt có lúc quá 10 s mặc định (chạy riêng 9 s cả hai tệp, 3/3 lượt xanh).
+
+### Soát nốt cùng ngày
+
+Chủ bảo làm tiếp: xử lý các nghi ngờ chưa ai tái hiện và các mục để lại ở trên. Cụm cổng: 9/9 mục tái hiện được và đã sửa; cụm lệnh: phần còn lại bác
+kèm phép thử. Cổng khối mẫu trước và sau: cùng 23 phát hiện mềm, 0 cứng.
+
+- **`vh-full` ở cùng số px (trước để lại) nay làm được** mà không tự tính cascade: đổi tạm khai báo dvh sang `auto`/`none`, xem giá trị đã tính có đổi không,
+  trả lại ngay. Không thử với thuộc tính `style`, `allow-discrete`, `interpolate-size`.
+- **Bác:** `fetch` tải engine không hạn giờ (undici tự ngắt sau 305 s im lặng, đo trên Node 24); `test.skip`, `test.only`, `beforeEach` trong bộ test mod (Claude
+  Code 2.1.332 chỉ có `describe`, `expect`, `mock`, `test`, `tier`); `borderTop`, `overflowY`, tra prototype ở khoảng cách (engine từ chối cây trước).
+- **Vẫn để lại:** phím Tab của cổng và `offline` muộn (lý do ở trên); lượt test mod hết giờ chỉ ra ghi chú, status vẫn có thể "pass"; Linux: tiến trình cháu giữ
+  ống khi hết giờ (suy luận từ mã); `theme-color` với body gradient, `@media` lồng trong luật ở `contrast-more` (đọc mã, chưa tái hiện).
+- **Phát hiện `steps` chập chờn:** một lượt cổng lúc máy bận có 2 lỗi cứng ở `thanh-ben #ngan-keo` khổ 320 (hết 5 s chờ bấm), các lượt sau sạch; chưa chứng minh là do tải.

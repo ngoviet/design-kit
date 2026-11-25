@@ -4,7 +4,8 @@ Dùng: py -3.12 scripts/tao-trang-ab.py <thư mục đợt> <tên trang .html> "
 import json, sys, os
 from PIL import Image
 
-dot, page, title = sys.argv[1], sys.argv[2], sys.argv[3]
+# Bỏ gạch chéo cuối: "eval/dot1/" cho basename rỗng và slug thừa dấu ~ nên không thấy ảnh.
+dot, page, title = sys.argv[1].rstrip("/\\"), sys.argv[2], sys.argv[3]
 briefs = [a.split(":", 2) for a in sys.argv[4:]]
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 khoa = json.load(open(os.path.join(root, dot, ".khoa.json"), encoding="utf-8"))

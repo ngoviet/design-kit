@@ -19,6 +19,19 @@ export function kitRoot(): string {
   return dir;
 }
 
+/** Đường dẫn rút gọn bằng ~. Chỉ khi nằm trong thư mục nhà: C:/Users/Vok không phải nhà của C:/Users/Vokupt. */
+export function tilde(p: string, home: string): string {
+  const h = home.replace(/[\\/]+$/, "");
+  if (!h || p.slice(0, h.length).toLowerCase() !== h.toLowerCase() || !/^([\\/]|$)/.test(p.slice(h.length))) return p;
+  return `~${p.slice(h.length).replace(/\\/g, "/")}`;
+}
+
+/** Lệnh chép một hướng về dự án: đường dẫn có dấu cách hay ký tự shell thì bọc nháy. */
+export function copyHint(root: string): string {
+  const src = `${root.replace(/\\/g, "/")}/design/<dem|giay|dam>/DESIGN.md`;
+  return `cp ${/[\s()&;'`$]/.test(root) ? `"${src}"` : src} ./DESIGN.md`;
+}
+
 const list = (dir: string, ext: string): string[] =>
   existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(ext)).map((f) => f.slice(0, -ext.length)).sort() : [];
 
@@ -36,12 +49,11 @@ export async function homeView(args: string[], rt: Runtime): Promise<Record<stri
   } catch (e) {
     impError = (e as Error).message;
   }
-  const tilde = (p: string) => (p.toLowerCase().startsWith(rt.home.toLowerCase()) ? `~${p.slice(rt.home.length).replace(/\\/g, "/")}` : p);
   return {
     kit: root.replace(/\\/g, "/"),
     directions: directions.length ? directions.map((d) => `${d} (design/${d}/DESIGN.md)`).join(", ") : "0 directions found",
     blocks: `${html.length} html: ${html.join(", ") || "none"}; ${react.length} react: ${react.join(", ") || "none"}`,
-    impeccable: impError ?? (imp ? tilde(imp) : "not found: run `design-kit setup`, or set IMPECCABLE_BIN"),
+    impeccable: impError ?? (imp ? tilde(imp, rt.home) : "not found: run `design-kit setup`, or set IMPECCABLE_BIN"),
     browser: rt.env["DK_BROWSER"] ? `DK_BROWSER=${rt.env["DK_BROWSER"]}` : "Edge, else Chrome (playwright-core channel), else Playwright's Chromium",
     project: `${rt.cwd.replace(/\\/g, "/")}: DESIGN.md ${existsSync(join(rt.cwd, "DESIGN.md")) ? "yes" : "no"}, PRODUCT.md ${existsSync(join(rt.cwd, "PRODUCT.md")) ? "yes" : "no"}`,
     // Chủ yêu cầu 09/11/2026: mọi quy trình, phức tạp đến mấy, phải dễ như phần hướng dẫn trong game.
@@ -53,7 +65,7 @@ export async function homeView(args: string[], rt: Runtime): Promise<Record<stri
     help: [
       "Write the task map first (skill design-kit, section 2b), then build from the closest block",
       "Run `design-kit check <file|dir|url>` before calling a page done",
-      ...(existsSync(join(rt.cwd, "DESIGN.md")) ? [] : [`Copy a direction: cp ${root.replace(/\\/g, "/")}/design/<dem|giay|dam>/DESIGN.md ./DESIGN.md`]),
+      ...(existsSync(join(rt.cwd, "DESIGN.md")) ? [] : [`Copy a direction: ${copyHint(root)}`]),
     ],
   };
 }

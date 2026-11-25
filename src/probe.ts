@@ -170,13 +170,36 @@ export function probePage(): ProbeResult {
     // Hộp bao đã co theo k, dòng chữ khai báo thì chưa: quy về cùng một hệ. Trừ đệm và viền: `li` một dòng có padding 14px
     // từng thành "hai dòng" và bị báo body-lh, measure (25/11/2026).
     const edges = [cs.paddingTop, cs.paddingBottom, cs.borderTopWidth, cs.borderBottomWidth].reduce((s, v) => s + (parseFloat(v) || 0), 0);
-    const lines = Math.round((el.getBoundingClientRect().height / k - edges) / lhRaw);
+    const tall = Math.round((el.getBoundingClientRect().height / k - edges) / lhRaw);
+    // Hàng một dòng cao nhờ min-height, nút hay hình: hỏi lại chính các dòng chữ, chỉ khi sắp báo. Dòng mới là khi đáy hộp chữ xuống quá
+    // nửa giãn dòng (chữ to cùng dòng lệch ít hơn; chỉ số trên, dưới thì bỏ qua). Chữ đi vào qua slot, nằm trong cây bóng, bị xoay hay viết dọc thì giữ
+    // cách đếm theo chiều cao (25/11/2026).
+    const manyLines = (): boolean => {
+      if (tall < 2) return false;
+      const [, b, c] = lin(el);
+      if (b || c || cs.writingMode !== "horizontal-tb" || Array.from(el.querySelectorAll("*")).some((x) => x.tagName === "SLOT" || x.shadowRoot)) return true;
+      const range = document.createRange();
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      let min = Infinity;
+      let max = -Infinity;
+      for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+        if (!(t.textContent || "").trim() || t.parentElement?.closest("sub, sup")) continue;
+        range.selectNodeContents(t);
+        for (const q of Array.from(range.getClientRects())) {
+          if (q.width <= 0) continue;
+          min = Math.min(min, q.bottom);
+          max = Math.max(max, q.bottom);
+          if (max - min > (lhRaw * k) / 2) return true;
+        }
+      }
+      return false;
+    };
     // Chữ phụ (gợi ý dưới ô, chú thích) có màu khác chữ thân: 14px là đúng thang, không tính là thân chữ nhỏ.
     const secondary = cs.color !== bodyColor;
     if (isBody && !secondary && text.length > 40 && fs * k < 16) out.bodySmall.push({ where: label(el), value: px(fs, k) });
-    if (isBody && lines >= 2 && ratio < 1.5) out.bodyTight.push({ where: label(el), value: ratio.toFixed(2) });
+    if (isBody && ratio < 1.5 && manyLines()) out.bodyTight.push({ where: label(el), value: ratio.toFixed(2) });
     if (/^H[1-4]$/.test(tag) && ratio < 1.2) out.headingTight.push({ where: label(el), value: ratio.toFixed(2) });
-    if (isBody && lines >= 2 && canvas) {
+    if (isBody && tall >= 2 && canvas) {
       // Bề rộng ký tự trung bình đo trên chính chữ của đoạn (không dùng "0" như đơn vị ch:
       // chữ Việt trong Be Vietnam Pro hẹp hơn "0" ~37%, nên 68ch thành ~93 ký tự mỗi dòng).
       canvas.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
@@ -184,7 +207,7 @@ export function probePage(): ProbeResult {
       const avg = sample ? canvas.measureText(sample).width / sample.length : 0;
       const [a, b] = lin(el);
       const width = el.getBoundingClientRect().width / (Math.hypot(a, b) || 1) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-      if (avg > 0 && width / avg > 80) out.measure.push({ where: label(el), value: `~${Math.round(width / avg)} chars/line` });
+      if (avg > 0 && width / avg > 80 && manyLines()) out.measure.push({ where: label(el), value: `~${Math.round(width / avg)} chars/line` });
     }
     const first = (cs.fontFamily.split(",")[0] || "").replace(/["']/g, "").trim();
     const key = first.toLowerCase();
@@ -473,6 +496,18 @@ export function probePage(): ProbeResult {
       a = a.parentElement;
       if ((a.textContent || "").length > 400) break;
       found = !!a.querySelector(ACTION);
+    }
+    // Câu nằm ngay dưới body hay gốc cây bóng: không có tầng nào để đi lên, nên xét thứ đứng ngay sau nó (qua các dòng giải thích).
+    // Nút ở chỗ khác của trang không phải việc làm tiếp của câu này (25/11/2026).
+    if (el.parentNode === document.body || el.parentNode instanceof ShadowRoot) {
+      let chars = text.length;
+      for (let s = el.nextElementSibling; s && !found; s = s.nextElementSibling) {
+        if (!shown(s)) continue;
+        chars += (s.textContent || "").length;
+        if (chars > 400 || s.matches("header, nav, main, footer, aside, [role=banner], [role=navigation], [role=main], [role=contentinfo]")) break;
+        found = s.matches(ACTION) || !!s.querySelector(ACTION);
+        if (!/^(P|SPAN|SMALL|BR)$/.test(s.tagName)) break;
+      }
     }
     if (!found) out.emptyDeadEnd.push({ where: label(el), value: `"${text.slice(0, 40)}"` });
   }

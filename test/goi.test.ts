@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -448,6 +448,142 @@ describe("engine download", () => {
     await expect(downloadEngine(env)).rejects.toThrow(/checksum mismatch/);
     expect(existsSync(dkCache(env))).toBe(false);
     expect(engineAsset()).toMatch(/^impeccable-(windows-x64\.exe|darwin-(x64|arm64)|linux-(x64|arm64))$/);
+  });
+
+  // Engine giả: fetch trả chữ "engine", sha256 của đúng chữ đó được coi là bản ghim. Không tải gì, không đụng ~/.design-kit.
+  const PIN = /^ {2}"(impeccable-[^"]+)": "([0-9a-f]{64})"/gm;
+  const fakeEngine = async (fsOver: (real: typeof import("node:fs")) => Partial<typeof import("node:fs")>) => {
+    const pins = new Map([...readFileSync(join(root, "src", "impeccable.ts"), "utf8").matchAll(PIN)].map((m) => [m[1]!, m[2]!]));
+    vi.stubGlobal("fetch", async () => new Response("engine"));
+    vi.resetModules();
+    vi.doMock("node:crypto", async (orig) => ({
+      ...(await orig<typeof import("node:crypto")>()),
+      createHash: () => {
+        let text = "";
+        const h = { update: (b: Buffer) => ((text += b.toString()), h), digest: () => (text === "engine" ? pins.get(engineAsset()) : "0".repeat(64)) };
+        return h;
+      },
+    }));
+    vi.doMock("node:fs", async (orig) => {
+      const real = await orig<typeof import("node:fs")>();
+      return { ...real, ...fsOver(real) };
+    });
+    try {
+      return await import("../src/impeccable.js");
+    } finally {
+      vi.doUnmock("node:crypto");
+      vi.doUnmock("node:fs");
+      vi.resetModules();
+    }
+  };
+  const home = () => ({ DK_HOME: mkdtempSync(join(tmpdir(), "dk-engine-")) });
+
+  it("two setups at the same time do not take each other's temporary file (25/11/2026)", async () => {
+    const env = home();
+    // Ngay sau khi setup này ghi tệp tạm, một setup khác (mã tiến trình khác, cùng mã) ghi tệp tạm của nó rồi đổi tên.
+    const m = await fakeEngine((real) => ({
+      writeFileSync: ((p: string, data: Buffer) => {
+        real.writeFileSync(p, data);
+        const other = p.replaceAll(String(process.pid), "1");
+        real.writeFileSync(other, data);
+        real.renameSync(other, dkCache(env));
+      }) as typeof writeFileSync,
+    }));
+    await m.downloadEngine(env);
+    expect(readFileSync(dkCache(env), "utf8")).toBe("engine");
+    expect(readdirSync(dirname(dkCache(env)))).toHaveLength(1);
+  });
+  it.each([["already the pinned one", "engine"], ["something else", "engine cũ"], ["missing", undefined]])("an engine that cannot be replaced (running on Windows): %s", async (_n, there) => {
+    const env = home();
+    if (there !== undefined) {
+      mkdirSync(dirname(dkCache(env)), { recursive: true });
+      writeFileSync(dkCache(env), there);
+    }
+    const m = await fakeEngine(() => ({
+      renameSync: () => {
+        throw Object.assign(new Error("EPERM: operation not permitted, rename"), { code: "EPERM" });
+      },
+    }));
+    if (there === "engine") expect((await m.downloadEngine(env)).path).toBe(dkCache(env));
+    else await expect(m.downloadEngine(env)).rejects.toThrow(/EPERM/);
+    // Không để lại tệp tạm 20 MB.
+    expect(readdirSync(dirname(dkCache(env)))).toHaveLength(there === undefined ? 0 : 1);
+  });
+});
+
+describe("paths in home and setup (25/11/2026)", () => {
+  afterEach(() => vi.unstubAllEnvs());
+  const show = async (argv: string[], env: Record<string, string | undefined>, home: string) => {
+    let out = "";
+    const prev = process.exitCode;
+    await main({ argv, stdout: { write: (c: string) => (out += c) }, runtime: { env: { ...process.env, ...env }, home, cwd: tmp } });
+    process.exitCode = prev;
+    return /^impeccable: (.*)$/m.exec(out)?.[1]?.replace(/^"|"$/g, "") ?? out;
+  };
+  it("~ stands for the home folder only, not for a folder whose name starts like it", async () => {
+    const at = (name: string) => {
+      const f = join(tmp, name, "imp");
+      mkdirSync(dirname(f), { recursive: true });
+      writeFileSync(f, "");
+      return f;
+    };
+    const nha = join(tmp, "Vok");
+    // os.homedir() đọc USERPROFILE (Windows) hay HOME: setup không lấy thư mục nhà từ runtime.
+    vi.stubEnv("USERPROFILE", nha);
+    vi.stubEnv("HOME", nha);
+    const mine = at("Vok");
+    const other = at("Vokupt");
+    for (const argv of [["home"], ["setup", "--no-browser"]]) {
+      expect([argv[0], await show(argv, { IMPECCABLE_BIN: mine }, nha)]).toEqual([argv[0], expect.stringMatching(/~\/imp$/)]);
+      expect([argv[0], await show(argv, { IMPECCABLE_BIN: other }, nha)]).toEqual([argv[0], expect.stringMatching(/Vokupt/)]);
+    }
+    expect(await show(["home"], { IMPECCABLE_BIN: mine }, nha + "/")).toBe("~/imp");
+  });
+  it("the copy command quotes a kit path with a space in it", async () => {
+    const help = async (name: string) => {
+      const kit = join(mkdtempSync(join(tmpdir(), "dk-kit-")), name);
+      mkdirSync(join(kit, "tokens"), { recursive: true });
+      writeFileSync(join(kit, "tokens", "core.css"), "");
+      vi.resetModules();
+      vi.doMock("node:url", async (orig) => ({ ...(await orig<typeof import("node:url")>()), fileURLToPath: () => join(kit, "src", "commands", "home.ts") }));
+      try {
+        const { homeView } = await import("../src/commands/home.js");
+        const v = await homeView([], { env: {}, home: tmp, cwd: kit });
+        return [(v["help"] as string[]).find((h) => h.startsWith("Copy a direction: "))!.slice(18), kit.replace(/\\/g, "/")];
+      } finally {
+        vi.doUnmock("node:url");
+        vi.resetModules();
+      }
+    };
+    const [a, kitA] = await help("bộ kit (2)");
+    expect(a).toBe(`cp "${kitA}/design/<dem|giay|dam>/DESIGN.md" ./DESIGN.md`);
+    const [b, kitB] = await help("design-kit");
+    expect(b).toBe(`cp ${kitB}/design/<dem|giay|dam>/DESIGN.md ./DESIGN.md`);
+  });
+});
+
+const python = ["python3", "python"].find((p) => /^Python 3/.test(spawnSync(p, ["--version"], { encoding: "utf8" }).stdout ?? ""));
+describe.skipIf(!python)("A/B page script", () => {
+  it("takes the folder with or without a slash at the end (25/11/2026)", () => {
+    // Bản chép script trong thư mục tạm (nó ghi theo chỗ nó nằm), PIL giả: không cần Pillow.
+    const d = mkdtempSync(join(tmpdir(), "dk-ab-"));
+    const put = (f: string, text: string) => {
+      mkdirSync(dirname(join(d, f)), { recursive: true });
+      writeFileSync(join(d, f), text);
+    };
+    put("scripts/tao-trang-ab.py", readFileSync(join(root, "scripts", "tao-trang-ab.py"), "utf8"));
+    put("gia/PIL/__init__.py", "");
+    put("gia/PIL/Image.py", ["import builtins", "class Im:", "    width = height = 10", "    crop = lambda self, b: self", "    convert = lambda self, m: self", "    def save(self, p, **k):", "        builtins.open(p, 'w').close()", "def open(p):", "    builtins.open(p).close()", "    return Im()"].join("\n"));
+    put(".folio/danh-gia-ab.html", '<title>Chấm mù A/B</title><main class="wrap">');
+    put("eval/dot1/.khoa.json", '{"de":{"X":"a","Y":"b"}}');
+    for (const s of ["a", "b"]) for (const n of ["light-1280", "light-390", "dark-390"]) put(`eval/dot1/.shots/eval~dot1~de~${s}~index/${n}.png`, "x");
+    for (const dot of ["eval/dot1", "eval/dot1/", ...(process.platform === "win32" ? ["eval\\dot1\\"] : [])]) {
+      const anh = join(d, ".folio", "anh");
+      rmSync(anh, { recursive: true, force: true });
+      const r = spawnSync(python!, [join(d, "scripts", "tao-trang-ab.py"), dot, "t.html", "T", "de:Ten:mo ta"], { encoding: "utf8", env: { ...process.env, PYTHONPATH: join(d, "gia"), PYTHONUTF8: "1" } });
+      expect([dot, r.status, r.stderr]).toEqual([dot, 0, ""]);
+      expect([dot, readdirSync(anh), readdirSync(join(anh, "dot1")).length]).toEqual([dot, ["dot1"], 6]);
+    }
   });
 });
 
